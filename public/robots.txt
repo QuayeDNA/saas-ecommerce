@@ -1,0 +1,11 @@
+# Allow all robots to index the site
+User-agent: *
+Allow: /
+
+# Block specific folders that shouldn't be indexed
+Disallow: /admin/
+Disallow: /api/
+Disallow: /assets/
+
+# Sitemap location
+Sitemap: https://telepay.example.com/sitemap.xml
