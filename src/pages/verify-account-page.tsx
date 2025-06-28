@@ -1,13 +1,16 @@
-// src/pages/VerifyAccountPage.tsx
-import { Link, useParams } from 'react-router-dom';
+// src/pages/verify-account-page.tsx
+import { Link, useLocation } from 'react-router-dom'; // Import useLocation
 import { useAuth } from '../hooks';
 import { useState, useEffect } from 'react';
 import { Button, Alert, Card, CardHeader, CardBody } from '../design-system';
 
 export const VerifyAccountPage = () => {
-  const { token } = useParams<{ token: string }>();
+  const location = useLocation(); // Use useLocation
+  const queryParams = new URLSearchParams(location.search); // Get query parameters
+  const token = queryParams.get('token'); // Extract the token from query parameters
+
   const { verifyAccount } = useAuth();
-  
+
   const [isVerifying, setIsVerifying] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
   const [userType, setUserType] = useState<string>('');
@@ -22,7 +25,7 @@ export const VerifyAccountPage = () => {
 
     const performVerification = async () => {
       try {
-        const result = await verifyAccount(token);
+        const result = await verifyAccount(token); // Pass token as a string
         setUserType(result.userType);
         setIsSuccess(true);
       } catch (error) {
@@ -46,7 +49,7 @@ export const VerifyAccountPage = () => {
               </div>
               <h2 className="mt-3 text-2xl font-extrabold text-gray-900">Verifying your account</h2>
             </CardHeader>
-            
+
             <CardBody>
               <p className="text-center text-sm text-gray-600">
                 Please wait while we verify your account...
@@ -71,7 +74,7 @@ export const VerifyAccountPage = () => {
               </div>
               <h2 className="mt-3 text-2xl font-extrabold text-gray-900">Account verified!</h2>
             </CardHeader>
-            
+
             <CardBody>
               <p className="text-center text-sm text-gray-600 mb-6">
                 Your {userType} account has been successfully verified. You can now log in and start using the platform.
@@ -100,18 +103,18 @@ export const VerifyAccountPage = () => {
             </div>
             <h2 className="mt-3 text-2xl font-extrabold text-gray-900">Verification failed</h2>
           </CardHeader>
-          
+
           <CardBody>
             {verificationError && (
               <Alert status="error" variant="left-accent" className="mb-6">
                 {verificationError}
               </Alert>
             )}
-            
+
             <p className="text-center text-sm text-gray-600 mb-6">
               The verification link may be invalid or expired. Please try registering again or contact support.
             </p>
-            
+
             <div className="space-y-3">
               <Link to="/register">
                 <Button variant="primary" colorScheme="default" size="lg" fullWidth>
