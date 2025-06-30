@@ -1,24 +1,148 @@
+// src/types/product.types.ts
+export interface ProductAttribute {
+  key: string;
+  value: string | number | boolean | Date | Array<unknown>;
+  label?: string;
+  dataType: 'string' | 'number' | 'boolean' | 'date' | 'array';
+}
+
+export interface ProductImage {
+  url: string;
+  alt?: string;
+  isPrimary: boolean;
+}
+
 export interface ProductVariant {
   _id?: string;
   name: string;
-  price: number;
+  description?: string;
   sku: string;
-  inventory?: number;
-  reservedInventory?: number;
-  lowStockThreshold?: number;
-  isActive?: boolean;
-  isDeleted?: boolean;
+  price: number;
+  costPrice?: number;
+  inventory: number;
+  reservedInventory: number;
+  lowStockThreshold: number;
+  attributes: ProductAttribute[];
+  isActive: boolean;
+  images: ProductImage[];
+  dataVolume?: number;
+  validity?: number;
+  network?: Network;
+  bundleType?: 'data' | 'voice' | 'sms' | 'combo';
+  isDeleted: boolean;
+  deletedAt?: Date;
+  deletedBy?: string;
+  availableInventory: number;
 }
 
 export interface Product {
-  _id: string;
+  _id?: string;
   name: string;
   description?: string;
-  category: string;
-  provider?: string;
+  category: ProductCategory;
+  subCategory?: ProductSubCategory;
+  provider?: Network;
   variants: ProductVariant[];
+  attributes: ProductAttribute[];
+  tags: string[];
+  tenantId: string;
+  createdBy: string;
+  updatedBy?: string;
   isActive: boolean;
-  isDeleted?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  isDeleted: boolean;
+  deletedAt?: Date;
+  deletedBy?: string;
+  slug?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  salesCount: number;
+  viewCount: number;
+  rating: number;
+  reviewCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type Network = 'MTN' | 'Vodafone' | 'AirtelTigo' | 'Glo' | 'Other';
+export type ProductCategory = 
+  | 'data-bundle'
+  | 'voice-bundle'
+  | 'sms-bundle'
+  | 'combo-bundle'
+  | 'physical'
+  | 'digital'
+  | 'service';
+export type ProductSubCategory =
+  | 'mobile-data'
+  | 'mobile-voice'
+  | 'mobile-sms'
+  | 'mobile-combo'
+  | 'fixed-data'
+  | 'fixed-voice'
+  | 'fixed-sms'
+  | 'fixed-combo';
+export type ProductBundleType = 'data' | 'voice' | 'sms' | 'combo' ;
+
+export interface ProductFilters {
+  category?: ProductCategory;
+  provider?: Network;
+  network?: Network;
+  bundleType?: ProductBundleType;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
+  isActive?: boolean;
+  includeDeleted?: boolean;
+}
+
+export interface ProductPagination {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+}
+
+export interface ProductResponse {
+  success: boolean;
+  products: Product[];
+  pagination: {
+    total: number;
+    page: number;
+    pages: number;
+    limit: number;
+  };
+}
+
+export interface BulkInventoryUpdate {
+  productId: string;
+  variantId: string;
+  inventory: number;
+}
+
+export interface StockReservation {
+  productId: string;
+  variantId: string;
+  quantity: number;
+}
+
+export interface LowStockAlert {
+  productId: string;
+  productName: string;
+  variants: {
+    variantId: string;
+    name: string;
+    currentStock: number;
+    threshold: number;
+  }[];
+}
+
+export interface ProductAnalytics {
+  totalProducts: number;
+  activeProducts: number;
+  lowStockCount: number;
+  topProducts: {
+    name: string;
+    salesCount: number;
+  }[];
+  timeframe: string;
 }

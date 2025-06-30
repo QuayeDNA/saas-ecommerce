@@ -1,26 +1,16 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ProductTable } from '@/components/products/ProductTable';
-import { InventoryManagement } from '@/components/products/InventoryManagement';
+// src/pages/ProductManagementPage.tsx
+import React from 'react';
+import { ProductProvider } from '../contexts/ProductContext';
+import { ProductList } from '../components/products/ProductList';
 
-export const ProductsPage = () => {
+export const ProductManagementPage: React.FC = () => {
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">Product Management</h1>
-      
-      <Tabs defaultValue="products">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="products">
-          <ProductTable />
-        </TabsContent>
-        
-        <TabsContent value="inventory">
-          <InventoryManagement />
-        </TabsContent>
-      </Tabs>
-    </div>
+    <ProductProvider>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ProductList />
+        </div>
+      </div>
+    </ProductProvider>
   );
 };

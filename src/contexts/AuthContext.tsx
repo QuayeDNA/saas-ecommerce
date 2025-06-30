@@ -34,6 +34,7 @@ export interface AuthContextValue {
   resetPassword: (token: string, password: string) => Promise<void>;
   verifyAccount: (token: string) => Promise<{ userType: string }>;
   clearErrors: () => void;
+  refreshAuth: () => Promise<void>;
 }
 
 // Default auth state
@@ -65,55 +66,106 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isLoading: true,
   });
 
-  // Initialize auth state
+  // Handle automatic logout from interceptor
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (authService.isAuthenticated()) {
-          const { valid, user } = await authService.verifyToken();
+    const handleAutoLogout = () => {
+      console.log('Auto logout triggered by token expiry');
+      setState({
+        ...defaultAuthState,
+        isInitialized: true,
+        isLoading: false,
+      });
+      
+      // Only show toast and navigate if not already on login page
+      if (location.pathname !== '/login') {
+        addToast("Session expired. Please log in again.", "warning");
+        navigate('/login', { replace: true, state: { from: location } });
+      }
+    };
+
+    window.addEventListener('auth:logout', handleAutoLogout);
+    return () => window.removeEventListener('auth:logout', handleAutoLogout);
+  }, [addToast, navigate, location]);
+
+  // Refresh authentication state
+  const refreshAuth = useCallback(async () => {
+    try {
+      if (!authService.isAuthenticated()) {
+        setState({
+          ...defaultAuthState,
+          isInitialized: true,
+          isLoading: false,
+        });
+        return;
+      }
+
+      // Verify token with server
+      const { valid, user } = await authService.verifyToken();
+      
+      if (valid && user) {
+        const token = authService.getToken();
+        const dashboardUrl = user.userType === 'agent' ? '/agent/dashboard' : '/customer/dashboard';
+        
+        setState({
+          user,
+          token,
+          isAuthenticated: true,
+          isLoading: false,
+          isInitialized: true,
+          error: null,
+          dashboardUrl
+        });
+      } else {
+        // Token is invalid, try to refresh
+        try {
+          const newToken = await authService.refreshAccessToken();
+          const refreshedUser = authService.getCurrentUser();
           
-          if (valid && user) {
-            const token = authService.getToken();
-            const dashboardUrl = user.userType === 'agent' ? '/agent/dashboard' : '/customer/dashboard';
-            
+          if (refreshedUser) {
             setState({
-              user,
-              token,
+              user: refreshedUser,
+              token: newToken,
               isAuthenticated: true,
               isLoading: false,
               isInitialized: true,
               error: null,
-              dashboardUrl
+              dashboardUrl: refreshedUser.userType === 'agent' 
+                ? '/agent/dashboard' 
+                : '/customer/dashboard'
             });
           } else {
-            // Token invalid, clear storage
-            await authService.logout();
-            setState({
-              ...defaultAuthState,
-              isInitialized: true,
-              isLoading: false,
-            });
+            throw new Error('User data missing after refresh');
           }
-        } else {
+        } catch (refreshError) {
+          console.error('Token refresh failed during auth init:', refreshError);
+          authService.clearAuthData();
           setState({
             ...defaultAuthState,
             isInitialized: true,
             isLoading: false,
           });
         }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        setState({
-          ...defaultAuthState,
-          isInitialized: true,
-          isLoading: false,
-          error: error instanceof Error ? error.message : "Failed to initialize authentication",
-        });
       }
+    } catch (error) {
+      console.error('Auth refresh error:', error);
+      setState({
+        ...defaultAuthState,
+        isInitialized: true,
+        isLoading: false,
+        error: error instanceof Error ? error.message : "Authentication failed",
+      });
+    }
+  }, []);
+
+  // Initialize auth state
+  useEffect(() => {
+    const initAuth = async () => {
+      setState(prev => ({ ...prev, isLoading: true }));
+      await refreshAuth();
     };
 
     initAuth();
-  }, []);
+  }, [refreshAuth]);
 
   // Enhanced login method
   const login = useCallback(async (email: string, password: string, rememberMe = false) => {
@@ -152,7 +204,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         error: errorMessage,
       }));
 
-      // Don't show toast for login errors - let the form handle it
+      // Re-throw error for form handling
       throw error;
     }
   }, [addToast, navigate, location.state]);
@@ -266,6 +318,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Logout method
   const logout = useCallback(async () => {
+    setState((prev) => ({ ...prev, isLoading: true }));
+
     try {
       await authService.logout();
     } catch (error) {
@@ -279,6 +333,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     addToast("Logged out successfully", "success");
+    
+    // Clear any redirect state and go to login
     navigate('/login', { replace: true });
   }, [addToast, navigate]);
 
@@ -299,8 +355,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       resetPassword,
       verifyAccount,
       clearErrors,
+      refreshAuth,
     }),
-    [state, login, registerAgent, registerCustomer, logout, forgotPassword, resetPassword, verifyAccount, clearErrors]
+    [state, login, registerAgent, registerCustomer, logout, forgotPassword, resetPassword, verifyAccount, clearErrors, refreshAuth]
   );
 
   return (

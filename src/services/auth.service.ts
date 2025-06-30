@@ -9,7 +9,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000
 const COOKIE_OPTIONS = {
   secure: import.meta.env.PROD, // Only secure in production
   sameSite: 'strict' as const,
-  expires: 7, // 7 days default
+  path: '/', // Ensure cookies are available site-wide
 };
 
 // Create axios instance
@@ -18,6 +18,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Important for cookies
 });
 
 // Request interceptor to add auth token
@@ -32,18 +33,51 @@ api.interceptors.request.use(
   (error) => Promise.reject(error instanceof Error ? error : new Error(String(error)))
 );
 
-// Response interceptor for error handling
+// Response interceptor for error handling and token refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Don't auto-redirect on 401 - let components handle it
-    if (error.response?.status === 401) {
-      // Clear auth data but don't redirect
-      Cookies.remove('authToken');
-      Cookies.remove('user');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // If we get a 401 and haven't already tried to refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Attempt token refresh
+        const refreshToken = Cookies.get('refreshToken');
+        if (refreshToken) {
+          const refreshResponse = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+            refreshToken
+          }, {
+            withCredentials: true
+          });
+          
+          const { accessToken, user } = refreshResponse.data;
+          
+          // Store new tokens
+          authService.storeAuthData(accessToken, user, !!Cookies.get('rememberMe'));
+          
+          // Retry original request with new token
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+        // Clear all auth data and let the app handle redirect
+        authService.clearAuthData();
+        // Dispatch custom event to notify app of logout
+        window.dispatchEvent(new CustomEvent('auth:logout'));
+        return Promise.reject(refreshError instanceof Error ? refreshError : new Error(String(refreshError)));
+      }
     }
+    
+    // For other 401s or if refresh failed, clear auth data
+    if (error.response?.status === 401) {
+      authService.clearAuthData();
+      window.dispatchEvent(new CustomEvent('auth:logout'));
+    }
+    
     return Promise.reject(error instanceof Error ? error : new Error(String(error)));
   }
 );
@@ -92,11 +126,12 @@ export interface AuthResponse {
   success: boolean;
   user: User;
   token: string;
+  refreshToken?: string;
   dashboardUrl?: string;
 }
 
 /**
- * Enhanced Auth Service for Multi-tenant SaaS
+ * Enhanced Auth Service for Multi-tenant SaaS (Cookie-Only)
  */
 class AuthService {
   /**
@@ -117,32 +152,94 @@ class AuthService {
   }
 
   /**
-   * Store auth data securely
+   * Store auth data securely in cookies only
    */
-  private storeAuthData(token: string, user: User, rememberMe = false): void {
+  storeAuthData(token: string, user: User, rememberMe = false): void {
     const cookieExpires = rememberMe ? 30 : 7; // 30 days if remember me, 7 days otherwise
     
-    // Store in secure cookies
+    // Store in secure cookies only
     Cookies.set('authToken', token, { ...COOKIE_OPTIONS, expires: cookieExpires });
     Cookies.set('user', JSON.stringify(user), { ...COOKIE_OPTIONS, expires: cookieExpires });
     
-    // Also store in localStorage for backward compatibility
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('user', JSON.stringify(user));
+    if (rememberMe) {
+      Cookies.set('rememberMe', 'true', { ...COOKIE_OPTIONS, expires: cookieExpires });
+    }
+    
+    // Clean up any old localStorage data
+    this.cleanLocalStorage();
   }
-
-  /**
-   * Clear auth data
+ /**
+   * Refresh access token using refresh token
    */
-  private clearAuthData(): void {
-    Cookies.remove('authToken');
-    Cookies.remove('user');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+  async refreshAccessToken(): Promise<string> {
+    try {
+      const refreshToken = Cookies.get('refreshToken');
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+      
+      const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+        refreshToken
+      }, {
+        withCredentials: true
+      });
+      
+      const { accessToken, user, refreshToken: newRefreshToken } = response.data;
+      const rememberMe = !!Cookies.get('rememberMe');
+      
+      // Store new tokens
+      this.storeAuthData(accessToken, user, rememberMe);
+      if (newRefreshToken) {
+        this.storeRefreshToken(newRefreshToken, rememberMe);
+      }
+      
+      return accessToken;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      this.clearAuthData();
+      throw new Error('Failed to refresh access token');
+    }
   }
 
   /**
-   * Login user (agent or customer)
+   * Store refresh token
+   */
+  storeRefreshToken(refreshToken: string, rememberMe = false): void {
+    const cookieExpires = rememberMe ? 30 : 7;
+    Cookies.set('refreshToken', refreshToken, { 
+      ...COOKIE_OPTIONS, 
+      expires: cookieExpires
+    });
+  }
+
+  /**
+   * Clear all auth data
+   */
+  clearAuthData(): void {
+    Cookies.remove('authToken', { path: '/' });
+    Cookies.remove('user', { path: '/' });
+    Cookies.remove('refreshToken', { path: '/' });
+    Cookies.remove('rememberMe', { path: '/' });
+    
+    // Clean up any old localStorage data
+    this.cleanLocalStorage();
+  }
+
+  /**
+   * Clean up old localStorage data
+   */
+  private cleanLocalStorage(): void {
+    try {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('refreshToken');
+    } catch (error) {
+      console.warn('Failed to clean localStorage:', error);
+    }
+  }
+
+ /**
+   * Enhanced login method
    */
   async login({ email, password, rememberMe }: LoginCredentials): Promise<AuthResponse> {
     try {
@@ -152,18 +249,23 @@ class AuthService {
         rememberMe
       });
       
-      const { user, token, dashboardUrl } = response.data;
+      const { user, token, refreshToken, dashboardUrl } = response.data;
       
       // Store auth data securely
       this.storeAuthData(token, user, rememberMe);
       
-      return { success: true, user, token, dashboardUrl };
+      // Store refresh token if provided
+      if (refreshToken) {
+        this.storeRefreshToken(refreshToken, rememberMe);
+      }
+      
+      return { success: true, user, token, refreshToken, dashboardUrl };
     } catch (err: unknown) {
       const { message } = this.extractErrorMessage(err, 'Login failed');
       throw new Error(message);
     }
   }
-
+  
   /**
    * Register new agent (business owner)
    */
@@ -237,16 +339,22 @@ class AuthService {
   }
 
   /**
-   * Verify JWT token
+   * Verify JWT token with the server
    */
   async verifyToken(): Promise<{ valid: boolean; user?: User }> {
     try {
+      const token = this.getToken();
+      if (!token) {
+        return { valid: false };
+      }
+
       const response = await api.post('/api/auth/verify-token');
       return {
         valid: response.data.valid,
         user: response.data.user
       };
-    } catch {
+    } catch (error) {
+      console.error('Token verification failed:', error);
       return { valid: false };
     }
   }
@@ -256,42 +364,56 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
+      // Call logout endpoint to invalidate tokens on server
       await api.post('/api/auth/logout');
-    } catch {
-      console.warn('Logout API call failed, continuing with local logout');
+    } catch (error) {
+      console.warn('Logout API call failed, continuing with local logout:', error);
     } finally {
       this.clearAuthData();
     }
   }
 
   /**
-   * Get current user from storage
+   * Get current user from cookies only
    */
   getCurrentUser(): User | null {
-    // Try cookies first, then localStorage
-    let user = Cookies.get('user');
-    if (user === undefined) {
-      const localUser = localStorage.getItem('user');
-      if (localUser !== null) {
-        user = localUser;
-      }
+    try {
+      const userCookie = Cookies.get('user');
+      return userCookie ? JSON.parse(userCookie) : null;
+    } catch (error) {
+      console.error('Failed to parse user from cookie:', error);
+      return null;
     }
-    return user ? JSON.parse(user) : null;
   }
 
   /**
-   * Check if user is authenticated
+   * Check if user is authenticated (has valid token in cookies)
    */
   isAuthenticated(): boolean {
-    // Check both cookies and localStorage
-    return !!(Cookies.get('authToken') ?? localStorage.getItem('authToken'));
+    const token = Cookies.get('authToken');
+    const user = Cookies.get('user');
+    return !!(token && user);
   }
 
   /**
-   * Get auth token
+   * Get auth token from cookies only
    */
   getToken(): string | null {
-    return Cookies.get('authToken') ?? localStorage.getItem('authToken');
+    return Cookies.get('authToken') ?? null;
+  }
+
+  /**
+   * Get refresh token from cookies
+   */
+  getRefreshToken(): string | null {
+    return Cookies.get('refreshToken') ?? null;
+  }
+
+  /**
+   * Check if remember me is enabled
+   */
+  isRememberMeEnabled(): boolean {
+    return Cookies.get('rememberMe') === 'true';
   }
 }
 

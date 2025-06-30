@@ -1,10 +1,10 @@
-import { useRoutes } from 'react-router-dom';
-import { routes } from './routes';
-import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from './design-system';
-import { ToastProvider } from './design-system/components/toast';
-import './App.css';
-import './design-system/theme.css';
+import { useRoutes } from "react-router-dom";
+import { routes } from "./routes";
+import { ThemeProvider } from "./design-system";
+import { ToastProvider } from "./design-system/components/toast";
+import "./App.css";
+import "./design-system/theme.css";
+import { AppProvider } from "./providers/app-provider";
 
 function App() {
   const routeElement = useRoutes(routes);
@@ -12,9 +12,7 @@ function App() {
   return (
     <ThemeProvider initialTheme="default">
       <ToastProvider>
-        <AuthProvider>
-          {routeElement}
-        </AuthProvider>
+        <AppProvider>{routeElement}</AppProvider>
       </ToastProvider>
     </ThemeProvider>
   );

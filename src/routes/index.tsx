@@ -65,6 +65,16 @@ const ProfilePage = lazy(() =>
     default: module.ProfilePage,
   }))
 );
+const ProductManagementPage = lazy(() =>
+  import("../pages/products-page").then((module) => ({
+    default: module.ProductManagementPage,
+  }))
+);
+const OrderManagementPage = lazy(() =>
+  import("../pages/orders-page").then((module) => ({
+    default: module.OrderManagementPage,
+  }))
+);
 const AfaRegistrationPage = lazy(() =>
   import("../pages/afa-registration-page").then((module) => ({
     default: module.AfaRegistrationPage,
@@ -153,6 +163,22 @@ export const routes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <DashboardPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "products",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductManagementPage />
+              </Suspense>
+            )
+          },
+          {
+            path: "orders",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OrderManagementPage />
               </Suspense>
             ),
           },
