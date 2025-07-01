@@ -23,25 +23,22 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    /*Paths*/
-    "baseUrl": "src",
+    /* Path aliases for cleaner imports */
+    "baseUrl": ".",
     "paths": {
-      "@design-system/*": ["./src/design-system/*"],
-      "@components/*": ["./src/components/*"],
-      "@hooks/*": ["./src/hooks/*"],
-      "@utils/*": ["./src/utils/*"],
-      "@pages/*": ["./src/pages/*"],
-      "@services/*": ["./src/services/*"],
-      "@context/*": ["./src/context/*"],
-      "@assets/*": ["./src/assets/*"],
-      "@styles/*": ["./src/styles/*"],
-      "@types/*": ["./src/types/*"],
-      "@config/*": ["./src/config/*"],
-      "@constants/*": ["./src/constants/*"],
-      "@api/*": ["./src/api/*"],
-      "@store/*": ["./src/store/*"],
-      "@features/*": ["./src/features/*"],
-      "@app/*": ["./src/app/*"],
+      "@/*": ["src/*"],
+      "@design-system/*": ["src/design-system/*"],
+      "@components/*": ["src/components/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@utils/*": ["src/utils/*"],
+      "@pages/*": ["src/pages/*"],
+      "@services/*": ["src/services/*"],
+      "@contexts/*": ["src/contexts/*"],
+      "@providers/*": ["src/providers/*"],
+      "@layouts/*": ["src/layouts/*"],
+      "@assets/*": ["src/assets/*"],
+      "@types/*": ["src/types/*"],
+      "@routes/*": ["src/routes/*"]
     }
   },
   "include": ["src"]

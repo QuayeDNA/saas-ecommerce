@@ -1,0 +1,132 @@
+/* Enhanced Mobile-First CSS Variables */
+:root {
+  /* Existing variables */
+  --header-height: 4rem;
+  --sidebar-width: 16rem;
+  --sidebar-collapsed-width: 5rem;
+  
+  /* Enhanced mobile breakpoints and spacing */
+  --mobile-header-height: 3.5rem;
+  --mobile-padding: 1rem;
+  --mobile-sidebar-width: 100vw;
+  --tablet-sidebar-width: 20rem;
+  
+  /* Touch-friendly dimensions */
+  --touch-target-min: 44px;
+  --mobile-input-height: 48px;
+  --mobile-button-height: 48px;
+  
+  /* Animation and transitions */
+  --animation-fast: 150ms;
+  --animation-normal: 250ms;
+  --animation-slow: 350ms;
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Mobile typography scale */
+  --mobile-text-xs: 0.75rem;
+  --mobile-text-sm: 0.875rem;
+  --mobile-text-base: 1rem;
+  --mobile-text-lg: 1.125rem;
+  --mobile-text-xl: 1.25rem;
+  --mobile-text-2xl: 1.5rem;
+  
+  /* Responsive grid system */
+  --grid-gap-mobile: 0.75rem;
+  --grid-gap-tablet: 1rem;
+  --grid-gap-desktop: 1.5rem;
+  
+  /* Z-index scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+}
+
+/* Enhanced mobile breakpoints */
+@media (max-width: 640px) {
+  :root {
+    --header-height: var(--mobile-header-height);
+    --mobile-padding: 0.75rem;
+  }
+  
+  /* Ensure touch targets are adequate */
+  button, input, select, textarea {
+    min-height: var(--touch-target-min);
+  }
+  
+  /* Mobile-specific text sizes */
+  .text-mobile-responsive {
+    font-size: var(--mobile-text-sm);
+    line-height: 1.5;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  :root {
+    --sidebar-width: var(--tablet-sidebar-width);
+  }
+}
+
+/* Enhanced focus styles for accessibility */
+.focus-enhanced:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Loading and skeleton animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Enhanced scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-400);
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-block {
+    display: block !important;
+  }
+  
+  * {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
