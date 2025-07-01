@@ -1,718 +1,644 @@
-// src/pages/landing-page.tsx
-
-/**
- * Modern Landing Page for SaaS Telecom Platform
- * 
- * Features:
- * - Mobile-first responsive design with modern aesthetics
- * - Hero section with engaging visuals and clear CTAs
- * - Feature highlights with icons and animations
- * - Network service cards with hover effects
- * - Social proof with customer testimonials
- * - Comprehensive footer with contact information
- * - Modern image components and animations
- * - Consistent design system usage
- */
-
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  FaPhoneAlt, 
-  FaWifi, 
-  FaShieldAlt, 
-  FaClock, 
-  FaUsers, 
-  FaChartLine, 
-  FaBars,
-  FaTimes,
-  FaArrowRight,
-  FaCheck,
-  FaPlay,
-  FaMobile,
-  FaHeadset
-} from 'react-icons/fa';
-import { 
-  Button, 
-  Card, 
-  CardHeader, 
-  CardBody,
-  Hero,
-  HeroTitle,
-  HeroSubtitle,
-  Feature,
-  FeatureGrid,
-  Container,
-  SectionHeader,
-  Testimonial,
-  Avatar
-} from '../design-system';
+import { useState, useEffect } from "react";
+import {
+  Phone,
+  Wifi,
+  Shield,
+  Users,
+  TrendingUp,
+  Menu,
+  X,
+  ArrowRight,
+  Check,
+  Play,
+  Smartphone,
+  Headphones,
+  Star,
+  Globe,
+  Zap,
+  BarChart3,
+} from "lucide-react";
 
 export const LandingPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const testimonials = [
+    {
+      name: "Sarah Mensah",
+      role: "CEO, Mensah Telecom",
+      content:
+        "TelecomSaaS transformed our operations. 300% revenue increase in just 6 months.",
+      rating: 5,
+      image:
+        "https://images.unsplash.com/photo-1494790108755-2616b612b1c2?w=150&h=150&fit=crop&crop=face",
+    },
+    {
+      name: "Kwame Asante",
+      role: "Owner, Mobile Services",
+      content:
+        "Incredibly user-friendly with outstanding support. Everything in one dashboard.",
+      rating: 5,
+      image:
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+    },
+    {
+      name: "Ama Osei",
+      role: "Manager, Communications",
+      content:
+        "Fast, reliable, secure. The analytics help us make better decisions daily.",
+      rating: 5,
+      image:
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+    },
+  ];
+
+  const features = [
+    {
+      icon: <Shield className="w-8 h-8" />,
+      title: "Bank-Grade Security",
+      description:
+        "Advanced encryption protecting your data with 99.9% uptime guarantee.",
+    },
+    {
+      icon: <Zap className="w-8 h-8" />,
+      title: "Instant Processing",
+      description:
+        "Lightning-fast transactions with real-time updates in seconds.",
+    },
+    {
+      icon: <BarChart3 className="w-8 h-8" />,
+      title: "Smart Analytics",
+      description:
+        "Comprehensive insights to optimize operations and drive growth.",
+    },
+    {
+      icon: <Users className="w-8 h-8" />,
+      title: "Multi-Agent Support",
+      description:
+        "Scale with role-based access and individual performance tracking.",
+    },
+    {
+      icon: <Globe className="w-8 h-8" />,
+      title: "All Networks",
+      description: "Complete integration with MTN, Vodafone, and AirtelTigo.",
+    },
+    {
+      icon: <Headphones className="w-8 h-8" />,
+      title: "24/7 Support",
+      description:
+        "Round-the-clock expert assistance via phone, chat, and email.",
+    },
+  ];
+
+  const networks = [
+    {
+      name: "MTN",
+      color: "from-yellow-400 to-yellow-600",
+      bgColor: "bg-yellow-50",
+      textColor: "text-yellow-600",
+    },
+    {
+      name: "Vodafone",
+      color: "from-red-400 to-red-600",
+      bgColor: "bg-red-50",
+      textColor: "text-red-600",
+    },
+    {
+      name: "AirtelTigo",
+      color: "from-blue-400 to-blue-600",
+      bgColor: "bg-blue-50",
+      textColor: "text-blue-600",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200">
-        <Container padding="md">
+      <header
+        className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+          isScrolled
+            ? "bg-white/95 backdrop-blur-md shadow-lg"
+            : "bg-transparent"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex justify-between items-center py-4">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
-                <FaPhoneAlt className="text-white text-xl" />
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center">
+                <Phone className="text-white w-5 h-5" />
               </div>
-              <span className="text-xl sm:text-2xl font-bold text-gray-900">TelecomSaaS</span>
+              <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                TelecomSaaS
+              </span>
             </div>
-            
+
             {/* Mobile menu button */}
-            <button 
-              className="md:hidden p-2 text-gray-600 hover:text-blue-600 focus:outline-none transition-colors"
+            <button
+              className="md:hidden p-2 text-gray-600 hover:text-indigo-600 transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle menu"
             >
-              {isMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
-            
+
             {/* Desktop navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link to="#features" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <a
+                href="#features"
+                className="text-gray-600 hover:text-indigo-600 transition-colors font-medium"
+              >
                 Features
-              </Link>
-              <Link to="#services" className="text-gray-600 hover:text-blue-600 transition-colors">
+              </a>
+              <a
+                href="#services"
+                className="text-gray-600 hover:text-indigo-600 transition-colors font-medium"
+              >
                 Services
-              </Link>
-              <Link to="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Pricing
-              </Link>
+              </a>
+              <a
+                href="#testimonials"
+                className="text-gray-600 hover:text-indigo-600 transition-colors font-medium"
+              >
+                Reviews
+              </a>
               <div className="flex items-center space-x-4">
-                <Link to="/login">
-                  <Button variant="ghost" size="md">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button variant="primary" size="md">
-                    Get Started
-                  </Button>
-                </Link>
+                <button className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">
+                  Sign In
+                </button>
+                <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium">
+                  Get Started
+                </button>
               </div>
             </div>
           </nav>
-          
-          {/* Mobile menu dropdown */}
+
+          {/* Mobile menu */}
           {isMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-100 bg-white">
+            <div className="md:hidden py-4 border-t border-gray-100 bg-white/95 backdrop-blur-md rounded-b-2xl">
               <div className="flex flex-col space-y-4">
-                <Link 
-                  to="#features" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors py-2"
-                  onClick={() => setIsMenuOpen(false)}
+                <a
+                  href="#features"
+                  className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium"
                 >
                   Features
-                </Link>
-                <Link 
-                  to="#services" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors py-2"
-                  onClick={() => setIsMenuOpen(false)}
+                </a>
+                <a
+                  href="#services"
+                  className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium"
                 >
                   Services
-                </Link>
-                <Link 
-                  to="#pricing" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors py-2"
-                  onClick={() => setIsMenuOpen(false)}
+                </a>
+                <a
+                  href="#testimonials"
+                  className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium"
                 >
-                  Pricing
-                </Link>
+                  Reviews
+                </a>
                 <div className="flex flex-col space-y-3 pt-4 border-t border-gray-100">
-                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" size="md" fullWidth>
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="primary" size="md" fullWidth>
-                      Get Started
-                    </Button>
-                  </Link>
+                  <button className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium text-left">
+                    Sign In
+                  </button>
+                  <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-medium">
+                    Get Started
+                  </button>
                 </div>
               </div>
             </div>
           )}
-        </Container>
-      </header>     
-       <main className="flex-grow">
-        {/* Enhanced Hero Section */}
-        <Hero background="gradient" size="xl">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center bg-gradient-to-br from-slate-50 via-white to-indigo-50 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234f46e5' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          ></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Column - Content */}
             <div className="text-center lg:text-left">
-              <HeroTitle size="xl" className="mb-6">
+              <div className="inline-flex items-center bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full text-sm font-medium mb-8">
+                <Zap className="w-4 h-4 mr-2" />
+                Trusted by 1000+ businesses
+              </div>
+
+              <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight mb-8">
                 Transform Your
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block sm:inline sm:ml-3">
+                <span className="block bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   Telecom Business
                 </span>
-              </HeroTitle>
-              
-              <HeroSubtitle size="lg" className="mb-8 max-w-2xl">
-                Streamline airtime and data distribution across all major networks. 
-                Manage sales, track performance, and scale your business with our 
-                comprehensive SaaS platform.
-              </HeroSubtitle>
+              </h1>
 
-              {/* Hero CTAs */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
-                <Link to="/register">
-                  <Button variant="primary" size="lg" rightIcon={<FaArrowRight />}>
-                    Start Free Trial
-                  </Button>
-                </Link>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  leftIcon={<FaPlay />}
-                  className="group"
-                >
-                  <span className="mr-2">Watch Demo</span>
-                  <div className="w-0 group-hover:w-4 transition-all duration-200 overflow-hidden">
-                    <FaPlay className="text-sm" />
-                  </div>
-                </Button>
-              </div>
-
-              {/* Trust Indicators */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 border-t border-white/20">
-                <div className="text-center lg:text-left">
-                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">1000+</div>
-                  <div className="text-gray-600 text-sm">Active Agents</div>
-                </div>
-                <div className="text-center lg:text-left">
-                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">₵2M+</div>
-                  <div className="text-gray-600 text-sm">Monthly Volume</div>
-                </div>
-                <div className="text-center lg:text-left">
-                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">99.9%</div>
-                  <div className="text-gray-600 text-sm">Uptime</div>
-                </div>
-                <div className="text-center lg:text-left">
-                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">24/7</div>
-                  <div className="text-gray-600 text-sm">Support</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Hero Image/Dashboard Preview */}
-            <div className="relative">
-              {/* Floating dashboard mockup */}
-              <div className="relative bg-white rounded-2xl shadow-2xl p-6 transform hover:scale-105 transition-transform duration-500">
-                {/* Mock dashboard header */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                      <FaPhoneAlt className="text-white text-sm" />
-                    </div>
-                    <span className="font-bold text-gray-900">Dashboard</span>
-                  </div>
-                  <div className="flex space-x-2">
-                    <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                  </div>
-                </div>
-
-                {/* Mock dashboard content */}
-                <div className="space-y-4">
-                  {/* Stats cards */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl">
-                      <div className="text-2xl font-bold">₵45,250</div>
-                      <div className="text-blue-100 text-sm">Total Sales</div>
-                    </div>
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
-                      <div className="text-2xl font-bold">1,247</div>
-                      <div className="text-green-100 text-sm">Transactions</div>
-                    </div>
-                  </div>
-
-                  {/* Mock chart */}
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <div className="flex items-end space-x-2 h-20">
-                      {[40, 65, 45, 80, 55, 70, 90].map((height, i) => (
-                        <div
-                          key={i}
-                          className="bg-gradient-to-t from-blue-400 to-blue-500 rounded-t flex-1"
-                          style={{ height: `${height}%` }}
-                        ></div>
-                      ))}
-                    </div>
-                    <div className="text-xs text-gray-600 text-center mt-2">Sales Overview</div>
-                  </div>
-
-                  {/* Recent transactions */}
-                  <div className="space-y-2">
-                    {['MTN Airtime - ₵50', 'Vodafone Data - ₵25', 'AirtelTigo - ₵30'].map((transaction, i) => (
-                      <div key={i} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <span className="text-sm text-gray-700">{transaction}</span>
-                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating elements */}
-              <div className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center text-white animate-bounce">
-                <FaMobile className="text-xl" />
-              </div>
-              <div className="absolute -bottom-4 -left-4 w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center text-white animate-pulse">
-                <FaWifi className="text-lg" />
-              </div>
-            </div>
-          </div>
-        </Hero>
-
-        {/* Enhanced Features Section */}
-        <section id="features" className="py-20 bg-gray-50">
-          <Container>
-            <SectionHeader 
-              title="Why Choose Our Platform?"
-              subtitle="Everything you need to run a successful telecom business, all in one powerful platform"
-            />
-
-            <FeatureGrid columns={3} gap="lg">
-              <Feature
-                icon={
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <FaShieldAlt size={24} />
-                  </div>
-                }
-                title="Bank-Grade Security"
-                description="Advanced encryption and security protocols protect your business data and customer transactions with 99.9% uptime guarantee."
-                variant="centered"
-              />
-              <Feature
-                icon={
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <FaClock size={24} />
-                  </div>
-                }
-                title="Instant Processing"
-                description="Lightning-fast transaction processing with real-time updates. Your customers receive airtime and data bundles within seconds."
-                variant="centered"
-              />
-              <Feature
-                icon={
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <FaChartLine size={24} />
-                  </div>
-                }
-                title="Advanced Analytics"
-                description="Comprehensive reporting and business intelligence tools to track performance, optimize operations, and drive growth."
-                variant="centered"
-              />
-              <Feature
-                icon={
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <FaUsers size={24} />
-                  </div>
-                }
-                title="Multi-Agent Support"
-                description="Scale your business with role-based access control. Manage multiple agents and track individual performance seamlessly."
-                variant="centered"
-              />
-              <Feature
-                icon={
-                  <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <FaWifi size={24} />
-                  </div>
-                }
-                title="All Networks Supported"
-                description="Complete integration with MTN, Vodafone, and AirtelTigo networks. One platform for all your telecom needs."
-                variant="centered"
-              />
-              <Feature
-                icon={
-                  <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <FaHeadset size={24} />
-                  </div>
-                }
-                title="24/7 Expert Support"
-                description="Round-the-clock customer support via phone, chat, and email. Our team is here to help your business succeed."
-                variant="centered"
-              />
-            </FeatureGrid>
-
-            {/* Additional feature highlights */}
-            <div className="mt-16 bg-white rounded-2xl p-8 shadow-lg">
-              <div className="grid md:grid-cols-2 gap-8 items-center">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    Built for Scale, Designed for Growth
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    Whether you're a small business owner or managing a large network of agents, 
-                    our platform scales with your needs. Start small and grow big with confidence.
-                  </p>
-                  <ul className="space-y-3">
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-3 flex-shrink-0" />
-                      Unlimited transactions and users
-                    </li>
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-3 flex-shrink-0" />
-                      Real-time notifications and alerts
-                    </li>
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-3 flex-shrink-0" />
-                      Advanced reporting and analytics
-                    </li>
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-3 flex-shrink-0" />
-                      Mobile-first design for on-the-go management
-                    </li>
-                  </ul>
-                </div>
-                <div className="relative">
-                  {/* Feature showcase mockup */}
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 rounded-2xl">
-                    <div className="space-y-4">
-                      {/* Mobile devices illustration */}
-                      <div className="flex justify-center space-x-4">
-                        <div className="w-20 h-32 bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl flex items-center justify-center transform rotate-12">
-                          <div className="w-16 h-28 bg-white rounded-xl p-2">
-                            <div className="w-full h-2 bg-gray-200 rounded mb-2"></div>
-                            <div className="space-y-1">
-                              {[...Array(8)].map((_, i) => (
-                                <div key={i} className="w-full h-1 bg-gray-200 rounded"></div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="w-20 h-32 bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl flex items-center justify-center transform -rotate-12">
-                          <div className="w-16 h-28 bg-white rounded-xl p-2">
-                            <div className="w-full h-2 bg-blue-400 rounded mb-2"></div>
-                            <div className="space-y-1">
-                              {[...Array(8)].map((_, i) => (
-                                <div key={i} className="w-full h-1 bg-gray-200 rounded"></div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm font-semibold text-gray-700">Cross-Platform Access</div>
-                        <div className="text-xs text-gray-600">Web, Mobile & Desktop</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Container>
-        </section>
-
-        {/* Services Section */}
-        <section id="services" className="py-20 bg-white">
-          <Container>
-            <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                Our Services
-              </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Comprehensive telecom solutions for all your business needs
+              <p className="text-xl text-gray-600 leading-relaxed mb-12 max-w-2xl">
+                Streamline airtime and data distribution across all major
+                networks. Manage sales, track performance, and scale your
+                business effortlessly.
               </p>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* MTN Card */}
-              <Card variant="outlined" className="hover:shadow-xl transition-all duration-300 border-t-4 border-yellow-500 group">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                    <span className="text-2xl font-bold text-yellow-600">MTN</span>
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 mb-16">
+                <button className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-semibold text-lg flex items-center">
+                  Start Free Trial
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+                <button className="group flex items-center text-gray-600 hover:text-indigo-600 transition-colors font-semibold">
+                  <div className="bg-white shadow-lg rounded-full p-3 mr-4 group-hover:shadow-xl transition-all">
+                    <Play className="w-5 h-5 ml-1" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900">MTN Services</h3>
-                </CardHeader>
-                <CardBody className="text-center">
-                  <p className="text-gray-600 mb-6">
-                    Complete MTN airtime and data services with competitive rates and instant delivery.
-                  </p>
-                  <ul className="text-left space-y-2 mb-6">
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-2 flex-shrink-0" size={14} />
-                      Airtime top-up
-                    </li>
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-2 flex-shrink-0" size={14} />
-                      Data bundles
-                    </li>
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-2 flex-shrink-0" size={14} />
-                      Bulk operations
-                    </li>
-                  </ul>
-                  <Link to="/register">
-                    <Button variant="primary" size="md" fullWidth colorScheme="warning">
-                      Get Started
-                    </Button>
-                  </Link>
-                </CardBody>
-              </Card>
-
-              {/* Vodafone Card */}
-              <Card variant="outlined" className="hover:shadow-xl transition-all duration-300 border-t-4 border-red-500 group">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                    <span className="text-2xl font-bold text-red-600">VF</span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900">Vodafone Services</h3>
-                </CardHeader>
-                <CardBody className="text-center">
-                  <p className="text-gray-600 mb-6">
-                    Reliable Vodafone services with excellent coverage and fast processing.
-                  </p>
-                  <ul className="text-left space-y-2 mb-6">
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-2 flex-shrink-0" size={14} />
-                      Airtime top-up
-                    </li>
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-2 flex-shrink-0" size={14} />
-                      Data bundles
-                    </li>
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-2 flex-shrink-0" size={14} />
-                      Bulk operations
-                    </li>
-                  </ul>
-                  <Link to="/register">
-                    <Button variant="primary" size="md" fullWidth colorScheme="error">
-                      Get Started
-                    </Button>
-                  </Link>
-                </CardBody>
-              </Card>
-
-              {/* AirtelTigo Card */}
-              <Card variant="outlined" className="hover:shadow-xl transition-all duration-300 border-t-4 border-blue-500 group">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                    <span className="text-lg font-bold text-blue-600">AT</span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900">AirtelTigo Services</h3>
-                </CardHeader>
-                <CardBody className="text-center">
-                  <p className="text-gray-600 mb-6">
-                    Comprehensive AirtelTigo solutions with competitive pricing and reliability.
-                  </p>
-                  <ul className="text-left space-y-2 mb-6">
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-2 flex-shrink-0" size={14} />
-                      Airtime top-up
-                    </li>
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-2 flex-shrink-0" size={14} />
-                      Data bundles
-                    </li>
-                    <li className="flex items-center text-gray-700">
-                      <FaCheck className="text-green-500 mr-2 flex-shrink-0" size={14} />
-                      Bulk operations
-                    </li>
-                  </ul>
-                  <Link to="/register">
-                    <Button variant="primary" size="md" fullWidth>
-                      Get Started
-                    </Button>
-                  </Link>
-                </CardBody>
-              </Card>
-            </div>
-          </Container>
-        </section>
-
-        {/* Enhanced Testimonials Section */}
-        <section className="py-20 bg-white">
-          <Container>
-            <SectionHeader 
-              title="Trusted by Businesses Across Ghana"
-              subtitle="Join thousands of satisfied businesses using our platform to grow their telecom operations"
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Testimonial
-                content="TelecomSaaS has completely transformed our business operations. We've increased our revenue by 300% since switching to their platform. The ease of use and reliability is outstanding."
-                author="Sarah Mensah"
-                role="CEO"
-                company="Mensah Telecom Solutions"
-                avatar={<Avatar name="Sarah Mensah" />}
-                rating={5}
-                variant="card"
-              />
-
-              <Testimonial
-                content="The platform is incredibly user-friendly and the customer support is outstanding. We can now manage all our network operations from one dashboard. Highly recommended!"
-                author="Kwame Asante"
-                role="Owner"
-                company="Asante Mobile Services"
-                avatar={<Avatar name="Kwame Asante" />}
-                rating={5}
-                variant="card"
-              />
-
-              <Testimonial
-                content="Fast, reliable, and secure. Everything we need to run our telecom business efficiently in one place. The analytics help us make better business decisions every day."
-                author="Ama Osei"
-                role="Manager"
-                company="Osei Communications"
-                avatar={<Avatar name="Ama Osei" />}
-                rating={5}
-                variant="card"
-              />
-            </div>
-
-            {/* Customer logos section */}
-            <div className="mt-16 pt-12 border-t border-gray-200">
-              <div className="text-center mb-8">
-                <p className="text-lg font-semibold text-gray-600">Trusted by leading businesses</p>
+                  Watch Demo
+                </button>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">
-                {/* Logo placeholders - in a real app, these would be actual customer logos */}
-                {['TechCorp', 'ConnectPlus', 'MobilePro', 'DataLink'].map((company, i) => (
-                  <div key={i} className="text-center">
-                    <div className="w-24 h-16 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <span className="text-gray-500 font-bold text-sm">{company}</span>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+                {[
+                  { value: "1000+", label: "Active Agents" },
+                  { value: "₵2M+", label: "Monthly Volume" },
+                  { value: "99.9%", label: "Uptime" },
+                  { value: "24/7", label: "Support" },
+                ].map((stat, index) => (
+                  <div key={index} className="text-center lg:text-left">
+                    <div className="text-3xl font-bold text-gray-900 mb-1">
+                      {stat.value}
                     </div>
+                    <div className="text-gray-600 text-sm">{stat.label}</div>
                   </div>
                 ))}
               </div>
             </div>
-          </Container>
-        </section>
 
-        {/* Enhanced CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 relative overflow-hidden">
-          {/* Background pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}></div>
-          </div>
-          
-          <Container centerContent>
-            <div className="text-center text-white max-w-4xl relative z-10">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-6">
-                Ready to Transform Your Business?
-              </h2>
-              <p className="text-xl mb-8 text-blue-100 leading-relaxed">
-                Join thousands of businesses already using our platform to scale their telecom operations. 
-                Start your free trial today and see the difference in just minutes.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
-                <Link to="/register">
-                  <Button 
-                    variant="primary" 
-                    size="lg" 
-                    className="bg-white text-blue-600 hover:bg-gray-100 shadow-xl transform hover:scale-105 transition-all duration-200"
-                    rightIcon={<FaArrowRight />}
-                  >
-                    Start Free Trial - No Credit Card Required
-                  </Button>
-                </Link>
-                <Link to="#contact">
-                  <Button 
-                    variant="outline" 
-                    size="lg" 
-                    className="border-white text-white hover:bg-white hover:text-blue-600 transition-all duration-200"
-                  >
-                    Schedule a Demo
-                  </Button>
-                </Link>
+            {/* Right Column - Hero Image */}
+            <div className="relative">
+              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden transform hover:scale-105 transition-transform duration-500">
+                <img
+                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop"
+                  alt="Modern Dashboard Interface"
+                  className="w-full h-92 object-cover"
+                />
+
+                {/* Dashboard Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent"></div>
+
+                {/* Dashboard Content */}
+                <div className="absolute bottom-6 left-6 right-6 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
+                        <Phone className="w-5 h-5" />
+                      </div>
+                      <span className="font-bold">Dashboard</span>
+                    </div>
+                    <div className="flex space-x-2">
+                      <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                      <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                      <div className="text-2xl font-bold">₵45,250</div>
+                      <div className="text-white/80 text-sm">Total Sales</div>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                      <div className="text-2xl font-bold">1,247</div>
+                      <div className="text-white/80 text-sm">Transactions</div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Trust indicators for CTA */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-white/20">
-                <div className="flex items-center justify-center text-blue-100">
-                  <FaCheck className="mr-2 text-green-300" />
-                  <span>Free 14-day trial</span>
-                </div>
-                <div className="flex items-center justify-center text-blue-100">
-                  <FaCheck className="mr-2 text-green-300" />
-                  <span>No setup fees</span>
-                </div>
-                <div className="flex items-center justify-center text-blue-100">
-                  <FaCheck className="mr-2 text-green-300" />
-                  <span>Cancel anytime</span>
-                </div>
+              {/* Floating Elements */}
+              <div className="absolute -top-6 -right-6 w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl flex items-center justify-center text-white animate-bounce shadow-xl">
+                <Smartphone className="w-8 h-8" />
+              </div>
+              <div className="absolute -bottom-6 -left-6 w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center text-white animate-pulse shadow-xl">
+                <Wifi className="w-6 h-6" />
               </div>
             </div>
-          </Container>
-        </section>
-      </main>
-      
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+              Why Choose Our Platform?
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Everything you need to run a successful telecom business, designed
+              with simplicity and power in mind.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className="group bg-white border border-gray-100 rounded-3xl p-8 hover:shadow-2xl hover:border-indigo-100 transition-all duration-300"
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform duration-300">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Additional Feature Highlight */}
+          <div className="mt-24 grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
+                Built for Scale, Designed for Growth
+              </h3>
+              <p className="text-xl text-gray-600 mb-8">
+                Whether you're a small business or managing a large network, our
+                platform scales with your ambitions.
+              </p>
+              <div className="space-y-4">
+                {[
+                  "Unlimited transactions and users",
+                  "Real-time notifications and alerts",
+                  "Advanced reporting and analytics",
+                  "Mobile-first design for anywhere access",
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center">
+                    <Check className="text-green-500 w-6 h-6 mr-4 flex-shrink-0" />
+                    <span className="text-gray-700 text-lg">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="relative">
+              <img
+                src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop"
+                alt="Business Growth Analytics"
+                className="rounded-3xl shadow-2xl"
+              />
+              <div className="absolute -bottom-6 -right-6 bg-white rounded-2xl p-6 shadow-xl">
+                <TrendingUp className="w-8 h-8 text-green-500 mb-2" />
+                <div className="text-2xl font-bold text-gray-900">300%</div>
+                <div className="text-gray-600 text-sm">Growth Rate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section
+        id="services"
+        className="py-32 bg-gradient-to-br from-gray-50 to-indigo-50"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+              All Networks, One Platform
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Comprehensive telecom solutions for all major networks in Ghana.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {networks.map((network, index) => (
+              <div
+                key={index}
+                className="group bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-indigo-100"
+              >
+                <div
+                  className={`w-20 h-20 bg-gradient-to-br ${network.color} rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}
+                >
+                  <span className="text-2xl font-bold text-white">
+                    {network.name.slice(0, 2)}
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">
+                  {network.name} Services
+                </h3>
+                <p className="text-gray-600 text-center mb-8">
+                  Complete {network.name} solutions with competitive rates and
+                  instant delivery.
+                </p>
+                <div className="space-y-3 mb-8">
+                  {["Airtime top-up", "Data bundles", "Bulk operations"].map(
+                    (service, idx) => (
+                      <div key={idx} className="flex items-center">
+                        <Check className="text-green-500 w-5 h-5 mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">{service}</span>
+                      </div>
+                    )
+                  )}
+                </div>
+                <button
+                  className={`w-full bg-gradient-to-r ${network.color} text-white py-4 rounded-2xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200`}
+                >
+                  Get Started
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+              Trusted by Businesses
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Join thousands of satisfied businesses across Ghana using our
+              platform to grow their operations.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div
+                key={index}
+                className="bg-white border border-gray-100 rounded-3xl p-8 hover:shadow-2xl transition-all duration-300"
+              >
+                <div className="flex items-center mb-6">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className="w-5 h-5 text-yellow-400 fill-current"
+                    />
+                  ))}
+                </div>
+                <p className="text-gray-700 leading-relaxed mb-8">
+                  "{testimonial.content}"
+                </p>
+                <div className="flex items-center">
+                  <img
+                    src={testimonial.image}
+                    alt={testimonial.name}
+                    className="w-12 h-12 rounded-full mr-4"
+                  />
+                  <div>
+                    <div className="font-bold text-gray-900">
+                      {testimonial.name}
+                    </div>
+                    <div className="text-gray-600 text-sm">
+                      {testimonial.role}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <img
+          src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=1920&h=1080&fit=crop"
+          alt="Team collaboration"
+          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
+        />
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 className="text-4xl lg:text-6xl font-bold text-white mb-8">
+            Ready to Transform Your Business?
+          </h2>
+          <p className="text-xl text-indigo-100 mb-12 leading-relaxed">
+            Join thousands of businesses using our platform to scale their
+            telecom operations. Start your free trial today and see results in
+            minutes.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
+            <button className="bg-white text-indigo-600 px-8 py-4 rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center">
+              Start Free Trial - No Credit Card Required
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </button>
+            <button className="border-2 border-white text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-white hover:text-indigo-600 transition-all duration-300">
+              Schedule a Demo
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-8 border-t border-white/20">
+            {["Free 14-day trial", "No setup fees", "Cancel anytime"].map(
+              (item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-center text-indigo-100"
+                >
+                  <Check className="mr-3 text-green-300 w-5 h-5" />
+                  <span className="font-medium">{item}</span>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <Container>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <footer className="bg-gray-900 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             <div>
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
-                  <FaPhoneAlt className="text-white text-xl" />
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center">
+                  <Phone className="text-white w-5 h-5" />
                 </div>
-                <span className="text-xl font-bold">TelecomSaaS</span>
+                <span className="text-2xl font-bold">TelecomSaaS</span>
               </div>
-              <p className="text-gray-300 leading-relaxed">
-                Empowering telecom businesses across Ghana with innovative SaaS solutions.
+              <p className="text-gray-400 leading-relaxed">
+                Empowering telecom businesses across Ghana with innovative SaaS
+                solutions.
               </p>
             </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-gray-300">
-                <li><Link to="#features" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link to="#services" className="hover:text-white transition-colors">Services</Link></li>
-                <li><Link to="#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link to="#api" className="hover:text-white transition-colors">API</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-300">
-                <li><Link to="#help" className="hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link to="#contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link to="#status" className="hover:text-white transition-colors">System Status</Link></li>
-                <li><Link to="#community" className="hover:text-white transition-colors">Community</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-300">
-                <li><Link to="#about" className="hover:text-white transition-colors">About Us</Link></li>
-                <li><Link to="#careers" className="hover:text-white transition-colors">Careers</Link></li>
-                <li><Link to="#privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link to="#terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
-              </ul>
-            </div>
+
+            {[
+              {
+                title: "Product",
+                links: [
+                  { label: "Features", path: "/features" },
+                  { label: "Services", path: "/services" },
+                  { label: "Pricing", path: "/pricing" },
+                  { label: "API", path: "/api" },
+                ],
+              },
+              {
+                title: "Support",
+                links: [
+                  { label: "Help Center", path: "/help-center" },
+                  { label: "Contact Us", path: "/contact" },
+                  { label: "System Status", path: "/status" },
+                  { label: "Community", path: "/community" },
+                ],
+              },
+              {
+                title: "Company",
+                links: [
+                  { label: "About Us", path: "/about" },
+                  { label: "Careers", path: "/careers" },
+                  { label: "Privacy Policy", path: "/privacy-policy" },
+                  { label: "Terms of Service", path: "/terms" },
+                ],
+              },
+            ].map((section, index) => (
+              <div key={index}>
+                <h4 className="font-bold mb-6 text-lg">{section.title}</h4>
+                <ul className="space-y-3">
+                  {section.links.map((link, linkIndex) => (
+                    <li key={linkIndex}>
+                      <a
+                        href={link.path}
+                        className="text-gray-400 hover:text-white transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-          
-          <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center">
+
+          <div className="pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
               © 2025 TelecomSaaS. All rights reserved.
             </p>
             <div className="flex items-center space-x-6 mt-4 sm:mt-0">
-              <Link to="#facebook" className="text-gray-400 hover:text-white transition-colors">
-                Facebook
-              </Link>
-              <Link to="#twitter" className="text-gray-400 hover:text-white transition-colors">
-                Twitter
-              </Link>
-              <Link to="#linkedin" className="text-gray-400 hover:text-white transition-colors">
-                LinkedIn
-              </Link>
+              {["Facebook", "Twitter", "LinkedIn"].map((social, index) => (
+                <a
+                  key={index}
+                  href="#"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  {social}
+                </a>
+              ))}
             </div>
           </div>
-        </Container>
+        </div>
       </footer>
     </div>
   );
