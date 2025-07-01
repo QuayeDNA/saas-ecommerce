@@ -1,4 +1,27 @@
 // src/contexts/AuthContext.tsx
+
+/**
+ * Enhanced Authentication Context for SaaS E-commerce App
+ * 
+ * This context provides comprehensive authentication state management including:
+ * - Cookie-based authentication with automatic token refresh
+ * - User session management for both agents and customers
+ * - Automatic logout on token expiry with proper cleanup
+ * - Registration flows for different user types
+ * - Password reset and account verification flows
+ * - Robust error handling and loading states
+ * 
+ * Key Features:
+ * - Seamless integration with auth.service.ts
+ * - Automatic token refresh without user interruption
+ * - Type-safe state management
+ * - Navigation integration with protected routes
+ * - Toast notifications for user feedback
+ * 
+ * @version 2.0.0
+ * @author SaaS E-commerce Team
+ */
+
 import {
   createContext,
   useState,
@@ -12,29 +35,39 @@ import type { User } from "../types";
 import { authService, type RegisterAgentData, type RegisterCustomerData } from "../services/auth.service";
 import { useToast } from "../design-system/components/toast";
 
-// Enhanced Auth state interface
+/**
+ * Enhanced Authentication State Interface
+ * 
+ * Comprehensive state object that tracks all authentication-related data
+ * including user information, tokens, loading states, and error conditions.
+ */
 export interface AuthState {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  isInitialized: boolean;
-  error: string | null;
-  dashboardUrl?: string;
+  user: User | null;              // Current authenticated user data
+  token: string | null;           // JWT access token (stored in cookies)
+  isAuthenticated: boolean;       // Whether user is currently authenticated
+  isLoading: boolean;             // Loading state for async operations
+  isInitialized: boolean;         // Whether auth state has been initialized
+  error: string | null;           // Current error message, if any
+  dashboardUrl?: string;          // Dashboard URL based on user type
 }
 
-// Enhanced Auth context type
+/**
+ * Enhanced Authentication Context Interface
+ * 
+ * Defines all methods and state available through the auth context.
+ * All methods handle their own loading states and error management.
+ */
 export interface AuthContextValue {
-  authState: AuthState;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
-  registerAgent: (data: RegisterAgentData) => Promise<{ agentCode: string }>;
-  registerCustomer: (data: RegisterCustomerData) => Promise<void>;
-  logout: () => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (token: string, password: string) => Promise<void>;
-  verifyAccount: (token: string) => Promise<{ userType: string }>;
-  clearErrors: () => void;
-  refreshAuth: () => Promise<void>;
+  authState: AuthState;                                                          // Current authentication state
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;   // User login
+  registerAgent: (data: RegisterAgentData) => Promise<{ agentCode: string }>;       // Agent registration
+  registerCustomer: (data: RegisterCustomerData) => Promise<void>;                  // Customer registration
+  logout: () => Promise<void>;                                                      // User logout
+  forgotPassword: (email: string) => Promise<void>;                                 // Request password reset
+  resetPassword: (token: string, password: string) => Promise<void>;                // Complete password reset
+  verifyAccount: (token: string) => Promise<{ userType: string }>;                  // Verify user account
+  clearErrors: () => void;                                                          // Clear error state
+  refreshAuth: () => Promise<void>;                                                 // Refresh authentication
 }
 
 // Default auth state
@@ -87,88 +120,149 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => window.removeEventListener('auth:logout', handleAutoLogout);
   }, [addToast, navigate, location]);
 
+  // Helper function to set authenticated state
+  const setAuthenticatedState = useCallback((user: User, token: string) => {
+    const dashboardUrl = user.userType === 'agent' ? '/agent/dashboard' : '/customer/dashboard';
+    setState({
+      user,
+      token,
+      isAuthenticated: true,
+      isLoading: false,
+      isInitialized: true,
+      error: null,
+      dashboardUrl
+    });
+  }, []);
+
+  // Helper function to set unauthenticated state
+  const setUnauthenticatedState = useCallback((error?: string) => {
+    setState({
+      ...defaultAuthState,
+      isInitialized: true,
+      isLoading: false,
+      error: error ?? null,
+    });
+  }, []);
+
+  // Handle token refresh logic
+  const handleTokenRefresh = useCallback(async () => {
+    try {
+      const newToken = await authService.refreshAccessToken();
+      const refreshedUser = authService.getCurrentUser();
+      
+      if (refreshedUser && newToken) {
+        console.log('✅ AuthContext: Token refreshed successfully');
+        setAuthenticatedState(refreshedUser, newToken);
+      } else {
+        throw new Error('User data missing after refresh');
+      }
+    } catch (refreshError) {
+      console.error('❌ AuthContext: Token refresh failed:', refreshError);
+      authService.clearAuthData();
+      setUnauthenticatedState();
+    }
+  }, [setAuthenticatedState, setUnauthenticatedState]);
+
   // Refresh authentication state
   const refreshAuth = useCallback(async () => {
+    console.log('🔄 AuthContext: Refreshing authentication state...');
+    
     try {
+      // Check if we have any authentication data
       if (!authService.isAuthenticated()) {
+        console.log('🚫 AuthContext: No authentication data found');
+        setUnauthenticatedState();
+        return;
+      }
+
+      // Verify current token validity
+      const { valid, user } = await authService.verifyToken();
+      
+      if (valid && user) {
+        // Token is valid, update state
+        const token = authService.getToken();
+        if (token) {
+          console.log('✅ AuthContext: Token verified successfully');
+          setAuthenticatedState(user, token);
+          return;
+        }
+      }
+
+      // Token is invalid, attempt refresh
+      console.log('🔄 AuthContext: Token invalid, attempting refresh...');
+      await handleTokenRefresh();
+      
+    } catch (error) {
+      console.error('❌ AuthContext: Auth refresh error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Authentication failed";
+      setUnauthenticatedState(errorMessage);
+    }
+  }, [setAuthenticatedState, setUnauthenticatedState, handleTokenRefresh]);
+
+  // Initialize authentication state on component mount
+  useEffect(() => {
+    const initializeAuth = async () => {
+      console.log('🔐 AuthContext: Initializing authentication...');
+      
+      try {
+        // Use the improved auth service initialization
+        const isAuthenticated = await authService.initializeAuth();
+        
+        if (isAuthenticated) {
+          // Authentication successful - get user data
+          const user = authService.getCurrentUser();
+          const token = authService.getToken();
+          
+          if (user && token) {
+            const dashboardUrl = user.userType === 'agent' 
+              ? '/agent/dashboard' 
+              : '/customer/dashboard';
+            
+            console.log('✅ AuthContext: Authentication initialized successfully', { 
+              userId: user.id, 
+              userType: user.userType 
+            });
+            
+            setState({
+              user,
+              token,
+              isAuthenticated: true,
+              isLoading: false,
+              isInitialized: true,
+              error: null,
+              dashboardUrl
+            });
+            return;
+          }
+        }
+        
+        // Authentication failed or no valid tokens
+        console.log('🚫 AuthContext: No valid authentication found');
         setState({
           ...defaultAuthState,
           isInitialized: true,
           isLoading: false,
         });
-        return;
-      }
-
-      // Verify token with server
-      const { valid, user } = await authService.verifyToken();
-      
-      if (valid && user) {
-        const token = authService.getToken();
-        const dashboardUrl = user.userType === 'agent' ? '/agent/dashboard' : '/customer/dashboard';
         
+      } catch (error) {
+        console.error('❌ AuthContext: Authentication initialization failed:', error);
+        
+        // Clear any stale data and set error state
+        authService.clearAuthData();
         setState({
-          user,
-          token,
-          isAuthenticated: true,
-          isLoading: false,
+          ...defaultAuthState,
           isInitialized: true,
-          error: null,
-          dashboardUrl
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Authentication failed'
         });
-      } else {
-        // Token is invalid, try to refresh
-        try {
-          const newToken = await authService.refreshAccessToken();
-          const refreshedUser = authService.getCurrentUser();
-          
-          if (refreshedUser) {
-            setState({
-              user: refreshedUser,
-              token: newToken,
-              isAuthenticated: true,
-              isLoading: false,
-              isInitialized: true,
-              error: null,
-              dashboardUrl: refreshedUser.userType === 'agent' 
-                ? '/agent/dashboard' 
-                : '/customer/dashboard'
-            });
-          } else {
-            throw new Error('User data missing after refresh');
-          }
-        } catch (refreshError) {
-          console.error('Token refresh failed during auth init:', refreshError);
-          authService.clearAuthData();
-          setState({
-            ...defaultAuthState,
-            isInitialized: true,
-            isLoading: false,
-          });
-        }
       }
-    } catch (error) {
-      console.error('Auth refresh error:', error);
-      setState({
-        ...defaultAuthState,
-        isInitialized: true,
-        isLoading: false,
-        error: error instanceof Error ? error.message : "Authentication failed",
-      });
-    }
-  }, []);
-
-  // Initialize auth state
-  useEffect(() => {
-    const initAuth = async () => {
-      setState(prev => ({ ...prev, isLoading: true }));
-      await refreshAuth();
     };
 
-    initAuth();
-  }, [refreshAuth]);
-
-  // Enhanced login method
+    initializeAuth();
+  }, []);
+  // Enhanced login method with improved error handling
   const login = useCallback(async (email: string, password: string, rememberMe = false) => {
+    console.log('🔐 AuthContext: Attempting login...');
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -178,24 +272,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         rememberMe,
       });
 
-      setState({
-        user,
-        token,
-        isAuthenticated: true,
-        isLoading: false,
-        isInitialized: true,
-        error: null,
-        dashboardUrl
+      console.log('✅ AuthContext: Login successful', { 
+        userId: user.id, 
+        userType: user.userType 
       });
+
+      setAuthenticatedState(user, token);
 
       // Show success toast
       addToast(`Welcome back, ${user.fullName}!`, "success");
       
       // Navigate to dashboard or intended page
-      const from = (location.state)?.from?.pathname ?? dashboardUrl ?? '/';
+      const locationState = location.state as { from?: { pathname: string } } | null;
+      const from = locationState?.from?.pathname ?? dashboardUrl ?? '/';
       navigate(from, { replace: true });
       
     } catch (error) {
+      console.error('❌ AuthContext: Login failed:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to login";
 
       setState((prev) => ({
@@ -207,7 +300,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Re-throw error for form handling
       throw error;
     }
-  }, [addToast, navigate, location.state]);
+  }, [addToast, navigate, location.state, setAuthenticatedState]);
 
   // Register agent method
   const registerAgent = useCallback(async (data: RegisterAgentData): Promise<{ agentCode: string }> => {
@@ -316,27 +409,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [addToast]);
 
-  // Logout method
+  // Logout method with improved error handling
   const logout = useCallback(async () => {
+    console.log('🚪 AuthContext: Logging out...');
     setState((prev) => ({ ...prev, isLoading: true }));
 
     try {
       await authService.logout();
+      console.log('✅ AuthContext: Logout successful');
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error('❌ AuthContext: Logout error:', error);
+    } finally {
+      // Always clear state regardless of logout API success
+      setUnauthenticatedState();
+      addToast("Logged out successfully", "success");
+      
+      // Clear any redirect state and go to login
+      navigate('/login', { replace: true });
     }
-
-    setState({
-      ...defaultAuthState,
-      isInitialized: true,
-      isLoading: false,
-    });
-
-    addToast("Logged out successfully", "success");
-    
-    // Clear any redirect state and go to login
-    navigate('/login', { replace: true });
-  }, [addToast, navigate]);
+  }, [addToast, navigate, setUnauthenticatedState]);
 
   // Clear errors
   const clearErrors = useCallback(() => {
