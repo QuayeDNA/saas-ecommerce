@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '../../design-system';
 import { 
   Plus, Search, User, Settings, ArrowRight, ChevronRight, 
-  Mail, Download, Upload, Trash, Check, X, Edit, Save 
+  Mail, Download, Upload, Trash, Check, Edit,
 } from 'lucide-react';
 import { FaGoogle, FaFacebook, FaTwitter, FaApple } from 'react-icons/fa';
 
