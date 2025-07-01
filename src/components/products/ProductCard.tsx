@@ -18,6 +18,9 @@ interface ProductCardProps {
   onDelete: (id: string) => void;
   onToggleStatus: (id: string, isActive: boolean) => void;
   onView: (product: Product) => void;
+  selected: boolean;
+  onSelect: (selected: boolean) => void;
+  showBulkActions?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -25,7 +28,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onEdit,
   onDelete,
   onToggleStatus,
-  onView
+  onView,
+  selected,
+  onSelect,
+  showBulkActions = false,
 }) => {
   const hasLowStock = product.variants.some(
     variant => variant.availableInventory <= variant.lowStockThreshold
@@ -49,8 +55,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-md border-l-4 transition-all duration-200 hover:shadow-lg ${borderClass}`}>
+    <div className={`bg-white rounded-lg shadow-md border-l-4 transition-all duration-200 hover:shadow-lg ${borderClass} ${selected ? 'ring-2 ring-blue-500' : ''}`}>
       <div className="p-6">
+        {/* Bulk Selection Checkbox */}
+        {showBulkActions && (
+          <div className="mb-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={(e) => onSelect(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="ml-2 text-sm text-gray-700">Select</span>
+            </label>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">

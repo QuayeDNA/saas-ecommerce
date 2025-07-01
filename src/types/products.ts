@@ -146,3 +146,39 @@ export interface ProductAnalytics {
   }[];
   timeframe: string;
 }
+
+export interface BulkImportResult {
+  successful: Array<{
+    index: number;
+    product: Product;
+    originalData: unknown;
+  }>;
+  failed: Array<{
+    index: number;
+    error: string;
+    originalData: unknown;
+  }>;
+  totalProcessed: number;
+}
+
+export interface BulkValidationResult {
+  success: boolean;
+  valid: boolean;
+  totalProducts: number;
+  errors: Array<{
+    index: number;
+    productName: string;
+    errors: string[];
+  }>;
+  products: Partial<Product>[];
+}
+
+export interface BulkProductData {
+  products?: Partial<Product>[];
+  csvData?: string;
+}
+
+export interface BulkUpdateData {
+  productId: string;
+  updateData: Partial<Product>;
+}

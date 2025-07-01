@@ -1,24 +1,26 @@
 // src/services/product.service.ts
-import axios from 'axios';
+import axios from "axios";
 import type {
-    Product,
-    ProductResponse,
-    ProductFilters,
-    ProductPagination,
-    BulkInventoryUpdate,
-    StockReservation,
-    LowStockAlert,
-    ProductAnalytics,
-    ProductVariant
-} from '../types/products';
+  Product,
+  ProductResponse,
+  ProductFilters,
+  ProductPagination,
+  BulkInventoryUpdate,
+  StockReservation,
+  LowStockAlert,
+  ProductAnalytics,
+  ProductVariant,
+  BulkImportResult,
+} from "../types/products";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 
 class ProductService {
   private readonly api = axios.create({
     baseURL: `${API_BASE_URL}/api/products`,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
 
@@ -27,10 +29,12 @@ class ProductService {
     this.api.interceptors.request.use((config) => {
       // Helper to get cookie value by name
       function getCookie(name: string): string | null {
-        const match = RegExp(new RegExp('(^| )' + name + '=([^;]+)')).exec(document.cookie);
+        const match = RegExp(new RegExp("(^| )" + name + "=([^;]+)")).exec(
+          document.cookie
+        );
         return match ? decodeURIComponent(match[2]) : null;
       }
-      const token = getCookie('authToken');
+      const token = getCookie("authToken");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       } else {
@@ -42,7 +46,7 @@ class ProductService {
 
   // Create product
   async createProduct(productData: Partial<Product>): Promise<Product> {
-    const response = await this.api.post('/', productData);
+    const response = await this.api.post("/", productData);
     return response.data.product;
   }
 
@@ -52,7 +56,7 @@ class ProductService {
     pagination: Partial<ProductPagination> = {}
   ): Promise<ProductResponse> {
     const params = { ...filters, ...pagination };
-    const response = await this.api.get('/', { params });
+    const response = await this.api.get("/", { params });
     return response.data;
   }
 
@@ -63,7 +67,10 @@ class ProductService {
   }
 
   // Update product
-  async updateProduct(id: string, updateData: Partial<Product>): Promise<Product> {
+  async updateProduct(
+    id: string,
+    updateData: Partial<Product>
+  ): Promise<Product> {
     const response = await this.api.put(`/${id}`, updateData);
     return response.data.product;
   }
@@ -80,46 +87,56 @@ class ProductService {
   }
 
   // Bulk inventory update
-  async bulkUpdateInventory(updates: BulkInventoryUpdate[]): Promise<BulkInventoryUpdate[]> {
-    const response = await this.api.patch('/inventory/bulk', { updates });
+  async bulkUpdateInventory(
+    updates: BulkInventoryUpdate[]
+  ): Promise<BulkInventoryUpdate[]> {
+    const response = await this.api.patch("/inventory/bulk", { updates });
     return response.data.results as BulkInventoryUpdate[];
   }
 
   // Reserve stock
   async reserveStock(reservations: StockReservation[]): Promise<void> {
-    await this.api.post('/inventory/reserve', { reservations });
+    await this.api.post("/inventory/reserve", { reservations });
   }
 
   // Release stock
   async releaseStock(reservations: StockReservation[]): Promise<void> {
-    await this.api.post('/inventory/release', { reservations });
+    await this.api.post("/inventory/release", { reservations });
   }
 
   // Get low stock alerts
   async getLowStockAlerts(): Promise<LowStockAlert[]> {
-    const response = await this.api.get('/alerts/low-stock');
+    const response = await this.api.get("/alerts/low-stock");
     return response.data.alerts;
   }
 
   // Get analytics
-  async getAnalytics(timeframe = '30d'): Promise<ProductAnalytics> {
-    const response = await this.api.get('/analytics', { params: { timeframe } });
+  async getAnalytics(timeframe = "30d"): Promise<ProductAnalytics> {
+    const response = await this.api.get("/analytics", {
+      params: { timeframe },
+    });
     return response.data.analytics;
   }
 
   // Add variant
-  async addVariant(productId: string, variantData: Partial<ProductVariant>): Promise<ProductVariant> {
+  async addVariant(
+    productId: string,
+    variantData: Partial<ProductVariant>
+  ): Promise<ProductVariant> {
     const response = await this.api.post(`/${productId}/variants`, variantData);
     return response.data.variant;
   }
 
   // Update variant
   async updateVariant(
-    productId: string, 
-    variantId: string, 
+    productId: string,
+    variantId: string,
     updateData: Partial<ProductVariant>
   ): Promise<ProductVariant> {
-    const response = await this.api.put(`/${productId}/variants/${variantId}`, updateData);
+    const response = await this.api.put(
+      `/${productId}/variants/${variantId}`,
+      updateData
+    );
     return response.data.variant;
   }
 
@@ -128,7 +145,51 @@ class ProductService {
     await this.api.delete(`/${productId}/variants/${variantId}`);
   }
 
-  
+  async bulkCreateProducts(data: {
+  products?: Product[];
+  csvData?: string;
+}): Promise<BulkImportResult> {
+  const response = await this.api.post("/bulk/create", data);
+  return response.data as BulkImportResult;
+}
+
+  // Bulk update products
+  async bulkUpdateProducts(updates: Partial<Product>[]): Promise<Product[]> {
+    const response = await this.api.patch("/bulk/update", { updates });
+    return response.data.results as Product[];
+  }
+
+  // Bulk delete products
+  async bulkDeleteProducts(productIds: string[]): Promise<Product[]> {
+    const response = await this.api.delete("/bulk/delete", {
+      data: { productIds },
+    });
+    return response.data.results as Product[];
+  }
+
+  // Download bulk import template
+  async downloadBulkTemplate(): Promise<void> {
+    const response = await this.api.get("/bulk/template", {
+      responseType: "blob",
+    });
+
+    const blob = new Blob([response.data], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "product-import-template.csv";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  // Validate bulk import data
+  async validateBulkImport(data: {
+    products?: unknown[];
+    csvData?: string;
+  }): Promise<unknown> {
+    const response = await this.api.post("/bulk/validate", data);
+    return response.data;
+  }
 }
 
 export const productService = new ProductService();

@@ -42,19 +42,6 @@ const DashboardPage = lazy(() =>
     default: module.DashboardPage,
   }))
 );
-const MtnPage = lazy(() =>
-  import("../pages/mtn-page").then((module) => ({ default: module.MTNPage }))
-);
-const VodafonePage = lazy(() =>
-  import("../pages/vodafone-page").then((module) => ({
-    default: module.VodafonePage,
-  }))
-);
-const AirtelTigoPage = lazy(() =>
-  import("../pages/airteltigo-page").then((module) => ({
-    default: module.AirtelTigoPage,
-  }))
-);
 const HistoryPage = lazy(() =>
   import("../pages/history-page").then((module) => ({
     default: module.HistoryPage,
@@ -73,6 +60,16 @@ const ProductManagementPage = lazy(() =>
 const OrderManagementPage = lazy(() =>
   import("../pages/orders-page").then((module) => ({
     default: module.OrderManagementPage,
+  }))
+);
+const StorefrontManagementPage = lazy(() =>
+  import("../pages/store-page").then((module) => ({
+    default: module.StorefrontManagementPage,
+  }))
+);
+const PublicStorefrontPage = lazy(() =>
+  import("../pages/PublicStorefrontPage").then((module) => ({
+    default: module.PublicStorefrontPage,
   }))
 );
 const AfaRegistrationPage = lazy(() =>
@@ -141,6 +138,15 @@ export const routes: RouteObject[] = [
       </Suspense>
     ),
   },
+  // Public Storefront Routes (No authentication required)
+  {
+    path: "/store/:slug",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PublicStorefrontPage />
+      </Suspense>
+    ),
+  },
   {
     path: "/forbidden",
     element: (
@@ -183,28 +189,12 @@ export const routes: RouteObject[] = [
             ),
           },
           {
-            path: "mtn",
+            path: "store",
             element: (
               <Suspense fallback={<PageLoader />}>
-                <MtnPage />
+                <StorefrontManagementPage />
               </Suspense>
-            ),
-          },
-          {
-            path: "vodafone",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <VodafonePage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "airteltigo",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AirtelTigoPage />
-              </Suspense>
-            ),
+            )
           },
           {
             path: "history",
