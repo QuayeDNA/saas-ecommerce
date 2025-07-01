@@ -13,7 +13,7 @@ interface ContainerProps extends HTMLAttributes<HTMLDivElement> {
 export const Container = forwardRef<HTMLDivElement, ContainerProps>(
   ({ 
     children, 
-    size = 'full', 
+    size = 'xl', 
     padding = 'md', 
     centerContent = false,
     className = '', 
