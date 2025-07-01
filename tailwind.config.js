@@ -47,6 +47,23 @@ export default {
       borderRadius: {
         '4xl': '2rem',
       },
+      animation: {
+        'gradient-slow': 'gradient 15s ease infinite',
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        gradient: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
+        },
+      },
+      backgroundSize: {
+        'auto': 'auto',
+        'cover': 'cover',
+        'contain': 'contain',
+        '200%': '200% 200%',
+      },
     },
   },
   plugins: [],

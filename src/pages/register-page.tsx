@@ -221,7 +221,7 @@ export const RegisterPage = () => {
       </header>
 
       {/* Main content */}
-      <div className="flex-grow flex items-center justify-center px-4 sm:px-6">
+      <div className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-lg">
           <Card className="shadow-xl border-0" variant="elevated" size="lg">
             <CardHeader className="text-center pb-6">

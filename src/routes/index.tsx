@@ -5,6 +5,7 @@ import type { RouteObject } from "react-router-dom";
 import { DashboardLayout } from "../layouts/dashboard-layout";
 import { PageLoader } from "../components/page-loader";
 import { ProtectedRoute } from "../components/protected-route";
+import { ButtonExamples } from '../components/examples/button-examples';
 
 // Lazy load pages for better performance
 const LandingPage = lazy(() =>
@@ -302,6 +303,14 @@ export const routes: RouteObject[] = [
         ],
       },
     ],
+  },
+  {
+    path: "/button-examples",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <ButtonExamples />
+      </Suspense>
+    ),
   },
   // Privacy Policy Page
   {

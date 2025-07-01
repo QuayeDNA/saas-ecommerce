@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import type { ReactNode, ButtonHTMLAttributes } from 'react';
 import { useTheme } from '../../hooks/use-theme';
+import { Loader2 } from 'lucide-react';
 
 // Button variants
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'accent';
@@ -11,9 +12,21 @@ type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 // Button color schemes (beyond the variant)
 type ButtonColorScheme = 'default' | 'success' | 'warning' | 'error' | 'info';
 
-// Button props interface
+/**
+ * Button component props
+ * 
+ * Usage with icons:
+ * - Icon-only: <Button iconOnly leftIcon={<PlusIcon />} aria-label="Add item" />
+ * - Left icon: <Button leftIcon={<UserIcon />}>Profile</Button>
+ * - Right icon: <Button rightIcon={<ArrowRightIcon />}>Next</Button>
+ * - Loading: <Button isLoading loadingText="Processing...">Submit</Button>
+ * 
+ * Both Lucide React icons and React Icons are supported:
+ * - Lucide: import { Home } from 'lucide-react'
+ * - React Icons: import { FaHome } from 'react-icons/fa'
+ */
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
+  children?: ReactNode; // Optional for icon-only buttons
   variant?: ButtonVariant;
   size?: ButtonSize;
   colorScheme?: ButtonColorScheme;
@@ -24,6 +37,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   rounded?: boolean; // For fully rounded buttons
   useThemeColor?: boolean;
+  iconOnly?: boolean; // For buttons that only display an icon (should include aria-label)
+  loadingText?: string; // Optional text to display while loading
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -42,6 +57,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       type = 'button',
       rounded = false,
       useThemeColor = true,
+      iconOnly = false,
+      loadingText,
       ...props
     },
     ref
@@ -49,13 +66,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     // Access theme
     const { primaryColor } = useTheme();
     
-    // Size styles
+    // Size styles for regular buttons
     const sizeClasses = {
       xs: 'text-xs px-2 py-1 h-6',
       sm: 'text-sm px-3 py-1.5 h-8',
       md: 'text-sm px-4 py-2 h-10',
       lg: 'text-base px-5 py-2.5 h-12',
       xl: 'text-lg px-6 py-3 h-14',
+    };
+    
+    // Size styles for icon-only buttons (equal width and height)
+    const iconOnlySizeClasses = {
+      xs: 'p-1 min-h-6 h-6 w-6',
+      sm: 'p-1.5 min-h-8 h-8 w-8',
+      md: 'p-2 min-h-10 h-10 w-10',
+      lg: 'p-2.5 min-h-12 h-12 w-12',
+      xl: 'p-3 min-h-14 h-14 w-14',
     };
 
     // Helper function to get theme-based color classes
@@ -211,7 +237,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       rounded ? 'rounded-full' : 'rounded-md',
       getFocusRingClass(),
       'transition-all duration-200',
-      sizeClasses[size],
+      iconOnly ? iconOnlySizeClasses[size] : sizeClasses[size],
       getVariantClasses(),
       fullWidth ? 'w-full' : '',
       (disabled || isLoading) ? 'opacity-60 cursor-not-allowed' : '',
@@ -227,32 +253,30 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || isLoading}
         {...props}
       >
-        {isLoading && (
-          <svg
-            className="animate-spin -ml-1 mr-2 h-4 w-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {loadingText && <span className="ml-2">{loadingText}</span>}
+          </>
+        ) : (
+          <>
+            {leftIcon && (
+              <span className={`inline-flex items-center justify-center ${children ? 'mr-1.5' : ''}`} style={{ lineHeight: 0 }}>
+                {leftIcon}
+              </span>
+            )}
+            {children && (
+              <span className={`inline-flex ${iconOnly ? 'sr-only' : ''}`}>
+                {children}
+              </span>
+            )}
+            {rightIcon && (
+              <span className={`inline-flex items-center justify-center ${children ? 'ml-1.5' : ''}`} style={{ lineHeight: 0 }}>
+                {rightIcon}
+              </span>
+            )}
+          </>
         )}
-        
-        {!isLoading && leftIcon && <span className="mr-2">{leftIcon}</span>}
-        <span>{children}</span>
-        {!isLoading && rightIcon && <span className="ml-2">{rightIcon}</span>}
       </button>
     );
   }

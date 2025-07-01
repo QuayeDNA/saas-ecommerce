@@ -237,7 +237,7 @@ export const LandingPage = () => {
                 Trusted by 1000+ businesses
               </div>
 
-              <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 leading-tight mb-8">
+              <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
                 Transform Your
                 <span className="block bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   Telecom Business
@@ -588,7 +588,7 @@ export const LandingPage = () => {
               {
                 title: "Support",
                 links: [
-                  { label: "Help Center", path: "/help-center" },
+                  { label: "Help Center", path: "/support" },
                   { label: "Contact Us", path: "/contact" },
                   { label: "System Status", path: "/status" },
                   { label: "Community", path: "/community" },

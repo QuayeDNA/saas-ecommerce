@@ -123,7 +123,7 @@ export const SupportPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-300 shadow-lg sticky top-0 z-10">
         <Container padding="md">
           <div className="py-4 flex items-center justify-between">
             <div className="flex items-center">
@@ -152,7 +152,7 @@ export const SupportPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-8">
               <a 
                 href="tel:+233551234567"
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
+                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
               >
                 <FaPhone className="text-2xl mb-2" />
                 <span className="text-sm font-medium">Call Us</span>
@@ -161,7 +161,7 @@ export const SupportPage: React.FC = () => {
               
               <a 
                 href="mailto:support@telecomsaas.com"
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
+                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
               >
                 <FaEnvelope className="text-2xl mb-2" />
                 <span className="text-sm font-medium">Email</span>
@@ -170,7 +170,7 @@ export const SupportPage: React.FC = () => {
               
               <a 
                 href="#contact-form"
-                className="col-span-2 sm:col-span-1 bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
+                className="col-span-2 sm:col-span-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
               >
                 <FaComment className="text-2xl mb-2" />
                 <span className="text-sm font-medium">Live Chat</span>
