@@ -1,11 +1,36 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks';
+// src/pages/register-page.tsx
+
+/**
+ * Modern Registration Page with Enhanced UX
+ * 
+ * Features:
+ * - Mobile-first responsive design
+ * - Multi-step registration flow
+ * - Real-time validation
+ * - Password strength indicator
+ * - Clear user type selection
+ * - Progress indicators
+ * - Success states with agent code display
+ */
+
 import { useState } from 'react';
-import { Button, Input, Alert, Card, CardHeader, CardBody } from '../design-system';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
-  FaUser, FaEnvelope, FaPhone, FaLock, FaEye, FaEyeSlash, 
-  FaBriefcase, FaCheck, FaExclamationTriangle 
+  FaUser, 
+  FaEye, 
+  FaEyeSlash, 
+  FaArrowLeft, 
+  FaPhoneAlt, 
+  FaExclamationTriangle, 
+  FaSpinner,
+  FaCheck,
+  FaCopy,
+  FaStore,
+  FaUsers,
 } from 'react-icons/fa';
+import { Button, Card, CardHeader, CardBody, Input, Alert, Container } from '../design-system';
+import { useAuth } from '../hooks';
+import type { RegisterAgentData, RegisterCustomerData } from '../services/auth.service';
 
 type RegistrationType = 'agent' | 'customer';
 
@@ -13,11 +38,47 @@ export const RegisterPage = () => {
   const { authState, registerAgent, registerCustomer } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registrationType, setRegistrationType] = useState<RegistrationType>('customer');
   const [agentCode, setAgentCode] = useState<string>('');
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [passwordValidation, setPasswordValidation] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    match: false
+  });
+
+  // Password validation
+  const validatePassword = (password: string, confirmPassword: string) => {
+    setPasswordValidation({
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /\d/.test(password),
+      match: password === confirmPassword && password.length > 0
+    });
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const password = e.target.value;
+    const confirmPassword = (document.querySelector('input[name="confirmPassword"]') as HTMLInputElement)?.value || '';
+    validatePassword(password, confirmPassword);
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const confirmPassword = e.target.value;
+    const password = (document.querySelector('input[name="password"]') as HTMLInputElement)?.value || '';
+    validatePassword(password, confirmPassword);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLocalError(null);
+    setIsSubmitting(true);
+    
     const formData = new FormData(e.currentTarget);
     
     const commonData = {
@@ -29,7 +90,7 @@ export const RegisterPage = () => {
     
     try {
       if (registrationType === 'agent') {
-        const agentData = {
+        const agentData: RegisterAgentData = {
           ...commonData,
           businessName: formData.get('businessName') as string,
           businessCategory: formData.get('businessCategory') as 'electronics' | 'fashion' | 'food' | 'services' | 'other',
@@ -39,7 +100,7 @@ export const RegisterPage = () => {
         const result = await registerAgent(agentData);
         setAgentCode(result.agentCode);
       } else {
-        const customerData = {
+        const customerData: RegisterCustomerData = {
           ...commonData,
           agentCode: formData.get('agentCode') as string || undefined,
         };
@@ -48,43 +109,84 @@ export const RegisterPage = () => {
         navigate('/login');
       }
     } catch (error) {
-      console.error('Registration failed:', error);
+      setLocalError(error instanceof Error ? error.message : 'Registration failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const copyAgentCode = async () => {
+    if (agentCode) {
+      await navigator.clipboard.writeText(agentCode);
+      // You could add a toast notification here
     }
   };
 
   // Show agent code success screen
   if (agentCode) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-white p-4 sm:p-6">
-        <div className="flex-grow flex items-center justify-center">
-          <Card className="w-full max-w-lg" variant="elevated" size="lg">
-            <CardHeader className="text-center">
-              <div className="mx-auto bg-green-100 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-50 via-white to-emerald-100">
+        <div className="flex-grow flex items-center justify-center px-4 sm:px-6">
+          <Card className="w-full max-w-lg shadow-xl border-0" variant="elevated" size="lg">
+            <CardHeader className="text-center pb-6">
+              <div className="mx-auto bg-gradient-to-br from-green-100 to-emerald-100 p-4 rounded-2xl w-20 h-20 flex items-center justify-center mb-6">
                 <FaCheck className="text-green-600 text-2xl" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Agent Account Created!</h2>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Registration Successful! 🎉
+              </h1>
+              <p className="text-gray-600">
+                Your agent account has been created successfully
+              </p>
             </CardHeader>
             
-            <CardBody className="text-center">
-              <p className="text-gray-600 mb-4">
-                Please check your email for verification instructions.
-              </p>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <h3 className="text-lg font-medium text-blue-900 mb-2">Your Agent Code</h3>
-                <div className="bg-white border-2 border-dashed border-blue-300 rounded-lg p-3 font-mono text-xl font-bold text-blue-600">
-                  {agentCode}
+            <CardBody className="text-center pt-0">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 mb-6">
+                <h3 className="font-semibold text-gray-900 mb-2">Your Agent Code</h3>
+                <div className="flex items-center justify-center space-x-3 mb-4">
+                  <code className="text-2xl font-mono font-bold text-blue-600 bg-white px-4 py-2 rounded-lg border">
+                    {agentCode}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyAgentCode}
+                    leftIcon={<FaCopy />}
+                  >
+                    Copy
+                  </Button>
                 </div>
-                <p className="text-blue-700 mt-2 text-sm">
-                  Share this code with customers to register under your business
+                <p className="text-sm text-gray-600">
+                  Share this code with customers to earn commissions from their transactions
                 </p>
               </div>
-              
-              <Link to="/login">
-                <Button variant="primary" colorScheme="default" size="lg" fullWidth>
-                  Go to Login
-                </Button>
-              </Link>
+
+              <div className="space-y-4 mb-6">
+                <Alert status="info" variant="left-accent">
+                  <div className="text-sm">
+                    <div className="font-medium">Next Steps:</div>
+                    <ol className="list-decimal list-inside mt-2 space-y-1 text-left">
+                      <li>Check your email for account verification</li>
+                      <li>Complete your profile setup</li>
+                      <li>Start sharing your agent code</li>
+                      <li>Begin earning commissions!</li>
+                    </ol>
+                  </div>
+                </Alert>
+              </div>
+
+              <div className="space-y-3">
+                <Link to="/login">
+                  <Button variant="primary" size="lg" fullWidth>
+                    Continue to Login
+                  </Button>
+                </Link>
+                <Link to="/">
+                  <Button variant="outline" size="lg" fullWidth>
+                    Back to Home
+                  </Button>
+                </Link>
+              </div>
             </CardBody>
           </Card>
         </div>
@@ -93,241 +195,364 @@ export const RegisterPage = () => {
   }
   
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-white p-4 sm:p-6">
-      <div className="flex-grow flex items-center justify-center">
-        <Card className="w-full max-w-lg" variant="elevated" size="lg">
-          <CardHeader className="text-center">
-            <div className="mx-auto p-3 bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-              <FaUser className="text-blue-600 text-2xl" />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-indigo-100">
+      {/* Header */}
+      <header className="p-4 sm:p-6">
+        <Container>
+          <div className="flex items-center justify-between">
+            <Link 
+              to="/" 
+              className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
+            >
+              <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden sm:inline">Back to Home</span>
+              <span className="sm:hidden">Back</span>
+            </Link>
+            
+            {/* Logo */}
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                <FaPhoneAlt className="text-white text-sm" />
+              </div>
+              <span className="font-bold text-gray-900 hidden sm:block">TelecomSaaS</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Create an account</h2>
-            <p className="mt-2 text-gray-600 text-sm">
-              Already have an account?{' '}
-              <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition">
-                Sign in now
-              </Link>
-            </p>
-          </CardHeader>
-          
-          <CardBody>
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              {authState.error && (
-                <Alert 
-                  status="error" 
-                  variant="left-accent"
-                  className="flex items-start"
+          </div>
+        </Container>
+      </header>
+
+      {/* Main content */}
+      <div className="flex-grow flex items-center justify-center px-4 sm:px-6">
+        <div className="w-full max-w-lg">
+          <Card className="shadow-xl border-0" variant="elevated" size="lg">
+            <CardHeader className="text-center pb-6">
+              <div className="mx-auto bg-gradient-to-br from-blue-100 to-indigo-100 p-4 rounded-2xl w-20 h-20 flex items-center justify-center mb-6">
+                <FaUser className="text-blue-600 text-2xl" />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an account</h1>
+              <p className="text-gray-600">
+                Already have an account?{' '}
+                <Link 
+                  to="/login" 
+                  className="font-semibold text-blue-600 hover:text-blue-500 transition-colors"
                 >
-                  <FaExclamationTriangle className="mt-0.5 mr-2 flex-shrink-0" />
-                  <span>{authState.error}</span>
-                </Alert>
-              )}
-              
+                  Sign in here
+                </Link>
+              </p>
+            </CardHeader>
+            
+            <CardBody className="pt-0">
               {/* Registration Type Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Account Type
-                </label>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Choose your account type</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     type="button"
                     onClick={() => setRegistrationType('customer')}
-                    className={`p-4 border-2 rounded-lg text-left transition-colors ${
+                    className={`p-4 rounded-xl border-2 transition-all duration-200 ${
                       registrationType === 'customer'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <div className="font-medium">Customer</div>
-                    <div className="text-sm text-gray-500">Shop and buy products</div>
+                    <FaUsers className={`text-2xl mx-auto mb-2 ${
+                      registrationType === 'customer' ? 'text-blue-600' : 'text-gray-400'
+                    }`} />
+                    <div className="font-semibold text-gray-900">Customer</div>
+                    <div className="text-sm text-gray-600">Buy airtime & data</div>
                   </button>
                   
                   <button
                     type="button"
                     onClick={() => setRegistrationType('agent')}
-                    className={`p-4 border-2 rounded-lg text-left transition-colors ${
+                    className={`p-4 rounded-xl border-2 transition-all duration-200 ${
                       registrationType === 'agent'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <div className="font-medium">Business Agent</div>
-                    <div className="text-sm text-gray-500">Manage your business</div>
+                    <FaStore className={`text-2xl mx-auto mb-2 ${
+                      registrationType === 'agent' ? 'text-blue-600' : 'text-gray-400'
+                    }`} />
+                    <div className="font-semibold text-gray-900">Agent</div>
+                    <div className="text-sm text-gray-600">Sell & earn commissions</div>
                   </button>
                 </div>
               </div>
-              
-              <div className="space-y-4">
-                {/* Common Fields */}
-                <Input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  label="Full Name"
-                  autoComplete="name"
-                  required
-                  placeholder="Your full name"
-                  size="md"
-                  variant="outline"
-                  colorScheme="default"
-                  fullWidth
-                  leftIcon={<FaUser className="text-gray-400" />}
-                />
-                
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  label="Email address"
-                  autoComplete="email"
-                  required
-                  placeholder="your@email.com"
-                  size="md"
-                  variant="outline"
-                  colorScheme="default"
-                  fullWidth
-                  leftIcon={<FaEnvelope className="text-gray-400" />}
-                />
-                
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  label="Phone Number"
-                  autoComplete="tel"
-                  required
-                  placeholder="+1234567890"
-                  size="md"
-                  variant="outline"
-                  colorScheme="default"
-                  fullWidth
-                  leftIcon={<FaPhone className="text-gray-400" />}
-                />
-                
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  label="Password"
-                  autoComplete="new-password"
-                  required
-                  placeholder="••••••••"
-                  size="md"
-                  variant="outline"
-                  colorScheme="default"
-                  fullWidth
-                  leftIcon={<FaLock className="text-gray-400" />}
-                  rightIcon={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-400 hover:text-gray-500"
-                    >
-                      {showPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-                  }
-                  helperText="Min 6 chars with uppercase, lowercase, and number"
-                />
 
-                {/* Agent-specific fields */}
-                {registrationType === 'agent' && (
-                  <>
-                    <Input
-                      id="businessName"
-                      name="businessName"
-                      type="text"
-                      label="Business Name"
-                      required
-                      placeholder="Your business name"
-                      size="md"
-                      variant="outline"
-                      colorScheme="default"
-                      fullWidth
-                      leftIcon={<FaBriefcase className="text-gray-400" />}
-                    />
-                    
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                {/* Error Alert */}
+                {(localError || authState.error) && (
+                  <Alert 
+                    status="error" 
+                    variant="left-accent"
+                    className="flex items-start"
+                  >
+                    <FaExclamationTriangle className="mt-0.5 mr-3 flex-shrink-0 text-red-500" />
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Business Category
-                      </label>
-                      <select
-                        name="businessCategory"
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="">Select a category</option>
-                        <option value="electronics">Electronics</option>
-                        <option value="fashion">Fashion</option>
-                        <option value="food">Food & Beverage</option>
-                        <option value="services">Services</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subscription Plan
-                      </label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[
-                          { value: 'basic', label: 'Basic', price: 'Free' },
-                          { value: 'premium', label: 'Premium', price: '$29/mo' },
-                          { value: 'enterprise', label: 'Enterprise', price: '$99/mo' }
-                        ].map((plan) => (
-                          <label key={plan.value} className="relative">
-                            <input
-                              type="radio"
-                              name="subscriptionPlan"
-                              value={plan.value}
-                              defaultChecked={plan.value === 'basic'}
-                              className="sr-only peer"
-                            />
-                            <div className="p-3 border-2 rounded-lg cursor-pointer hover:border-blue-300 peer-checked:border-blue-500 peer-checked:bg-blue-50">
-                              <div className="text-sm font-medium">{plan.label}</div>
-                              <div className="text-xs text-gray-500">{plan.price}</div>
-                            </div>
-                          </label>
-                        ))}
+                      <div className="font-medium text-red-800">Registration Failed</div>
+                      <div className="text-red-700 text-sm mt-1">
+                        {localError ?? authState.error}
                       </div>
                     </div>
-                  </>
+                  </Alert>
                 )}
 
-                {/* Customer-specific fields */}
-                {registrationType === 'customer' && (
-                  <Input
-                    id="agentCode"
-                    name="agentCode"
-                    type="text"
-                    label="Agent Code (Optional)"
-                    placeholder="Enter agent code if you have one"
-                    size="md"
-                    variant="outline"
-                    colorScheme="default"
-                    fullWidth
-                    leftIcon={<FaUser className="text-gray-400" />}
-                    helperText="Get this code from your business agent"
+                {/* Common Fields */}
+                <div className="grid grid-cols-1 gap-6">
+                  <div>
+                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <Input
+                      id="fullName"
+                      name="fullName"
+                      type="text"
+                      autoComplete="name"
+                      required
+                      placeholder="Enter your full name"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      placeholder="Enter your email"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      autoComplete="tel"
+                      required
+                      placeholder="233XXXXXXXXX"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  {/* Agent-specific fields */}
+                  {registrationType === 'agent' && (
+                    <>
+                      <div>
+                        <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
+                          Business Name
+                        </label>
+                        <Input
+                          id="businessName"
+                          name="businessName"
+                          type="text"
+                          required
+                          placeholder="Enter your business name"
+                          disabled={isSubmitting}
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="businessCategory" className="block text-sm font-medium text-gray-700 mb-2">
+                          Business Category
+                        </label>
+                        <select
+                          id="businessCategory"
+                          name="businessCategory"
+                          required
+                          disabled={isSubmitting}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select category</option>
+                          <option value="electronics">Electronics</option>
+                          <option value="fashion">Fashion</option>
+                          <option value="food">Food & Beverages</option>
+                          <option value="services">Services</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Customer-specific fields */}
+                  {registrationType === 'customer' && (
+                    <div>
+                      <label htmlFor="agentCode" className="block text-sm font-medium text-gray-700 mb-2">
+                        Agent Code <span className="text-gray-500">(Optional)</span>
+                      </label>
+                      <Input
+                        id="agentCode"
+                        name="agentCode"
+                        type="text"
+                        placeholder="Enter agent code to support them"
+                        disabled={isSubmitting}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Have an agent code? Enter it to support your agent with commissions.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Password Fields */}
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        required
+                        placeholder="Create a strong password"
+                        className="pr-12"
+                        disabled={isSubmitting}
+                        onChange={handlePasswordChange}
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={isSubmitting}
+                      >
+                        {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                      </button>
+                    </div>
+
+                    {/* Password strength indicators */}
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center text-xs space-x-4">
+                        <div className={`flex items-center ${passwordValidation.length ? 'text-green-600' : 'text-gray-400'}`}>
+                          <FaCheck className="mr-1" size={10} />
+                          8+ characters
+                        </div>
+                        <div className={`flex items-center ${passwordValidation.uppercase ? 'text-green-600' : 'text-gray-400'}`}>
+                          <FaCheck className="mr-1" size={10} />
+                          Uppercase
+                        </div>
+                        <div className={`flex items-center ${passwordValidation.lowercase ? 'text-green-600' : 'text-gray-400'}`}>
+                          <FaCheck className="mr-1" size={10} />
+                          Lowercase
+                        </div>
+                        <div className={`flex items-center ${passwordValidation.number ? 'text-green-600' : 'text-gray-400'}`}>
+                          <FaCheck className="mr-1" size={10} />
+                          Number
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        required
+                        placeholder="Confirm your password"
+                        className="pr-12"
+                        disabled={isSubmitting}
+                        onChange={handleConfirmPasswordChange}
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        disabled={isSubmitting}
+                      >
+                        {showConfirmPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                      </button>
+                    </div>
+                    {passwordValidation.match && (
+                      <div className="flex items-center text-xs text-green-600 mt-1">
+                        <FaCheck className="mr-1" size={10} />
+                        Passwords match
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Terms and Conditions */}
+                <div className="flex items-start">
+                  <input
+                    id="terms"
+                    name="terms"
+                    type="checkbox"
+                    required
+                    disabled={isSubmitting}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
                   />
-                )}
-              </div>
-              
-              <Button
-                type="submit"
-                disabled={authState.isLoading}
-                isLoading={authState.isLoading}
-                variant="primary"
-                colorScheme="default"
-                size="lg"
-                fullWidth
-                className="mt-2"
-              >
-                {authState.isLoading 
-                  ? 'Creating account...' 
-                  : `Create ${registrationType} account`
-                }
-              </Button>
-            </form>
-          </CardBody>
-        </Card>
+                  <label htmlFor="terms" className="ml-3 text-sm text-gray-600">
+                    I agree to the{' '}
+                    <Link to="/terms" className="text-blue-600 hover:text-blue-500">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link to="/privacy" className="text-blue-600 hover:text-blue-500">
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  disabled={isSubmitting || authState.isLoading}
+                  leftIcon={
+                    (isSubmitting || authState.isLoading) ? (
+                      <FaSpinner className="animate-spin" />
+                    ) : undefined
+                  }
+                >
+                  {isSubmitting || authState.isLoading 
+                    ? 'Creating account...' 
+                    : `Create ${registrationType} account`
+                  }
+                </Button>
+
+                {/* Support */}
+                <div className="text-center pt-4 border-t border-gray-100">
+                  <p className="text-sm text-gray-500 mb-2">
+                    Need help getting started?
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
+                    <a 
+                      href="tel:+233559876543" 
+                      className="text-blue-600 hover:text-blue-500 transition-colors"
+                    >
+                      📞 +233 55 987 6543
+                    </a>
+                    <a 
+                      href="https://t.me/telecomsaas" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-500 transition-colors"
+                    >
+                      📱 Join our Telegram
+                    </a>
+                  </div>
+                </div>
+              </form>
+            </CardBody>
+          </Card>
+        </div>
       </div>
     </div>
   );

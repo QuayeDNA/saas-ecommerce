@@ -1,6 +1,13 @@
 // src/components/products/ProductList.tsx
 import React, { useEffect, useState } from 'react';
-import { FaPlus, FaFilter, FaSearch, FaEdit, FaFileImport, FaTrash } from 'react-icons/fa';
+import { 
+  FaPlus, 
+  FaFilter, 
+  FaSearch, 
+  FaEdit, 
+  FaFileImport, 
+  FaTrash
+} from 'react-icons/fa';
 import { ProductCard } from './ProductCard';
 import { ProductFilters } from './ProductFilters';
 import { ProductModal } from './ProductModal';
@@ -22,6 +29,8 @@ export const ProductList: React.FC = () => {
     setFilters
   } = useProduct();
 
+  // UI State
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
@@ -30,6 +39,8 @@ export const ProductList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState(false);
+  const [sortField, setSortField] = useState<string>('updatedAt');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     fetchProducts();
@@ -39,6 +50,18 @@ export const ProductList: React.FC = () => {
     e.preventDefault();
     setFilters({ ...filters, search: searchTerm });
     fetchProducts({ ...filters, search: searchTerm });
+  };
+  
+  const handleSort = (field: string) => {
+    const newDirection = field === sortField && sortDirection === 'desc' ? 'asc' : 'desc';
+    setSortField(field);
+    setSortDirection(newDirection);
+    
+    // Update pagination with new sort options
+    fetchProducts(
+      filters, 
+      { sortBy: field, sortOrder: newDirection }
+    );
   };
 
   const handleBulkDelete = async () => {
@@ -51,12 +74,12 @@ export const ProductList: React.FC = () => {
     }
   };
 
-  const handleProductSelect = (productId: string, selected: boolean) => {
-    if (selected) {
-      setSelectedProducts(prev => [...prev, productId]);
-    } else {
-      setSelectedProducts(prev => prev.filter(id => id !== productId));
-    }
+  const selectProduct = (productId: string) => {
+    setSelectedProducts(prev => [...prev, productId]);
+  };
+
+  const deselectProduct = (productId: string) => {
+    setSelectedProducts(prev => prev.filter(id => id !== productId));
   };
 
   const handleSelectAll = () => {
@@ -292,7 +315,13 @@ export const ProductList: React.FC = () => {
               onToggleStatus={onToggleProductStatus}
               onView={onViewProduct}
               selected={selectedProducts.includes(product._id!)}
-              onSelect={(selected: boolean) => handleProductSelect(product._id!, selected)}
+              onSelect={(selected: boolean) => {
+                if (selected) {
+                  selectProduct(product._id!);
+                } else {
+                  deselectProduct(product._id!);
+                }
+              }}
               showBulkActions={bulkMode}
             />
           ))}

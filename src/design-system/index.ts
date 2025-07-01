@@ -20,6 +20,15 @@ export { DialogHeader } from './components/dialog-header';
 export { DialogBody } from './components/dialog-body';
 export { DialogFooter } from './components/dialog-footer';
 
+// New components
+export { Spinner } from './components/spinner';
+export { Hero, HeroTitle, HeroSubtitle } from './components/hero';
+export { Feature, FeatureGrid } from './components/feature';
+export { Container } from './components/container';
+export { Image, HeroImage } from './components/image';
+export { Section, SectionHeader } from './components/section';
+export { Testimonial, Avatar } from './components/testimonial';
+
 // Export theme provider and types
 export { ThemeProvider } from '../contexts/theme-context';
 export type { ThemeColor } from '../contexts/theme-context-value';

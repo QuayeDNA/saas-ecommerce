@@ -87,6 +87,16 @@ const ForbiddenPage = lazy(() =>
     default: module.ForbiddenPage,
   }))
 );
+const PrivacyPolicyPage = lazy(() =>
+  import("../pages/privacy-policy-page").then((module) => ({
+    default: module.PrivacyPolicyPage,
+  }))
+);
+const SupportPage = lazy(() =>
+  import("../pages/support-page").then((module) => ({
+    default: module.SupportPage,
+  }))
+);
 
 // Define routes
 export const routes: RouteObject[] = [
@@ -220,6 +230,22 @@ export const routes: RouteObject[] = [
               </Suspense>
             ),
           },
+          {
+            path: "support",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SupportPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "privacy-policy",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PrivacyPolicyPage />
+              </Suspense>
+            ),
+          },
         ],
       },
     ],
@@ -241,10 +267,59 @@ export const routes: RouteObject[] = [
               </Suspense>
             ),
           },
-          // Add customer-specific routes here
+          {
+            path: "profile",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProfilePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "history",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <HistoryPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "support",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SupportPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "privacy-policy",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PrivacyPolicyPage />
+              </Suspense>
+            ),
+          },
         ],
       },
     ],
+  },
+  // Privacy Policy Page
+  {
+    path: "/privacy-policy",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PrivacyPolicyPage />
+      </Suspense>
+    ),
+  },
+  // Support Page
+  {
+    path: "/support",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <SupportPage />
+      </Suspense>
+    ),
   },
   // 404 Page
   {

@@ -1,16 +1,32 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks';
+// src/pages/login-page.tsx
+
+/**
+ * Modern Login Page with Enhanced UX
+ * 
+ * Features:
+ * - Mobile-first responsive design with modern aesthetics
+ * - Clear visual hierarchy and user-friendly layout
+ * - Comprehensive loading states and error handling
+ * - Enhanced accessibility and form validation
+ * - Password visibility toggle with smooth animations
+ * - Remember me functionality with clear messaging
+ * - Social proof elements and trust indicators
+ * - Seamless navigation and user flow
+ * - Consistent design system integration
+ */
+
 import { useState, useEffect } from 'react';
-import { Button, Input, Alert, Card, CardHeader, CardBody } from '../design-system';
-import { 
-  FaEnvelope, FaLock, FaEye, FaEyeSlash, FaExclamationTriangle 
-} from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaLock, FaEye, FaEyeSlash, FaArrowLeft, FaPhoneAlt, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
+import { Button, Card, CardHeader, CardBody, Input, Alert, Container } from '../design-system';
+import { useAuth } from '../hooks';
 
 export const LoginPage = () => {
   const { authState, login, clearErrors } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Redirect if already authenticated
   useEffect(() => {
@@ -29,6 +45,7 @@ export const LoginPage = () => {
     e.preventDefault();
     setLocalError(null);
     clearErrors();
+    setIsSubmitting(true);
     
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
@@ -39,120 +56,205 @@ export const LoginPage = () => {
       await login(email, password, rememberMe);
     } catch (error) {
       setLocalError(error instanceof Error ? error.message : 'Login failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-white p-4 sm:p-6">      
-      <div className="flex-grow flex items-center justify-center">
-        <Card className="w-full max-w-md" variant="elevated" size="lg">
-          <CardHeader className="text-center">
-            <div className="mx-auto bg-blue-100 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-              <FaLock className="text-blue-600 text-2xl" />
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Welcome back</h2>
-            <p className="mt-2 text-gray-600 text-sm">
-              Don't have an account?{' '}
-              <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition">
-                Sign up now
-              </Link>
-            </p>
-          </CardHeader>
-          
-          <CardBody>
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              {(localError || authState.error) && (
-                <Alert 
-                  status="error" 
-                  variant="left-accent"
-                  className="flex items-start"
-                >
-                  <FaExclamationTriangle className="mt-0.5 mr-2 flex-shrink-0" />
-                  <span>{localError ?? authState.error}</span>
-                </Alert>
-              )}
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-indigo-100">
+      {/* Header with back to home */}
+      <header className="p-4 sm:p-6">
+        <Container>
+          <div className="flex items-center justify-between">
+            <Link 
+              to="/" 
+              className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
+            >
+              <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden sm:inline">Back to Home</span>
+              <span className="sm:hidden">Back</span>
+            </Link>
             
-              <div className="space-y-4">
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  label="Email address"
-                  autoComplete="email"
-                  required
-                  placeholder="your@email.com"
-                  size="md"
-                  variant="outline"
-                  colorScheme="default"
-                  fullWidth
-                  leftIcon={<FaEnvelope className="text-gray-400" />}
-                />
-                
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  label="Password"
-                  autoComplete="current-password"
-                  required
-                  placeholder="••••••••"
-                  size="md"
-                  variant="outline"
-                  colorScheme="default"
-                  fullWidth
-                  leftIcon={<FaLock className="text-gray-400" />}
-                  rightIcon={
+            {/* Logo */}
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                <FaPhoneAlt className="text-white text-sm" />
+              </div>
+              <span className="font-bold text-gray-900 hidden sm:block">TelecomSaaS</span>
+            </div>
+          </div>
+        </Container>
+      </header>
+
+      {/* Main content */}
+      <div className="flex-grow flex items-center justify-center px-4 sm:px-6">
+        <div className="w-full max-w-md">
+          <Card className="shadow-xl border-0" variant="elevated" size="lg">
+            <CardHeader className="text-center pb-6">
+              <div className="mx-auto bg-gradient-to-br from-blue-100 to-indigo-100 p-4 rounded-2xl w-20 h-20 flex items-center justify-center mb-6">
+                <FaLock className="text-blue-600 text-2xl" />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
+              <p className="text-gray-600">
+                Don't have an account?{' '}
+                <Link 
+                  to="/register" 
+                  className="font-semibold text-blue-600 hover:text-blue-500 transition-colors"
+                >
+                  Sign up for free
+                </Link>
+              </p>
+            </CardHeader>
+            
+            <CardBody className="pt-0">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                {/* Error Alert */}
+                {(localError || authState.error) && (
+                  <Alert 
+                    status="error" 
+                    variant="left-accent"
+                    className="flex items-start"
+                  >
+                    <FaExclamationTriangle className="mt-0.5 mr-3 flex-shrink-0 text-red-500" />
+                    <div>
+                      <div className="font-medium text-red-800">
+                        Login Failed
+                      </div>
+                      <div className="text-red-700 text-sm mt-1">
+                        {localError ?? authState.error}
+                      </div>
+                    </div>
+                  </Alert>
+                )}
+
+                {/* Email Field */}
+                <div className="space-y-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    Email address
+                  </label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    placeholder="Enter your email"
+                    className="w-full"
+                    disabled={isSubmitting || authState.isLoading}
+                  />
+                </div>
+
+                {/* Password Field */}
+                <div className="space-y-2">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      required
+                      placeholder="Enter your password"
+                      className="w-full pr-12"
+                      disabled={isSubmitting || authState.isLoading}
+                    />
                     <button
                       type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-400 hover:text-gray-500"
+                      disabled={isSubmitting || authState.isLoading}
                     >
-                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                     </button>
+                  </div>
+                </div>
+
+                {/* Remember me and Forgot password */}
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center">
+                    <input
+                      id="remember_me"
+                      name="remember_me"
+                      type="checkbox"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      disabled={isSubmitting || authState.isLoading}
+                    />
+                    <span className="ml-2 block text-sm text-gray-700">
+                      Remember me
+                    </span>
+                  </label>
+
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  disabled={isSubmitting || authState.isLoading}
+                  leftIcon={
+                    (isSubmitting || authState.isLoading) ? (
+                      <FaSpinner className="animate-spin" />
+                    ) : undefined
                   }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    id="remember_me"
-                    name="remember_me"
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Remember me</span>
-                </label>
-                
-                <Link 
-                  to="/forgot-password" 
-                  className="text-sm font-medium text-blue-600 hover:text-blue-500 transition"
                 >
-                  Forgot password?
-                </Link>
-              </div>
+                  {isSubmitting || authState.isLoading ? 'Signing in...' : 'Sign in'}
+                </Button>
 
-              <Button
-                type="submit"
-                disabled={authState.isLoading}
-                isLoading={authState.isLoading}
-                variant="primary"
-                colorScheme="default"
-                size="lg"
-                fullWidth
-                className="mt-4"
-              >
-                {authState.isLoading ? 'Signing in...' : 'Sign in'}
-              </Button>
-              
-              <div className="mt-4 text-center text-sm text-gray-600">
-                <Link to="/" className="font-medium text-blue-600 hover:text-blue-500 transition">
-                  ← Back to home
-                </Link>
+                {/* Additional Help */}
+                <div className="text-center pt-4 border-t border-gray-100">
+                  <p className="text-sm text-gray-500 mb-2">
+                    Need help? Contact our support team
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
+                    <a 
+                      href="tel:+233559876543" 
+                      className="text-blue-600 hover:text-blue-500 transition-colors"
+                    >
+                      📞 +233 55 987 6543
+                    </a>
+                    <a 
+                      href="https://t.me/telecomsaas" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-500 transition-colors"
+                    >
+                      📱 Join our Telegram
+                    </a>
+                  </div>
+                </div>
+              </form>
+            </CardBody>
+          </Card>
+
+          {/* Trust indicators */}
+          <div className="mt-8 text-center">
+            <div className="flex items-center justify-center space-x-8 text-sm text-gray-500">
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                99.9% Uptime
               </div>
-            </form>
-          </CardBody>
-        </Card>
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                Bank-grade Security
+              </div>
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                24/7 Support
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

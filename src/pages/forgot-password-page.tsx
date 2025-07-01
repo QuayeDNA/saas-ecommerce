@@ -1,8 +1,21 @@
+// src/pages/forgot-password-page.tsx
+
+/**
+ * Forgot Password Page
+ * 
+ * Features:
+ * - Email input with validation
+ * - Clear success/error states
+ * - Animated transitions
+ * - Mobile-first responsive design
+ * - Consistent with auth design system
+ */
+
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks';
 import { useState } from 'react';
 import { Button, Input, Alert, Card, CardHeader, CardBody } from '../design-system';
-import { FaEnvelope, FaArrowLeft, FaCheck, FaExclamationTriangle, FaLock } from 'react-icons/fa';
+import { FaEnvelope, FaArrowLeft, FaExclamationTriangle, FaLock, FaCheck } from 'react-icons/fa';
 
 export const ForgotPasswordPage = () => {
   const { authState, forgotPassword } = useAuth();
