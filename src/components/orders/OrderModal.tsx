@@ -159,30 +159,29 @@ export const OrderModal: React.FC<OrderModalProps> = ({
                       
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm text-gray-600">
                         <div>
-                          <span className="block text-gray-500">Product:</span>
-                          <span className="font-medium">{item.variantDetails.name}</span>
+                          <span className="block text-gray-500">Package:</span>
+                          <span className="font-medium">{item.packageDetails.name}</span>
                         </div>
                         
-                        {item.variantDetails.network && (
+                        <div>
+                          <span className="block text-gray-500">Provider:</span>
+                          <span className="font-medium flex items-center gap-1">
+                            <FaWifi />
+                            {item.packageDetails.provider}
+                          </span>
+                        </div>
+                        
+                        {item.packageDetails.validity && (
                           <div>
-                            <span className="block text-gray-500">Network:</span>
+                            <span className="block text-gray-500">Validity:</span>
                             <span className="font-medium flex items-center gap-1">
-                              <FaWifi />
-                              {item.variantDetails.network}
+                              <FaClock />
+                              {item.packageDetails.validity}
                             </span>
                           </div>
                         )}
                         
-                        {item.bundleSize && (
-                          <div>
-                            <span className="block text-gray-500">Bundle:</span>
-                            <span className="font-medium">
-                              {item.bundleSize.value}{item.bundleSize.unit}
-                            </span>
-                          </div>
-                        )}
-                        
-                                                <div>
+                        <div>
                           <span className="block text-gray-500">Price:</span>
                           <span className="font-medium">${item.totalPrice.toFixed(2)}</span>
                         </div>

@@ -1,16 +1,15 @@
 // src/types/order.types.ts
 export interface OrderItem {
   _id?: string;
-  product: string;
-  variant: string;
-  variantDetails: {
+  packageGroup: string;
+  packageItem: string;
+  packageDetails: {
     name: string;
-    sku: string;
+    code: string;
     price: number;
     dataVolume?: number;
     validity?: number;
-    network?: string;
-    bundleType?: string;
+    provider?: string;
   };
   quantity: number;
   unitPrice: number;
@@ -103,8 +102,8 @@ export interface OrderAnalytics {
 }
 
 export interface CreateSingleOrderData {
-  productId: string;
-  variantId: string;
+  packageGroupId: string;
+  packageItemId: string;
   customerPhone: string;
   bundleSize?: {
     value: number;
@@ -114,7 +113,7 @@ export interface CreateSingleOrderData {
 }
 
 export interface CreateBulkOrderData {
-  productId: string;
-  variantId: string;
+  packageGroupId: string;
+  packageItemId: string;
   rawInput: string;
 }

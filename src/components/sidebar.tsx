@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks';
 import type { ReactNode } from 'react';
-import { FaBox, FaMobile, FaShoppingBag } from 'react-icons/fa';
+import { FaBox, FaMobile, FaShoppingBag, FaUsers, FaUsersCog } from 'react-icons/fa';
 
 // Nav item type definition
 interface NavItem {
@@ -19,51 +19,83 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const { authState, logout } = useAuth();
   
-  // Navigation items
-  const navItems: NavItem[] = [
-    {
-      label: 'Dashboard',
-      path: '',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-      )
-    },
-    {
-      label: 'Products',
-      path: './products',
-      icon: <FaBox />
-    },  
-    {
-      label: 'Orders',
-      path: './orders',
-      icon: <FaMobile />
-    },
-    {
-      label: 'Store',
-      path: './store',
-      icon: <FaShoppingBag />
-    },
-    {
-      label: 'Profile',
-      path: './profile',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      )
-    },
-    {
-      label: 'AFA Registration',
-      path: '/dashboard/afa',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-        </svg>
-      )
-    },
-  ];
+  // Dynamic navigation items based on user type
+  const getNavItems = (): NavItem[] => {
+    const baseItems: NavItem[] = [
+      {
+        label: 'Dashboard',
+        path: '',
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+        )
+      },
+    ];
+
+    // Agent-specific navigation items
+    if (authState.user?.userType === 'agent') {
+      baseItems.push(
+        {
+          label: 'Packages',
+          path: './packages',
+          icon: <FaBox />
+        },  
+        {
+          label: 'Orders',
+          path: './orders',
+          icon: <FaMobile />
+        },
+        {
+          label: 'Store',
+          path: './store',
+          icon: <FaShoppingBag />
+        },
+        {
+          label: 'My Customers',
+          path: './users',
+          icon: <FaUsers />
+        },
+        {
+          label: 'AFA Registration',
+          path: './afa-registration',
+          icon: (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+          )
+        },
+      );
+    }
+
+    // Super Admin specific navigation items
+    if (authState.user?.userType === 'super_admin') {
+      baseItems.push(
+        {
+          label: 'User Management',
+          path: './users',
+          icon: <FaUsersCog />
+        },
+      );
+    }
+
+    // Common navigation items for all users
+    baseItems.push(
+      {
+        label: 'Profile',
+        path: './profile',
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        )
+      },
+    );
+
+    return baseItems;
+  };
+
+  const navItems = getNavItems();
   
   // Check if a path is active
   const isActivePath = (path: string) => {

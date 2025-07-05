@@ -1,7 +1,8 @@
 // src/components/orders/OrderList.tsx
 import React, { useEffect, useState } from 'react';
-import { FaPlus, FaFilter, FaSearch, FaFileImport } from 'react-icons/fa';
+import { FaPlus, FaFilter, FaSearch, FaFileImport, FaTh, FaList } from 'react-icons/fa';
 import { OrderCard } from './OrderCard';
+import { OrderTable } from './OrderTable';
 import { OrderFilters } from './OrderFilters';
 import { OrderModal } from './OrderModal';
 import { CreateOrderModal } from './CreateOrderModal';
@@ -28,6 +29,7 @@ export const OrderList: React.FC = () => {
   const [createModalType, setCreateModalType] = useState<'single' | 'bulk'>('single');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   useEffect(() => {
     fetchOrders();
@@ -130,6 +132,32 @@ export const OrderList: React.FC = () => {
           </div>
         </form>
         
+        {/* View Mode Toggle */}
+        <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('cards')}
+            className={`p-2 rounded-md transition-colors ${
+              viewMode === 'cards' 
+                ? 'bg-white text-blue-600 shadow-sm' 
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+            title="Card View"
+          >
+            <FaTh size={16} />
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`p-2 rounded-md transition-colors ${
+              viewMode === 'table' 
+                ? 'bg-white text-blue-600 shadow-sm' 
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+            title="Table View"
+          >
+            <FaList size={16} />
+          </button>
+        </div>
+        
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`inline-flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
@@ -188,10 +216,10 @@ export const OrderList: React.FC = () => {
       {/* Order Grid */}
       {(() => {
         if (loading) {
-          return (
+          return viewMode === 'cards' ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {[...Array(6)].map((_, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
+                <div key={`loading-card-${index}`} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
                   <div className="h-4 bg-gray-200 rounded mb-4"></div>
                   <div className="h-3 bg-gray-200 rounded mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded mb-4"></div>
@@ -199,6 +227,15 @@ export const OrderList: React.FC = () => {
                 </div>
               ))}
             </div>
+          ) : (
+            <OrderTable
+              orders={[]}
+              onView={handleView}
+              onProcess={handleProcess}
+              onCancel={handleCancel}
+              onProcessItem={handleProcessItem}
+              loading={true}
+            />
           );
         } else if (orders.length === 0) {
           return (
@@ -225,7 +262,7 @@ export const OrderList: React.FC = () => {
             </div>
           );
         } else {
-          return (
+          return viewMode === 'cards' ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {orders.map((order) => (
                 <OrderCard
@@ -238,6 +275,15 @@ export const OrderList: React.FC = () => {
                 />
               ))}
             </div>
+          ) : (
+            <OrderTable
+              orders={orders}
+              onView={handleView}
+              onProcess={handleProcess}
+              onCancel={handleCancel}
+              onProcessItem={handleProcessItem}
+              loading={loading}
+            />
           );
         }
       })()}

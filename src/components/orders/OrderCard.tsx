@@ -1,5 +1,5 @@
 // src/components/orders/OrderCard.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   FaEye, 
   FaPlay, 
@@ -9,7 +9,10 @@ import {
   FaClock,
   FaCheckCircle,
   FaExclamationCircle,
-  FaSpinner
+  FaSpinner,
+  FaChevronDown,
+  FaChevronUp,
+  FaEllipsisV
 } from 'react-icons/fa';
 import type { Order } from '../../types/order';
 
@@ -28,6 +31,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onCancel,
   onProcessItem
 }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
@@ -45,22 +51,29 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       case 'completed': return <FaCheckCircle className="text-green-600" />;
       case 'processing': return <FaSpinner className="text-blue-600 animate-spin" />;
       case 'failed': return <FaExclamationCircle className="text-red-600" />;
+      case 'cancelled': return <FaTimes className="text-gray-600" />;
       case 'pending': return <FaClock className="text-yellow-600" />;
+      case 'partially_completed': return <FaExclamationCircle className="text-orange-600" />;
       default: return <FaClock className="text-gray-600" />;
     }
   };
 
-  const canProcess = ['pending', 'confirmed'].includes(order.status);
-  const canCancel = ['pending', 'confirmed'].includes(order.status);
+  const getServiceIcon = (serviceType: string) => {
+    switch (serviceType?.toLowerCase()) {
+      case 'voice': return <FaPhone className="text-blue-600" />;
+      case 'data': return <FaWifi className="text-green-600" />;
+      default: return <FaPhone className="text-gray-600" />;
+    }
+  };
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="p-4 sm:p-6 border-b border-gray-200">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+      <div className="p-4">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-lg font-semibold text-gray-900 truncate">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-sm font-semibold text-gray-900 truncate">
                 {order.orderNumber}
               </h3>
               <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}>
@@ -68,149 +81,138 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               </span>
             </div>
             
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
               <span className="flex items-center gap-1">
                 {getStatusIcon(order.status)}
                 {order.orderType}
               </span>
-              <span>${order.total.toFixed(2)}</span>
+              <span className="font-medium">${order.total.toFixed(2)}</span>
               <span>{new Date(order.createdAt).toLocaleDateString()}</span>
             </div>
+
+            <div className="text-xs text-gray-500 mb-2">
+              {order.customerInfo?.name || 'Guest Customer'}
+            </div>
           </div>
-          
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-2 ml-4">
             <button
               onClick={() => onView(order)}
-              className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"
-              title="View Details"
+              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
             >
-              <FaEye size={16} />
+              <FaEye />
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaEllipsisV />
+              </button>
+              {showDropdown && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                  <div className="py-1">
+                    {order.status === 'pending' && (
+                      <button
+                        onClick={() => {
+                          onProcess(order._id!);
+                          setShowDropdown(false);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50 w-full text-left"
+                      >
+                        <FaPlay className="text-xs" />
+                        Process
+                      </button>
+                    )}
+                    {['pending', 'processing'].includes(order.status) && (
+                      <button
+                        onClick={() => {
+                          onCancel(order._id!);
+                          setShowDropdown(false);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
+                      >
+                        <FaTimes className="text-xs" />
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Items Summary */}
+        <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Items: {order.items.length}</span>
+            <span className="text-gray-600">Completion: {order.completionPercentage}%</span>
+          </div>
+          <div className="mt-2">
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${order.completionPercentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Expandable Items Section */}
+        {order.items && order.items.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-900 transition-colors mb-2"
+            >
+              {expanded ? <FaChevronUp /> : <FaChevronDown />}
+              Show {order.items.length} item(s)
             </button>
             
-            {canProcess && (
-              <button
-                onClick={() => onProcess(order._id!)}
-                className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors"
-                title="Process Order"
-              >
-                <FaPlay size={16} />
-              </button>
+            {expanded && (
+              <div className="space-y-2">
+                {order.items.map((item) => (
+                  <div key={item._id} className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getServiceIcon(item.packageDetails.provider || 'voice')}
+                        <div className="text-xs">
+                          <div className="font-medium">{item.customerPhone}</div>
+                          <div className="text-gray-500">{item.packageDetails.name}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(item.processingStatus)}`}>
+                          {item.processingStatus}
+                        </span>
+                        {item.processingStatus === 'pending' && (
+                          <button
+                            onClick={() => onProcessItem(order._id!, item._id!)}
+                            className="p-1 text-green-600 hover:bg-green-100 rounded"
+                          >
+                            <FaPlay className="text-xs" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      ${item.totalPrice.toFixed(2)} • Qty: {item.quantity}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-            
-            {canCancel && (
-              <button
-                onClick={() => onCancel(order._id!)}
-                className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"
-                title="Cancel Order"
-              >
-                <FaTimes size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Bar */}
-      {order.orderType === 'bulk' && (
-        <div className="px-4 sm:px-6 py-3 bg-gray-50">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-            <span>Progress</span>
-            <span>{order.completionPercentage}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${order.completionPercentage}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Order Items Preview */}
-      <div className="p-4 sm:p-6">
-        <div className="space-y-3">
-          {order.items.slice(0, 3).map((item, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <FaPhone className="text-blue-500 text-sm" />
-                  <span className="text-sm font-medium text-gray-900 truncate">
-                    {item.customerPhone}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-4 text-xs text-gray-600">
-                  {item.variantDetails.network && (
-                    <span className="flex items-center gap-1">
-                      <FaWifi />
-                      {item.variantDetails.network}
-                    </span>
-                  )}
-                  {item.bundleSize && (
-                    <span>{item.bundleSize.value}{item.bundleSize.unit}</span>
-                  )}
-                  {item.variantDetails.validity && (
-                    <span className="flex items-center gap-1">
-                      <FaClock />
-                      {item.variantDetails.validity}d
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(item.processingStatus)}`}>
-                  {item.processingStatus}
-                </span>
-                
-                {item.processingStatus === 'pending' && (
-                  <button
-                    onClick={() => onProcessItem(order._id!, item._id!)}
-                    className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
-                    title="Process Item"
-                  >
-                    <FaPlay size={12} />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-          
-          {order.items.length > 3 && (
-            <div className="text-center py-2">
-              <span className="text-sm text-gray-500">
-                +{order.items.length - 3} more items
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Bulk Order Stats */}
-        {order.orderType === 'bulk' && order.bulkData && (
-          <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <div className="text-lg font-bold text-blue-600">
-                {order.bulkData.totalItems}
-              </div>
-              <div className="text-xs text-blue-600">Total</div>
-            </div>
-            
-            <div className="p-3 bg-green-50 rounded-lg">
-              <div className="text-lg font-bold text-green-600">
-                {order.bulkData.successfulItems}
-              </div>
-              <div className="text-xs text-green-600">Success</div>
-            </div>
-            
-            <div className="p-3 bg-red-50 rounded-lg">
-              <div className="text-lg font-bold text-red-600">
-                {order.bulkData.failedItems}
-              </div>
-              <div className="text-xs text-red-600">Failed</div>
-            </div>
           </div>
         )}
+
+        {/* Footer */}
+        <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+          <span>Payment: {order.paymentStatus}</span>
+          <span>Priority: {order.priority}</span>
+        </div>
       </div>
     </div>
   );
 };
+ 

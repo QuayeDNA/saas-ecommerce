@@ -53,9 +53,9 @@ const ProfilePage = lazy(() =>
     default: module.ProfilePage,
   }))
 );
-const ProductManagementPage = lazy(() =>
-  import("../pages/products-page").then((module) => ({
-    default: module.ProductManagementPage,
+const PackageManagementPage = lazy(() =>
+  import("../pages/packages-page").then((module) => ({
+    default: module.PackageManagementPage,
   }))
 );
 const OrderManagementPage = lazy(() =>
@@ -96,6 +96,11 @@ const PrivacyPolicyPage = lazy(() =>
 const SupportPage = lazy(() =>
   import("../pages/support-page").then((module) => ({
     default: module.SupportPage,
+  }))
+);
+const UserManagementPage = lazy(() =>
+  import("../pages/user-management-page").then((module) => ({
+    default: module.UserManagementPage,
   }))
 );
 
@@ -184,10 +189,10 @@ export const routes: RouteObject[] = [
             ),
           },
           {
-            path: "products",
+            path: "packages",
             element: (
               <Suspense fallback={<PageLoader />}>
-                <ProductManagementPage />
+                <PackageManagementPage />
               </Suspense>
             )
           },
@@ -247,11 +252,18 @@ export const routes: RouteObject[] = [
               </Suspense>
             ),
           },
+          {
+            path: "users",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <UserManagementPage />
+              </Suspense>
+            ),
+          },
         ],
       },
     ],
   },
-  // Protected Customer Routes
   {
     path: "/customer",
     element: <ProtectedRoute allowedUserTypes={["customer"]} />,
@@ -338,6 +350,51 @@ export const routes: RouteObject[] = [
         <NotFoundPage />
       </Suspense>
     ),
+  },
+  // Protected Super Admin Routes
+  {
+    path: "/admin",
+    element: <ProtectedRoute allowedUserTypes={["super_admin"]} />,
+    children: [
+      {
+        path: "dashboard",
+        element: <DashboardLayout />,
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DashboardPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "users",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <UserManagementPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "profile",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProfilePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "support",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SupportPage />
+              </Suspense>
+            ),
+          },
+        ],
+      },
+    ],
   },
   // Catch all route - redirect to 404
   {
