@@ -1,6 +1,7 @@
 // src/services/user.service.ts
 import { apiClient } from '../utils/api-client';
 import type { User } from '../types';
+import { isAxiosError } from 'axios';
 
 export interface UpdateProfileData {
   fullName?: string;
@@ -194,8 +195,9 @@ class UserService {
    * Handle API errors
    */
   private handleError(error: unknown, fallbackMessage: string) {
-    if (apiClient.isAxiosError(error)) {
-      const message = error.response?.data?.message || fallbackMessage;
+    if (isAxiosError(error)) {
+      const msg = error.response?.data?.message;
+      const message = typeof msg === 'string' ? msg : fallbackMessage;
       console.error(`User Service Error: ${message}`, error);
     } else {
       console.error(`User Service Error: ${fallbackMessage}`, error);
