@@ -32,6 +32,7 @@ interface OrderContextType {
   processBulkOrder: (orderId: string) => Promise<void>;
   cancelOrder: (orderId: string, reason?: string) => Promise<void>;
   fetchAnalytics: (timeframe?: string) => Promise<void>;
+  getAnalytics: (timeframe?: string) => Promise<OrderAnalytics>;
   setFilters: (filters: OrderFilters) => void;
   clearError: () => void;
 }
@@ -190,6 +191,23 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
+  const getAnalytics = useCallback(async (timeframe = '30d') => {
+    try {
+      const analytics = await orderService.getAnalytics(timeframe);
+      return analytics;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to fetch analytics');
+        addToast('Failed to fetch analytics', 'error');
+        throw err;
+      } else {
+        setError('Failed to fetch analytics');
+        addToast('Failed to fetch analytics', 'error');
+        throw err;
+      }
+    }
+  }, [addToast]);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -208,6 +226,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     processBulkOrder,
     cancelOrder,
     fetchAnalytics,
+    getAnalytics,
     setFilters,
     clearError,
   }), [
@@ -224,6 +243,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     processBulkOrder,
     cancelOrder,
     fetchAnalytics,
+    getAnalytics,
     setFilters,
     clearError,
   ]);

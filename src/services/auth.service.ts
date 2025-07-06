@@ -2,8 +2,9 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import type { User } from "../types";
+import { apiClient } from '../utils/api-client';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5050';
 
 // Cookie configuration
 const COOKIE_OPTIONS = {
@@ -12,75 +13,8 @@ const COOKIE_OPTIONS = {
   path: '/', // Ensure cookies are available site-wide
 };
 
-// Create axios instance
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true, // Important for cookies
-});
-
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = Cookies.get('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error instanceof Error ? error : new Error(String(error)))
-);
-
-// Response interceptor for error handling and token refresh
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    
-    // If we get a 401 and haven't already tried to refresh
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      try {
-        // Attempt token refresh
-        const refreshToken = Cookies.get('refreshToken');
-        if (refreshToken) {
-          const refreshResponse = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
-            refreshToken
-          }, {
-            withCredentials: true
-          });
-          
-          const { accessToken, user } = refreshResponse.data;
-          
-          // Store new tokens
-          authService.storeAuthData(accessToken, user, !!Cookies.get('rememberMe'));
-          
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
-        }
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-        // Clear all auth data and let the app handle redirect
-        authService.clearAuthData();
-        // Dispatch custom event to notify app of logout
-        window.dispatchEvent(new CustomEvent('auth:logout'));
-        return Promise.reject(refreshError instanceof Error ? refreshError : new Error(String(refreshError)));
-      }
-    }
-    
-    // For other 401s or if refresh failed, clear auth data
-    if (error.response?.status === 401) {
-      authService.clearAuthData();
-      window.dispatchEvent(new CustomEvent('auth:logout'));
-    }
-    
-    return Promise.reject(error instanceof Error ? error : new Error(String(error)));
-  }
-);
+// We'll use the consolidated apiClient instead of creating a new instance
+const api = apiClient;
 
 /**
  * Auth Service Types
@@ -496,6 +430,19 @@ class AuthService {
    */
   isRememberMeEnabled(): boolean {
     return Cookies.get('rememberMe') === 'true';
+  }
+
+  /**
+   * Update user's first-time flag after completing guided tour
+   */
+  async updateFirstTimeFlag(): Promise<void> {
+    try {
+      await api.post('/api/auth/update-first-time');
+    } catch (err: unknown) {
+      const { message } = this.extractErrorMessage(err, 'Failed to update user preferences');
+      console.error('Error updating first-time flag:', message);
+      // Silently fail as this is not critical
+    }
   }
 }
 

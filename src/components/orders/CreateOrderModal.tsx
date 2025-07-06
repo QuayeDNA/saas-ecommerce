@@ -260,7 +260,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                       </option>
                       {selectedPackageGroup?.packageItems.map((item: PackageItem) => (
                         <option key={item._id} value={item._id}>
-                          {item.name} - ${item.price} ({item.dataVolume}GB, {item.validity} days)
+                          {item.name} - GH₵ {item.price} ({item.dataVolume}GB, {item.validity} days)
                         </option>
                       ))}
                     </select>
@@ -275,7 +275,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                       <h4 className="font-medium text-green-900 mb-3">Selected Bundle Preview</h4>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="bg-white p-3 rounded-lg text-center">
-                          <div className="text-lg font-bold text-green-600">${selectedPackageItem.price}</div>
+                          <div className="text-lg font-bold text-green-600">GH₵ {selectedPackageItem.price}</div>
                           <div className="text-xs text-green-700">Price</div>
                         </div>
                         <div className="bg-white p-3 rounded-lg text-center">
@@ -484,7 +484,7 @@ Or use comma separation:
                       </div>
                       <div>
                         <span className="text-gray-500">Price:</span>
-                        <span className="text-gray-900 font-medium ml-2">${selectedPackageItem?.price}</span>
+                        <span className="text-gray-900 font-medium ml-2">GH₵ {selectedPackageItem?.price}</span>
                       </div>
                     </div>
                   </div>
@@ -502,7 +502,7 @@ Or use comma separation:
                           </div>
                           <div className="text-right">
                             <div className="font-medium text-gray-900">
-                              ${((selectedPackageItem?.price || 0) * formData.quantity).toFixed(2)}
+                              GH₵ {((selectedPackageItem?.price ?? 0) * formData.quantity).toFixed(2)}
                             </div>
                             <div className="text-sm text-gray-600">Total</div>
                           </div>

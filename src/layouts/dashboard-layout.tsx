@@ -19,7 +19,7 @@ import SetupWizard, { WelcomeStep } from '../components/setup-wizard';
 import { useAuth } from '../hooks';
 
 export const DashboardLayout = () => {
-  const { authState } = useAuth();
+  const { authState, updateFirstTimeFlag } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showTour, setShowTour] = useState(false);
@@ -49,15 +49,27 @@ export const DashboardLayout = () => {
   // Check if user is new and should see the tour/wizard
   useEffect(() => {
     if (authState.isAuthenticated && authState.user) {
-      // Check if this is the user's first login (in a real app, this would be a property on the user)
-      const isFirstLogin = localStorage.getItem('hasSeenTour') !== 'true';
+      // Check if this is the user's first login using the isFirstTime flag from backend
+      const isFirstTime = authState.user.isFirstTime === true;
       
-      if (isFirstLogin && location.pathname === '/dashboard') {
+      // Check if we've already completed the wizard in this session
+      const wizardCompletedThisSession = localStorage.getItem('wizardCompleted') === 'true';
+      const tourCompletedThisSession = localStorage.getItem('tourCompleted') === 'true';
+      
+      // Only show the wizard on dashboard pages for first-time users
+      // and only if not already completed in this session
+      if (isFirstTime && location.pathname.includes('/dashboard') && !wizardCompletedThisSession) {
         // Show setup wizard first time
         setShowSetupWizard(true);
       }
+      
+      // For the tour, if the wizard was completed but the tour wasn't,
+      // and if the user is still a first-time user
+      if (isFirstTime && wizardCompletedThisSession && !tourCompletedThisSession && !showSetupWizard) {
+        setShowTour(true);
+      }
     }
-  }, [authState.isAuthenticated, authState.user, location.pathname]);
+  }, [authState.isAuthenticated, authState.user, location.pathname, showSetupWizard]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -94,16 +106,28 @@ export const DashboardLayout = () => {
   // Handle tour completion
   const handleTourComplete = () => {
     setShowTour(false);
-    localStorage.setItem('hasSeenTour', 'true');
+    
+    // Mark tour as completed in localStorage to prevent showing again on refresh
+    localStorage.setItem('tourCompleted', 'true');
+    
+    // Update backend and local state
+    if (authState.isAuthenticated && authState.user?.isFirstTime) {
+      updateFirstTimeFlag();
+    }
   };
 
   // Handle wizard completion
   const handleWizardComplete = () => {
     setShowSetupWizard(false);
-    localStorage.setItem('hasSeenTour', 'true');
+    
+    // Mark wizard as completed in localStorage to prevent showing again on refresh
+    localStorage.setItem('wizardCompleted', 'true');
     
     // After wizard, offer the tour
     setShowTour(true);
+    
+    // Note: We don't update the first-time flag here yet
+    // We'll update it only after completing the tour
   };
 
   // Setup wizard steps
@@ -169,24 +193,30 @@ export const DashboardLayout = () => {
       </div>
       
       {/* Guided Tour */}
-      {showTour && (
+      {showTour && localStorage.getItem('tourCompleted') !== 'true' && (
         <GuidedTour 
           steps={tourSteps}
           isOpen={showTour}
-          onClose={() => setShowTour(false)}
+          onClose={() => {
+            setShowTour(false);
+            localStorage.setItem('tourCompleted', 'true');
+          }}
           onComplete={handleTourComplete}
         />
       )}
       
       {/* Setup Wizard Modal */}
-      {showSetupWizard && (
+      {showSetupWizard && localStorage.getItem('wizardCompleted') !== 'true' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <SetupWizard
                 steps={wizardSteps}
                 onComplete={handleWizardComplete}
-                onClose={() => setShowSetupWizard(false)}
+                onClose={() => {
+                  setShowSetupWizard(false);
+                  localStorage.setItem('wizardCompleted', 'true');
+                }}
                 showSkip
               />
             </div>

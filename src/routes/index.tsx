@@ -6,6 +6,8 @@ import { DashboardLayout } from "../layouts/dashboard-layout";
 import { PageLoader } from "../components/page-loader";
 import { ProtectedRoute } from "../components/protected-route";
 import { ButtonExamples } from '../components/examples/button-examples';
+import { WalletPage } from "../pages/wallet-page";
+import { AdminWalletPage } from "../pages/admin-wallet-page";
 
 // Lazy load pages for better performance
 const LandingPage = lazy(() =>
@@ -101,6 +103,16 @@ const SupportPage = lazy(() =>
 const UserManagementPage = lazy(() =>
   import("../pages/user-management-page").then((module) => ({
     default: module.UserManagementPage,
+  }))
+);
+const PackageList = lazy(() =>
+  import("../components/products/PackageList").then((module) => ({
+    default: module.PackageList,
+  }))
+);
+const ProviderList = lazy(() =>
+  import("../components/products/ProviderList").then((module) => ({
+    default: module.ProviderList,
   }))
 );
 
@@ -221,6 +233,22 @@ export const routes: RouteObject[] = [
             ),
           },
           {
+            path: "packages",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PackageList />
+              </Suspense>
+            )
+          },
+          {
+            path: "providers",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProviderList />
+              </Suspense>
+            )
+          },
+          {
             path: "profile",
             element: (
               <Suspense fallback={<PageLoader />}>
@@ -233,6 +261,14 @@ export const routes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AfaRegistrationPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "wallet",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <WalletPage />
               </Suspense>
             ),
           },
@@ -389,6 +425,14 @@ export const routes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <SupportPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "wallet",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminWalletPage />
               </Suspense>
             ),
           },

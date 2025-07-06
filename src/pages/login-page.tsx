@@ -91,7 +91,7 @@ export const LoginPage = () => {
       <div className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-lg">
           <Card className="shadow-xl border-0" variant="elevated" size="lg">
-            <CardHeader className="text-center pb-6">
+            <CardHeader className="text-center mb-6">
               <div className="mx-auto bg-gradient-to-br from-blue-100 to-indigo-100 p-4 rounded-2xl w-20 h-20 flex items-center justify-center mb-6">
                 <FaLock className="text-blue-600 text-2xl" />
               </div>

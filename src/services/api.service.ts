@@ -1,32 +1,7 @@
-import axios from 'axios';
-import Cookies from 'js-cookie';
+// This file is deprecated - use the apiClient from api-client.ts instead
+// Import and re-export the apiClient to maintain backward compatibility
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
+import { apiClient } from '../utils/api-client';
 
-export const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = Cookies.get('authToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Handle errors globally
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized (e.g., redirect to login)
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+// Export the apiClient as api for backward compatibility
+export const api = apiClient;

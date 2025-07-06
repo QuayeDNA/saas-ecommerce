@@ -86,7 +86,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 {getStatusIcon(order.status)}
                 {order.orderType}
               </span>
-              <span className="font-medium">${order.total.toFixed(2)}</span>
+              <span className="font-medium">GH₵ {order.total.toFixed(2)}</span>
               <span>{new Date(order.createdAt).toLocaleDateString()}</span>
             </div>
 
@@ -197,7 +197,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                       </div>
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
-                      ${item.totalPrice.toFixed(2)} • Qty: {item.quantity}
+                      GH₵ {item.totalPrice.toFixed(2)} • Qty: {item.quantity}
                     </div>
                   </div>
                 ))}

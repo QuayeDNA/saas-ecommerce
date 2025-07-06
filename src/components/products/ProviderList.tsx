@@ -4,6 +4,7 @@ import { useProvider } from '../../hooks/use-provider';
 import { useAuth } from '../../hooks/use-auth';
 import { ProviderFormModal } from './ProviderFormModal';
 import type { Provider } from '../../types/package';
+import type { ProviderFormData } from './ProviderFormModal';
 import { FaPlus, FaEdit, FaTrash, FaUndo, FaEllipsisV, FaToggleOn, FaToggleOff } from 'react-icons/fa';
 
 export const ProviderList: React.FC = () => {
@@ -40,11 +41,17 @@ export const ProviderList: React.FC = () => {
     fetchProviders(newFilters);
   };
 
-  const handleModalSubmit = async (data: Partial<Provider>) => {
+  const handleModalSubmit = async (data: ProviderFormData) => {
+    // Remove empty string from code if present
+    const providerData: Partial<Provider> = {
+      ...data,
+      code: data.code === '' ? undefined : data.code
+    };
+  
     if (modalMode === 'create') {
-      await createProvider(data);
+      await createProvider(providerData);
     } else if (selectedProvider?._id) {
-      await updateProvider(selectedProvider._id, data);
+      await updateProvider(selectedProvider._id, providerData);
     }
   };
 

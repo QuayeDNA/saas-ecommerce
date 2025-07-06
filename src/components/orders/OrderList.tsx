@@ -1,11 +1,12 @@
 // src/components/orders/OrderList.tsx
 import React, { useEffect, useState } from 'react';
-import { FaPlus, FaFilter, FaSearch, FaFileImport, FaTh, FaList } from 'react-icons/fa';
+import { FaPlus, FaFilter, FaSearch, FaFileImport, FaTh, FaList, FaChartLine } from 'react-icons/fa';
 import { OrderCard } from './OrderCard';
 import { OrderTable } from './OrderTable';
 import { OrderFilters } from './OrderFilters';
 import { OrderModal } from './OrderModal';
 import { CreateOrderModal } from './CreateOrderModal';
+import { OrderAnalytics } from './OrderAnalytics';
 import { useOrder } from '../../contexts/OrderContext';
 import type { Order } from '../../types/order';
 
@@ -30,6 +31,7 @@ export const OrderList: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -114,6 +116,19 @@ export const OrderList: React.FC = () => {
             <span className="hidden sm:inline">Bulk Order</span>
             <span className="sm:hidden">Bulk</span>
           </button>
+          
+          <button
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              showAnalytics 
+                ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                : 'bg-gray-600 text-white hover:bg-gray-700'
+            }`}
+          >
+            <FaChartLine size={16} />
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Stats</span>
+          </button>
         </div>
       </div>
 
@@ -182,7 +197,12 @@ export const OrderList: React.FC = () => {
         />
       )}
 
-      {/* Stats */}
+      {/* Analytics Dashboard */}
+      {showAnalytics && (
+        <OrderAnalytics className="mb-6" />
+      )}
+
+      {/* Quick Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border">
           <div className="text-xl sm:text-2xl font-bold text-gray-900">
@@ -282,6 +302,7 @@ export const OrderList: React.FC = () => {
               onProcess={handleProcess}
               onCancel={handleCancel}
               onProcessItem={handleProcessItem}
+              onRefresh={() => fetchOrders(filters)}
               loading={loading}
             />
           );

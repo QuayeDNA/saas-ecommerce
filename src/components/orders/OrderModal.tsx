@@ -80,7 +80,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-600">Total Amount</div>
-              <div className="text-xl font-bold text-gray-900">${order.total.toFixed(2)}</div>
+              <div className="text-xl font-bold text-gray-900">GH₵ {order.total.toFixed(2)}</div>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -183,7 +183,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
                         
                         <div>
                           <span className="block text-gray-500">Price:</span>
-                          <span className="font-medium">${item.totalPrice.toFixed(2)}</span>
+                          <span className="font-medium">GH₵ {item.totalPrice.toFixed(2)}</span>
                         </div>
                       </div>
 

@@ -1,12 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/products/ProviderFormModal.tsx
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaPlus } from 'react-icons/fa';
 import type { Provider } from '../../types/package';
 
+// Extended provider interface with tags for the form
+export interface ProviderFormData extends Omit<Partial<Provider>, 'code'> {
+  code?: 'MTN' | 'TELECEL' | 'AT' | 'GLO' | '';
+  tags?: string[];
+}
+
 interface ProviderFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Partial<Provider>) => Promise<void>;
+  onSubmit: (data: ProviderFormData) => Promise<void>;
   provider?: Provider | null;
   mode: 'create' | 'edit';
   loading: boolean;
@@ -20,7 +27,7 @@ export const ProviderFormModal: React.FC<ProviderFormModalProps> = ({
   mode,
   loading
 }) => {
-  const [formData, setFormData] = useState<Partial<Provider>>({
+  const [formData, setFormData] = useState<ProviderFormData>({
     name: '',
     code: '',
     description: '',
@@ -32,7 +39,12 @@ export const ProviderFormModal: React.FC<ProviderFormModalProps> = ({
 
   useEffect(() => {
     if (providerData && mode === 'edit') {
-      setFormData(providerData);
+      // Convert Provider to ProviderFormData (adding tags if needed)
+      const formDataFromProvider: ProviderFormData = {
+        ...providerData,
+        tags: []  // Initialize tags as empty array since it's not in Provider type
+      };
+      setFormData(formDataFromProvider);
     } else {
       setFormData({
         name: '',
@@ -99,7 +111,7 @@ export const ProviderFormModal: React.FC<ProviderFormModalProps> = ({
               <input
                 id="providerName"
                 type="text"
-                value={formData.name || ''}
+                value={formData.name ?? ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
@@ -113,8 +125,15 @@ export const ProviderFormModal: React.FC<ProviderFormModalProps> = ({
               <input
                 id="providerCode"
                 type="text"
-                value={formData.code || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                value={formData.code ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  const allowedCodes = ['MTN', 'TELECEL', 'AT', 'GLO', ''] as const;
+                  setFormData(prev => ({
+                    ...prev,
+                    code: allowedCodes.includes(value as any) ? (value as ProviderFormData['code']) : ''
+                  }));
+                }}
                 placeholder="e.g., MTN, VODAFONE"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
@@ -128,7 +147,7 @@ export const ProviderFormModal: React.FC<ProviderFormModalProps> = ({
             </label>
             <textarea
               id="providerDescription"
-              value={formData.description || ''}
+              value={formData.description ?? ''}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -190,10 +209,13 @@ export const ProviderFormModal: React.FC<ProviderFormModalProps> = ({
             <input
               id="logoUrl"
               type="url"
-              value={formData.logo?.url || ''}
+              value={formData.logo?.url ?? ''}
               onChange={(e) => setFormData(prev => ({ 
                 ...prev, 
-                logo: { ...prev.logo, url: e.target.value } 
+                logo: { 
+                  url: e.target.value, 
+                  alt: prev.logo?.alt ?? '' // Ensure alt is always a string
+                } 
               }))}
               placeholder="https://example.com/logo.png"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

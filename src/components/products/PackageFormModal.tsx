@@ -145,7 +145,19 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await onSubmit(formData);
+      // Clean up package items - remove empty codes to let backend generate them
+      const cleanedFormData = {
+        ...formData,
+        packageItems: formData.packageItems?.map(item => {
+          const cleanedItem = { ...item };
+          if (!cleanedItem.code || cleanedItem.code.trim() === '') {
+            delete cleanedItem.code;
+          }
+          return cleanedItem;
+        })
+      };
+      
+      await onSubmit(cleanedFormData);
       onClose();
     } catch (error) {
       console.error('Error submitting package:', error);
@@ -170,10 +182,16 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
   };
 
   const addPackageItem = () => {
-    if (newItem.name && newItem.code && newItem.price && newItem.dataVolume) {
+    if (newItem.name && newItem.price && newItem.dataVolume) {
+      // Remove empty code field to let backend generate it
+      const itemToAdd = { ...newItem };
+      if (!itemToAdd.code || itemToAdd.code.trim() === '') {
+        delete itemToAdd.code;
+      }
+      
       setFormData(prev => ({
         ...prev,
-        packageItems: [...(prev.packageItems || []), { ...newItem } as PackageItem]
+        packageItems: [...(prev.packageItems || []), itemToAdd as PackageItem]
       }));
       setNewItem({
         name: '',
@@ -264,7 +282,11 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
           }
         });
 
-        if (item.name && item.code && item.price && item.dataVolume) {
+        if (item.name && item.price && item.dataVolume) {
+          // Remove empty code field to let backend generate it
+          if (!item.code || item.code.trim() === '') {
+            delete item.code;
+          }
           items.push(item);
         }
       }
@@ -294,7 +316,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
 
   const downloadTemplate = () => {
     const headers = ['name', 'code', 'price', 'data_volume', 'validity', 'inventory', 'low_stock_threshold'];
-    const sampleData = ['1GB Daily Bundle', 'MTN1GB24H', '5.00', '1.0', '1', '100', '10'];
+    const sampleData = ['1GB Daily Bundle', '', '5.00', '1.0', '1', '100', '10'];
     
     const csvContent = `${headers.join(',')}\n${sampleData.join(',')}`;
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -546,15 +568,18 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                       
                       <div>
                         <label htmlFor='bundle-code' className="block text-sm font-medium text-gray-700 mb-1">
-                          Bundle Code *
+                          Bundle Code (Optional)
                         </label>
                         <input
                           type="text"
-                          placeholder="e.g., MTN1GB24H"
+                          placeholder="Leave empty for auto-generation"
                           value={newItem.code ?? ''}
                           onChange={(e) => setNewItem(prev => ({ ...prev, code: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Leave empty to automatically generate a unique code
+                        </p>
                       </div>
                     </div>
 
@@ -596,7 +621,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                         <input
                           type="number"
                           placeholder="1"
-                          value={newItem.validity || ''}
+                          value={newItem.validity ?? ''}
                           onChange={(e) => setNewItem(prev => ({ ...prev, validity: parseInt(e.target.value) ?? 1 }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           min="1"
@@ -647,7 +672,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                       <button
                         type="button"
                         onClick={addPackageItem}
-                        disabled={!newItem.name || !newItem.code || !newItem.price || !newItem.dataVolume}
+                        disabled={!newItem.name || !newItem.price || !newItem.dataVolume}
                         className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Add Bundle
@@ -673,7 +698,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
 
                     <div className="bg-white rounded-lg p-3 border">
                       <p className="text-sm text-gray-600 mb-3">
-                        Upload a CSV file with the following columns: name, code, price, data_volume, validity, inventory, low_stock_threshold
+                        Upload a CSV file with the following columns: name, code (optional), price, data_volume, validity, inventory, low_stock_threshold
                       </p>
                       
                       <div className="flex items-center gap-3">
@@ -708,10 +733,10 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                         <div className="max-h-40 overflow-y-auto space-y-2">
                           {bulkImportData.map((item, index) => (
                             <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                              <div className="flex-1">
-                                <span className="font-medium text-gray-900">{item.name}</span>
-                                <span className="text-gray-500 text-sm ml-2">({item.code})</span>
-                              </div>
+                                                          <div className="flex-1">
+                              <span className="font-medium text-gray-900">{item.name}</span>
+                              <span className="text-gray-500 text-sm ml-2">({item.code || 'Auto-generated'})</span>
+                            </div>
                               <div className="text-right">
                                 <div className="font-medium text-gray-900">GHS {item.price?.toFixed(2)}</div>
                                 <div className="text-sm text-gray-500">{item.dataVolume}GB • {item.validity} days</div>
@@ -747,7 +772,9 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h5 className="font-medium text-gray-900">{item.name}</h5>
-                          <p className="text-sm text-gray-600">Code: {item.code}</p>
+                          <p className="text-sm text-gray-600">
+                            Code: {item.code || 'Auto-generated'}
+                          </p>
                         </div>
                         <button
                           type="button"
@@ -847,7 +874,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div>
                             <span className="font-medium text-gray-900">{item.name}</span>
-                            <span className="text-gray-500 text-sm ml-2">({item.code})</span>
+                            <span className="text-gray-500 text-sm ml-2">({item.code || 'Auto-generated'})</span>
                           </div>
                           <div className="text-right">
                             <div className="font-medium text-gray-900">GHS {item.price.toFixed(2)}</div>

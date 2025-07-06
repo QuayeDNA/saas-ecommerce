@@ -1,13 +1,24 @@
+// src/components/sidebar.tsx
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks';
+import { useAuth } from '../hooks/use-auth';
 import type { ReactNode } from 'react';
-import { FaBox, FaMobile, FaShoppingBag, FaUsers, FaUsersCog } from 'react-icons/fa';
+import { 
+  FaBox, 
+  FaMobile, 
+  FaShoppingBag, 
+  FaUsers, 
+  FaUsersCog, 
+  FaChevronRight,
+  FaWallet
+} from 'react-icons/fa';
+import { useState } from 'react';
 
 // Nav item type definition
 interface NavItem {
   label: string;
   path: string;
   icon: ReactNode;
+  children?: NavItem[];
 }
 
 interface SidebarProps {
@@ -18,7 +29,19 @@ interface SidebarProps {
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const { authState, logout } = useAuth();
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['packages']));
   
+  // Toggle expanded state for nav items with children
+  const toggleExpanded = (path: string) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(path)) {
+      newExpanded.delete(path);
+    } else {
+      newExpanded.add(path);
+    }
+    setExpandedItems(newExpanded);
+  };
+
   // Dynamic navigation items based on user type
   const getNavItems = (): NavItem[] => {
     const baseItems: NavItem[] = [
@@ -38,27 +61,44 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       baseItems.push(
         {
           label: 'Packages',
-          path: './packages',
-          icon: <FaBox />
-        },  
+          path: 'packages',
+          icon: <FaBox />,
+          children: [
+            {
+              label: 'Data Packages',
+              path: 'packages',
+              icon: <FaBox />
+            },
+            {
+              label: 'Network Providers',
+              path: 'providers',
+              icon: <FaMobile />
+            },
+          ]
+        },
         {
           label: 'Orders',
-          path: './orders',
+          path: 'orders',
           icon: <FaMobile />
         },
         {
           label: 'Store',
-          path: './store',
+          path: 'store',
           icon: <FaShoppingBag />
         },
         {
           label: 'My Customers',
-          path: './users',
+          path: 'users',
           icon: <FaUsers />
         },
         {
+          label: 'Wallet',
+          path: 'wallet',
+          icon: <FaWallet />
+        },
+        {
           label: 'AFA Registration',
-          path: './afa-registration',
+          path: 'afa-registration',
           icon: (
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -73,9 +113,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       baseItems.push(
         {
           label: 'User Management',
-          path: './users',
+          path: 'admin/users',
           icon: <FaUsersCog />
         },
+        {
+          label: 'Wallet Management',
+          path: 'admin/wallet',
+          icon: <FaWallet />
+        }
       );
     }
 
@@ -83,7 +128,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     baseItems.push(
       {
         label: 'Profile',
-        path: './profile',
+        path: 'profile',
         icon: (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -99,16 +144,91 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   
   // Check if a path is active
   const isActivePath = (path: string) => {
-    return location.pathname === path;
+    if (path === '') {
+      return location.pathname === '/agent/dashboard' || location.pathname === '/customer/dashboard' || location.pathname === '/admin/dashboard';
+    }
+    return location.pathname.includes(path);
   };
+
+  // Check if parent has active child
+  const hasActiveChild = (item: NavItem) => {
+    if (!item.children) return false;
+    return item.children.some(child => isActivePath(child.path));
+  };
+
+  const renderNavItem = (item: NavItem, level = 0) => {
+    const hasChildren = item.children && item.children.length > 0;
+    const isExpanded = expandedItems.has(item.path);
+    const isActive = isActivePath(item.path);
+    const hasActiveChildItem = hasActiveChild(item);
+
     return (
+      <li key={item.path}>
+        {hasChildren ? (
+          <>
+            <button
+              onClick={() => toggleExpanded(item.path)}
+              className={`w-full flex items-center justify-between px-3 py-3 rounded-md text-sm transition-all duration-200 ${
+                hasActiveChildItem
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              } ${level > 0 ? 'ml-4' : ''}`}
+            >
+              <div className="flex items-center">
+                <span className={`mr-3 ${hasActiveChildItem ? 'text-white' : 'text-gray-400'}`}>
+                  {item.icon}
+                </span>
+                <span className="font-medium">{item.label}</span>
+              </div>
+              <span className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
+                <FaChevronRight size={12} />
+              </span>
+            </button>
+            
+            {isExpanded && (
+              <ul className="mt-1 space-y-1">
+                {item.children?.map(child => renderNavItem(child, level + 1))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <Link
+            to={item.path}
+            className={`flex items-center px-3 py-3 rounded-md text-sm transition-all duration-200 ${
+              isActive
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+            } ${level > 0 ? 'ml-6' : ''}`}
+            onClick={() => onClose()}
+          >
+            <span className={`mr-3 ${isActive ? 'text-white' : 'text-gray-400'} ${level > 0 ? 'text-xs' : ''}`}>
+              {item.icon}
+            </span>
+            <span className={`font-medium ${level > 0 ? 'text-sm' : ''}`}>{item.label}</span>
+            
+            {/* Show indicator for active link */}
+            {isActive && (
+              <span className="ml-auto">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                </svg>
+              </span>
+            )}
+          </Link>
+        )}
+      </li>
+    );
+  };
+
+  return (
     <>
       {/* Sidebar - slide in on mobile, fixed on desktop */}
       <aside 
         className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-900 text-white transform transition-all duration-300 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}
-      >{/* Logo and close button */}
+      >
+        {/* Logo and close button */}
         <div className="flex items-center justify-between px-4 py-5 bg-gray-800 shadow-md">
           <div className="flex items-center">
             <div className="w-8 h-8 mr-3 bg-blue-600 rounded-md flex items-center justify-center shadow-sm">
@@ -126,41 +246,17 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             </svg>
           </button>
         </div>
-          {/* Navigation */}
+        
+        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="px-6 py-2 mb-1">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Menu</p>
           </div>
           <ul className="space-y-1 px-3">
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center px-3 py-3 rounded-md text-sm transition-all duration-200 ${
-                    isActivePath(item.path)
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  }`}
-                  onClick={() => onClose()}
-                >
-                  <span className={`mr-3 ${isActivePath(item.path) ? 'text-white' : 'text-gray-400'}`}>
-                    {item.icon}
-                  </span>
-                  <span className="font-medium">{item.label}</span>
-                  
-                  {/* Show indicator for active link */}
-                  {isActivePath(item.path) && (
-                    <span className="ml-auto">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-                      </svg>
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
+            {navItems.map((item) => renderNavItem(item))}
           </ul>
         </nav>        
+        
         {/* User info section */}
         <div className="mt-auto">
           {/* User profile */}

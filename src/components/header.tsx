@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../hooks';
+import { useAuth, useWallet } from '../hooks';
 import { Link } from 'react-router-dom';
 
 interface HeaderProps {
@@ -8,6 +8,7 @@ interface HeaderProps {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { authState, logout } = useAuth();
+  const { walletBalance, refreshWallet, isLoading } = useWallet();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Get greeting based on time of day
@@ -53,13 +54,38 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             {/* Right side: Wallet & User Menu */}
           <div className="flex items-center space-x-3 sm:space-x-5">
             {/* Wallet */}
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-sm shadow-sm">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-sm shadow-sm relative group">
               <div className="hidden sm:block text-xs font-medium text-green-100">Wallet Balance</div>
               <div className="font-bold flex items-center">
                 <svg className="w-4 h-4 mr-1 text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                GH¢{authState.user?.walletBalance.toFixed(2) ?? '0.00'}
+                GH¢{walletBalance.toFixed(2)}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    refreshWallet();
+                  }}
+                  disabled={isLoading}
+                  className="ml-2 p-1 rounded-full opacity-70 hover:opacity-100 focus:outline-none hover:bg-green-700 transition-opacity"
+                  aria-label="Refresh wallet balance"
+                  title="Refresh balance"
+                >
+                  <svg 
+                    className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24" 
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
             

@@ -2,7 +2,7 @@ export interface PackageItem {
   _id?: string;
   name: string;
   description?: string;
-  code: string;
+  code?: string; // Optional - backend will generate if not provided
   price: number;
   costPrice?: number;
   inventory: number;

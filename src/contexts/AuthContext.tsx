@@ -68,6 +68,7 @@ export interface AuthContextValue {
   verifyAccount: (token: string) => Promise<{ userType: string }>;                  // Verify user account
   clearErrors: () => void;                                                          // Clear error state
   refreshAuth: () => Promise<void>;                                                 // Refresh authentication
+  updateFirstTimeFlag: () => Promise<void>;                                         // Update first-time flag after tour
 }
 
 // Default auth state
@@ -417,6 +418,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       await authService.logout();
       console.log('✅ AuthContext: Logout successful');
+      
+      // Clear localStorage flags for wizard/tour completion
+      localStorage.removeItem('wizardCompleted');
+      localStorage.removeItem('tourCompleted');
     } catch (error) {
       console.error('❌ AuthContext: Logout error:', error);
     } finally {
@@ -428,6 +433,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       navigate('/login', { replace: true });
     }
   }, [addToast, navigate, setUnauthenticatedState]);
+
+  // Update first-time flag after completing guided tour or setup wizard
+  const updateFirstTimeFlag = useCallback(async (): Promise<void> => {
+    try {
+      await authService.updateFirstTimeFlag();
+      
+      // Update local state to avoid showing the tour/wizard again
+      setState(prev => ({
+        ...prev,
+        user: prev.user ? { ...prev.user, isFirstTime: false } : null
+      }));
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update preferences";
+      console.error("Error updating first-time flag:", errorMessage);
+      // Silently fail as this is not critical
+    }
+  }, []);
 
   // Clear errors
   const clearErrors = useCallback(() => {
@@ -447,8 +470,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       verifyAccount,
       clearErrors,
       refreshAuth,
+      updateFirstTimeFlag,
     }),
-    [state, login, registerAgent, registerCustomer, logout, forgotPassword, resetPassword, verifyAccount, clearErrors, refreshAuth]
+    [state, login, registerAgent, registerCustomer, logout, forgotPassword, resetPassword, verifyAccount, clearErrors, refreshAuth, updateFirstTimeFlag]
   );
 
   return (

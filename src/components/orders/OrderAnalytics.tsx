@@ -2,31 +2,72 @@
 import React, { useEffect, useState } from 'react';
 import { 
   FaChartLine, 
-  FaShoppingCart, 
-  FaCheckCircle, 
-  FaClock,
-  FaDollarSign,
-  FaFileImport
+  FaChartBar, 
+  FaChartPie, 
+  FaClock, 
+  FaCheckCircle,
+  FaExclamationCircle,
+  FaSpinner,
+  FaDownload,
+  FaCalendarAlt
 } from 'react-icons/fa';
 import { useOrder } from '../../contexts/OrderContext';
+import type { OrderAnalytics } from '../../types/order';
 
-export const OrderAnalytics: React.FC = () => {
-  const { analytics, fetchAnalytics } = useOrder();
+interface OrderAnalyticsProps {
+  className?: string;
+}
+
+export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ className = '' }) => {
+  const { getAnalytics } = useOrder();
+  const [analytics, setAnalytics] = useState<OrderAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState('30d');
 
   useEffect(() => {
-    fetchAnalytics(timeframe);
-  }, [fetchAnalytics, timeframe]);
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const data = await getAnalytics(timeframe);
+        setAnalytics(data);
+      } catch (error) {
+        console.error('Failed to fetch analytics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [getAnalytics, timeframe]);
+
+  const timeframes = [
+    { value: '7d', label: 'Last 7 Days' },
+    { value: '30d', label: 'Last 30 Days' },
+    { value: '90d', label: 'Last 90 Days' }
+  ];
+
+  if (loading) {
+    return (
+      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, index) => (
+              <div key={index} className="h-20 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!analytics) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {[...Array(6)].map((_, index) => (
-          <div key={index} className="bg-white p-6 rounded-lg shadow-md animate-pulse">
-            <div className="h-4 bg-gray-200 rounded mb-4"></div>
-            <div className="h-8 bg-gray-200 rounded"></div>
-          </div>
-        ))}
+      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+        <div className="text-center text-gray-500">
+          <FaChartLine className="text-4xl mx-auto mb-4" />
+          <p>Unable to load analytics</p>
+        </div>
       </div>
     );
   }
@@ -35,129 +76,205 @@ export const OrderAnalytics: React.FC = () => {
     {
       title: 'Total Orders',
       value: analytics.totalOrders,
-      icon: FaShoppingCart,
-      color: 'blue',
+      icon: FaChartBar,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
       change: '+12%'
     },
     {
-      title: 'Completed Orders',
+      title: 'Completed',
       value: analytics.completedOrders,
       icon: FaCheckCircle,
-      color: 'green',
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
       change: '+8%'
     },
     {
-      title: 'Pending Orders',
+      title: 'Pending',
       value: analytics.pendingOrders,
       icon: FaClock,
-      color: 'yellow',
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50',
       change: '-5%'
     },
     {
-      title: 'Total Revenue',
-      value: `$${analytics.totalRevenue.toFixed(2)}`,
-      icon: FaDollarSign,
-      color: 'purple',
-      change: '+15%'
-    },
-    {
-      title: 'Bulk Orders',
-      value: analytics.bulkOrders,
-      icon: FaFileImport,
-      color: 'indigo',
-      change: '+20%'
-    },
-    {
-      title: 'Completion Rate',
-      value: `${analytics.completionRate}%`,
+      title: 'Revenue',
+      value: `GH₵${analytics.totalRevenue.toFixed(2)}`,
       icon: FaChartLine,
-      color: 'pink',
-      change: '+3%'
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      change: '+15%'
     }
   ];
 
-  const getColorClasses = (color: string) => {
-    const colors = {
-      blue: 'bg-blue-500 text-blue-600 bg-blue-50',
-      green: 'bg-green-500 text-green-600 bg-green-50',
-      yellow: 'bg-yellow-500 text-yellow-600 bg-yellow-50',
-      purple: 'bg-purple-500 text-purple-600 bg-purple-50',
-      indigo: 'bg-indigo-500 text-indigo-600 bg-indigo-50',
-      pink: 'bg-pink-500 text-pink-600 bg-pink-50'
-    };
-    return colors[color as keyof typeof colors].split(' ');
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Timeframe Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-xl font-semibold text-gray-900">Order Analytics</h2>
-        
-        <select
-          value={timeframe}
-          onChange={(e) => setTimeframe(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="90d">Last 90 days</option>
-        </select>
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FaChartLine className="text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Order Analytics</h2>
+              <p className="text-sm text-gray-600">Performance overview and insights</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              {timeframes.map((tf) => (
+                <button
+                  key={tf.value}
+                  onClick={() => setTimeframe(tf.value)}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    timeframe === tf.value
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {tf.label}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => {/* Export analytics */}}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <FaDownload size={14} />
+              Export
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {stats.map((stat, index) => {
-          const [textColor, lightBg] = getColorClasses(stat.color);
-          const Icon = stat.icon;
-          
-          return (
-            <div key={index} className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">
-                    {stat.title}
-                  </p>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {stat.value}
-                  </p>
-                  <p className="text-sm text-green-600 mt-1">
-                    {stat.change} from last period
-                  </p>
+      <div className="p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => (
+            <div key={index} className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`text-lg ${stat.color}`} />
                 </div>
-                
-                <div className={`p-3 rounded-full ${lightBg}`}>
-                  <Icon className={`text-xl ${textColor}`} />
-                </div>
+                <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                  {stat.change}
+                </span>
+              </div>
+              
+              <div className="mb-1">
+                <span className="text-2xl font-bold text-gray-900">
+                  {stat.value}
+                </span>
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                {stat.title}
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-center">
-            <FaShoppingCart className="mx-auto text-2xl text-gray-400 mb-2" />
-            <span className="text-sm font-medium text-gray-700">New Single Order</span>
-          </button>
+        {/* Additional Metrics */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          {/* Completion Rate */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FaChartPie className="text-blue-600" />
+              <h3 className="font-medium text-gray-900">Completion Rate</h3>
+            </div>
+            
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                <span>Success Rate</span>
+                <span>{analytics.completionRate}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${analytics.completionRate}%` }}
+                />
+              </div>
+            </div>
+            
+            <div className="text-xs text-gray-500">
+              {analytics.completedOrders} of {analytics.totalOrders} orders completed successfully
+            </div>
+          </div>
+
+          {/* Order Types */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FaChartBar className="text-green-600" />
+              <h3 className="font-medium text-gray-900">Order Types</h3>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Bulk Orders</span>
+                <span className="text-sm font-medium text-gray-900">{analytics.bulkOrders}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Single Orders</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {analytics.totalOrders - analytics.bulkOrders}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Bulk Percentage</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {analytics.totalOrders > 0 ? Math.round((analytics.bulkOrders / analytics.totalOrders) * 100) : 0}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FaCalendarAlt className="text-purple-600" />
+              <h3 className="font-medium text-gray-900">Recent Activity</h3>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-gray-600">Orders completed today</span>
+                <span className="font-medium text-gray-900">12</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span className="text-gray-600">Orders pending</span>
+                <span className="font-medium text-gray-900">{analytics.pendingOrders}</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-gray-600">Processing</span>
+                <span className="font-medium text-gray-900">5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Performance Chart Placeholder */}
+        <div className="mt-6 bg-gray-50 rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FaChartLine className="text-blue-600" />
+            <h3 className="font-medium text-gray-900">Order Performance</h3>
+          </div>
           
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-center">
-            <FaFileImport className="mx-auto text-2xl text-gray-400 mb-2" />
-            <span className="text-sm font-medium text-gray-700">New Bulk Order</span>
-          </button>
-          
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition-colors text-center">
-            <FaClock className="mx-auto text-2xl text-gray-400 mb-2" />
-            <span className="text-sm font-medium text-gray-700">Pending Orders</span>
-          </button>
-          
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-center">
-            <FaChartLine className="mx-auto text-2xl text-gray-400 mb-2" />
-            <span className="text-sm font-medium text-gray-700">View Reports</span>
-          </button>
+          <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+            <div className="text-center text-gray-500">
+              <FaChartLine className="text-3xl mx-auto mb-2" />
+              <p className="text-sm">Chart visualization coming soon</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ export interface User {
   userType: UserType;
   walletBalance: number;
   isVerified: boolean;
+  isFirstTime?: boolean;
   createdAt?: Date | string;
   // Agent-specific fields
   businessName?: string;

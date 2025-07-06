@@ -169,7 +169,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
   return createPortal(
     <div className="fixed inset-0 z-50 pointer-events-none">
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black bg-opacity-50 pointer-events-auto" />
+      <div className="absolute inset-0 bg-black/50 pointer-events-auto" />
       
       {/* Spotlight on target element */}
       {targetRect && (

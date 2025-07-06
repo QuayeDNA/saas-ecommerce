@@ -7,7 +7,7 @@ import type {
 } from '../types/storefront';
 import type { Product } from '../types/products';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5050';
 
 class StorefrontService {
   private readonly api = axios.create({
