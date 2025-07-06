@@ -6,7 +6,7 @@ import { OrderTable } from './OrderTable';
 import { OrderFilters } from './OrderFilters';
 import { OrderModal } from './OrderModal';
 import { CreateOrderModal } from './CreateOrderModal';
-import { OrderAnalytics } from './OrderAnalytics';
+import { OrderAnalyticsPage } from './OrderAnalytics';
 import { useOrder } from '../../contexts/OrderContext';
 import type { Order } from '../../types/order';
 
@@ -199,7 +199,7 @@ export const OrderList: React.FC = () => {
 
       {/* Analytics Dashboard */}
       {showAnalytics && (
-        <OrderAnalytics className="mb-6" />
+        <OrderAnalyticsPage className="mb-6" />
       )}
 
       {/* Quick Stats */}

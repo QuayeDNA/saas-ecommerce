@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Phone,
   Wifi,
@@ -170,12 +171,12 @@ export const LandingPage = () => {
                 Reviews
               </a>
               <div className="flex items-center space-x-4">
-                <button className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">
+                <Link to="/login" className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">
                   Sign In
-                </button>
-                <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium">
+                </Link>
+                <Link to="/register" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium">
                   Get Started
-                </button>
+                </Link>
               </div>
             </div>
           </nav>
@@ -203,12 +204,12 @@ export const LandingPage = () => {
                   Reviews
                 </a>
                 <div className="flex flex-col space-y-3 pt-4 border-t border-gray-100">
-                  <button className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium text-left">
+                  <Link to="/login" className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium text-left">
                     Sign In
-                  </button>
-                  <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-medium">
+                  </Link>
+                  <Link to="/register" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-medium text-center">
                     Get Started
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -251,16 +252,16 @@ export const LandingPage = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 mb-16">
-                <button className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-semibold text-lg flex items-center">
+                <Link to="/register" className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-semibold text-lg flex items-center">
                   Start Free Trial
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-                <button className="group flex items-center text-gray-600 hover:text-indigo-600 transition-colors font-semibold">
+                </Link>
+                <a href="#" className="group flex items-center text-gray-600 hover:text-indigo-600 transition-colors font-semibold">
                   <div className="bg-white shadow-lg rounded-full p-3 mr-4 group-hover:shadow-xl transition-all">
                     <Play className="w-5 h-5 ml-1" />
                   </div>
                   Watch Demo
-                </button>
+                </a>
               </div>
 
               {/* Stats */}
@@ -451,11 +452,12 @@ export const LandingPage = () => {
                     )
                   )}
                 </div>
-                <button
-                  className={`w-full bg-gradient-to-r ${network.color} text-white py-4 rounded-2xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200`}
+                <Link
+                  to="/register"
+                  className={`w-full bg-gradient-to-r ${network.color} text-white py-4 rounded-2xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 text-center block`}
                 >
                   Get Started
-                </button>
+                </Link>
               </div>
             ))}
           </div>
@@ -579,8 +581,8 @@ export const LandingPage = () => {
               {
                 title: "Product",
                 links: [
-                  { label: "Features", path: "/features" },
-                  { label: "Services", path: "/services" },
+                  { label: "Features", path: "#features" },
+                  { label: "Services", path: "#services" },
                   { label: "Pricing", path: "/pricing" },
                   { label: "API", path: "/api" },
                 ],
@@ -609,12 +611,21 @@ export const LandingPage = () => {
                 <ul className="space-y-3">
                   {section.links.map((link, linkIndex) => (
                     <li key={linkIndex}>
-                      <a
-                        href={link.path}
-                        className="text-gray-400 hover:text-white transition-colors"
-                      >
-                        {link.label}
-                      </a>
+                      {link.path.startsWith("/") ? (
+                        <Link
+                          to={link.path}
+                          className="text-gray-400 hover:text-white transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      ) : (
+                        <a
+                          href={link.path}
+                          className="text-gray-400 hover:text-white transition-colors"
+                        >
+                          {link.label}
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -627,13 +638,19 @@ export const LandingPage = () => {
               © 2025 TelecomSaaS. All rights reserved.
             </p>
             <div className="flex items-center space-x-6 mt-4 sm:mt-0">
-              {["Facebook", "Twitter", "LinkedIn"].map((social, index) => (
+              {[
+                { label: "Facebook", url: "#" },
+                { label: "Twitter", url: "#" },
+                { label: "LinkedIn", url: "#" },
+              ].map((social, index) => (
                 <a
                   key={index}
-                  href="#"
+                  href={social.url}
                   className="text-gray-400 hover:text-white transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  {social}
+                  {social.label}
                 </a>
               ))}
             </div>
