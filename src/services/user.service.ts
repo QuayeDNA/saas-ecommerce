@@ -1,27 +1,6 @@
 // src/services/user.service.ts
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import { apiClient } from '../utils/api-client';
 import type { User } from '../types';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5050';
-
-// Create axios instance
-const api = axios.create({
-  baseURL: `${API_BASE_URL}/api/users`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true,
-});
-
-// Request interceptor to add auth token
-api.interceptors.request.use((config) => {
-  const token = Cookies.get('authToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 export interface UpdateProfileData {
   fullName?: string;
@@ -80,7 +59,7 @@ class UserService {
    */
   async getProfile(): Promise<User> {
     try {
-      const response = await api.get('/profile');
+      const response = await apiClient.get('/api/users/profile');
       return response.data.user;
     } catch (error) {
       this.handleError(error, 'Failed to get user profile');
@@ -93,7 +72,7 @@ class UserService {
    */
   async updateProfile(data: UpdateProfileData): Promise<User> {
     try {
-      const response = await api.put('/profile', data);
+      const response = await apiClient.put('/api/users/profile', data);
       return response.data.user;
     } catch (error) {
       this.handleError(error, 'Failed to update profile');
@@ -106,7 +85,7 @@ class UserService {
    */
   async changePassword(data: ChangePasswordData): Promise<void> {
     try {
-      await api.post('/change-password', data);
+      await apiClient.post('/api/users/change-password', data);
     } catch (error) {
       this.handleError(error, 'Failed to change password');
       throw error;
@@ -118,7 +97,7 @@ class UserService {
    */
   async submitAfaRegistration(data: AfaRegistrationData): Promise<AfaRegistration> {
     try {
-      const response = await api.post('/afa-registration', data);
+      const response = await apiClient.post('/api/users/afa-registration', data);
       return response.data.afaRegistration;
     } catch (error) {
       this.handleError(error, 'AFA registration failed');
@@ -131,7 +110,7 @@ class UserService {
    */
   async getAfaRegistration(): Promise<AfaRegistration | null> {
     try {
-      const response = await api.get('/afa-registration');
+      const response = await apiClient.get('/api/users/afa-registration');
       return response.data.afaRegistration;
     } catch (error) {
       this.handleError(error, 'Failed to get AFA registration status');
@@ -149,7 +128,7 @@ class UserService {
     userType?: string;
   }): Promise<UsersResponse> {
     try {
-      const response = await api.get('/', { params });
+      const response = await apiClient.get('/api/users', { params });
       return response.data;
     } catch (error) {
       this.handleError(error, 'Failed to get users');
@@ -162,7 +141,7 @@ class UserService {
    */
   async getUserById(id: string): Promise<User> {
     try {
-      const response = await api.get(`/${id}`);
+      const response = await apiClient.get(`/api/users/${id}`);
       return response.data.user;
     } catch (error) {
       this.handleError(error, 'Failed to get user');
@@ -175,7 +154,7 @@ class UserService {
    */
   async getUserStats(): Promise<UserStats> {
     try {
-      const response = await api.get('/stats');
+      const response = await apiClient.get('/api/users/stats');
       return response.data.stats;
     } catch (error) {
       this.handleError(error, 'Failed to get user statistics');
@@ -191,7 +170,7 @@ class UserService {
     subscriptionStatus?: string;
   }): Promise<User> {
     try {
-      const response = await api.put(`/${id}/status`, data);
+      const response = await apiClient.put(`/api/users/${id}/status`, data);
       return response.data.user;
     } catch (error) {
       this.handleError(error, 'Failed to update user status');
@@ -204,7 +183,7 @@ class UserService {
    */
   async deleteUser(id: string): Promise<void> {
     try {
-      await api.delete(`/${id}`);
+      await apiClient.delete(`/api/users/${id}`);
     } catch (error) {
       this.handleError(error, 'Failed to delete user');
       throw error;
@@ -215,7 +194,7 @@ class UserService {
    * Handle API errors
    */
   private handleError(error: unknown, fallbackMessage: string) {
-    if (axios.isAxiosError(error)) {
+    if (apiClient.isAxiosError(error)) {
       const message = error.response?.data?.message || fallbackMessage;
       console.error(`User Service Error: ${message}`, error);
     } else {
