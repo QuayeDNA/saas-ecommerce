@@ -33,6 +33,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import type { User } from "../types";
 import { authService, type RegisterAgentData, type RegisterCustomerData } from "../services/auth.service";
+import { tokenRefreshService } from "../utils/token-refresh";
 import { useToast } from "../design-system/components/toast";
 
 /**
@@ -118,7 +119,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     window.addEventListener('auth:logout', handleAutoLogout);
-    return () => window.removeEventListener('auth:logout', handleAutoLogout);
+    return () => {
+      window.removeEventListener('auth:logout', handleAutoLogout);
+      // Clean up token refresh service on unmount
+      tokenRefreshService.stopTokenRefresh();
+    };
   }, [addToast, navigate, location]);
 
   // Helper function to set authenticated state
@@ -133,10 +138,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       error: null,
       dashboardUrl
     });
+    
+    // Start proactive token refresh
+    tokenRefreshService.startTokenRefresh();
   }, []);
 
   // Helper function to set unauthenticated state
   const setUnauthenticatedState = useCallback((error?: string) => {
+    // Stop token refresh service
+    tokenRefreshService.stopTokenRefresh();
+    
     setState({
       ...defaultAuthState,
       isInitialized: true,
@@ -425,6 +436,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (error) {
       console.error('❌ AuthContext: Logout error:', error);
     } finally {
+      // Stop token refresh service
+      tokenRefreshService.stopTokenRefresh();
+      
       // Always clear state regardless of logout API success
       setUnauthenticatedState();
       addToast("Logged out successfully", "success");

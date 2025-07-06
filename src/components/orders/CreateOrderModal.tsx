@@ -21,13 +21,15 @@ interface CreateOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  providerPreset?: string; // New prop for provider preset
 }
 
 export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
   type,
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  providerPreset
 }) => {
   const { createSingleOrder, createBulkOrder, loading } = useOrder();
   const { packages, fetchPackages } = usePackage();
@@ -63,8 +65,31 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
     if (isOpen) {
       fetchPackages();
       setCurrentStep(1);
+      
+      // Reset form data when modal opens
+      setFormData({
+        packageGroupId: '',
+        packageItemId: '',
+        customerPhone: '',
+        bundleValue: '',
+        bundleUnit: 'GB' as 'MB' | 'GB',
+        quantity: 1,
+        rawInput: ''
+      });
+      setSelectedPackageGroup(null);
+      setSelectedPackageItem(null);
     }
   }, [isOpen, fetchPackages]);
+
+  // Auto-select provider when preset is provided
+  useEffect(() => {
+    if (providerPreset && packages.length > 0 && isOpen) {
+      const providerPackage = packages.find(p => p.provider === providerPreset);
+      if (providerPackage) {
+        setFormData(prev => ({ ...prev, packageGroupId: providerPackage._id }));
+      }
+    }
+  }, [providerPreset, packages, isOpen]);
 
   useEffect(() => {
     if (formData.packageGroupId) {
@@ -233,11 +258,13 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Choose a package group...</option>
-                      {packages.map((packageGroup: PackageGroup) => (
-                        <option key={packageGroup._id} value={packageGroup._id}>
-                          {packageGroup.name} ({packageGroup.provider})
-                        </option>
-                      ))}
+                      {packages
+                        .filter(packageGroup => !providerPreset || packageGroup.provider === providerPreset)
+                        .map((packageGroup: PackageGroup) => (
+                          <option key={packageGroup._id} value={packageGroup._id}>
+                            {packageGroup.name} ({packageGroup.provider})
+                          </option>
+                        ))}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
                       Select the package group that contains your desired data bundles

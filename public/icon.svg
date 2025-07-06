@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#3B82F6"/>
+  
+  <!-- Phone icon -->
+  <rect x="176" y="120" width="160" height="272" rx="20" fill="white"/>
+  <rect x="196" y="140" width="120" height="200" rx="8" fill="#1E40AF"/>
+  
+  <!-- Signal bars -->
+  <rect x="216" y="160" width="8" height="40" fill="#10B981"/>
+  <rect x="232" y="160" width="8" height="60" fill="#10B981"/>
+  <rect x="248" y="160" width="8" height="80" fill="#10B981"/>
+  <rect x="264" y="160" width="8" height="100" fill="#10B981"/>
+  
+  <!-- Payment symbol -->
+  <circle cx="256" cy="320" r="24" fill="#F59E0B"/>
+  <text x="256" y="330" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">₵</text>
+  
+  <!-- Network waves -->
+  <path d="M 120 200 Q 180 180 240 200 Q 300 220 360 200" stroke="white" stroke-width="4" fill="none" opacity="0.8"/>
+  <path d="M 120 220 Q 180 200 240 220 Q 300 240 360 220" stroke="white" stroke-width="4" fill="none" opacity="0.6"/>
+  <path d="M 120 240 Q 180 220 240 240 Q 300 260 360 240" stroke="white" stroke-width="4" fill="none" opacity="0.4"/>
+</svg> 
