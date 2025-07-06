@@ -86,7 +86,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
     if (providerPreset && packages.length > 0 && isOpen) {
       const providerPackage = packages.find(p => p.provider === providerPreset);
       if (providerPackage) {
-        setFormData(prev => ({ ...prev, packageGroupId: providerPackage._id }));
+        setFormData(prev => ({ ...prev, packageGroupId: providerPackage._id ?? '' }));
       }
     }
   }, [providerPreset, packages, isOpen]);

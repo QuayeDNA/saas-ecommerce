@@ -6,8 +6,6 @@ import {
   FaChartPie, 
   FaClock, 
   FaCheckCircle,
-  FaExclamationCircle,
-  FaSpinner,
   FaDownload,
   FaCalendarAlt
 } from 'react-icons/fa';
@@ -18,7 +16,7 @@ interface OrderAnalyticsProps {
   className?: string;
 }
 
-export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ className = '' }) => {
+export const OrderAnalyticsPage: React.FC<OrderAnalyticsProps> = ({ className = '' }) => {
   const { getAnalytics } = useOrder();
   const [analytics, setAnalytics] = useState<OrderAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
