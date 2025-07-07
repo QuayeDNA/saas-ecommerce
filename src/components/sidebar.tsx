@@ -42,6 +42,27 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     setExpandedItems(newExpanded);
   };
 
+  // Get business name from user context
+  const getBusinessName = () => {
+    if (authState.user?.businessName) {
+      return authState.user.businessName;
+    }
+    // Fallback to user's full name if no business name
+    if (authState.user?.fullName) {
+      return authState.user.fullName;
+    }
+    // Final fallback
+    return 'SaaS Telecom';
+  };
+
+  // Get app name for version display
+  const getAppName = () => {
+    if (authState.user?.businessName) {
+      return authState.user.businessName;
+    }
+    return 'SaaS Telecom';
+  };
+
   // Dynamic navigation items based on user type
   const getNavItems = (): NavItem[] => {
     const baseItems: NavItem[] = [
@@ -230,15 +251,19 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       >
         {/* Logo and close button */}
         <div className="flex items-center justify-between px-4 py-5 bg-gray-800 shadow-md">
-          <div className="flex items-center">
-            <div className="w-8 h-8 mr-3 bg-blue-600 rounded-md flex items-center justify-center shadow-sm">
-              <span className="text-lg font-bold">ST</span>
+          <div className="flex items-center min-w-0 flex-1">
+            <div className="w-8 h-8 mr-3 bg-blue-600 rounded-md flex items-center justify-center shadow-sm flex-shrink-0">
+              <span className="text-lg font-bold text-white">
+                {getBusinessName().charAt(0).toUpperCase()}
+              </span>
             </div>
-            <div className="text-xl font-bold">SaaS Telecom</div>
+            <div className="text-lg sm:text-xl font-bold truncate">
+              {getBusinessName()}
+            </div>
           </div>
           <button 
             aria-label="Close sidebar"
-            className="text-gray-300 hover:text-white md:hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md p-1"
+            className="text-gray-300 hover:text-white md:hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md p-1 flex-shrink-0"
             onClick={onClose}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -270,10 +295,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                   {authState.user?.fullName.charAt(0)}{authState.user?.fullName.split(' ')[1]?.charAt(0) ?? ''}
                 </div>
               </div>
-              <div className="overflow-hidden">
+              <div className="overflow-hidden min-w-0 flex-1">
                 <div className="text-sm font-medium truncate">{authState.user?.fullName}</div>
                 <div className="flex items-center">
-                  <span className={`w-2 h-2 ${authState.isAuthenticated ? 'bg-green-500' : 'bg-gray-400'} rounded-full mr-1`}></span>
+                  <span className={`w-2 h-2 ${authState.isAuthenticated ? 'bg-green-500' : 'bg-gray-400'} rounded-full mr-1 flex-shrink-0`}></span>
                   <p className="text-xs text-gray-400 truncate capitalize">{authState.user?.userType ?? 'User'}</p>
                 </div>
               </div>
@@ -296,7 +321,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           
           {/* App version */}
           <div className="p-3 border-t border-gray-700 text-center">
-            <div className="text-xs text-gray-500">SaaS Telecom</div>
+            <div className="text-xs text-gray-500 truncate">{getAppName()}</div>
             <div className="text-xs text-gray-600 font-semibold">v1.0.0</div>
           </div>
         </div>

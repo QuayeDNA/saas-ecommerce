@@ -554,8 +554,8 @@ Or use comma separation:
             )}
           </div>
 
-          {/* Footer Actions */}
-          <div className="border-t border-gray-200 p-4 sm:p-6 bg-white">
+          {/* Footer Actions - Fixed on mobile */}
+          <div className="border-t border-gray-200 p-4 sm:p-6 bg-white flex-shrink-0 fixed sm:relative bottom-0 left-0 right-0 sm:bottom-auto sm:left-auto sm:right-auto">
             <div className="flex items-center justify-between gap-3">
               {currentStep > 1 ? (
                 <button
