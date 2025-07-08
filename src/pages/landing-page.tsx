@@ -134,17 +134,17 @@ export const LandingPage = () => {
           <nav className="flex justify-between items-center py-4">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center">
                 <Phone className="text-white w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                 TelecomSaaS
               </span>
             </div>
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2 text-gray-600 hover:text-indigo-600 transition-colors"
+              className="md:hidden p-2 text-gray-600 hover:text-blue-600 transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -154,27 +154,27 @@ export const LandingPage = () => {
             <div className="hidden md:flex items-center space-x-8">
               <a
                 href="#features"
-                className="text-gray-600 hover:text-indigo-600 transition-colors font-medium"
+                className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
               >
                 Features
               </a>
               <a
                 href="#services"
-                className="text-gray-600 hover:text-indigo-600 transition-colors font-medium"
+                className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
               >
                 Services
               </a>
               <a
                 href="#testimonials"
-                className="text-gray-600 hover:text-indigo-600 transition-colors font-medium"
+                className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
               >
                 Reviews
               </a>
               <div className="flex items-center space-x-4">
-                <Link to="/login" className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">
+                <Link to="/login" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
                   Sign In
                 </Link>
-                <Link to="/register" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium">
+                <Link to="/register" className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium">
                   Get Started
                 </Link>
               </div>
@@ -187,30 +187,28 @@ export const LandingPage = () => {
               <div className="flex flex-col space-y-4">
                 <a
                   href="#features"
-                  className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium"
+                  className="text-gray-600 hover:text-blue-600 transition-colors py-2 font-medium"
                 >
                   Features
                 </a>
                 <a
                   href="#services"
-                  className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium"
+                  className="text-gray-600 hover:text-blue-600 transition-colors py-2 font-medium"
                 >
                   Services
                 </a>
                 <a
                   href="#testimonials"
-                  className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium"
+                  className="text-gray-600 hover:text-blue-600 transition-colors py-2 font-medium"
                 >
                   Reviews
                 </a>
-                <div className="flex flex-col space-y-3 pt-4 border-t border-gray-100">
-                  <Link to="/login" className="text-gray-600 hover:text-indigo-600 transition-colors py-2 font-medium text-left">
-                    Sign In
-                  </Link>
-                  <Link to="/register" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-medium text-center">
-                    Get Started
-                  </Link>
-                </div>
+                <Link to="/login" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
+                  Sign In
+                </Link>
+                <Link to="/register" className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium">
+                  Get Started
+                </Link>
               </div>
             </div>
           )}
@@ -240,7 +238,7 @@ export const LandingPage = () => {
 
               <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
                 Transform Your
-                <span className="block bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 bg-clip-text text-transparent">
                   Telecom Business
                 </span>
               </h1>
@@ -252,7 +250,7 @@ export const LandingPage = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 mb-16">
-                <Link to="/register" className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-semibold text-lg flex items-center">
+                <Link to="/register" className="group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-semibold text-lg flex items-center">
                   Start Free Trial
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
