@@ -23,6 +23,8 @@ interface PackageFormModalProps {
   package?: PackageGroup | null;
   mode: 'create' | 'edit';
   loading: boolean;
+  editItemIndex?: number | null;
+  selectedPackageItem?: PackageItem | null;
 }
 
 export const PackageFormModal: React.FC<PackageFormModalProps> = ({
@@ -31,7 +33,9 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
   onSubmit,
   package: packageData,
   mode,
-  loading
+  loading,
+  editItemIndex,
+  selectedPackageItem
 }) => {
   const [formData, setFormData] = useState<Partial<PackageGroup>>({
     name: '',
@@ -61,6 +65,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
     lowStockThreshold: 10,
     isActive: true
   });
+  const [unlimitedValidity, setUnlimitedValidity] = useState(false);
 
   const steps = [
     { id: 1, title: 'Basic Info', description: 'Package details' },
@@ -71,6 +76,13 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
   useEffect(() => {
     if (packageData && mode === 'edit') {
       setFormData(packageData);
+      // If editing a specific item, pre-fill and go to step 2
+      if (editItemIndex !== null && selectedPackageItem) {
+        setCurrentStep(2);
+        setShowItemForm(true);
+        setNewItem(selectedPackageItem);
+        setUnlimitedValidity(selectedPackageItem.validity === null);
+      }
     } else {
       setFormData({
         name: '',
@@ -80,9 +92,9 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
         isActive: true,
         packageItems: []
       });
+      setCurrentStep(1);
     }
-    setCurrentStep(1);
-  }, [packageData, mode, isOpen]);
+  }, [packageData, mode, isOpen, editItemIndex, selectedPackageItem]);
 
   // Fetch providers when modal opens
   useEffect(() => {
@@ -181,18 +193,26 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
     }));
   };
 
+  // In addPackageItem, if editing, update the item in the array
   const addPackageItem = () => {
     if (newItem.name && newItem.price && newItem.dataVolume) {
-      // Remove empty code field to let backend generate it
       const itemToAdd = { ...newItem };
+      if (unlimitedValidity) itemToAdd.validity = null;
       if (!itemToAdd.code || itemToAdd.code.trim() === '') {
         delete itemToAdd.code;
       }
-      
-      setFormData(prev => ({
-        ...prev,
-        packageItems: [...(prev.packageItems || []), itemToAdd as PackageItem]
-      }));
+      setFormData(prev => {
+        let updatedItems = [...(prev.packageItems || [])];
+        if (editItemIndex !== null && editItemIndex >= 0) {
+          updatedItems[editItemIndex] = itemToAdd as PackageItem;
+        } else {
+          updatedItems = [...updatedItems, itemToAdd as PackageItem];
+        }
+        return {
+          ...prev,
+          packageItems: updatedItems
+        };
+      });
       setNewItem({
         name: '',
         code: '',
@@ -204,6 +224,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
         lowStockThreshold: 10,
         isActive: true
       });
+      setUnlimitedValidity(false);
       setShowItemForm(false);
     }
   };
@@ -618,14 +639,25 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                         <label htmlFor='bundle-validity' className="block text-sm font-medium text-gray-700 mb-1">
                           Validity (Days) *
                         </label>
-                        <input
-                          type="number"
-                          placeholder="1"
-                          value={newItem.validity ?? ''}
-                          onChange={(e) => setNewItem(prev => ({ ...prev, validity: parseInt(e.target.value) ?? 1 }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          min="1"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            placeholder="1"
+                            value={unlimitedValidity ? '' : newItem.validity ?? ''}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, validity: parseInt(e.target.value) ?? 1 }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            min="1"
+                            disabled={unlimitedValidity}
+                          />
+                          <label className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={unlimitedValidity}
+                              onChange={e => setUnlimitedValidity(e.target.checked)}
+                            />
+                            Unlimited validity
+                          </label>
+                        </div>
                       </div>
                     </div>
 
@@ -795,7 +827,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                           <p className="text-green-700 text-xs">Data</p>
                         </div>
                         <div className="bg-orange-50 p-2 rounded">
-                          <span className="text-orange-600 font-medium">{item.validity} days</span>
+                          <span className="text-orange-600 font-medium">{item.validity === null ? 'Unlimited' : `${item.validity} days`}</span>
                           <p className="text-orange-700 text-xs">Validity</p>
                         </div>
                         <div className="bg-purple-50 p-2 rounded">
@@ -878,7 +910,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                           </div>
                           <div className="text-right">
                             <div className="font-medium text-gray-900">GHS {item.price.toFixed(2)}</div>
-                            <div className="text-sm text-gray-500">{item.dataVolume}GB • {item.validity} days</div>
+                            <div className="text-sm text-gray-500">{item.dataVolume}GB • {item.validity === null ? 'Unlimited' : `${item.validity} days`}</div>
                           </div>
                         </div>
                       ))}

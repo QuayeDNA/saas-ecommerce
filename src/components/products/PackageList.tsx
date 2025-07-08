@@ -42,6 +42,8 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedPackage, setSelectedPackage] = useState<PackageGroup | null>(null);
+  const [selectedPackageItem, setSelectedPackageItem] = useState<PackageItem | null>(null);
+  const [editItemIndex, setEditItemIndex] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [localFilters, setLocalFilters] = useState({
     provider: provider || '',
@@ -434,7 +436,7 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
                     </div>
                     <div className="text-sm">
                       <span className="text-gray-500">Validity:</span>
-                      <span className="text-gray-900 font-medium ml-1">{item.validity} {item.validity === 1 ? 'day' : 'days'}</span>
+                      <span className="text-gray-900 font-medium ml-1">{item.validity === null ? 'Unlimited' : `${item.validity} ${item.validity === 1 ? 'day' : 'days'}`}</span>
                     </div>
                     <div className="text-sm">
                       <span className="text-gray-500">Inventory:</span>
@@ -451,7 +453,17 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
                     <span className="text-xs text-gray-500">Code: {item.code}</span>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleEdit && handleEdit({ ...item, _id: item.groupId })}
+                        onClick={() => {
+                          const group = packages.find(p => p._id === item.groupId);
+                          if (group) {
+                            setModalMode('edit');
+                            setSelectedPackage(group);
+                            const idx = group.packageItems.findIndex(i => i._id === item._id);
+                            setSelectedPackageItem(item);
+                            setEditItemIndex(idx);
+                            setShowModal(true);
+                          }
+                        }}
                         className="p-2 rounded-lg transition-colors text-blue-600 hover:bg-blue-50"
                         title="Edit Package"
                       >
@@ -532,11 +544,18 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       {/* Package Form Modal */}
       <PackageFormModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedPackage(null);
+          setSelectedPackageItem(null);
+          setEditItemIndex(null);
+        }}
         onSubmit={handleModalSubmit}
         package={selectedPackage}
         mode={modalMode}
         loading={loading}
+        editItemIndex={editItemIndex}
+        selectedPackageItem={selectedPackageItem}
       />
     </div>
   );

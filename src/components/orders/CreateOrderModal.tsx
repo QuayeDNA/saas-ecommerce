@@ -56,8 +56,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
         { id: 3, title: 'Review', description: 'Confirm order' }
       ]
     : [
-        { id: 1, title: 'Select Package', description: 'Choose data bundle' },
-        { id: 2, title: 'Bulk Input', description: 'Enter phone numbers' },
+        { id: 1, title: 'Bulk Order', description: 'Select package group and enter bulk input' },
         { id: 3, title: 'Review', description: 'Confirm orders' }
       ];
 
@@ -156,7 +155,6 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
       } else {
         const orderData: CreateBulkOrderData = {
           packageGroupId: formData.packageGroupId,
-          packageItemId: formData.packageItemId,
           rawInput: formData.rawInput
         };
         
@@ -169,10 +167,12 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
     }
   };
 
-  const canProceedToStep2 = formData.packageGroupId && formData.packageItemId;
-  const canProceedToStep3 = type === 'single' 
+  const canProceedToStep2 = type === 'single'
+    ? formData.packageGroupId && formData.packageItemId
+    : formData.packageGroupId && formData.rawInput.trim();
+  const canProceedToStep3 = type === 'single'
     ? canProceedToStep2 && formData.customerPhone
-    : canProceedToStep2 && formData.rawInput.trim();
+    : canProceedToStep2;
 
   if (!isOpen) return null;
 
@@ -231,21 +231,20 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
 
         <form onSubmit={handleSubmit} className="flex flex-col h-full sm:h-auto">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-            {/* Step 1: Package Selection */}
-            {currentStep === 1 && (
+            {/* Step 1: Bulk Order (for bulk type) */}
+            {currentStep === 1 && type === 'bulk' && (
               <div className="space-y-6">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start gap-2">
                     <FaInfoCircle className="text-blue-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-blue-900">Select Data Bundle</h4>
+                      <h4 className="font-medium text-blue-900">Bulk Order</h4>
                       <p className="text-sm text-blue-700 mt-1">
-                        Choose the package group and specific data bundle for your {type} order.
+                        Select the package group and enter your bulk order details below.
                       </p>
                     </div>
                   </div>
                 </div>
-
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -270,7 +269,99 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                       Select the package group that contains your desired data bundles
                     </p>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Numbers and Bundle Sizes *
+                    </label>
+                    <textarea
+                      value={formData.rawInput}
+                      onChange={(e) => handleInputChange('rawInput', e.target.value)}
+                      placeholder={`Enter phone numbers and bundle sizes:\n+233123456789,1GB\n+233987654321,500MB\n+233555666777,2GB\n\nOr use comma separation:\n+233123456789,1GB\n+233987654321,500MB`}
+                      required
+                      rows={8}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      One entry per line. Supports colon (:), comma (,), or space separation.
+                    </p>
+                  </div>
+                </div>
+                {/* Help Section */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">Input Format Help</h4>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={generateBulkTemplate}
+                        className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      >
+                        <FaDownload size={12} />
+                        Download Template
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowBulkHelp(!showBulkHelp)}
+                        className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
+                      >
+                        <FaFileImport size={12} />
+                        {showBulkHelp ? 'Hide' : 'Show'} Examples
+                        {showBulkHelp ? <FaChevronUp /> : <FaChevronDown />}
+                      </button>
+                    </div>
+                  </div>
+                  {showBulkHelp && (
+                    <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                      <p className="font-medium text-gray-700 mb-2">Supported formats:</p>
+                      <div className="space-y-1 text-gray-600 font-mono">
+                        <div>• phone:bundleSize → +233123456789:1GB</div>
+                        <div>• phone,bundleSize → +233123456789,500MB</div>
+                        <div>• phone bundleSize → +233123456789 2GB</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
+            {/* Step 1: Package Selection (for single type) */}
+            {currentStep === 1 && type === 'single' && (
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <FaInfoCircle className="text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900">Select Data Bundle</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Choose the package group and specific data bundle for your order.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Package Group *
+                    </label>
+                    <select
+                      value={formData.packageGroupId}
+                      onChange={(e) => handleInputChange('packageGroupId', e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Choose a package group...</option>
+                      {packages
+                        .filter(packageGroup => !providerPreset || packageGroup.provider === providerPreset)
+                        .map((packageGroup: PackageGroup) => (
+                          <option key={packageGroup._id} value={packageGroup._id}>
+                            {packageGroup.name} ({packageGroup.provider})
+                          </option>
+                        ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Select the package group that contains your desired data bundles
+                    </p>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Data Bundle *
@@ -295,7 +386,6 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                       Choose the specific data bundle with price and validity period
                     </p>
                   </div>
-
                   {/* Package Item Preview */}
                   {selectedPackageItem && selectedPackageGroup && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">

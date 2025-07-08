@@ -10,7 +10,7 @@ export interface PackageItem {
   lowStockThreshold: number;
   isActive: boolean;
   dataVolume: number; // in GB
-  validity: number; // in days
+  validity: number | null; // in days, null = unlimited
   availableInventory?: number; // calculated field
 }
 
