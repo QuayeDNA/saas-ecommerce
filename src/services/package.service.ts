@@ -115,6 +115,14 @@ class PackageService {
     });
     return response.data.analytics;
   }
+
+  // Fetch all package items with their parent group, optionally filtered by provider
+  async getAllPackageItems(provider?: string) {
+    const params: any = {};
+    if (provider) params.provider = provider;
+    const response = await apiClient.get('/api/packages/all-items', { params });
+    return response.data.items;
+  }
 }
 
 export const packageService = new PackageService();

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/use-auth';
 import { useWallet } from '../hooks/use-wallet';
 import { useOrder } from '../contexts/OrderContext';
-import { CreateOrderModal } from '../components/orders/CreateOrderModal';
 import type { WalletTransaction } from '../types/wallet';
 
 export const DashboardPage = () => {
@@ -12,9 +11,6 @@ export const DashboardPage = () => {
   const { getAnalytics } = useOrder();
   
   // State for modals and data
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createModalType, setCreateModalType] = useState<'single' | 'bulk'>('single');
-  const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
   const [orderStats, setOrderStats] = useState({
     totalOrders: 0,
@@ -23,6 +19,8 @@ export const DashboardPage = () => {
     successRate: 0
   });
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   // Network quick links with updated provider codes
   const networks: { name: string; code: string; color: string; bgColor: string }[] = [
@@ -66,17 +64,7 @@ export const DashboardPage = () => {
 
   // Handle quick link click
   const handleQuickLinkClick = (providerCode: string) => {
-    setSelectedProvider(providerCode);
-    setCreateModalType('single');
-    setShowCreateModal(true);
-  };
-
-  // Handle modal success
-  const handleModalSuccess = () => {
-    setShowCreateModal(false);
-    setSelectedProvider('');
-    // Refresh dashboard data
-    window.location.reload();
+    navigate(`./packages/${providerCode.toLowerCase()}`);
   };
 
   // Format transaction amount
@@ -284,18 +272,7 @@ export const DashboardPage = () => {
       </section>
 
       {/* Create Order Modal */}
-      {showCreateModal && (
-        <CreateOrderModal
-          type={createModalType}
-          isOpen={showCreateModal}
-          onClose={() => {
-            setShowCreateModal(false);
-            setSelectedProvider('');
-          }}
-          onSuccess={handleModalSuccess}
-          providerPreset={selectedProvider}
-        />
-      )}
+      {/* Removed CreateOrderModal and related modal state */}
     </div>
   );
 };

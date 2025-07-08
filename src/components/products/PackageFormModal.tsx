@@ -203,8 +203,9 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
       }
       setFormData(prev => {
         let updatedItems = [...(prev.packageItems || [])];
-        if (editItemIndex !== null && editItemIndex >= 0) {
-          updatedItems[editItemIndex] = itemToAdd as PackageItem;
+        const idx = editItemIndex ?? -1;
+        if (idx >= 0) {
+          updatedItems[idx] = itemToAdd as PackageItem;
         } else {
           updatedItems = [...updatedItems, itemToAdd as PackageItem];
         }

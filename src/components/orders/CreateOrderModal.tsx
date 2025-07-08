@@ -155,6 +155,7 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
       } else {
         const orderData: CreateBulkOrderData = {
           packageGroupId: formData.packageGroupId,
+          packageItemId: '', // Not used for bulk, but required by type
           rawInput: formData.rawInput
         };
         

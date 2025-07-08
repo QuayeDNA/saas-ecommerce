@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePackage } from '../../hooks/use-package';
 import { PackageFormModal } from './PackageFormModal';
-import type { PackageGroup } from '../../types/package';
+import type { PackageGroup, PackageItem } from '../../types/package';
 import { getProviderColors } from '../../utils/provider-colors';
 import { 
   FaPlus, 
@@ -12,15 +12,20 @@ import {
   FaSearch,
   FaFilter,
   FaBox,
-  FaEye,
   FaToggleOn,
   FaToggleOff,
   FaTimes,
   FaExclamationCircle
 } from 'react-icons/fa';
+import { packageService } from '../../services/package.service';
 
 export interface PackageListProps {
   provider?: string;
+}
+
+// Utility to always include provider in filters if present
+function getEffectiveFilters(baseFilters: any, provider?: string) {
+  return provider ? { ...baseFilters, provider } : baseFilters;
 }
 
 export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
@@ -50,13 +55,17 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     isActive: '',
     includeDeleted: false
   });
+  const [allProviderItems, setAllProviderItems] = useState<PackageItem[]>([]);
+  const [loadingProviderItems, setLoadingProviderItems] = useState(false);
 
   useEffect(() => {
-    // If provider prop is set, always filter by that provider
+    // If provider prop is set, always filter by that provider ONLY
     if (provider) {
-      const newFilters = { ...filters, provider };
-      setFilters(newFilters);
-      fetchPackages(newFilters);
+      setLoadingProviderItems(true);
+      packageService.getAllPackageItems(provider)
+        .then(items => setAllProviderItems(items))
+        .catch(() => setAllProviderItems([]))
+        .finally(() => setLoadingProviderItems(false));
     } else {
       fetchPackages();
     }
@@ -65,7 +74,7 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const newFilters = { ...filters, search: searchTerm };
+    const newFilters = getEffectiveFilters({ ...filters, search: searchTerm }, provider);
     setFilters(newFilters);
     fetchPackages(newFilters);
   };
@@ -77,12 +86,12 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     else if (localFilters.isActive === 'false') isActive = false;
     else isActive = undefined;
 
-    const newFilters = {
+    const newFilters = getEffectiveFilters({
       ...filters,
       ...localFilters,
       isActive,
       search: searchTerm
-    };
+    }, provider);
     setFilters(newFilters);
     fetchPackages(newFilters);
     setShowFilters(false);
@@ -95,19 +104,14 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       isActive: '',
       includeDeleted: false
     });
-    setFilters({});
-    fetchPackages({});
+    const newFilters = provider ? { provider } : {};
+    setFilters(newFilters);
+    fetchPackages(newFilters);
   };
 
   const handleCreateNew = () => {
     setModalMode('create');
     setSelectedPackage(null);
-    setShowModal(true);
-  };
-
-  const handleEdit = (pkg: PackageGroup) => {
-    setModalMode('edit');
-    setSelectedPackage(pkg);
     setShowModal(true);
   };
 
@@ -119,6 +123,9 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
         await updatePackage(selectedPackage._id, data);
       }
       setShowModal(false);
+      // Always refetch with provider filter if present
+      const newFilters = provider ? { provider } : filters;
+      fetchPackages(newFilters);
     } catch (error) {
       console.error('Error submitting package:', error);
     }
@@ -127,21 +134,28 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this package?')) {
       await deletePackage(id);
+      // Always refetch with provider filter if present
+      const newFilters = provider ? { provider } : filters;
+      fetchPackages(newFilters);
     }
   };
 
   const handleRestore = async (id: string) => {
     if (window.confirm('Are you sure you want to restore this package?')) {
       await restorePackage(id);
+      // Always refetch with provider filter if present
+      const newFilters = provider ? { provider } : filters;
+      fetchPackages(newFilters);
     }
   };
 
   const handlePageChange = (page: number) => {
-    fetchPackages(filters, { page });
+    const newFilters = provider ? { provider } : filters;
+    fetchPackages(newFilters, { page });
   };
 
   // Flatten all package items with their parent package group info
-  const allPackageItems = packages.flatMap(pkg =>
+  const allPackageItems = provider ? allProviderItems : packages.flatMap(pkg =>
     pkg.packageItems.map(item => ({
       ...item,
       provider: pkg.provider,
@@ -154,7 +168,7 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     }))
   );
 
-  if (error) {
+  if (error && !provider) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">
         <div className="flex items-center gap-3">
@@ -343,7 +357,7 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       </div>
 
       {/* Package Items Grid */}
-      {loading ? (
+      {(provider ? loadingProviderItems : loading) ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {Array.from({ length: 6 }, (_, index) => (
             <div key={`loading-${index}`} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
@@ -549,6 +563,9 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
           setSelectedPackage(null);
           setSelectedPackageItem(null);
           setEditItemIndex(null);
+          // Always refetch with provider filter if present
+          const newFilters = provider ? { provider } : filters;
+          fetchPackages(newFilters);
         }}
         onSubmit={handleModalSubmit}
         package={selectedPackage}
