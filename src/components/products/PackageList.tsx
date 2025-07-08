@@ -28,6 +28,16 @@ function getEffectiveFilters(baseFilters: any, provider?: string) {
   return provider ? { ...baseFilters, provider } : baseFilters;
 }
 
+export type EnrichedPackageItem = PackageItem & {
+  provider: string;
+  groupName: string;
+  groupId: string | undefined;
+  groupIsActive: boolean;
+  groupIsDeleted: boolean;
+  groupDescription?: string;
+  groupTags?: string[];
+};
+
 export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
   const {
     packages,
@@ -55,7 +65,7 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     isActive: '',
     includeDeleted: false
   });
-  const [allProviderItems, setAllProviderItems] = useState<PackageItem[]>([]);
+  const [allProviderItems, setAllProviderItems] = useState<EnrichedPackageItem[]>([]);
   const [loadingProviderItems, setLoadingProviderItems] = useState(false);
 
   useEffect(() => {
@@ -155,7 +165,7 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
   };
 
   // Flatten all package items with their parent package group info
-  const allPackageItems = provider ? allProviderItems : packages.flatMap(pkg =>
+  const allPackageItems: EnrichedPackageItem[] = provider ? allProviderItems : packages.flatMap(pkg =>
     pkg.packageItems.map(item => ({
       ...item,
       provider: pkg.provider,
