@@ -86,8 +86,18 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           icon: <FaBox />,
           children: [
             {
-              label: 'Data Packages',
-              path: 'packages',
+              label: 'MTN Packages',
+              path: 'packages/mtn',
+              icon: <FaBox />
+            },
+            {
+              label: 'Telecel Packages',
+              path: 'packages/telecel',
+              icon: <FaBox />
+            },
+            {
+              label: 'AT Packages',
+              path: 'packages/at',
               icon: <FaBox />
             },
             {

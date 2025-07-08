@@ -115,6 +115,21 @@ const ProviderList = lazy(() =>
     default: module.ProviderList,
   }))
 );
+const MtnPackagesPage = lazy(() =>
+  import("../pages/mtn-packages-page").then((module) => ({
+    default: module.MtnPackagesPage,
+  }))
+);
+const TelecelPackagesPage = lazy(() =>
+  import("../pages/telecel-packages-page").then((module) => ({
+    default: module.TelecelPackagesPage,
+  }))
+);
+const AtPackagesPage = lazy(() =>
+  import("../pages/at-packages-page").then((module) => ({
+    default: module.AtPackagesPage,
+  }))
+);
 
 // Define routes
 export const routes: RouteObject[] = [
@@ -293,6 +308,30 @@ export const routes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <UserManagementPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "packages/mtn",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <MtnPackagesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "packages/telecel",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <TelecelPackagesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "packages/at",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AtPackagesPage />
               </Suspense>
             ),
           },

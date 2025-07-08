@@ -19,7 +19,11 @@ import {
   FaExclamationCircle
 } from 'react-icons/fa';
 
-export const PackageList: React.FC = () => {
+export interface PackageListProps {
+  provider?: string;
+}
+
+export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
   const {
     packages,
     loading,
@@ -40,14 +44,22 @@ export const PackageList: React.FC = () => {
   const [selectedPackage, setSelectedPackage] = useState<PackageGroup | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [localFilters, setLocalFilters] = useState({
-    provider: '',
+    provider: provider || '',
     isActive: '',
     includeDeleted: false
   });
 
   useEffect(() => {
-    fetchPackages();
-  }, [fetchPackages]);
+    // If provider prop is set, always filter by that provider
+    if (provider) {
+      const newFilters = { ...filters, provider };
+      setFilters(newFilters);
+      fetchPackages(newFilters);
+    } else {
+      fetchPackages();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchPackages, provider]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +89,7 @@ export const PackageList: React.FC = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setLocalFilters({
-      provider: '',
+      provider: provider || '',
       isActive: '',
       includeDeleted: false
     });
@@ -126,6 +138,20 @@ export const PackageList: React.FC = () => {
     fetchPackages(filters, { page });
   };
 
+  // Flatten all package items with their parent package group info
+  const allPackageItems = packages.flatMap(pkg =>
+    pkg.packageItems.map(item => ({
+      ...item,
+      provider: pkg.provider,
+      groupName: pkg.name,
+      groupId: pkg._id,
+      groupIsActive: pkg.isActive,
+      groupIsDeleted: pkg.isDeleted,
+      groupDescription: pkg.description,
+      groupTags: pkg.tags,
+    }))
+  );
+
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -147,12 +173,15 @@ export const PackageList: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Data Packages</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {provider ? `${provider} Packages` : 'Data Packages'}
+          </h1>
           <p className="text-gray-600">
-            Manage your mobile data bundle packages and inventory
+            {provider
+              ? `Browse all packages for ${provider}`
+              : 'Manage your mobile data bundle packages and inventory'}
           </p>
         </div>
-
         <button
           onClick={handleCreateNew}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -201,22 +230,24 @@ export const PackageList: React.FC = () => {
         {showFilters && (
           <div className="pt-4 border-t border-gray-200">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Provider
-                </label>
-                <select
-                  value={localFilters.provider}
-                  onChange={(e) => setLocalFilters(prev => ({ ...prev, provider: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">All Providers</option>
-                  <option value="MTN">MTN</option>
-                  <option value="TELECEL">TELECEL</option>
-                  <option value="AT">AT (AirtelTigo)</option>
-                  <option value="GLO">GLO</option>
-                </select>
-              </div>
+              {!provider && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Provider
+                  </label>
+                  <select
+                    value={localFilters.provider}
+                    onChange={(e) => setLocalFilters(prev => ({ ...prev, provider: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">All Providers</option>
+                    <option value="MTN">MTN</option>
+                    <option value="TELECEL">TELECEL</option>
+                    <option value="AT">AT (AirtelTigo)</option>
+                    <option value="GLO">GLO</option>
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -309,12 +340,12 @@ export const PackageList: React.FC = () => {
         </div>
       </div>
 
-      {/* Package Grid */}
+      {/* Package Items Grid */}
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {Array.from({ length: 6 }, (_, index) => (
             <div key={`loading-${index}`} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
-              <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
+              <div className="h-24 bg-gray-200 rounded-lg mb-4"></div>
               <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
               <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
               <div className="flex gap-2 mb-4">
@@ -325,7 +356,7 @@ export const PackageList: React.FC = () => {
             </div>
           ))}
         </div>
-      ) : packages.length === 0 ? (
+      ) : allPackageItems.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
           <div className="mx-auto bg-gray-100 rounded-full p-6 w-20 h-20 flex items-center justify-center mb-6">
             <FaBox className="text-4xl text-gray-400" />
@@ -358,185 +389,77 @@ export const PackageList: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {packages.map((pkg) => {
-            const colors = getProviderColors(pkg.provider);
-            
+          {allPackageItems.map((item) => {
+            const colors = getProviderColors(item.provider);
             return (
               <div
-                key={pkg._id}
-                className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow ${
-                  pkg.isDeleted ? 'opacity-60' : ''
-                }`}
+                key={item._id}
+                className="rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow bg-white"
+                style={{
+                  borderColor: colors.primary,
+                  backgroundColor: colors.background,
+                }}
               >
-                {/* Provider Banner */}
-                <div 
-                  className="h-3" 
-                  style={{
-                    backgroundColor: colors.primary,
-                    borderBottom: `1px solid ${colors.secondary}`
-                  }}
-                />
-                
-                {/* Package Header */}
-                <div 
-                  className="p-6 pb-4"
-                  style={{
-                    backgroundColor: pkg.isDeleted ? 'white' : colors.background,
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate mb-1">
-                        {pkg.name}
-                      </h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span 
-                          className="font-medium" 
-                          style={{ color: colors.secondary }}
-                        >
-                          {pkg.provider}
-                        </span>
-                        <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                        <span>{pkg.packageItems.length} items</span>
-                      </div>
+                {/* Header */}
+                <div className="flex items-center justify-between p-4" style={{ backgroundColor: colors.primary + '22' }}>
+                  <div>
+                    <h3 className="text-lg font-bold" style={{ color: colors.secondary }}>{item.name}</h3>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {item.groupName} ({item.provider})
                     </div>
-                    
-                    <div className="flex items-center gap-1 ml-3">
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          pkg.isDeleted
-                            ? 'bg-red-100 text-red-800'
-                            : pkg.isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {pkg.isDeleted ? 'Deleted' : pkg.isActive ? 'Active' : 'Inactive'}
+                  </div>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    item.isActive ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {item.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                {/* Details */}
+                <div className="p-4 space-y-2">
+                  {item.description && (
+                    <p className="text-sm text-gray-500 mb-2">{item.description}</p>
+                  )}
+                  <div className="flex flex-wrap gap-4">
+                    <div className="text-sm">
+                      <span className="text-gray-500">Price:</span>
+                      <span className="text-gray-900 font-medium ml-1">GHS {item.price.toFixed(2)}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Data:</span>
+                      <span className="text-gray-900 font-medium ml-1">
+                        {item.dataVolume < 1 
+                          ? `${(item.dataVolume * 1000).toFixed(0)} MB` 
+                          : `${item.dataVolume.toFixed(1)} GB`}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Validity:</span>
+                      <span className="text-gray-900 font-medium ml-1">{item.validity} {item.validity === 1 ? 'day' : 'days'}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Inventory:</span>
+                      <span className={`font-medium ml-1 ${
+                        item.inventory <= item.lowStockThreshold 
+                          ? 'text-red-600' 
+                          : 'text-gray-900'
+                      }`}>
+                        {item.inventory}
                       </span>
                     </div>
                   </div>
-                  
-                  {pkg.description && (
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {pkg.description}
-                    </p>
-                  )}
-                  
-                  {/* Tags */}
-                  {pkg.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {pkg.tags.slice(0, 3).map((tag) => (
-                        <span
-                          key={`${pkg._id}-tag-${tag}`}
-                          className="bg-blue-50 text-blue-700 px-2 py-1 text-xs rounded-full"
-                          style={{
-                            backgroundColor: `${colors.primary}30`, // Adding transparency
-                            color: colors.secondary
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                      {pkg.tags.length > 3 && (
-                        <span className="text-xs text-gray-500">
-                          +{pkg.tags.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Package Items Preview */}
-                <div className="px-6 pb-4">
-                  <h4 className="font-medium text-gray-700 mb-3">Package Items</h4>
-                  <div className="space-y-2">
-                    {pkg.packageItems.slice(0, 3).map((item) => (
-                      <div key={item._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 truncate">
-                            {item.name}
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            {item.dataVolume}GB • {item.validity} days
-                          </div>
-                        </div>
-                        <div className="text-sm font-medium text-gray-900">
-                          GHS{item.price.toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {pkg.packageItems.length > 3 && (
-                      <div className="text-center py-2">
-                        <span className="text-sm text-blue-600 cursor-pointer hover:text-blue-700">
-                          View all {pkg.packageItems.length} items
-                        </span>
-                      </div>
-                    )}
-                    
-                    {pkg.packageItems.length === 0 && (
-                      <div className="text-center py-4 text-gray-500 text-sm">
-                        No items added yet
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200" style={{
-                  backgroundColor: `${colors.primary}15`, // Very light version of primary color
-                  borderTopColor: `${colors.primary}40`,  // Semi-transparent primary
-                }}>
-                  <div className="flex items-center justify-between">
-                    <button
-                      onClick={() => handleEdit(pkg)}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
-                      style={{
-                        color: colors.secondary,
-                        backgroundColor: 'rgba(255, 255, 255, 0.6)',
-                      }}                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = `${colors.primary}30`;
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.backgroundColor = `${colors.primary}30`;
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.6)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.6)';
-                    }}
-                    >
-                      <FaEye size={14} />
-                      <span className="text-sm font-medium">View Details</span>
-                    </button>
-                    
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">Code: {item.code}</span>
+                    <div className="flex gap-2">
                       <button
-                        onClick={() => handleEdit(pkg)}
-                        className="p-2 rounded-lg transition-colors"
-                        style={{
-                          color: colors.secondary,
-                        }}                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = `${colors.primary}30`;
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.backgroundColor = `${colors.primary}30`;
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
+                        onClick={() => handleEdit && handleEdit({ ...item, _id: item.groupId })}
+                        className="p-2 rounded-lg transition-colors text-blue-600 hover:bg-blue-50"
                         title="Edit Package"
                       >
                         <FaEdit size={14} />
                       </button>
-                      
-                      {pkg.isDeleted ? (
+                      {item.groupIsDeleted ? (
                         <button
-                          onClick={() => handleRestore(pkg._id ?? '')}
+                          onClick={() => handleRestore && handleRestore(item.groupId ?? '')}
                           className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
                           title="Restore Package"
                         >
@@ -544,7 +467,7 @@ export const PackageList: React.FC = () => {
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleDelete(pkg._id ?? '')}
+                          onClick={() => handleDelete && handleDelete(item.groupId ?? '')}
                           className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                           title="Delete Package"
                         >
