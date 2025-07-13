@@ -2,11 +2,14 @@ import React, { useState, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { PackageContext, type PackageContextType } from './package-context';
 import { packageService } from '../services/package.service';
+import { bundleService } from '../services/bundle.service';
 import type { 
-  PackageGroup, 
+  Package, 
+  Bundle,
   PackageFilters, 
-  LowStockAlert,
-  PackageAnalytics
+  BundleFilters,
+  PackageAnalytics,
+  BundleAnalytics
 } from '../types/package';
 
 interface PackageProviderProps {
@@ -14,19 +17,24 @@ interface PackageProviderProps {
 }
 
 export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) => {
-  const [packages, setPackages] = useState<PackageGroup[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
     pages: 0,
-    limit: 20
+    limit: 20,
+    hasNext: false,
+    hasPrev: false
   });
-  const [filters, setFilters] = useState<PackageFilters>({});
-  const [lowStockAlerts, setLowStockAlerts] = useState<LowStockAlert[]>([]);
-  const [analytics, setAnalytics] = useState<PackageAnalytics | null>(null);
+  const [packageFilters, setPackageFilters] = useState<PackageFilters>({});
+  const [bundleFilters, setBundleFilters] = useState<BundleFilters>({});
+  const [packageAnalytics, setPackageAnalytics] = useState<PackageAnalytics | null>(null);
+  const [bundleAnalytics, setBundleAnalytics] = useState<BundleAnalytics | null>(null);
   
+  // Package operations
   const fetchPackages = useCallback(async (
     newFilters: PackageFilters = {},
     newPagination: Partial<{ page: number; limit: number }> = {}
@@ -39,9 +47,8 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
       setPackages(response.packages);
       setPagination(response.pagination);
       
-      // Update filters if new ones are provided
       if (Object.keys(newFilters).length > 0) {
-        setFilters(prev => ({ ...prev, ...newFilters }));
+        setPackageFilters(prev => ({ ...prev, ...newFilters }));
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to fetch packages';
@@ -52,13 +59,13 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     }
   }, []);
 
-  const createPackage = useCallback(async (packageData: Partial<PackageGroup>) => {
+  const createPackage = useCallback(async (packageData: any) => {
     setLoading(true);
     setError(null);
     
     try {
       await packageService.createPackage(packageData);
-      await fetchPackages(filters);
+      await fetchPackages(packageFilters);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create package';
       setError(message);
@@ -67,15 +74,15 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  }, [filters, fetchPackages]);
+  }, [packageFilters, fetchPackages]);
 
-  const updatePackage = useCallback(async (id: string, updateData: Partial<PackageGroup>) => {
+  const updatePackage = useCallback(async (id: string, updateData: any) => {
     setLoading(true);
     setError(null);
     
     try {
       await packageService.updatePackage(id, updateData);
-      await fetchPackages(filters);
+      await fetchPackages(packageFilters);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to update package';
       setError(message);
@@ -84,7 +91,7 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  }, [filters, fetchPackages]);
+  }, [packageFilters, fetchPackages]);
 
   const deletePackage = useCallback(async (id: string) => {
     setLoading(true);
@@ -92,7 +99,7 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     
     try {
       await packageService.deletePackage(id);
-      await fetchPackages(filters);
+      await fetchPackages(packageFilters);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to delete package';
       setError(message);
@@ -101,7 +108,7 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  }, [filters, fetchPackages]);
+  }, [packageFilters, fetchPackages]);
 
   const restorePackage = useCallback(async (id: string) => {
     setLoading(true);
@@ -109,7 +116,7 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     
     try {
       await packageService.restorePackage(id);
-      await fetchPackages(filters);
+      await fetchPackages(packageFilters);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to restore package';
       setError(message);
@@ -118,23 +125,156 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  }, [filters, fetchPackages]);
+  }, [packageFilters, fetchPackages]);
 
-  const fetchLowStockAlerts = useCallback(async () => {
+  const getPackage = useCallback(async (id: string): Promise<Package> => {
     try {
-      const alerts = await packageService.getLowStockAlerts();
-      setLowStockAlerts(alerts);
+      return await packageService.getPackage(id);
     } catch (err: unknown) {
-      console.error("Failed to fetch low stock alerts", err);
+      const message = err instanceof Error ? err.message : 'Failed to get package';
+      setError(message);
+      console.error("Failed to get package", err);
+      throw err;
     }
   }, []);
 
-  const fetchAnalytics = useCallback(async (timeframe = '30d') => {
+  // Bundle operations
+  const fetchBundles = useCallback(async (
+    newFilters: BundleFilters = {},
+    newPagination: Partial<{ page: number; limit: number }> = {}
+  ) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await bundleService.getBundles(newFilters, newPagination);
+      setBundles(response.bundles);
+      setPagination(response.pagination);
+      
+      if (Object.keys(newFilters).length > 0) {
+        setBundleFilters(prev => ({ ...prev, ...newFilters }));
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch bundles';
+      setError(message);
+      console.error("Failed to fetch bundles", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const createBundle = useCallback(async (bundleData: any) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await bundleService.createBundle(bundleData);
+      await fetchBundles(bundleFilters);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to create bundle';
+      setError(message);
+      console.error("Failed to create bundle", err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [bundleFilters, fetchBundles]);
+
+  const updateBundle = useCallback(async (id: string, updateData: any) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await bundleService.updateBundle(id, updateData);
+      await fetchBundles(bundleFilters);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to update bundle';
+      setError(message);
+      console.error("Failed to update bundle", err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [bundleFilters, fetchBundles]);
+
+  const deleteBundle = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await bundleService.deleteBundle(id);
+      await fetchBundles(bundleFilters);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to delete bundle';
+      setError(message);
+      console.error("Failed to delete bundle", err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [bundleFilters, fetchBundles]);
+
+  const getBundle = useCallback(async (id: string): Promise<Bundle> => {
+    try {
+      return await bundleService.getBundle(id);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to get bundle';
+      setError(message);
+      console.error("Failed to get bundle", err);
+      throw err;
+    }
+  }, []);
+
+  const getBundlesByProvider = useCallback(async (providerId: string, pagination?: Partial<{ page: number; limit: number }>) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await bundleService.getBundlesByProvider(providerId, pagination);
+      setBundles(response.bundles);
+      setPagination(response.pagination);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch bundles by provider';
+      setError(message);
+      console.error("Failed to fetch bundles by provider", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getBundlesByPackage = useCallback(async (packageId: string, pagination?: Partial<{ page: number; limit: number }>) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await bundleService.getBundlesByPackage(packageId, pagination);
+      setBundles(response.bundles);
+      setPagination(response.pagination);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch bundles by package';
+      setError(message);
+      console.error("Failed to fetch bundles by package", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Analytics
+  const fetchPackageAnalytics = useCallback(async (timeframe = '30d') => {
     try {
       const data = await packageService.getAnalytics(timeframe);
-      setAnalytics(data);
+      setPackageAnalytics(data);
     } catch (err: unknown) {
-      console.error("Failed to fetch analytics", err);
+      console.error("Failed to fetch package analytics", err);
+    }
+  }, []);
+
+  const fetchBundleAnalytics = useCallback(async (timeframe = '30d') => {
+    try {
+      const data = await bundleService.getBundleAnalytics(timeframe);
+      setBundleAnalytics(data);
+    } catch (err: unknown) {
+      console.error("Failed to fetch bundle analytics", err);
     }
   }, []);
 
@@ -144,36 +284,57 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
 
   const value = useMemo<PackageContextType>(() => ({
     packages,
+    bundles,
     loading,
     error,
     pagination,
-    filters,
-    lowStockAlerts,
-    analytics,
+    packageFilters,
+    bundleFilters,
+    packageAnalytics,
+    bundleAnalytics,
     fetchPackages,
     createPackage,
     updatePackage,
     deletePackage,
     restorePackage,
-    fetchLowStockAlerts,
-    fetchAnalytics,
-    setFilters,
+    getPackage,
+    fetchBundles,
+    createBundle,
+    updateBundle,
+    deleteBundle,
+    getBundle,
+    getBundlesByProvider,
+    getBundlesByPackage,
+    fetchPackageAnalytics,
+    fetchBundleAnalytics,
+    setPackageFilters,
+    setBundleFilters,
     clearError,
   }), [
     packages,
+    bundles,
     loading,
     error,
     pagination,
-    filters,
-    lowStockAlerts,
-    analytics,
+    packageFilters,
+    bundleFilters,
+    packageAnalytics,
+    bundleAnalytics,
     fetchPackages,
     createPackage,
     updatePackage,
     deletePackage,
     restorePackage,
-    fetchLowStockAlerts,
-    fetchAnalytics,
+    getPackage,
+    fetchBundles,
+    createBundle,
+    updateBundle,
+    deleteBundle,
+    getBundle,
+    getBundlesByProvider,
+    getBundlesByPackage,
+    fetchPackageAnalytics,
+    fetchBundleAnalytics,
     clearError,
   ]);
 

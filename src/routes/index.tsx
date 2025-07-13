@@ -130,6 +130,11 @@ const AtPackagesPage = lazy(() =>
     default: module.AtPackagesPage,
   }))
 );
+const GloPackagesPage = lazy(() =>
+  import("../pages/glo-packages-page").then((module) => ({
+    default: module.GloPackagesPage,
+  }))
+);
 
 // Define routes
 export const routes: RouteObject[] = [
@@ -332,6 +337,14 @@ export const routes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AtPackagesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "packages/glo",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <GloPackagesPage />
               </Suspense>
             ),
           },

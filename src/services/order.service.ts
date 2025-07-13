@@ -18,9 +18,19 @@ class OrderService {
   }
 
   // Create bulk order
-  async createBulkOrder(orderData: CreateBulkOrderData): Promise<Order> {
+  async createBulkOrder(orderData: CreateBulkOrderData): Promise<{
+    orderId: string;
+    orderNumber: string;
+    totalItems: number;
+    items: Array<{ customerPhone: string; bundleSize?: { value: number; unit: string }; status: string }>;
+  }> {
     const response = await apiClient.post('/api/orders/bulk', orderData);
-    return response.data.order;
+    return {
+      orderId: response.data.orderId,
+      orderNumber: response.data.orderNumber,
+      totalItems: response.data.totalItems,
+      items: response.data.items
+    };
   }
 
   // Get orders with filtering and pagination

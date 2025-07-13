@@ -1,92 +1,63 @@
 // src/components/products/PackageList.tsx
 import React, { useEffect, useState } from 'react';
 import { usePackage } from '../../hooks/use-package';
-import { PackageFormModal } from './PackageFormModal';
-import type { PackageGroup, PackageItem } from '../../types/package';
 import { getProviderColors } from '../../utils/provider-colors';
 import { 
-  FaPlus, 
-  FaEdit, 
-  FaTrash, 
-  FaUndo, 
   FaSearch,
   FaFilter,
   FaBox,
-  FaToggleOn,
-  FaToggleOff,
-  FaTimes,
   FaExclamationCircle
 } from 'react-icons/fa';
-import { packageService } from '../../services/package.service';
 
 export interface PackageListProps {
   provider?: string;
 }
 
 // Utility to always include provider in filters if present
-function getEffectiveFilters(baseFilters: any, provider?: string) {
+function getEffectiveFilters(baseFilters: Record<string, unknown>, provider?: string) {
   return provider ? { ...baseFilters, provider } : baseFilters;
 }
-
-export type EnrichedPackageItem = PackageItem & {
-  provider: string;
-  groupName: string;
-  groupId: string | undefined;
-  groupIsActive: boolean;
-  groupIsDeleted: boolean;
-  groupDescription?: string;
-  groupTags?: string[];
-};
 
 export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
   const {
     packages,
+    bundles,
     loading,
     error,
     pagination,
-    filters,
+    packageFilters,
     fetchPackages,
-    createPackage,
-    updatePackage,
-    deletePackage,
-    restorePackage,
-    setFilters
+    fetchBundles,
+    setPackageFilters
   } = usePackage();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [selectedPackage, setSelectedPackage] = useState<PackageGroup | null>(null);
-  const [selectedPackageItem, setSelectedPackageItem] = useState<PackageItem | null>(null);
-  const [editItemIndex, setEditItemIndex] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [localFilters, setLocalFilters] = useState({
     provider: provider || '',
     isActive: '',
     includeDeleted: false
   });
-  const [allProviderItems, setAllProviderItems] = useState<EnrichedPackageItem[]>([]);
-  const [loadingProviderItems, setLoadingProviderItems] = useState(false);
+  const [viewMode, setViewMode] = useState<'packages' | 'bundles'>('packages');
 
   useEffect(() => {
-    // If provider prop is set, always filter by that provider ONLY
-    if (provider) {
-      setLoadingProviderItems(true);
-      packageService.getAllPackageItems(provider)
-        .then(items => setAllProviderItems(items))
-        .catch(() => setAllProviderItems([]))
-        .finally(() => setLoadingProviderItems(false));
-    } else {
+    if (viewMode === 'packages') {
       fetchPackages();
+    } else {
+      fetchBundles();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchPackages, provider]);
+  }, [fetchPackages, fetchBundles, viewMode]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const newFilters = getEffectiveFilters({ ...filters, search: searchTerm }, provider);
-    setFilters(newFilters);
-    fetchPackages(newFilters);
+    const newFilters = getEffectiveFilters({ ...packageFilters, search: searchTerm }, provider);
+    setPackageFilters(newFilters);
+    if (viewMode === 'packages') {
+      fetchPackages(newFilters);
+    } else {
+      fetchBundles(newFilters);
+    }
   };
 
   const handleFilterChange = () => {
@@ -97,13 +68,17 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     else isActive = undefined;
 
     const newFilters = getEffectiveFilters({
-      ...filters,
+      ...packageFilters,
       ...localFilters,
       isActive,
       search: searchTerm
     }, provider);
-    setFilters(newFilters);
-    fetchPackages(newFilters);
+    setPackageFilters(newFilters);
+    if (viewMode === 'packages') {
+      fetchPackages(newFilters);
+    } else {
+      fetchBundles(newFilters);
+    }
     setShowFilters(false);
   };
 
@@ -115,70 +90,26 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       includeDeleted: false
     });
     const newFilters = provider ? { provider } : {};
-    setFilters(newFilters);
-    fetchPackages(newFilters);
-  };
-
-  const handleCreateNew = () => {
-    setModalMode('create');
-    setSelectedPackage(null);
-    setShowModal(true);
-  };
-
-  const handleModalSubmit = async (data: Partial<PackageGroup>) => {
-    try {
-      if (modalMode === 'create') {
-        await createPackage(data);
-      } else if (selectedPackage?._id) {
-        await updatePackage(selectedPackage._id, data);
-      }
-      setShowModal(false);
-      // Always refetch with provider filter if present
-      const newFilters = provider ? { provider } : filters;
-      fetchPackages(newFilters);
-    } catch (error) {
-      console.error('Error submitting package:', error);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this package?')) {
-      await deletePackage(id);
-      // Always refetch with provider filter if present
-      const newFilters = provider ? { provider } : filters;
-      fetchPackages(newFilters);
-    }
-  };
-
-  const handleRestore = async (id: string) => {
-    if (window.confirm('Are you sure you want to restore this package?')) {
-      await restorePackage(id);
-      // Always refetch with provider filter if present
-      const newFilters = provider ? { provider } : filters;
-      fetchPackages(newFilters);
+    setPackageFilters(newFilters);
+    if (viewMode === 'packages') {
+      fetchPackages(provider ? { provider } : undefined);
+    } else {
+      fetchBundles();
     }
   };
 
   const handlePageChange = (page: number) => {
-    const newFilters = provider ? { provider } : filters;
-    fetchPackages(newFilters, { page });
+    const newFilters = provider ? { provider } : packageFilters;
+    if (viewMode === 'packages') {
+      fetchPackages(newFilters, { page });
+    } else {
+      fetchBundles(newFilters, { page });
+    }
   };
 
-  // Flatten all package items with their parent package group info
-  const allPackageItems: EnrichedPackageItem[] = provider ? allProviderItems : packages.flatMap(pkg =>
-    pkg.packageItems.map(item => ({
-      ...item,
-      provider: pkg.provider,
-      groupName: pkg.name,
-      groupId: pkg._id,
-      groupIsActive: pkg.isActive,
-      groupIsDeleted: pkg.isDeleted,
-      groupDescription: pkg.description,
-      groupTags: pkg.tags,
-    }))
-  );
+  const currentItems = viewMode === 'packages' ? (packages || []) : (bundles || []);
 
-  if (error && !provider) {
+  if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">
         <div className="flex items-center gap-3">
@@ -186,7 +117,7 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
             <FaExclamationCircle className="text-red-600" />
           </div>
           <div>
-            <h3 className="font-medium text-red-800">Error Loading Packages</h3>
+            <h3 className="font-medium text-red-800">Error Loading {viewMode === 'packages' ? 'Packages' : 'Bundles'}</h3>
             <p className="text-red-700">{error}</p>
           </div>
         </div>
@@ -199,84 +130,74 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {provider ? `${provider} Packages` : 'Data Packages'}
-          </h1>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {viewMode === 'packages' ? 'Package Groups' : 'Data Bundles'}
+          </h2>
           <p className="text-gray-600">
-            {provider
-              ? `Browse all packages for ${provider}`
-              : 'Manage your mobile data bundle packages and inventory'}
+            Manage your {viewMode === 'packages' ? 'package groups' : 'data bundles'} and configurations
           </p>
         </div>
-        <button
-          onClick={handleCreateNew}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-        >
-          <FaPlus size={16} />
-          <span className="hidden sm:inline">Add Package</span>
-          <span className="sm:hidden">Add</span>
-        </button>
+        
+        <div className="flex items-center gap-3">
+          {/* View Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('packages')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'packages'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Packages
+            </button>
+            <button
+              onClick={() => setViewMode('bundles')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'bundles'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Bundles
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 space-y-4">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative flex-1">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search packages by name, description, or provider..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <form onSubmit={handleSearch} className="flex-1">
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder={`Search ${viewMode === 'packages' ? 'packages' : 'bundles'}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </form>
+
+          {/* Filter Toggle */}
           <button
-            type="submit"
-            className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <FaSearch className="sm:hidden" />
-            <span className="hidden sm:inline">Search</span>
-          </button>
-          <button
-            type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-4 py-3 border rounded-lg transition-colors ${
-              showFilters 
-                ? 'bg-blue-50 border-blue-300 text-blue-700' 
-                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-            }`}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <FaFilter className="sm:hidden" />
-            <span className="hidden sm:inline">Filters</span>
+            <FaFilter className="text-sm" />
+            Filters
           </button>
-        </form>
+        </div>
 
-        {/* Filters Panel */}
+        {/* Filter Panel */}
         {showFilters && (
-          <div className="pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-              {!provider && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Provider
-                  </label>
-                  <select
-                    value={localFilters.provider}
-                    onChange={(e) => setLocalFilters(prev => ({ ...prev, provider: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">All Providers</option>
-                    <option value="MTN">MTN</option>
-                    <option value="TELECEL">TELECEL</option>
-                    <option value="AT">AT (AirtelTigo)</option>
-                    <option value="GLO">GLO</option>
-                  </select>
-                </div>
-              )}
-
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status
                 </label>
                 <select
@@ -284,306 +205,208 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
                   onChange={(e) => setLocalFilters(prev => ({ ...prev, isActive: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">All Status</option>
+                  <option value="">All</option>
                   <option value="true">Active</option>
                   <option value="false">Inactive</option>
                 </select>
               </div>
 
-              <div className="flex items-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Include Deleted
+                </label>
                 <label className="flex items-center">
                   <input
                     type="checkbox"
                     checked={localFilters.includeDeleted}
                     onChange={(e) => setLocalFilters(prev => ({ ...prev, includeDeleted: e.target.checked }))}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Include deleted</span>
+                  <span className="ml-2 text-sm text-gray-700">Show deleted items</span>
                 </label>
               </div>
-            </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={handleFilterChange}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Apply Filters
-              </button>
-              <button
-                onClick={clearFilters}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Clear All
-              </button>
+              <div className="flex items-end gap-2">
+                <button
+                  onClick={handleFilterChange}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Apply
+                </button>
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FaBox className="text-blue-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">
-                {pagination.total || 0}
-              </div>
-              <div className="text-sm text-gray-600">Total Packages</div>
-            </div>
+      {/* Content */}
+      {loading ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-gray-600">Loading...</span>
           </div>
         </div>
-
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <FaToggleOn className="text-green-600" />
+      ) : currentItems.length === 0 ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-8">
+          <div className="text-center">
+            <FaBox className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No {viewMode === 'packages' ? 'packages' : 'bundles'} found</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Get started by creating a new {viewMode === 'packages' ? 'package' : 'bundle'}.
+            </p>
+            <div className="mt-6">
+              <p className="text-sm text-gray-500">
+                Contact your administrator to add new {viewMode === 'packages' ? 'packages' : 'bundles'}.
+              </p>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {packages.filter(p => p.isActive && !p.isDeleted).length}
-              </div>
-              <div className="text-sm text-gray-600">Active Packages</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <FaToggleOff className="text-orange-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">
-                {packages.filter(p => !p.isActive || p.isDeleted).length}
-              </div>
-              <div className="text-sm text-gray-600">Inactive/Deleted</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Package Items Grid */}
-      {(provider ? loadingProviderItems : loading) ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }, (_, index) => (
-            <div key={`loading-${index}`} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
-              <div className="h-24 bg-gray-200 rounded-lg mb-4"></div>
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-              <div className="flex gap-2 mb-4">
-                <div className="h-6 bg-gray-200 rounded w-16"></div>
-                <div className="h-6 bg-gray-200 rounded w-20"></div>
-              </div>
-              <div className="h-10 bg-gray-200 rounded"></div>
-            </div>
-          ))}
-        </div>
-      ) : allPackageItems.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
-          <div className="mx-auto bg-gray-100 rounded-full p-6 w-20 h-20 flex items-center justify-center mb-6">
-            <FaBox className="text-4xl text-gray-400" />
-          </div>
-          <h3 className="text-xl font-medium text-gray-900 mb-2">No packages found</h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            {searchTerm || Object.values(localFilters).some(v => v) 
-              ? "No packages match your search criteria. Try adjusting your filters."
-              : "Get started by creating your first data package to offer to customers."
-            }
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={handleCreateNew}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <FaPlus size={16} />
-              Create Your First Package
-            </button>
-            {(searchTerm || Object.values(localFilters).some(v => v)) && (
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center gap-2 px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <FaTimes size={16} />
-                Clear Filters
-              </button>
-            )}
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {allPackageItems.map((item) => {
-            const colors = getProviderColors(item.provider);
-            return (
-              <div
-                key={item._id}
-                className="rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow bg-white"
-                style={{
-                  borderColor: colors.primary,
-                  backgroundColor: colors.background,
-                }}
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between p-4" style={{ backgroundColor: colors.primary + '22' }}>
-                  <div>
-                    <h3 className="text-lg font-bold" style={{ color: colors.secondary }}>{item.name}</h3>
-                    <div className="text-xs text-gray-600 mt-1">
-                      {item.groupName} ({item.provider})
-                    </div>
-                  </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    item.isActive ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {item.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-                {/* Details */}
-                <div className="p-4 space-y-2">
-                  {item.description && (
-                    <p className="text-sm text-gray-500 mb-2">{item.description}</p>
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {viewMode === 'packages' ? 'Package' : 'Bundle'} Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Provider
+                  </th>
+                  {viewMode === 'bundles' && (
+                    <>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Data
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Validity
+                      </th>
+                    </>
                   )}
-                  <div className="flex flex-wrap gap-4">
-                    <div className="text-sm">
-                      <span className="text-gray-500">Price:</span>
-                      <span className="text-gray-900 font-medium ml-1">GHS {item.price.toFixed(2)}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-gray-500">Data:</span>
-                      <span className="text-gray-900 font-medium ml-1">
-                        {item.dataVolume < 1 
-                          ? `${(item.dataVolume * 1000).toFixed(0)} MB` 
-                          : `${item.dataVolume.toFixed(1)} GB`}
-                      </span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-gray-500">Validity:</span>
-                      <span className="text-gray-900 font-medium ml-1">{item.validity === null ? 'Unlimited' : `${item.validity} ${item.validity === 1 ? 'day' : 'days'}`}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-gray-500">Inventory:</span>
-                      <span className={`font-medium ml-1 ${
-                        item.inventory <= item.lowStockThreshold 
-                          ? 'text-red-600' 
-                          : 'text-gray-900'
-                      }`}>
-                        {item.inventory}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-gray-500">Code: {item.code}</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          const group = packages.find(p => p._id === item.groupId);
-                          if (group) {
-                            setModalMode('edit');
-                            setSelectedPackage(group);
-                            const idx = group.packageItems.findIndex(i => i._id === item._id);
-                            setSelectedPackageItem(item);
-                            setEditItemIndex(idx);
-                            setShowModal(true);
-                          }
-                        }}
-                        className="p-2 rounded-lg transition-colors text-blue-600 hover:bg-blue-50"
-                        title="Edit Package"
-                      >
-                        <FaEdit size={14} />
-                      </button>
-                      {item.groupIsDeleted ? (
-                        <button
-                          onClick={() => handleRestore && handleRestore(item.groupId ?? '')}
-                          className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-                          title="Restore Package"
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Price
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {(currentItems || []).map((item: any) => {
+                  const providerColors = getProviderColors((item.provider || item.providerId) as string);
+                  
+                  return (
+                    <tr key={item._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                          {item.description && (
+                            <div className="text-sm text-gray-500">{item.description}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                          style={{
+                            backgroundColor: providerColors.background,
+                            color: providerColors.text
+                          }}
                         >
-                          <FaUndo size={14} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleDelete && handleDelete(item.groupId ?? '')}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                          title="Delete Package"
-                        >
-                          <FaTrash size={14} />
-                        </button>
+                          {item.provider || item.providerId}
+                        </span>
+                      </td>
+                      {viewMode === 'bundles' && (
+                        <>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.dataVolume} {item.dataUnit}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.validity} {item.validityUnit}
+                          </td>
+                        </>
                       )}
-                    </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {viewMode === 'bundles' ? `GHS ${item.price}` : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          item.isActive
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {item.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {pagination.pages > 1 && (
+            <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page <= 1}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.pages}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing <span className="font-medium">{((pagination.page - 1) * pagination.limit) + 1}</span> to{' '}
+                      <span className="font-medium">
+                        {Math.min(pagination.page * pagination.limit, pagination.total)}
+                      </span>{' '}
+                      of <span className="font-medium">{pagination.total}</span> results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                      <button
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={pagination.page <= 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={pagination.page >= pagination.pages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </nav>
                   </div>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-6">
-          <button
-            onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
-            disabled={pagination.page === 1}
-            className={`px-3 py-2 border rounded-lg transition-colors ${
-              pagination.page === 1
-                ? 'text-gray-400 cursor-not-allowed border-gray-200'
-                : 'hover:bg-gray-50 border-gray-300'
-            }`}
-          >
-            Previous
-          </button>
-          
-          {Array.from({ length: Math.min(pagination.pages, 5) }, (_, index) => {
-            const page = index + 1;
-            return (
-              <button
-                key={`page-${page}`}
-                onClick={() => handlePageChange(page)}
-                className={`px-3 py-2 border rounded-lg transition-colors ${
-                  pagination.page === page
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'hover:bg-gray-50 border-gray-300'
-                }`}
-              >
-                {page}
-              </button>
-            );
-          })}
-          
-          <button
-            onClick={() => handlePageChange(Math.min(pagination.pages, pagination.page + 1))}
-            disabled={pagination.page === pagination.pages}
-            className={`px-3 py-2 border rounded-lg transition-colors ${
-              pagination.page === pagination.pages
-                ? 'text-gray-400 cursor-not-allowed border-gray-200'
-                : 'hover:bg-gray-50 border-gray-300'
-            }`}
-          >
-            Next
-          </button>
-        </div>
-      )}
-
-      {/* Package Form Modal */}
-      <PackageFormModal
-        isOpen={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setSelectedPackage(null);
-          setSelectedPackageItem(null);
-          setEditItemIndex(null);
-          // Always refetch with provider filter if present
-          const newFilters = provider ? { provider } : filters;
-          fetchPackages(newFilters);
-        }}
-        onSubmit={handleModalSubmit}
-        package={selectedPackage}
-        mode={modalMode}
-        loading={loading}
-        editItemIndex={editItemIndex}
-        selectedPackageItem={selectedPackageItem}
-      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PackageList } from '../components/products/PackageList';
+import { ProviderPackageDisplay } from '../components/products/ProviderPackageDisplay';
 import { CreateOrderModal } from '../components/orders/CreateOrderModal';
 
 export const MtnPackagesPage = () => {
@@ -22,7 +22,7 @@ export const MtnPackagesPage = () => {
           Bulk Order
         </button>
       </div>
-      <PackageList provider="MTN" />
+      <ProviderPackageDisplay provider="MTN" />
       {showOrderModal && (
         <CreateOrderModal
           type={orderType}

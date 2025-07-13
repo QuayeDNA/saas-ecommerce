@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ProviderPackageDisplay } from '../components/products/ProviderPackageDisplay';
 import { CreateOrderModal } from '../components/orders/CreateOrderModal';
 
-export const AtPackagesPage = () => {
+export const GloPackagesPage = () => {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderType, setOrderType] = useState<'single' | 'bulk'>('single');
 
@@ -22,14 +22,14 @@ export const AtPackagesPage = () => {
           Bulk Order
         </button>
       </div>
-      <ProviderPackageDisplay provider="AT" />
+      <ProviderPackageDisplay provider="GLO" />
       {showOrderModal && (
         <CreateOrderModal
           type={orderType}
           isOpen={showOrderModal}
           onClose={() => setShowOrderModal(false)}
           onSuccess={() => setShowOrderModal(false)}
-          providerPreset="AT"
+          providerPreset="GLO"
         />
       )}
     </div>

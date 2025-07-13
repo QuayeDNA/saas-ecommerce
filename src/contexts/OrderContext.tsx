@@ -106,9 +106,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setError(null);
     
     try {
-      await orderService.createBulkOrder(orderData);
+      const summary = await orderService.createBulkOrder(orderData);
       addToast('Bulk order created successfully', 'success');
       await fetchOrders(filters);
+      return summary;
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || 'Failed to create bulk order');
