@@ -3,13 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { usePackage } from '../../hooks/use-package';
 import { getProviderColors } from '../../utils/provider-colors';
 import { SingleOrderModal } from '../orders/SingleOrderModal';
+import { BulkOrderModal } from '../orders/BulkOrderModal';
 import { 
   FaSearch,
-  FaFilter,
   FaBox,
   FaExclamationCircle,
-  FaMobile,
-  FaWifi
+  FaFileUpload
 } from 'react-icons/fa';
 
 export interface ProviderPackageDisplayProps {
@@ -59,6 +58,8 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
   const [hasLoaded, setHasLoaded] = useState(false);
   const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showBulkOrderModal, setShowBulkOrderModal] = useState(false);
+  const [selectedBulkPackage, setSelectedBulkPackage] = useState<Package | null>(null);
 
   useEffect(() => {
     setHasLoaded(false); // Reset when provider changes
@@ -70,9 +71,9 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
         try {
           await Promise.all([
             fetchPackages({ provider }),
-            fetchBundles({ provider })
+            fetchBundles({ providerId: provider })
           ]);
-        } catch (err) {
+        } catch {
           // error is handled in context
         } finally {
           setHasLoaded(true);
@@ -85,12 +86,13 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
   // Group bundles by package
   const groupedBundles = (packages || []).reduce((acc, pkg) => {
     const packageBundles = (bundles || []).filter(bundle => 
-      bundle.packageId._id === pkg._id && 
+      // Fix: bundle.packageId may be a string or an object, handle both cases
+      ((typeof bundle.packageId === 'string' ? bundle.packageId === pkg._id : bundle.packageId && bundle.packageId._id === pkg._id)) &&
       bundle.isActive &&
       (selectedCategory === 'all' || bundle.category === selectedCategory) &&
       (searchTerm === '' || 
         bundle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        bundle.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        (bundle.description?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()))
     );
     
     if (packageBundles.length > 0) {
@@ -154,6 +156,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
             <p className="text-gray-600">Browse and order data bundles</p>
           </div>
         </div>
+        {/* Removed global Bulk Order button */}
       </div>
 
       {/* Search and Filters */}
@@ -181,8 +184,12 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {categories.map(category => (
-                <option key={category} value={category}>
-                  {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
+                <option key={category ?? 'unknown'} value={category ?? ''}>
+                  {category === 'all'
+                    ? 'All Categories'
+                    : typeof category === 'string'
+                      ? category.charAt(0).toUpperCase() + category.slice(1)
+                      : ''}
                 </option>
               ))}
             </select>
@@ -218,6 +225,17 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       {pkg.category}
                     </span>
+                    {/* Bulk Order Button for this package */}
+                    <button
+                      onClick={() => {
+                        setSelectedBulkPackage(pkg);
+                        setShowBulkOrderModal(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
+                    >
+                      <FaFileUpload />
+                      Bulk Order
+                    </button>
                   </div>
                 </div>
               </div>
@@ -297,6 +315,23 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
             setSelectedBundle(null);
           }}
           bundle={selectedBundle}
+        />
+      )}
+
+      {/* Bulk Order Modal */}
+      {selectedBulkPackage && (
+        <BulkOrderModal
+          isOpen={showBulkOrderModal}
+          onClose={() => {
+            setShowBulkOrderModal(false);
+            setSelectedBulkPackage(null);
+          }}
+          onSuccess={() => {
+            setShowBulkOrderModal(false);
+            setSelectedBulkPackage(null);
+          }}
+          packageId={selectedBulkPackage._id}
+          provider={provider}
         />
       )}
     </div>

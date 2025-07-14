@@ -1,5 +1,6 @@
 // src/components/orders/SingleOrderModal.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaTimes, FaPhone, FaWifi, FaClock, FaCheckCircle } from 'react-icons/fa';
 import { useOrder } from '../../contexts/OrderContext';
 import type { Bundle } from '../../types/package';
@@ -43,6 +44,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   bundle
 }) => {
   const { createSingleOrder, loading } = useOrder();
+  const navigate = useNavigate();
   const [customerPhone, setCustomerPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [showSummary, setShowSummary] = useState(false);
@@ -168,10 +170,11 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
       await createSingleOrder(orderData);
       
-      // Show success briefly before closing
+      // Show success briefly before navigating to orders page
       setTimeout(() => {
         onSuccess();
         onClose();
+        navigate('/agent/orders');
       }, 2000);
       
     } catch (err: any) {
