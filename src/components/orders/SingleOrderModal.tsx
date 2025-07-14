@@ -174,7 +174,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       setTimeout(() => {
         onSuccess();
         onClose();
-        navigate('/agent/orders');
+        navigate('./agent/orders');
       }, 2000);
       
     } catch (err: any) {

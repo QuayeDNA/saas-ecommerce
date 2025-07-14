@@ -20,7 +20,9 @@ interface BulkOrderModalProps {
   onClose: () => void;
   onSuccess: () => void;
   packageId: string;
-  provider: string;
+  provider: string; // provider code for validation
+  providerName: string; // provider name for display
+  providerId: string; // provider ObjectId for logic
 }
 
 interface BulkOrderItem {
@@ -56,12 +58,21 @@ const providerPhoneRules = {
   }
 };
 
+// Utility to strictly validate and extract a 24-char ObjectId string
+const getValidId = (id: any): string => {
+  if (typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)) return id;
+  if (id && typeof id._id === 'string' && /^[a-fA-F0-9]{24}$/.test(id._id)) return id._id;
+  throw new Error('Invalid ObjectId');
+};
+
 export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
   packageId,
-  provider
+  provider,
+  providerName,
+  providerId
 }) => {
   const { createBulkOrder, loading } = useOrder();
   const { bundles } = usePackage();
@@ -85,7 +96,9 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
   // Get available bundles for this package
   const availableBundles = bundles?.filter(bundle => 
-    bundle.packageId === packageId && bundle.isActive
+    ((typeof bundle.packageId === 'string' ? bundle.packageId : bundle.packageId?._id) === packageId) &&
+    ((typeof bundle.providerId === 'string' ? bundle.providerId : bundle.providerId?._id) === providerId) &&
+    bundle.isActive
   ) || [];
 
   // Validate phone number based on provider
@@ -267,8 +280,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       // Create orders for each bundle
       for (const [bundleId, group] of Object.entries(bundleGroups)) {
         const orderData: CreateBulkOrderData = {
-          packageGroupId: (group.bundle.packageId as any)?._id || group.bundle.packageId,
-          packageItemId: group.bundle._id || '',
+          packageGroupId: getValidId(group.bundle.packageId),
+          packageItemId: getValidId(group.bundle._id),
           items: group.items.map(item => ({
             customerPhone: item.customerPhone.replace(/^\+?233/, '0'),
             bundleSize: {
@@ -277,7 +290,11 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             }
           }))
         };
-
+        // Debug log
+        console.log('Bulk order IDs:', {
+          packageGroupId: orderData.packageGroupId,
+          packageItemId: orderData.packageItemId
+        });
         await createBulkOrder(orderData);
       }
       
@@ -327,7 +344,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            {showSummary ? 'Bulk Order Summary' : 'Bulk Order'}
+            {showSummary ? 'Bulk Order Summary' : `Bulk Order for ${providerName}`}
           </h2>
           <button 
             onClick={onClose} 
@@ -346,12 +363,12 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{provider} Package</h3>
+                    <h3 className="font-medium text-gray-900">{providerName} Package</h3>
                     <p className="text-sm text-gray-600 mt-1">Available bundles in this package</p>
                   </div>
                 </div>
-                
-                <div className="space-y-2">
+                {/* Make available bundles scrollable */}
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                   {availableBundles.map(bundle => (
                     <div key={bundle._id} className="flex items-center justify-between text-sm bg-white p-2 rounded">
                       <div className="flex items-center gap-2">
@@ -500,7 +517,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Provider:</span>
-                    <span className="font-medium">{provider}</span>
+                    <span className="font-medium">{providerName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Items:</span>

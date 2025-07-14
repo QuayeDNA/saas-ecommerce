@@ -1,6 +1,7 @@
 // src/components/products/ProviderPackageDisplay.tsx
 import React, { useEffect, useState } from 'react';
 import { usePackage } from '../../hooks/use-package';
+import { useProvider } from '../../hooks/use-provider';
 import { getProviderColors } from '../../utils/provider-colors';
 import { SingleOrderModal } from '../orders/SingleOrderModal';
 import { BulkOrderModal } from '../orders/BulkOrderModal';
@@ -12,7 +13,7 @@ import {
 } from 'react-icons/fa';
 
 export interface ProviderPackageDisplayProps {
-  provider: string;
+  provider: string; // provider code
 }
 
 interface Package {
@@ -53,6 +54,7 @@ interface Bundle {
 
 export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ provider }) => {
   const { packages, bundles, loading, error, fetchPackages, fetchBundles } = usePackage();
+  const { providers, loading: providersLoading } = useProvider();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -61,17 +63,20 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
   const [showBulkOrderModal, setShowBulkOrderModal] = useState(false);
   const [selectedBulkPackage, setSelectedBulkPackage] = useState<Package | null>(null);
 
+  // Find the provider object by code
+  const providerObj = providers.find(p => p.code === provider);
+
   useEffect(() => {
     setHasLoaded(false); // Reset when provider changes
   }, [provider]);
 
   useEffect(() => {
-    if (!hasLoaded) {
+    if (!hasLoaded && providerObj) {
       const loadData = async () => {
         try {
           await Promise.all([
-            fetchPackages({ provider }),
-            fetchBundles({ providerId: provider })
+            fetchPackages({ provider: providerObj.code }),
+            fetchBundles({ providerId: providerObj._id })
           ]);
         } catch {
           // error is handled in context
@@ -81,7 +86,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
       };
       loadData();
     }
-  }, [provider, hasLoaded]);
+  }, [provider, hasLoaded, providerObj]);
 
   // Group bundles by package
   const groupedBundles = (packages || []).reduce((acc, pkg) => {
@@ -108,14 +113,26 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
   // Get unique categories from bundles
   const categories = ['all', ...Array.from(new Set((bundles || []).map(b => b.category)))];
 
-  const providerColors = getProviderColors(provider);
+  // Use providerObj for display and providerObj._id for logic
+  if (providersLoading || !providerObj) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-8">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading provider info...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const providerColors = getProviderColors(providerObj.code);
 
   if (loading && !hasLoaded) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8">
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading {provider} packages...</span>
+          <span className="ml-3 text-gray-600">Loading {providerObj.name} packages...</span>
         </div>
       </div>
     );
@@ -149,10 +166,10 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
               color: providerColors.text
             }}
           >
-            {provider.slice(0, 2)}
+            {providerObj.code.slice(0, 2)}
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{provider} Data Packages</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{providerObj.name} Data Packages</h2>
             <p className="text-gray-600">Browse and order data bundles</p>
           </div>
         </div>
@@ -204,7 +221,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
             <FaBox className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No packages found</h3>
             <p className="mt-1 text-sm text-gray-500">
-              No {provider} packages are currently available.
+              No {providerObj.name} packages are currently available.
             </p>
           </div>
         </div>
@@ -331,7 +348,9 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
             setSelectedBulkPackage(null);
           }}
           packageId={selectedBulkPackage._id}
-          provider={provider}
+          provider={providerObj.code} // for validation
+          providerName={providerObj.name} // for display
+          providerId={providerObj._id} // for logic
         />
       )}
     </div>

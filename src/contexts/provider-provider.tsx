@@ -1,5 +1,5 @@
 // src/contexts/provider-provider.tsx
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { ProviderContext, type ProviderContextType } from './provider-context';
 import { providerService } from '../services/provider.service';
@@ -45,6 +45,11 @@ export const ProviderProvider: React.FC<ProviderProviderProps> = ({ children }) 
       setLoading(false);
     }
   }, []);
+
+  // Fetch providers on mount
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
 
   const createProvider = useCallback(async (providerData: Partial<Provider>) => {
     setLoading(true);
