@@ -166,7 +166,7 @@ class PackageService {
   async getAllPackageItems(provider?: string) {
     const params: any = {};
     if (provider) params.provider = provider;
-    const response = await apiClient.get('/api/bundles', { params });
+    const response = await apiClient.get('/api/packages/public/bundles', { params });
     return response.data.bundles;
   }
 

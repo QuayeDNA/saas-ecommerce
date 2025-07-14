@@ -1,10 +1,10 @@
 // src/components/orders/CreateOrderModal.tsx
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaTimes, FaCheckCircle } from 'react-icons/fa';
 import { useOrder } from '../../contexts/OrderContext';
 import { usePackage } from '../../hooks/use-package';
 import type { CreateSingleOrderData, CreateBulkOrderData } from '../../types/order';
-import type { PackageGroup, PackageItem } from '../../types/package';
+import type { PackageGroup } from '../../types/package';
 
 interface CreateOrderModalProps {
   type: 'single' | 'bulk';

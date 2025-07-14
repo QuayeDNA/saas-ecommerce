@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePackage } from '../../hooks/use-package';
 import { getProviderColors } from '../../utils/provider-colors';
+import { SingleOrderModal } from '../orders/SingleOrderModal';
 import { 
   FaSearch,
   FaFilter,
@@ -56,6 +57,8 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   useEffect(() => {
     setHasLoaded(false); // Reset when provider changes
@@ -77,11 +80,11 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
       };
       loadData();
     }
-  }, [provider, fetchPackages, fetchBundles, hasLoaded]);
+  }, [provider, hasLoaded]);
 
   // Group bundles by package
-  const groupedBundles = packages.reduce((acc, pkg) => {
-    const packageBundles = bundles.filter(bundle => 
+  const groupedBundles = (packages || []).reduce((acc, pkg) => {
+    const packageBundles = (bundles || []).filter(bundle => 
       bundle.packageId._id === pkg._id && 
       bundle.isActive &&
       (selectedCategory === 'all' || bundle.category === selectedCategory) &&
@@ -101,7 +104,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
   }, {} as Record<string, { package: Package; bundles: Bundle[] }>);
 
   // Get unique categories from bundles
-  const categories = ['all', ...Array.from(new Set(bundles.map(b => b.category)))];
+  const categories = ['all', ...Array.from(new Set((bundles || []).map(b => b.category)))];
 
   const providerColors = getProviderColors(provider);
 
@@ -263,7 +266,13 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
                       </div>
 
                       {/* Order Button */}
-                      <button className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
+                      <button 
+                        onClick={() => {
+                          setSelectedBundle(bundle);
+                          setShowOrderModal(true);
+                        }}
+                        className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                      >
                         Order Now
                       </button>
                     </div>
@@ -273,6 +282,22 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
             </div>
           ))}
         </div>
+      )}
+
+      {/* Single Order Modal */}
+      {selectedBundle && (
+        <SingleOrderModal
+          isOpen={showOrderModal}
+          onClose={() => {
+            setShowOrderModal(false);
+            setSelectedBundle(null);
+          }}
+          onSuccess={() => {
+            setShowOrderModal(false);
+            setSelectedBundle(null);
+          }}
+          bundle={selectedBundle}
+        />
       )}
     </div>
   );

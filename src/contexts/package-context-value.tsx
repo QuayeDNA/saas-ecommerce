@@ -57,7 +57,7 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [packageFilters]);
 
   const createPackage = useCallback(async (packageData: any) => {
     setLoading(true);
@@ -161,7 +161,7 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [bundleFilters]);
 
   const createBundle = useCallback(async (bundleData: any) => {
     setLoading(true);

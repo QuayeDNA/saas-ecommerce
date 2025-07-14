@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePackage } from '../../hooks/use-package';
 import { getProviderColors } from '../../utils/provider-colors';
+import type { Bundle } from '../../types/package';
 import { 
   FaSearch,
   FaFilter,
@@ -47,7 +48,7 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       fetchBundles();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchPackages, fetchBundles, viewMode]);
+  }, [viewMode]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -299,8 +300,8 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {(currentItems || []).map((item: any) => {
-                  const providerColors = getProviderColors((item.provider || item.providerId) as string);
+                {(currentItems || []).map((item) => {
+                  const providerColors = getProviderColors((item.provider || (item as Bundle).providerId) as string);
                   
                   return (
                     <tr key={item._id} className="hover:bg-gray-50">
@@ -320,21 +321,21 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
                             color: providerColors.text
                           }}
                         >
-                          {item.provider || item.providerId}
+                          {String(item.provider || 'Unknown')}
                         </span>
                       </td>
                       {viewMode === 'bundles' && (
                         <>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {item.dataVolume} {item.dataUnit}
+                            {(item as Bundle).dataVolume} {(item as Bundle).dataUnit}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {item.validity} {item.validityUnit}
+                            {(item as Bundle).validity} {(item as Bundle).validityUnit}
                           </td>
                         </>
                       )}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {viewMode === 'bundles' ? `GHS ${item.price}` : '-'}
+                        {viewMode === 'bundles' ? `GHS ${(item as Bundle).price}` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
