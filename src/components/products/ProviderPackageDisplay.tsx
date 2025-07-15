@@ -9,46 +9,12 @@ import {
   FaBox,
   FaExclamationCircle
 } from 'react-icons/fa';
-
+import type { Package, Bundle } from '../../types/package';
 export interface ProviderPackageDisplayProps {
   provider: string; // provider code
 }
 
-interface Package {
-  _id: string;
-  name: string;
-  description: string;
-  provider: string;
-  category: string;
-  isActive: boolean;
-}
 
-interface Bundle {
-  _id: string;
-  name: string;
-  description: string;
-  dataVolume: number;
-  dataUnit: string;
-  validity: number;
-  validityUnit: string;
-  price: number;
-  currency: string;
-  category: string;
-  isActive: boolean;
-  packageId: {
-    _id: string;
-    name: string;
-    description: string;
-  };
-  providerId: {
-    _id: string;
-    name: string;
-    logo: {
-      url: string;
-      alt: string;
-    };
-  };
-}
 
 export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ provider }) => {
   const { packages, bundles, loading, error, fetchPackages, fetchBundles } = usePackage();
@@ -82,12 +48,19 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
       };
       loadData();
     }
-  }, [provider, hasLoaded, providerObj]);
+  }, [provider, hasLoaded, providerObj, fetchPackages, fetchBundles]);
 
   // Group bundles by package
   const groupedBundles = (packages || []).reduce((acc, pkg) => {
+    if (!pkg._id) {
+      return acc;
+    }
     const packageBundles = (bundles || []).filter(bundle => 
-      ((typeof bundle.packageId === 'string' ? bundle.packageId === pkg._id : bundle.packageId && bundle.packageId._id === pkg._id)) &&
+      (
+        typeof bundle.packageId === 'string'
+          ? bundle.packageId === pkg._id
+          : (bundle.packageId && typeof bundle.packageId === 'object' && '_id' in bundle.packageId && (bundle.packageId as { _id: string })._id === pkg._id)
+      ) &&
       bundle.isActive &&
       (selectedCategory === 'all' || bundle.category === selectedCategory) &&
       (searchTerm === '' || 
@@ -244,6 +217,9 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
           bundle={selectedBundle}
           isOpen={showOrderModal}
           onClose={() => setShowOrderModal(false)}
+          onSuccess={() => {
+            setShowOrderModal(false);
+          }}
         />
       )}
     </div>

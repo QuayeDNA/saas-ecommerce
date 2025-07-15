@@ -48,9 +48,9 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
   const [newTag, setNewTag] = useState('');
   const [newFeature, setNewFeature] = useState('');
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [setPackages] = useState<Package[]>([]);
-  const [setLoadingProviders] = useState(false);
-  const [setLoadingPackages] = useState(false);
+  const [, setPackages] = useState<Package[]>([]);
+  const [, setLoadingProviders] = useState(false);
+  const [, setLoadingPackages] = useState(false);
 
   useEffect(() => {
     if (packageData && mode === 'edit') {
@@ -79,16 +79,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
   }, [packageData, mode, isOpen]);
 
   // Fetch providers and packages when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      fetchProviders();
-      if (viewMode === 'bundles') {
-        fetchPackages();
-      }
-    }
-  }, [isOpen, viewMode]);
-
-  const fetchProviders = async () => {
+  const fetchProviders = React.useCallback(async () => {
     try {
       setLoadingProviders(true);
       const providersResponse = await providerService.getPublicProviders();
@@ -137,9 +128,9 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
     } finally {
       setLoadingProviders(false);
     }
-  };
+  }, []);
 
-  const fetchPackages = async () => {
+  const fetchPackages = React.useCallback(async () => {
     try {
       setLoadingPackages(true);
       // This would need to be implemented in the package service
@@ -151,7 +142,16 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
     } finally {
       setLoadingPackages(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchProviders();
+      if (viewMode === 'bundles') {
+        fetchPackages();
+      }
+    }
+  }, [fetchPackages, fetchProviders, isOpen, viewMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,7 +250,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   Name *
                 </label>
                 <input
@@ -264,7 +264,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="provider" className="block text-sm font-medium text-gray-700 mb-1">
                   Provider *
                 </label>
                 <select
@@ -284,7 +284,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
               <textarea
@@ -298,7 +298,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
 
             {viewMode === 'packages' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
                   Category
                 </label>
                 <select
@@ -323,7 +323,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="dataVolume" className="block text-sm font-medium text-gray-700 mb-1">
                     Data Volume *
                   </label>
                   <input
@@ -338,7 +338,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="dataUnit" className="block text-sm font-medium text-gray-700 mb-1">
                     Data Unit
                   </label>
                   <select
@@ -353,7 +353,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                     Price (GHS) *
                   </label>
                   <input
@@ -370,7 +370,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="validity" className="block text-sm font-medium text-gray-700 mb-1">
                     Validity *
                   </label>
                   <input
@@ -384,7 +384,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="validityUnit" className="block text-sm font-medium text-gray-700 mb-1">
                     Validity Unit
                   </label>
                   <select
@@ -401,7 +401,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="bundleCode" className="block text-sm font-medium text-gray-700 mb-1">
                   Bundle Code
                 </label>
                 <input
@@ -414,7 +414,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
                   Category
                 </label>
                 <input
@@ -428,7 +428,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
 
               {/* Features */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="features" className="block text-sm font-medium text-gray-700 mb-1">
                   Features
                 </label>
                 <div className="flex gap-2 mb-2">
@@ -436,7 +436,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                     type="text"
                     value={newFeature}
                     onChange={(e) => setNewFeature(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Add a feature"
                   />
@@ -471,7 +471,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
                   Tags
                 </label>
                 <div className="flex gap-2 mb-2">
@@ -479,7 +479,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                     type="text"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Add a tag"
                   />
