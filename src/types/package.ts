@@ -23,7 +23,7 @@ export interface Bundle {
   description?: string;
   dataVolume: number;
   dataUnit: 'MB' | 'GB' | 'TB';
-  validity: number;
+  validity: number | 'unlimited';
   validityUnit: 'hours' | 'days' | 'weeks' | 'months' | 'unlimited';
   price: number;
   currency: string;
@@ -182,8 +182,8 @@ export interface CreateBundleData {
   description?: string;
   dataVolume: number;
   dataUnit: 'MB' | 'GB' | 'TB';
-  validity: number;
-  validityUnit: 'hours' | 'days' | 'weeks' | 'months';
+  validity: number | 'unlimited';
+  validityUnit: 'hours' | 'days' | 'weeks' | 'months' | 'unlimited';
   price: number;
   currency?: string;
   features?: string[];

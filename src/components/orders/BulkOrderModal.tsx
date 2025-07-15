@@ -67,7 +67,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   providerName,
   providerId
 }) => {
-  const { loading } = useOrder();
+  const { loading, createBulkOrder } = useOrder();
   const { bundles: rawBundles } = usePackage();
   const bundles: Bundle[] = Array.isArray(rawBundles) ? rawBundles : [];
   const navigate = useNavigate();
@@ -266,19 +266,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const handleConfirmOrder = async () => {
     try {
       setError(null);
-      // Convert orderItems to items array in the format 'phone,dataVolumeUnit'
       const items = orderItems.map(item => `${item.customerPhone},${item.dataVolume}${item.dataUnit}`);
-      // Only send items array to backend
       const orderData = { items };
-      // Debug log for data
-      console.log('[BulkOrder] Sending:', orderData);
-      // Optionally, show backend summary (success/failures)
-      // For now, just proceed to success
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-        navigate('/agent/dashboard/orders');
-      }, 2000);
+      // Actually make the backend request
+      await createBulkOrder(orderData);
+      onSuccess();
+      onClose();
+      navigate('/agent/dashboard/orders');
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message || 'Failed to create bulk order');

@@ -1,5 +1,3 @@
-// src/utils/provider-colors.ts
-
 type ProviderColors = {
   primary: string;
   secondary: string;
@@ -16,34 +14,34 @@ type ProviderColorMap = {
  */
 export const providerColors: ProviderColorMap = {
   MTN: {
-    primary: '#ffd600', // Vibrant MTN Yellow (matches order button)
-    secondary: '#000000', // Black
-    background: '#fff7d9', // Light yellow background
-    text: '#000000'
+    primary: '#FFC107', // MTN Yellow (official brand color)
+    secondary: '#1A2526', // MTN Dark Gray
+    background: '#FFF8E1', // Subtle yellow-tinted background
+    text: '#FFFFFF' // White for high contrast on primary color
   },
   TELECEL: {
-    primary: '#e60000', // TELECEL Red
-    secondary: '#4a4d4e', // TELECEL Dark Gray
-    background: '#ffecec', // Light red background
-    text: '#000000'
+    primary: '#D81B60', // Telecel Red (official brand color)
+    secondary: '#37474F', // Telecel Slate Gray
+    background: '#FFEBEE', // Subtle red-tinted background
+    text: '#FFFFFF'
   },
   AT: {
-    primary: '#0057b8', // AT Blue
-    secondary: '#e10600', // AT Red
-    background: '#eaf3fb', // Light blue background
-    text: '#000000'
+    primary: '#0071CE', // AirtelTigo Blue (official brand color)
+    secondary: '#D32F2F', // AirtelTigo Red
+    background: '#E3F2FD', // Subtle blue-tinted background
+    text: '#FFFFFF'
   },
   GLO: {
-    primary: '#4cb749', // GLO Green
-    secondary: '#00953b', // GLO Dark Green
-    background: '#edfaee', // Light green background
-    text: '#000000'
+    primary: '#4CAF50', // Glo Green (official brand color)
+    secondary: '#2E7D32', // Glo Dark Green
+    background: '#E8F5E9', // Subtle green-tinted background
+    text: '#FFFFFF'
   },
   default: {
-    primary: '#e5e7eb', // Default gray
-    secondary: '#6b7280', // Default dark gray
-    background: '#f9fafb', // Default light gray background
-    text: '#000000'
+    primary: '#9CA3AF', // Neutral gray
+    secondary: '#4B5563', // Darker gray
+    background: '#F9FAFB', // Light gray background
+    text: '#FFFFFF'
   }
 };
 

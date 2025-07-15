@@ -1,9 +1,9 @@
-// src/components/products/ProviderPackageDisplay.tsx
 import React, { useEffect, useState } from 'react';
 import { usePackage } from '../../hooks/use-package';
 import { useProvider } from '../../hooks/use-provider';
 import { getProviderColors } from '../../utils/provider-colors';
 import { SingleOrderModal } from '../orders/SingleOrderModal';
+import { BulkOrderModal } from '../orders/BulkOrderModal';
 import { 
   FaSearch,
   FaBox,
@@ -14,8 +14,6 @@ export interface ProviderPackageDisplayProps {
   provider: string; // provider code
 }
 
-
-
 export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ provider }) => {
   const { packages, bundles, loading, error, fetchPackages, fetchBundles } = usePackage();
   const { providers } = useProvider();
@@ -24,6 +22,8 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
   const [hasLoaded, setHasLoaded] = useState(false);
   const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showBulkOrderModal, setShowBulkOrderModal] = useState(false);
+  const [selectedBulkPackage, setSelectedBulkPackage] = useState<Package | null>(null);
 
   // Find the provider object by code
   const providerObj = providers.find(p => p.code === provider);
@@ -92,7 +92,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8">
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
           <span className="ml-3 text-gray-600">Loading {providerObj.name} packages...</span>
         </div>
       </div>
@@ -121,7 +121,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div 
-            className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg border-4 shadow"
+            className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg border-2 shadow-sm"
             style={{
               backgroundColor: providerColors.primary,
               color: providerColors.text,
@@ -131,26 +131,25 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
             {providerObj.code.slice(0, 2)}
           </div>
           <div>
-            <h2 className="text-2xl font-bold" style={{ color: providerColors.primary }}>{providerObj.name} Data Packages</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{providerObj.name} Data Packages</h2>
             <p className="text-gray-600">Browse and order data bundles</p>
           </div>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="rounded-lg border p-4" style={{ backgroundColor: providerColors.background }}>
+      <div className="rounded-lg border border-gray-200 p-4 bg-white">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2" style={{ color: providerColors.secondary }} />
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search bundles..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                style={{ backgroundColor: providerColors.background, color: providerColors.text }}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
               />
             </div>
           </div>
@@ -160,8 +159,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              style={{ backgroundColor: providerColors.background, color: providerColors.text }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
             >
               {categories.map(category => (
                 <option key={category ?? 'unknown'} value={category ?? ''}>
@@ -180,23 +178,35 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
       {/* Package and Bundle Cards */}
       <div className="space-y-6">
         {Object.values(groupedBundles).map(({ package: pkg, bundles }) => (
-          <div key={pkg._id} className="rounded-lg shadow border p-4" style={{ backgroundColor: providerColors.background, borderColor: providerColors.primary }}>
+          <div key={pkg._id} className="rounded-lg shadow border border-gray-200 p-4"
+            style={{ backgroundColor: providerColors.primary }}
+          >
             <div className="flex items-center gap-2 mb-2">
-              <FaBox className="text-xl" style={{ color: providerColors.primary }} />
-              <span className="font-semibold text-lg" style={{ color: providerColors.primary }}>{pkg.name}</span>
+              <FaBox className="text-xl " style={{ color: providerColors.secondary }} />
+              <span className="font-semibold text-lg text-gray-900">{pkg.name}</span>
+              <button
+                className="ml-auto px-3 py-1 rounded bg-white text-sm font-semibold border border-gray-300 hover:bg-gray-100 transition"
+                onClick={() => { setSelectedBulkPackage(pkg); setShowBulkOrderModal(true); }}
+              >
+                Bulk Order
+              </button>
             </div>
             <p className="mb-2 text-gray-700">{pkg.description}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {bundles.map(bundle => (
-                <div key={bundle._id} className="rounded-lg border p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition" style={{ borderColor: providerColors.secondary, backgroundColor: providerColors.background }}>
+                <div key={bundle._id} className="rounded-lg border border-gray-200 p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition bg-white">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-base" style={{ color: providerColors.secondary }}>{bundle.name}</span>
+                    <span className="font-bold text-base text-gray-900">{bundle.name}</span>
                   </div>
                   <div className="flex gap-2 text-sm">
-                    <span className="px-2 py-1 rounded bg-white/80" style={{ color: providerColors.primary, border: `1px solid ${providerColors.primary}` }}>{bundle.dataVolume}{bundle.dataUnit}</span>
-                    <span className="px-2 py-1 rounded bg-white/80" style={{ color: providerColors.secondary, border: `1px solid ${providerColors.secondary}` }}>{bundle.validity} {bundle.validityUnit}</span>
+                    <span className="px-2 py-1 rounded bg-gray-100 text-gray-800 border" style={{ borderColor: providerColors.primary }}>{bundle.dataVolume}{bundle.dataUnit}</span>
+                    <span className="px-2 py-1 rounded bg-gray-100 text-gray-800 border" style={{ borderColor: providerColors.secondary }}>
+                      {bundle.validity === 'unlimited' && bundle.validityUnit === 'unlimited'
+                        ? 'Unlimited'
+                        : `${bundle.validity} ${bundle.validityUnit}`}
+                    </span>
                   </div>
-                  <div className="text-lg font-bold" style={{ color: providerColors.primary }}>{bundle.price} {bundle.currency}</div>
+                  <div className="text-lg font-bold text-gray-900">{bundle.price} {bundle.currency}</div>
                   <button
                     className="mt-2 px-4 py-2 rounded-lg font-semibold shadow text-white"
                     style={{ backgroundColor: providerColors.primary, color: providerColors.text }}
@@ -222,6 +232,17 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
           }}
         />
       )}
+      {showBulkOrderModal && selectedBulkPackage && (
+        <BulkOrderModal
+          isOpen={showBulkOrderModal}
+          onClose={() => setShowBulkOrderModal(false)}
+          onSuccess={() => setShowBulkOrderModal(false)}
+          packageId={selectedBulkPackage._id!}
+          provider={providerObj.code}
+          providerName={providerObj.name}
+          providerId={providerObj._id}
+        />
+      )}
     </div>
   );
-}; 
+};

@@ -147,7 +147,15 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       totalPrice: bundle.price
     };
 
-    setOrderSummary(summary);
+    // Fix type error: ensure validity and validityUnit are strings/numbers as expected
+    setOrderSummary({
+      ...summary,
+      bundle: {
+        ...summary.bundle,
+        validity: typeof summary.bundle.validity === 'number' ? summary.bundle.validity : 0,
+        validityUnit: typeof summary.bundle.validityUnit === 'string' ? summary.bundle.validityUnit : '',
+      }
+    });
     setShowSummary(true);
   };
 
@@ -177,7 +185,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       setTimeout(() => {
         onSuccess();
         onClose();
-        navigate('./agent/dashboard/orders');
+        navigate('/agent/dashboard/orders');
       }, 2000);
 
     } catch (err) {
