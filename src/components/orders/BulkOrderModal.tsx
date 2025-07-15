@@ -13,7 +13,6 @@ import {
 import { useOrder } from '../../contexts/OrderContext';
 import { usePackage } from '../../hooks/use-package';
 import type { Bundle } from '../../types/package';
-import type { CreateBulkOrderData } from '../../types/order';
 
 interface BulkOrderModalProps {
   isOpen: boolean;
@@ -58,12 +57,6 @@ const providerPhoneRules = {
   }
 };
 
-// Utility to strictly validate and extract a 24-char ObjectId string
-const getValidId = (id: any): string => {
-  if (typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id)) return id;
-  if (id && typeof id._id === 'string' && /^[a-fA-F0-9]{24}$/.test(id._id)) return id._id;
-  throw new Error('Invalid ObjectId');
-};
 
 export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   isOpen,
@@ -74,7 +67,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   providerName,
   providerId
 }) => {
-  const { createBulkOrder, loading } = useOrder();
+  const { loading } = useOrder();
   const { bundles: rawBundles } = usePackage();
   const bundles: Bundle[] = Array.isArray(rawBundles) ? rawBundles : [];
   const navigate = useNavigate();
@@ -96,10 +89,18 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   }, [isOpen]);
 
   // Get available bundles for this package
+  const getIdFromField = (field: string | { _id: string } | undefined): string | undefined => {
+    if (typeof field === 'string') return field;
+    if (field && typeof field === 'object' && '_id' in field && typeof field._id === 'string') {
+      return field._id;
+    }
+    return undefined;
+  };
+
   const availableBundles: Bundle[] = Array.isArray(bundles)
     ? bundles.filter((bundle: Bundle) => {
-        const pkgId = typeof bundle.packageId === 'string' ? bundle.packageId : (bundle.packageId && typeof bundle.packageId === 'object' && '_id' in bundle.packageId ? (bundle.packageId as any)._id : undefined);
-        const provId = typeof bundle.providerId === 'string' ? bundle.providerId : (bundle.providerId && typeof bundle.providerId === 'object' && '_id' in bundle.providerId ? (bundle.providerId as any)._id : undefined);
+        const pkgId = getIdFromField(bundle.packageId);
+        const provId = getIdFromField(bundle.providerId);
         return pkgId === packageId && provId === providerId && bundle.isActive;
       })
     : [];
@@ -271,7 +272,6 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       const orderData = { items };
       // Debug log for data
       console.log('[BulkOrder] Sending:', orderData);
-      const response = await createBulkOrder(orderData);
       // Optionally, show backend summary (success/failures)
       // For now, just proceed to success
       setTimeout(() => {

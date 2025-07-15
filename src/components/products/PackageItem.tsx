@@ -65,17 +65,6 @@ export const PackageItem: React.FC<PackageItemProps> = ({ item, onEdit, onDelete
             {item.validity} {item.validity === 1 ? 'day' : 'days'}
           </span>
         </div>
-        
-        <div className="text-sm">
-          <span className="text-gray-500">Inventory:</span>
-          <span className={`font-medium ml-1 ${
-            item.inventory <= item.lowStockThreshold 
-              ? 'text-red-600' 
-              : 'text-gray-900'
-          }`}>
-            {item.inventory}
-          </span>
-        </div>
       </div>
       
       <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
@@ -88,7 +77,7 @@ export const PackageItem: React.FC<PackageItemProps> = ({ item, onEdit, onDelete
         </span>
         
         <span className="text-xs text-gray-500">
-          Code: {item.code}
+          Code: {item.bundleCode}
         </span>
       </div>
     </div>

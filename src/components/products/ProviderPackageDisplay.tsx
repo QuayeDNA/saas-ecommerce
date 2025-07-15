@@ -4,12 +4,10 @@ import { usePackage } from '../../hooks/use-package';
 import { useProvider } from '../../hooks/use-provider';
 import { getProviderColors } from '../../utils/provider-colors';
 import { SingleOrderModal } from '../orders/SingleOrderModal';
-import { BulkOrderModal } from '../orders/BulkOrderModal';
 import { 
   FaSearch,
   FaBox,
-  FaExclamationCircle,
-  FaFileUpload
+  FaExclamationCircle
 } from 'react-icons/fa';
 
 export interface ProviderPackageDisplayProps {
@@ -54,14 +52,12 @@ interface Bundle {
 
 export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ provider }) => {
   const { packages, bundles, loading, error, fetchPackages, fetchBundles } = usePackage();
-  const { providers, loading: providersLoading } = useProvider();
+  const { providers } = useProvider();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [hasLoaded, setHasLoaded] = useState(false);
   const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [showBulkOrderModal, setShowBulkOrderModal] = useState(false);
-  const [selectedBulkPackage, setSelectedBulkPackage] = useState<Package | null>(null);
 
   // Find the provider object by code
   const providerObj = providers.find(p => p.code === provider);
@@ -91,7 +87,6 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
   // Group bundles by package
   const groupedBundles = (packages || []).reduce((acc, pkg) => {
     const packageBundles = (bundles || []).filter(bundle => 
-      // Fix: bundle.packageId may be a string or an object, handle both cases
       ((typeof bundle.packageId === 'string' ? bundle.packageId === pkg._id : bundle.packageId && bundle.packageId._id === pkg._id)) &&
       bundle.isActive &&
       (selectedCategory === 'all' || bundle.category === selectedCategory) &&
@@ -153,35 +148,36 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div 
-            className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg"
+            className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg border-4 shadow"
             style={{
-              backgroundColor: providerColors.background,
-              color: providerColors.text
+              backgroundColor: providerColors.primary,
+              color: providerColors.text,
+              borderColor: providerColors.secondary
             }}
           >
             {providerObj.code.slice(0, 2)}
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{providerObj.name} Data Packages</h2>
+            <h2 className="text-2xl font-bold" style={{ color: providerColors.primary }}>{providerObj.name} Data Packages</h2>
             <p className="text-gray-600">Browse and order data bundles</p>
           </div>
         </div>
-        {/* Removed global Bulk Order button */}
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="rounded-lg border p-4" style={{ backgroundColor: providerColors.background }}>
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2" style={{ color: providerColors.secondary }} />
               <input
                 type="text"
                 placeholder="Search bundles..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                style={{ backgroundColor: providerColors.background, color: providerColors.text }}
               />
             </div>
           </div>
@@ -192,6 +188,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              style={{ backgroundColor: providerColors.background, color: providerColors.text }}
             >
               {categories.map(category => (
                 <option key={category ?? 'unknown'} value={category ?? ''}>
@@ -207,143 +204,46 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
         </div>
       </div>
 
-      {/* Content */}
-      {Object.keys(groupedBundles).length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-8">
-          <div className="text-center">
-            <FaBox className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No packages found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              No {providerObj.name} packages are currently available.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {Object.values(groupedBundles).map(({ package: pkg, bundles: packageBundles }) => (
-            <div key={pkg._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {/* Package Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{pkg.name}</h3>
-                    {pkg.description && (
-                      <p className="text-sm text-gray-600 mt-1">{pkg.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {pkg.category}
-                    </span>
-                    {/* Bulk Order Button for this package */}
-                    <button
-                      onClick={() => {
-                        setSelectedBulkPackage(pkg);
-                        setShowBulkOrderModal(true);
-                      }}
-                      className="inline-flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium"
-                    >
-                      <FaFileUpload />
-                      Bulk Order
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bundles Grid */}
-              <div className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {packageBundles.map((bundle) => (
-                    <div
-                      key={bundle._id}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                    >
-                      {/* Bundle Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900 text-sm">{bundle.name}</h4>
-                          <p className="text-xs text-gray-500 mt-1">{bundle.description}</p>
-                        </div>
-                        <div className="ml-2">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {bundle.category}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Bundle Details */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Data:</span>
-                          <span className="font-medium text-gray-900">
-                            {bundle.dataVolume} {bundle.dataUnit}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Validity:</span>
-                          <span className="font-medium text-gray-900">
-                            {bundle.validity} {bundle.validityUnit}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Price:</span>
-                          <span className="font-bold text-lg text-green-600">
-                            {bundle.currency} {bundle.price}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Order Button */}
-                      <button 
-                        onClick={() => {
-                          setSelectedBundle(bundle);
-                          setShowOrderModal(true);
-                        }}
-                        className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
-                      >
-                        Order Now
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      {/* Package and Bundle Cards */}
+      <div className="space-y-6">
+        {Object.values(groupedBundles).map(({ package: pkg, bundles }) => (
+          <div key={pkg._id} className="rounded-lg shadow border p-4" style={{ backgroundColor: providerColors.background, borderColor: providerColors.primary }}>
+            <div className="flex items-center gap-2 mb-2">
+              <FaBox className="text-xl" style={{ color: providerColors.primary }} />
+              <span className="font-semibold text-lg" style={{ color: providerColors.primary }}>{pkg.name}</span>
             </div>
-          ))}
-        </div>
-      )}
+            <p className="mb-2 text-gray-700">{pkg.description}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {bundles.map(bundle => (
+                <div key={bundle._id} className="rounded-lg border p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition" style={{ borderColor: providerColors.secondary, backgroundColor: providerColors.background }}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-base" style={{ color: providerColors.secondary }}>{bundle.name}</span>
+                  </div>
+                  <div className="flex gap-2 text-sm">
+                    <span className="px-2 py-1 rounded bg-white/80" style={{ color: providerColors.primary, border: `1px solid ${providerColors.primary}` }}>{bundle.dataVolume}{bundle.dataUnit}</span>
+                    <span className="px-2 py-1 rounded bg-white/80" style={{ color: providerColors.secondary, border: `1px solid ${providerColors.secondary}` }}>{bundle.validity} {bundle.validityUnit}</span>
+                  </div>
+                  <div className="text-lg font-bold" style={{ color: providerColors.primary }}>{bundle.price} {bundle.currency}</div>
+                  <button
+                    className="mt-2 px-4 py-2 rounded-lg font-semibold shadow text-white"
+                    style={{ backgroundColor: providerColors.primary, color: providerColors.text }}
+                    onClick={() => { setSelectedBundle(bundle); setShowOrderModal(true); }}
+                  >
+                    Order Now
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
-      {/* Single Order Modal */}
-      {selectedBundle && (
+      {/* Modals */}
+      {showOrderModal && selectedBundle && (
         <SingleOrderModal
-          isOpen={showOrderModal}
-          onClose={() => {
-            setShowOrderModal(false);
-            setSelectedBundle(null);
-          }}
-          onSuccess={() => {
-            setShowOrderModal(false);
-            setSelectedBundle(null);
-          }}
           bundle={selectedBundle}
-        />
-      )}
-
-      {/* Bulk Order Modal */}
-      {selectedBulkPackage && (
-        <BulkOrderModal
-          isOpen={showBulkOrderModal}
-          onClose={() => {
-            setShowBulkOrderModal(false);
-            setSelectedBulkPackage(null);
-          }}
-          onSuccess={() => {
-            setShowBulkOrderModal(false);
-            setSelectedBulkPackage(null);
-          }}
-          packageId={selectedBulkPackage._id}
-          provider={providerObj.code} // for validation
-          providerName={providerObj.name} // for display
-          providerId={providerObj._id} // for logic
+          isOpen={showOrderModal}
+          onClose={() => setShowOrderModal(false)}
         />
       )}
     </div>

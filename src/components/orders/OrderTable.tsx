@@ -4,17 +4,10 @@ import {
   FaEye, 
   FaPlay, 
   FaTimes, 
-  FaPhone, 
-  FaWifi, 
   FaClock,
   FaCheckCircle,
   FaExclamationCircle,
   FaSpinner,
-  FaChevronDown,
-  FaChevronUp,
-  FaEllipsisV,
-  FaDownload,
-  FaCopy,
 } from 'react-icons/fa';
 import type { Order } from '../../types/order';
 
@@ -23,7 +16,6 @@ interface OrderTableProps {
   onView: (order: Order) => void;
   onProcess: (orderId: string) => void;
   onCancel: (orderId: string) => void;
-  onProcessItem: (orderId: string, itemId: string) => void;
   onRefresh?: () => void;
   loading?: boolean;
 }
@@ -33,14 +25,11 @@ export const OrderTable: React.FC<OrderTableProps> = ({
   onView,
   onProcess,
   onCancel,
-  onProcessItem,
   onRefresh,
   loading = false
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
-  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
-  const [processingOrders, setProcessingOrders] = useState<Set<string>>(new Set());
+  const [, setProcessingOrders] = useState<Set<string>>(new Set());
 
   // Auto-refresh processing orders
   useEffect(() => {
@@ -83,16 +72,6 @@ export const OrderTable: React.FC<OrderTableProps> = ({
     }
   };
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      case 'refunded': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const toggleRowExpansion = (orderId: string) => {
     const newExpanded = new Set(expandedRows);
     if (newExpanded.has(orderId)) {
@@ -103,65 +82,9 @@ export const OrderTable: React.FC<OrderTableProps> = ({
     setExpandedRows(newExpanded);
   };
 
-  const toggleDropdown = (orderId: string) => {
-    const newDropdowns = new Set(openDropdowns);
-    if (newDropdowns.has(orderId)) {
-      newDropdowns.delete(orderId);
-    } else {
-      newDropdowns.add(orderId);
-    }
-    setOpenDropdowns(newDropdowns);
-  };
-
-  const toggleOrderSelection = (orderId: string) => {
-    const newSelected = new Set(selectedOrders);
-    if (newSelected.has(orderId)) {
-      newSelected.delete(orderId);
-    } else {
-      newSelected.add(orderId);
-    }
-    setSelectedOrders(newSelected);
-  };
-
-  const selectAllOrders = () => {
-    if (selectedOrders.size === orders.length) {
-      setSelectedOrders(new Set());
-    } else {
-      setSelectedOrders(new Set(orders.map(order => order._id!)));
-    }
-  };
 
   const canProcess = (status: string) => ['pending', 'confirmed'].includes(status);
   const canCancel = (status: string) => ['pending', 'confirmed', 'processing'].includes(status);
-
-  const copyOrderNumber = (orderNumber: string) => {
-    navigator.clipboard.writeText(orderNumber);
-    // You could add a toast notification here
-  };
-
-  const exportSelectedOrders = () => {
-    const selectedOrderData = orders.filter(order => selectedOrders.has(order._id!));
-    const csvData = [
-      ['Order Number', 'Type', 'Status', 'Total', 'Items', 'Created Date'],
-      ...selectedOrderData.map(order => [
-        order.orderNumber,
-        order.orderType,
-        order.status,
-        order.total.toFixed(2),
-        order.items.length,
-        new Date(order.createdAt).toLocaleDateString()
-      ])
-    ];
-    
-    const csvContent = csvData.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
 
   if (loading) {
     return (
@@ -266,7 +189,13 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                           </ul>
                         </div>
                         <div className="flex flex-col gap-2 items-end">
-                          <span className="text-xs text-gray-500">Created by: {typeof order.createdBy === 'object' ? order.createdBy.fullName : order.createdBy}</span>
+                          <span className="text-xs text-gray-500">
+                            Created by: {
+                              typeof order.createdBy === 'object' && order.createdBy !== null && 'fullName' in order.createdBy
+                                ? (order.createdBy as { fullName?: string }).fullName || 'Unknown'
+                                : order.createdBy || 'Unknown'
+                            }
+                          </span>
                           <span className="text-xs text-gray-500">Payment: {order.paymentStatus}</span>
                           <span className="text-xs text-gray-500">Priority: {order.priority}</span>
                           <span className="text-xs text-gray-500">Completion: {order.completionPercentage}%</span>

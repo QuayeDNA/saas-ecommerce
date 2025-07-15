@@ -16,8 +16,8 @@ type ProviderColorMap = {
  */
 export const providerColors: ProviderColorMap = {
   MTN: {
-    primary: '#ffcc00', // MTN Yellow
-    secondary: '#003f87', // MTN Blue
+    primary: '#ffd600', // Vibrant MTN Yellow (matches order button)
+    secondary: '#000000', // Black
     background: '#fff7d9', // Light yellow background
     text: '#000000'
   },
@@ -28,9 +28,9 @@ export const providerColors: ProviderColorMap = {
     text: '#000000'
   },
   AT: {
-    primary: '#ff7500', // AT Orange
-    secondary: '#990000', // AT Red
-    background: '#fff2e6', // Light orange background
+    primary: '#0057b8', // AT Blue
+    secondary: '#e10600', // AT Red
+    background: '#eaf3fb', // Light blue background
     text: '#000000'
   },
   GLO: {

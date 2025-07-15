@@ -1,18 +1,9 @@
 // src/components/orders/OrderCard.tsx
 import React, { useState } from 'react';
 import { 
-  FaEye, 
-  FaPlay, 
-  FaTimes, 
-  FaPhone, 
-  FaWifi, 
-  FaClock,
-  FaCheckCircle,
-  FaExclamationCircle,
-  FaSpinner,
+  FaEye,
   FaChevronDown,
   FaChevronUp,
-  FaEllipsisV
 } from 'react-icons/fa';
 import type { Order } from '../../types/order';
 
@@ -27,12 +18,8 @@ interface OrderCardProps {
 export const OrderCard: React.FC<OrderCardProps> = ({
   order,
   onView,
-  onProcess,
-  onCancel,
-  onProcessItem
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -43,26 +30,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'partially_completed': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <FaCheckCircle className="text-green-600" />;
-      case 'processing': return <FaSpinner className="text-blue-600 animate-spin" />;
-      case 'failed': return <FaExclamationCircle className="text-red-600" />;
-      case 'cancelled': return <FaTimes className="text-gray-600" />;
-      case 'pending': return <FaClock className="text-yellow-600" />;
-      case 'partially_completed': return <FaExclamationCircle className="text-orange-600" />;
-      default: return <FaClock className="text-gray-600" />;
-    }
-  };
-
-  const getServiceIcon = (serviceType: string) => {
-    switch (serviceType?.toLowerCase()) {
-      case 'voice': return <FaPhone className="text-blue-600" />;
-      case 'data': return <FaWifi className="text-green-600" />;
-      default: return <FaPhone className="text-gray-600" />;
     }
   };
 

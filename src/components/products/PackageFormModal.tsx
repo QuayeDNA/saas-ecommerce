@@ -1,14 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/products/PackageFormModal.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   FaTimes, 
-  FaPlus, 
-  FaTrash, 
-  FaBox, 
-  FaTag, 
-  FaInfoCircle,
-  FaChevronDown,
-  FaChevronUp
+  FaPlus
 } from 'react-icons/fa';
 import type { Package, Bundle, Provider } from '../../types/package';
 import { providerService } from '../../services/provider.service';
@@ -53,9 +48,9 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
   const [newTag, setNewTag] = useState('');
   const [newFeature, setNewFeature] = useState('');
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [packages, setPackages] = useState<Package[]>([]);
-  const [loadingProviders, setLoadingProviders] = useState(false);
-  const [loadingPackages, setLoadingPackages] = useState(false);
+  const [setPackages] = useState<Package[]>([]);
+  const [setLoadingProviders] = useState(false);
+  const [setLoadingPackages] = useState(false);
 
   useEffect(() => {
     if (packageData && mode === 'edit') {
@@ -197,7 +192,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
 
   const addTag = () => {
     if (newTag.trim() && !formData.tags?.includes(newTag.trim())) {
-      setFormData(prev => ({
+      setFormData((prev: { tags: any; }) => ({
         ...prev,
         tags: [...(prev.tags || []), newTag.trim()]
       }));
@@ -206,15 +201,15 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
   };
 
   const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
+    setFormData((prev: { tags: any[]; }) => ({
       ...prev,
-      tags: prev.tags?.filter(tag => tag !== tagToRemove) || []
+      tags: prev.tags?.filter((tag: string) => tag !== tagToRemove) || []
     }));
   };
 
   const addFeature = () => {
     if (newFeature.trim() && !formData.features?.includes(newFeature.trim())) {
-      setFormData(prev => ({
+      setFormData((prev: { features: any; }) => ({
         ...prev,
         features: [...(prev.features || []), newFeature.trim()]
       }));
@@ -223,9 +218,9 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
   };
 
   const removeFeature = (featureToRemove: string) => {
-    setFormData(prev => ({
+    setFormData((prev: { features: any[]; }) => ({
       ...prev,
-      features: prev.features?.filter(feature => feature !== featureToRemove) || []
+      features: prev.features?.filter((feature: string) => feature !== featureToRemove) || []
     }));
   };
 
@@ -262,7 +257,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                   type="text"
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder={`Enter ${viewMode === 'packages' ? 'package' : 'bundle'} name`}
                 />
@@ -275,7 +270,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                 <select
                   required
                   value={formData.provider}
-                  onChange={(e) => setFormData(prev => ({ ...prev, provider: e.target.value }))}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, provider: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Select Provider</option>
@@ -294,7 +289,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => setFormData((prev: any) => ({ ...prev, description: e.target.value }))}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter description"
@@ -308,7 +303,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                 </label>
                 <select
                   value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, category: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="daily">Daily</option>
@@ -337,7 +332,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                     min="0"
                     step="0.1"
                     value={formData.dataVolume}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dataVolume: parseFloat(e.target.value) || 0 }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, dataVolume: parseFloat(e.target.value) || 0 }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -348,7 +343,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                   </label>
                   <select
                     value={formData.dataUnit}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dataUnit: e.target.value }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, dataUnit: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="MB">MB</option>
@@ -367,7 +362,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                     min="0"
                     step="0.01"
                     value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -383,7 +378,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                     required
                     min="1"
                     value={formData.validity}
-                    onChange={(e) => setFormData(prev => ({ ...prev, validity: parseInt(e.target.value) || 1 }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, validity: parseInt(e.target.value) || 1 }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -394,7 +389,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                   </label>
                   <select
                     value={formData.validityUnit}
-                    onChange={(e) => setFormData(prev => ({ ...prev, validityUnit: e.target.value }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, validityUnit: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="hours">Hours</option>
@@ -412,7 +407,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                 <input
                   type="text"
                   value={formData.bundleCode}
-                  onChange={(e) => setFormData(prev => ({ ...prev, bundleCode: e.target.value }))}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, bundleCode: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Auto-generated if left empty"
                 />
@@ -425,7 +420,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                 <input
                   type="text"
                   value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, category: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Social Media, Gaming, etc."
                 />
@@ -528,7 +523,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
                 type="checkbox"
                 id="isActive"
                 checked={formData.isActive}
-                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                onChange={(e) => setFormData((prev: any) => ({ ...prev, isActive: e.target.checked }))}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">

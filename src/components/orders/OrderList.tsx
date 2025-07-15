@@ -47,8 +47,17 @@ export const OrderList: React.FC = () => {
 
   const handleProcess = async (orderId: string) => {
     const order = orders.find(o => o._id === orderId);
-    if (order?.orderType === 'bulk') {
+    if (!order) return;
+    if (order.orderType === 'bulk') {
       await processBulkOrder(orderId);
+    } else {
+      // For single orders, process the first (and only) item
+      if (order.items && order.items.length > 0) {
+        const itemId = order.items[0]._id;
+        if (typeof itemId === 'string') {
+          await processOrderItem(orderId, itemId);
+        }
+      }
     }
   };
 
@@ -222,7 +231,6 @@ export const OrderList: React.FC = () => {
               onView={handleView}
               onProcess={handleProcess}
               onCancel={handleCancel}
-              onProcessItem={handleProcessItem}
               loading={true}
             />
           );
@@ -254,7 +262,6 @@ export const OrderList: React.FC = () => {
               onView={handleView}
               onProcess={handleProcess}
               onCancel={handleCancel}
-              onProcessItem={handleProcessItem}
               onRefresh={() => fetchOrders(filters)}
               loading={loading}
             />

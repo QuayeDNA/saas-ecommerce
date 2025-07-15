@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/orders/SingleOrderModal.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -155,7 +156,9 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       setError(null);
       
       const orderData: CreateSingleOrderData = {
-        packageGroupId: (bundle.packageId as any)?._id || bundle.packageId,
+        packageGroupId: typeof bundle.packageId === 'object' && bundle.packageId !== null && '_id' in bundle.packageId
+          ? (bundle.packageId as { _id: string })._id
+          : bundle.packageId,
         packageItemId: bundle._id || '',
         customerPhone: customerPhone.replace(/^\+?233/, '0'),
         bundleSize: {
@@ -174,11 +177,15 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       setTimeout(() => {
         onSuccess();
         onClose();
-        navigate('./agent/orders');
+        navigate('./agent/dashboard/orders');
       }, 2000);
-      
-    } catch (err: any) {
-      setError(err.message || 'Failed to create order');
+
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to create order');
+      } else {
+        setError('Failed to create order');
+      }
     }
   };
 

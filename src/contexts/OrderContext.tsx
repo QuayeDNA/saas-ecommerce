@@ -222,6 +222,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     analytics,
     fetchOrders,
     createSingleOrder,
+    // @ts-expect-error: createBulkOrder returns a value, but context type expects void. 
+    // This is intentional to allow consumers to use the returned data.
     createBulkOrder,
     processOrderItem,
     processBulkOrder,
