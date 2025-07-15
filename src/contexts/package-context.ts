@@ -12,7 +12,7 @@ import type {
 // Package context type
 export interface PackageContextType {
   packages: Package[];
-  bundles: Bundle[];
+  bundles: Bundle[] | undefined;
   loading: boolean;
   error: string | null;
   pagination: {

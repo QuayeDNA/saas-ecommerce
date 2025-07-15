@@ -114,15 +114,8 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
   const categories = ['all', ...Array.from(new Set((bundles || []).map(b => b.category)))];
 
   // Use providerObj for display and providerObj._id for logic
-  if (providersLoading || !providerObj) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading provider info...</span>
-        </div>
-      </div>
-    );
+  if (!providerObj) {
+    return null;
   }
 
   const providerColors = getProviderColors(providerObj.code);

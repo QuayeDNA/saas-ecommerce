@@ -75,7 +75,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   providerId
 }) => {
   const { createBulkOrder, loading } = useOrder();
-  const { bundles } = usePackage();
+  const { bundles: rawBundles } = usePackage();
+  const bundles: Bundle[] = Array.isArray(rawBundles) ? rawBundles : [];
   const navigate = useNavigate();
   const [bulkText, setBulkText] = useState('');
   const [orderItems, setOrderItems] = useState<BulkOrderItem[]>([]);
@@ -95,11 +96,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   }, [isOpen]);
 
   // Get available bundles for this package
-  const availableBundles = bundles?.filter(bundle => 
-    ((typeof bundle.packageId === 'string' ? bundle.packageId : bundle.packageId?._id) === packageId) &&
-    ((typeof bundle.providerId === 'string' ? bundle.providerId : bundle.providerId?._id) === providerId) &&
-    bundle.isActive
-  ) || [];
+  const availableBundles: Bundle[] = Array.isArray(bundles)
+    ? bundles.filter((bundle: Bundle) => {
+        const pkgId = typeof bundle.packageId === 'string' ? bundle.packageId : (bundle.packageId && typeof bundle.packageId === 'object' && '_id' in bundle.packageId ? (bundle.packageId as any)._id : undefined);
+        const provId = typeof bundle.providerId === 'string' ? bundle.providerId : (bundle.providerId && typeof bundle.providerId === 'object' && '_id' in bundle.providerId ? (bundle.providerId as any)._id : undefined);
+        return pkgId === packageId && provId === providerId && bundle.isActive;
+      })
+    : [];
 
   // Validate phone number based on provider
   const validatePhone = (phone: string): string | null => {
@@ -262,49 +265,20 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const handleConfirmOrder = async () => {
     try {
       setError(null);
-      
-      // Group items by bundle
-      const bundleGroups = orderItems.reduce((groups, item) => {
-        if (!item.bundle) return groups;
-        const bundleId = item.bundle._id;
-        if (!groups[bundleId]) {
-          groups[bundleId] = {
-            bundle: item.bundle,
-            items: []
-          };
-        }
-        groups[bundleId].items.push(item);
-        return groups;
-      }, {} as Record<string, { bundle: Bundle; items: BulkOrderItem[] }>);
-
-      // Create orders for each bundle
-      for (const [bundleId, group] of Object.entries(bundleGroups)) {
-        const orderData: CreateBulkOrderData = {
-          packageGroupId: getValidId(group.bundle.packageId),
-          packageItemId: getValidId(group.bundle._id),
-          items: group.items.map(item => ({
-            customerPhone: item.customerPhone.replace(/^\+?233/, '0'),
-            bundleSize: {
-              value: item.dataVolume,
-              unit: item.dataUnit
-            }
-          }))
-        };
-        // Debug log
-        console.log('Bulk order IDs:', {
-          packageGroupId: orderData.packageGroupId,
-          packageItemId: orderData.packageItemId
-        });
-        await createBulkOrder(orderData);
-      }
-      
-      // Show success briefly before navigating to orders page
+      // Convert orderItems to items array in the format 'phone,dataVolumeUnit'
+      const items = orderItems.map(item => `${item.customerPhone},${item.dataVolume}${item.dataUnit}`);
+      // Only send items array to backend
+      const orderData = { items };
+      // Debug log for data
+      console.log('[BulkOrder] Sending:', orderData);
+      const response = await createBulkOrder(orderData);
+      // Optionally, show backend summary (success/failures)
+      // For now, just proceed to success
       setTimeout(() => {
         onSuccess();
         onClose();
         navigate('/agent/dashboard/orders');
       }, 2000);
-
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message || 'Failed to create bulk order');
@@ -369,20 +343,21 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 </div>
                 {/* Make available bundles scrollable */}
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                  {availableBundles.map(bundle => (
-                    <div key={bundle._id} className="flex items-center justify-between text-sm bg-white p-2 rounded">
-                      <div className="flex items-center gap-2">
-                        <FaWifi className="text-blue-500" />
-                        <span>{bundle.dataVolume} {bundle.dataUnit}</span>
-                        <span className="text-gray-500">•</span>
-                        <FaClock className="text-green-500" />
-                        <span>{bundle.validity} {bundle.validityUnit}</span>
+                  {Array.isArray(availableBundles) && availableBundles.length > 0 &&
+                    availableBundles.map((bundle: Bundle) => (
+                      <div key={bundle._id} className="flex items-center justify-between text-sm bg-white p-2 rounded">
+                        <div className="flex items-center gap-2">
+                          <FaWifi className="text-blue-500" />
+                          <span>{bundle.dataVolume} {bundle.dataUnit}</span>
+                          <span className="text-gray-500">•</span>
+                          <FaClock className="text-green-500" />
+                          <span>{bundle.validity} {bundle.validityUnit}</span>
+                        </div>
+                        <div className="font-bold text-green-600">
+                          {bundle.currency} {bundle.price}
+                        </div>
                       </div>
-                      <div className="font-bold text-green-600">
-                        {bundle.currency} {bundle.price}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
 

@@ -113,14 +113,5 @@ export interface CreateSingleOrderData {
 }
 
 export interface CreateBulkOrderData {
-  packageGroupId: string;
-  packageItemId: string;
-  items: {
-    customerName: string;
-    customerPhone: string;
-    bundleSize: {
-      value: number;
-      unit: 'MB' | 'GB';
-    };
-  }[];
+  items: string[];
 }
