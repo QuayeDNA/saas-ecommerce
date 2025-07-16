@@ -26,7 +26,8 @@ export const DashboardPage = () => {
   const networks: { name: string; code: string; color: string; bgColor: string }[] = [
     { name: 'MTN', code: 'MTN', color: 'bg-yellow-500', bgColor: 'bg-yellow-50' },
     { name: 'TELECEL', code: 'TELECEL', color: 'bg-red-500', bgColor: 'bg-red-50' },
-    { name: 'AT (AirtelTigo)', code: 'AT', color: 'bg-blue-500', bgColor: 'bg-blue-50' },
+    { name: 'AT BIG TIME', code: 'AT_BIG_TIME', color: 'bg-blue-500', bgColor: 'bg-blue-50' },
+    { name: 'AT iShare Premium', code: 'AT_ISHARE_PREMIUM', color: 'bg-purple-600', bgColor: 'bg-purple-50' },
   ];
 
   // Load dashboard data

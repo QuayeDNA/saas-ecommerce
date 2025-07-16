@@ -1,10 +1,9 @@
 import { ProviderPackageDisplay } from '../components/products/ProviderPackageDisplay';
 
-export const AtPackagesPage = () => {
-
-  return (
+export const AtBigTimePackagesPage = () => {
+  return(
     <div className="space-y-6">
-      <ProviderPackageDisplay provider="AT" />
+      <ProviderPackageDisplay provider="AT" category="big-time" />
     </div>
   );
-}; 
+};

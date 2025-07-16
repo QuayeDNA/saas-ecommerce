@@ -125,9 +125,14 @@ const TelecelPackagesPage = lazy(() =>
     default: module.TelecelPackagesPage,
   }))
 );
-const AtPackagesPage = lazy(() =>
-  import("../pages/at-packages-page").then((module) => ({
-    default: module.AtPackagesPage,
+const AtBigTimePackagesPage = lazy(() =>
+  import("../pages/at-bigtime-packages").then((module) => ({
+    default: module.AtBigTimePackagesPage,
+  }))
+);
+const AtISharePremiumPackagesPage = lazy(() =>
+  import("../pages/at-ishare-packages").then((module) => ({
+    default: module.AtISharePremiumPackagesPage,
   }))
 );
 // const GloPackagesPage = lazy(() =>
@@ -325,10 +330,18 @@ export const routes: RouteObject[] = [
             ),
           },
           {
-            path: "packages/at",
+            path: "packages/at-big-time",
             element: (
               <Suspense fallback={<PageLoader />}>
-                <AtPackagesPage />
+                <AtBigTimePackagesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "packages/at-ishare-premium",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AtISharePremiumPackagesPage />
               </Suspense>
             ),
           },

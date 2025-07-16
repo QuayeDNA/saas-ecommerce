@@ -7,11 +7,15 @@ import { useOrder } from '../../contexts/OrderContext';
 import type { Bundle } from '../../types/package';
 import type { CreateSingleOrderData } from '../../types/order';
 
+/**
+ * SingleOrderModal expects a Bundle object that is fetched using the new ProviderPackageDisplay logic.
+ * The bundle should be for the selected package and contain all required fields.
+ */
 interface SingleOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  bundle: Bundle;
+  bundle: Bundle; // Must be fetched using ProviderPackageDisplay or direct bundleService
 }
 
 // Provider-specific phone number validation rules

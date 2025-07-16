@@ -95,8 +95,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               icon: <FaBox />
             },
             {
-              label: 'AT Packages',
-              path: 'packages/at',
+              label: 'AT BIG TIME Packages',
+              path: 'packages/at-big-time',
+              icon: <FaBox />
+            },
+            {
+              label: 'AT iShare Premium Packages',
+              path: 'packages/at-ishare-premium',
               icon: <FaBox />
             },
           ]

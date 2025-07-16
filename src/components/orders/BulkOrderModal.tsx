@@ -11,7 +11,7 @@ import {
   FaPlus
 } from 'react-icons/fa';
 import { useOrder } from '../../contexts/OrderContext';
-import { usePackage } from '../../hooks/use-package';
+import { bundleService } from '../../services/bundle.service';
 import type { Bundle } from '../../types/package';
 
 interface BulkOrderModalProps {
@@ -21,7 +21,6 @@ interface BulkOrderModalProps {
   packageId: string;
   provider: string; // provider code for validation
   providerName: string; // provider name for display
-  providerId: string; // provider ObjectId for logic
 }
 
 interface BulkOrderItem {
@@ -64,12 +63,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   onSuccess,
   packageId,
   provider,
-  providerName,
-  providerId
+  providerName
 }) => {
   const { loading, createBulkOrder } = useOrder();
-  const { bundles: rawBundles } = usePackage();
-  const bundles: Bundle[] = Array.isArray(rawBundles) ? rawBundles : [];
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const navigate = useNavigate();
   const [bulkText, setBulkText] = useState('');
   const [orderItems, setOrderItems] = useState<BulkOrderItem[]>([]);
@@ -88,21 +85,18 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     }
   }, [isOpen]);
 
-  // Get available bundles for this package
-  const getIdFromField = (field: string | { _id: string } | undefined): string | undefined => {
-    if (typeof field === 'string') return field;
-    if (field && typeof field === 'object' && '_id' in field && typeof field._id === 'string') {
-      return field._id;
+  // Fetch bundles for the selected packageId
+  useEffect(() => {
+    if (isOpen && packageId) {
+      bundleService.getBundles({ packageId })
+        .then(resp => setBundles(resp.bundles || []))
+        .catch(() => setBundles([]));
     }
-    return undefined;
-  };
+  }, [isOpen, packageId]);
 
+  // Get available bundles for this package
   const availableBundles: Bundle[] = Array.isArray(bundles)
-    ? bundles.filter((bundle: Bundle) => {
-        const pkgId = getIdFromField(bundle.packageId);
-        const provId = getIdFromField(bundle.providerId);
-        return pkgId === packageId && provId === providerId && bundle.isActive;
-      })
+    ? bundles.filter((bundle: Bundle) => bundle.isActive)
     : [];
 
   // Validate phone number based on provider
@@ -152,7 +146,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       const line = element.trim();
       if (!line) continue;
       
-      // Parse format: "Number 10GB" or "Number 5MB"
+      // Parse format: "Number 10GB" or "Number 5MB" or just "Number 10"
       const parts = line.split(' ');
       if (parts.length < 2) {
         continue;
@@ -161,20 +155,38 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       const phone = parts[0];
       const dataPart = parts.slice(1).join(' '); // Handle cases like "10 GB" with space
       
-      // Extract data volume and unit
-      const dataMatch = RegExp(/^(\d+(?:\.\d+)?)\s*(MB|GB)$/i).exec(dataPart);
-      if (!dataMatch) {
+      // Try to extract data volume and unit (if present)
+      let dataVolume: number | null = null;
+      let dataUnit: 'MB' | 'GB' | 'TB' | undefined = undefined;
+      const dataMatch = RegExp(/^(\d+(?:\.\d+)?)\s*(MB|GB|TB)?$/i).exec(dataPart);
+      if (dataMatch) {
+        dataVolume = parseFloat(dataMatch[1]);
+        if (dataMatch[2]) {
+          dataUnit = dataMatch[2].toUpperCase() as 'MB' | 'GB' | 'TB';
+        }
+      } else {
         continue;
       }
       
-      const dataVolume = parseFloat(dataMatch[1]);
-      const dataUnit = dataMatch[2].toUpperCase() as 'MB' | 'GB';
-      
       // Find matching bundle
-      const matchingBundle = availableBundles.find(bundle => 
-        bundle.dataVolume === dataVolume && 
-        bundle.dataUnit.toUpperCase() === dataUnit
-      );
+      let matchingBundle: Bundle | undefined;
+      if (dataUnit) {
+        matchingBundle = availableBundles.find(bundle => 
+          bundle.dataVolume === dataVolume && 
+          bundle.dataUnit.toUpperCase() === dataUnit
+        );
+      } else {
+        // No unit provided, try to match by dataVolume, prefer GB > MB > TB
+        const candidates = availableBundles.filter(bundle => bundle.dataVolume === dataVolume);
+        if (candidates.length > 0) {
+          // Prefer GB > MB > TB
+          matchingBundle = candidates.find(b => b.dataUnit.toUpperCase() === 'GB')
+            || candidates.find(b => b.dataUnit.toUpperCase() === 'MB')
+            || candidates.find(b => b.dataUnit.toUpperCase() === 'TB')
+            || candidates[0];
+          dataUnit = matchingBundle.dataUnit.toUpperCase() as 'MB' | 'GB' | 'TB';
+        }
+      }
       
       if (!matchingBundle) {
         continue;
@@ -182,8 +194,14 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       
       items.push({
         customerPhone: phone,
-        dataVolume,
-        dataUnit,
+        dataVolume: matchingBundle.dataVolume,
+        // Only allow 'MB' or 'GB' for dataUnit to match type
+        dataUnit: ((): 'MB' | 'GB' => {
+          const unit = matchingBundle.dataUnit.toUpperCase();
+          if (unit === 'MB' || unit === 'GB') return unit;
+          // Fallback: if 'TB', default to 'GB' (or handle as needed)
+          return 'GB';
+        })(),
         bundle: matchingBundle
       });
     }
@@ -423,11 +441,11 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     <textarea
                       value={bulkText}
                       onChange={(e) => handleBulkTextChange(e.target.value)}
-                      placeholder="0241234567 5GB&#10;0201234567 2GB&#10;0271234567 1GB"
+                      placeholder="0241234567 5&#10;0201234567 2&#10;0271234567 1"
                       className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     />
                     <p className="text-xs text-gray-500 mt-2">
-                      Format: PhoneNumber DataVolume (e.g., 0241234567 5GB)
+                      Format: PhoneNumber DataVolume (e.g., 0241234567 5).
                     </p>
                   </div>
                   

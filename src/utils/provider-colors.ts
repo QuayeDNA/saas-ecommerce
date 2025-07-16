@@ -20,7 +20,7 @@ export const providerColors: ProviderColorMap = {
     text: '#FFFFFF' // White for high contrast on primary color
   },
   TELECEL: {
-    primary: '#D81B60', // Telecel Red (official brand color)
+    primary: 'rgb(178 8 1)', // Telecel Red (official brand color)
     secondary: '#37474F', // Telecel Slate Gray
     background: '#FFEBEE', // Subtle red-tinted background
     text: '#FFFFFF'

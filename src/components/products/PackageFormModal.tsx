@@ -114,7 +114,19 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({
         },
         { 
           _id: '3', 
-          name: 'AirtelTigo', 
+          name: 'AT BIG TIME',
+          code: 'AT' as const,
+          isActive: true,
+          createdBy: '',
+          isDeleted: false,
+          salesCount: 0,
+          viewCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          _id: '4',
+          name: 'AIRTEL TIGO iShare Premium',
           code: 'AT' as const,
           isActive: true,
           createdBy: '',
