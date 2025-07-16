@@ -39,6 +39,17 @@ interface OrderContextType {
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
+// Helper to extract error message from axios or generic error
+function extractErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const axiosError = err as { response?: { data?: { message?: string } }, message?: string };
+    return axiosError.response?.data?.message ?? axiosError.message ?? fallback;
+  } else if (err instanceof Error) {
+    return err.message;
+  }
+  return fallback;
+}
+
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,13 +77,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setOrders(response.orders);
       setPagination(response.pagination);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to fetch orders');
-        addToast('Failed to fetch orders', 'error');
-      } else {
-        setError('Failed to fetch orders');
-        addToast('Failed to fetch orders', 'error');
-      }
+      const message = extractErrorMessage(err, 'Failed to fetch orders');
+      setError(message);
+      addToast(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -87,15 +94,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addToast('Single order created successfully', 'success');
       await fetchOrders(filters);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to create order');
-        addToast('Failed to create order', 'error');
-        throw err;
-      } else {
-        setError('Failed to create order');
-        addToast('Failed to create order', 'error');
-        throw err;
-      }
+      const message = extractErrorMessage(err, 'Failed to create order');
+      setError(message);
+      addToast(message, 'error');
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -111,15 +113,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       await fetchOrders(filters);
       return summary;
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to create bulk order');
-        addToast('Failed to create bulk order', 'error');
-        throw err;
-      } else {
-        setError('Failed to create bulk order');
-        addToast('Failed to create bulk order', 'error');
-        throw err;
-      }
+      const message = extractErrorMessage(err, 'Failed to create bulk order');
+      setError(message);
+      addToast(message, 'error');
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -131,15 +128,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addToast('Order item processed successfully', 'success');
       await fetchOrders(filters);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to process order item');
-        addToast('Failed to process order item', 'error');
-        throw err;
-      } else {
-        setError('Failed to process order item');
-        addToast('Failed to process order item', 'error');
-        throw err;
-      }
+      const message = extractErrorMessage(err, 'Failed to process order item');
+      setError(message);
+      addToast(message, 'error');
+      throw new Error(message);
     }
   }, [addToast, fetchOrders, filters]);
 
@@ -149,15 +141,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addToast('Bulk order processing started', 'success');
       await fetchOrders(filters);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to process bulk order');
-        addToast('Failed to process bulk order', 'error');
-        throw err;
-      } else {
-        setError('Failed to process bulk order');
-        addToast('Failed to process bulk order', 'error');
-        throw err;
-      }
+      const message = extractErrorMessage(err, 'Failed to process bulk order');
+      setError(message);
+      addToast(message, 'error');
+      throw new Error(message);
     }
   }, [addToast, fetchOrders, filters]);
 
@@ -167,15 +154,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addToast('Order cancelled successfully', 'success');
       await fetchOrders(filters);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to cancel order');
-        addToast('Failed to cancel order', 'error');
-        throw err;
-      } else {
-        setError('Failed to cancel order');
-        addToast('Failed to cancel order', 'error');
-        throw err;
-      }
+      const message = extractErrorMessage(err, 'Failed to cancel order');
+      setError(message);
+      addToast(message, 'error');
+      throw new Error(message);
     }
   }, [addToast, fetchOrders, filters]);
 
@@ -184,13 +166,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const analyticsData = await orderService.getAnalytics(timeframe);
       setAnalytics(analyticsData);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to fetch analytics');
-      } else {
-        setError('Failed to fetch analytics');
-      }
+      const message = extractErrorMessage(err, 'Failed to fetch analytics');
+      setError(message);
+      addToast(message, 'error');
     }
-  }, []);
+  }, [addToast]);
 
   const getAnalytics = useCallback(async (timeframe = '30d') => {
     try {

@@ -110,11 +110,11 @@ const PackageList = lazy(() =>
     default: module.PackageList,
   }))
 );
-const ProviderList = lazy(() =>
-  import("../components/products/ProviderList").then((module) => ({
-    default: module.ProviderList,
-  }))
-);
+// const ProviderList = lazy(() =>
+//   import("../components/products/ProviderList").then((module) => ({
+//     default: module.ProviderList,
+//   }))
+// );
 const MtnPackagesPage = lazy(() =>
   import("../pages/mtn-packages-page").then((module) => ({
     default: module.MtnPackagesPage,
@@ -130,11 +130,11 @@ const AtPackagesPage = lazy(() =>
     default: module.AtPackagesPage,
   }))
 );
-const GloPackagesPage = lazy(() =>
-  import("../pages/glo-packages-page").then((module) => ({
-    default: module.GloPackagesPage,
-  }))
-);
+// const GloPackagesPage = lazy(() =>
+//   import("../pages/glo-packages-page").then((module) => ({
+//     default: module.GloPackagesPage,
+//   }))
+// );
 
 // Define routes
 export const routes: RouteObject[] = [
@@ -261,14 +261,6 @@ export const routes: RouteObject[] = [
             )
           },
           {
-            path: "providers",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <ProviderList />
-              </Suspense>
-            )
-          },
-          {
             path: "profile",
             element: (
               <Suspense fallback={<PageLoader />}>
@@ -337,14 +329,6 @@ export const routes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AtPackagesPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "packages/glo",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <GloPackagesPage />
               </Suspense>
             ),
           },

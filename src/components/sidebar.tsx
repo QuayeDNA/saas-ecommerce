@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import { 
   FaBox, 
   FaMobile, 
-  FaShoppingBag, 
   FaUsers, 
   FaUsersCog, 
   FaChevronRight,
@@ -100,11 +99,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               path: 'packages/at',
               icon: <FaBox />
             },
-            {
-              label: 'Network Providers',
-              path: 'providers',
-              icon: <FaMobile />
-            },
           ]
         },
         {
@@ -112,11 +106,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           path: 'orders',
           icon: <FaMobile />
         },
-        {
-          label: 'Store',
-          path: 'store',
-          icon: <FaShoppingBag />
-        },
+        // {
+        //   label: 'Store',
+        //   path: 'store',
+        //   icon: <FaShoppingBag />
+        // },
         {
           label: 'My Customers',
           path: 'users',

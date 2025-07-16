@@ -216,7 +216,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({ 
                   </button>
                 </div>
               ))}
-            </div>
+            </div>  
           </div>
         ))}
       </div>

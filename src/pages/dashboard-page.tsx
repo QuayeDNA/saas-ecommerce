@@ -27,7 +27,6 @@ export const DashboardPage = () => {
     { name: 'MTN', code: 'MTN', color: 'bg-yellow-500', bgColor: 'bg-yellow-50' },
     { name: 'TELECEL', code: 'TELECEL', color: 'bg-red-500', bgColor: 'bg-red-50' },
     { name: 'AT (AirtelTigo)', code: 'AT', color: 'bg-blue-500', bgColor: 'bg-blue-50' },
-    { name: 'GLO', code: 'GLO', color: 'bg-green-500', bgColor: 'bg-green-50' },
   ];
 
   // Load dashboard data
