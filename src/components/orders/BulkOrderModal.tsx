@@ -1,22 +1,22 @@
 // src/components/orders/BulkOrderModal.tsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  FaTimes, 
-  FaWifi, 
-  FaClock, 
-  FaCheckCircle, 
-  FaFileUpload, 
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FaTimes,
+  FaWifi,
+  FaClock,
+  FaCheckCircle,
+  FaFileUpload,
   FaDownload,
   FaPlus,
   FaBox,
   FaExclamationCircle,
-  FaDatabase
-} from 'react-icons/fa';
-import { useOrder } from '../../contexts/OrderContext';
-import { bundleService } from '../../services/bundle.service';
-import type { Bundle } from '../../types/package';
-import { getProviderColors } from '../../utils/provider-colors';
+  FaDatabase,
+} from "react-icons/fa";
+import { useOrder } from "../../contexts/OrderContext";
+import { bundleService } from "../../services/bundle.service";
+import type { Bundle } from "../../types/package";
+import { getProviderColors } from "../../utils/provider-colors";
 
 interface BulkOrderModalProps {
   isOpen: boolean;
@@ -30,7 +30,7 @@ interface BulkOrderModalProps {
 interface BulkOrderItem {
   customerPhone: string;
   dataVolume: number;
-  dataUnit: 'MB' | 'GB';
+  dataUnit: "MB" | "GB";
   bundle?: Bundle;
   phoneError?: string;
   dataError?: string;
@@ -39,27 +39,26 @@ interface BulkOrderItem {
 // Provider-specific phone number validation rules
 const providerPhoneRules = {
   MTN: {
-    prefixes: ['024', '025', '054', '055', '059'],
+    prefixes: ["024", "025", "054", "055", "059"],
     length: 10,
-    example: '0241234567'
+    example: "0241234567",
   },
   TELECEL: {
-    prefixes: ['020', '050'],
+    prefixes: ["020", "050"],
     length: 10,
-    example: '0201234567'
+    example: "0201234567",
   },
   AT: {
-    prefixes: ['027', '057', '026', '056'],
+    prefixes: ["027", "057", "026", "056"],
     length: 10,
-    example: '0271234567'
+    example: "0271234567",
   },
   GLO: {
-    prefixes: ['023'],
+    prefixes: ["023"],
     length: 10,
-    example: '0231234567'
-  }
+    example: "0231234567",
+  },
 };
-
 
 export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   isOpen,
@@ -67,33 +66,34 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   onSuccess,
   packageId,
   provider,
-  providerName
+  providerName,
 }) => {
   const { loading, createBulkOrder } = useOrder();
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const navigate = useNavigate();
-  const [bulkText, setBulkText] = useState('');
+  const [bulkText, setBulkText] = useState("");
   const [orderItems, setOrderItems] = useState<BulkOrderItem[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [importMethod, setImportMethod] = useState<'file' | 'manual'>('manual');
+  const [importMethod, setImportMethod] = useState<"file" | "manual">("manual");
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setBulkText('');
+      setBulkText("");
       setOrderItems([]);
       setShowSummary(false);
       setError(null);
-      setImportMethod('manual');
+      setImportMethod("manual");
     }
   }, [isOpen]);
 
   // Fetch bundles for the selected packageId
   useEffect(() => {
     if (isOpen && packageId) {
-      bundleService.getBundles({ packageId })
-        .then(resp => setBundles(resp.bundles || []))
+      bundleService
+        .getBundles({ packageId })
+        .then((resp) => setBundles(resp.bundles || []))
         .catch(() => setBundles([]));
     }
   }, [isOpen, packageId]);
@@ -105,21 +105,22 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
   // Validate phone number based on provider
   const validatePhone = (phone: string): string | null => {
-    const rules = providerPhoneRules[provider as keyof typeof providerPhoneRules];
-    
+    const rules =
+      providerPhoneRules[provider as keyof typeof providerPhoneRules];
+
     if (!rules) {
-      return 'Invalid provider';
+      return "Invalid provider";
     }
 
     // Remove any non-digit characters except +
-    const cleanPhone = phone.replace(/[^\d+]/g, '');
-    
+    const cleanPhone = phone.replace(/[^\d+]/g, "");
+
     // Convert to local format if it starts with +233
     let localPhone = cleanPhone;
-    if (cleanPhone.startsWith('+233')) {
-      localPhone = '0' + cleanPhone.substring(4);
-    } else if (cleanPhone.startsWith('233')) {
-      localPhone = '0' + cleanPhone.substring(3);
+    if (cleanPhone.startsWith("+233")) {
+      localPhone = "0" + cleanPhone.substring(4);
+    } else if (cleanPhone.startsWith("233")) {
+      localPhone = "0" + cleanPhone.substring(3);
     }
 
     // Check length
@@ -128,14 +129,16 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     }
 
     // Check if it starts with 0
-    if (!localPhone.startsWith('0')) {
-      return 'Phone number must start with 0';
+    if (!localPhone.startsWith("0")) {
+      return "Phone number must start with 0";
     }
 
     // Check prefix
     const prefix = localPhone.substring(0, 3);
     if (!rules.prefixes.includes(prefix)) {
-      return `Invalid prefix for ${provider}. Must start with: ${rules.prefixes.join(', ')}`;
+      return `Invalid prefix for ${provider}. Must start with: ${rules.prefixes.join(
+        ", "
+      )}`;
     }
 
     return null;
@@ -143,39 +146,52 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
   // Only accept numbers (assume GB) in the textarea input
   const parseBulkText = (text: string): BulkOrderItem[] => {
-    const lines = text.trim().split('\n');
+    const lines = text.trim().split("\n");
     const items: BulkOrderItem[] = [];
     for (const element of lines) {
       const line = element.trim();
       if (!line) continue;
       // Parse format: "Number 10" (assume GB)
-      const parts = line.split(' ');
+      const parts = line.split(" ");
       if (parts.length < 2) continue;
       const phoneNum = parts[0];
       const gbValue = parts[1];
       const gbVolume = parseFloat(gbValue);
       if (isNaN(gbVolume)) continue;
       // Find matching bundle (always in GB)
-      const foundBundle = availableBundles.find(bundle => bundle.dataVolume === gbVolume && bundle.dataUnit.toUpperCase() === 'GB');
+      const foundBundle = availableBundles.find(
+        (bundle) =>
+          bundle.dataVolume === gbVolume &&
+          bundle.dataUnit.toUpperCase() === "GB"
+      );
       items.push({
         customerPhone: phoneNum,
         dataVolume: gbVolume,
-        dataUnit: 'GB',
-        bundle: foundBundle
+        dataUnit: "GB",
+        bundle: foundBundle,
       });
     }
     return items;
   };
 
   // Validate all order items, but allow continue even if some are invalid
-  const validateOrderItems = (): { valid: BulkOrderItem[]; invalid: BulkOrderItem[] } => {
-    const validatedItems = orderItems.map(item => {
+  const validateOrderItems = (): {
+    valid: BulkOrderItem[];
+    invalid: BulkOrderItem[];
+  } => {
+    const validatedItems = orderItems.map((item) => {
       const phoneError = validatePhone(item.customerPhone);
-      const dataError = !item.bundle ? 'Data volume not available in this package' : undefined;
+      const dataError = !item.bundle
+        ? "Data volume not available in this package"
+        : undefined;
       return { ...item, phoneError: phoneError ?? undefined, dataError };
     });
-    const valid = validatedItems.filter(item => !item.phoneError && !item.dataError);
-    const invalid = validatedItems.filter(item => item.phoneError || item.dataError);
+    const valid = validatedItems.filter(
+      (item) => !item.phoneError && !item.dataError
+    );
+    const invalid = validatedItems.filter(
+      (item) => item.phoneError || item.dataError
+    );
     setOrderItems(validatedItems);
     return { valid, invalid };
   };
@@ -193,7 +209,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
         setOrderItems(items);
         setError(null);
       } catch {
-        setError('Failed to parse CSV file. Please check the format.');
+        setError("Failed to parse CSV file. Please check the format.");
       }
     };
     reader.readAsText(file);
@@ -220,17 +236,19 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const handleConfirmOrder = async () => {
     try {
       setError(null);
-      const items = validOrders.map(item => `${item.customerPhone},${item.dataVolume}GB`);
+      const items = validOrders.map(
+        (item) => `${item.customerPhone},${item.dataVolume}GB`
+      );
       const orderData = { items };
       await createBulkOrder(orderData);
       onSuccess();
       onClose();
-      navigate('/agent/dashboard/orders');
+      navigate("/agent/dashboard/orders");
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message || 'Failed to create bulk order');
+        setError(err.message || "Failed to create bulk order");
       } else {
-        setError('Failed to create bulk order');
+        setError("Failed to create bulk order");
       }
     }
   };
@@ -242,12 +260,12 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
   // Download CSV template
   const downloadTemplate = () => {
-    const template = '0241234567 5GB\n0201234567 2GB\n0271234567 1GB';
-    const blob = new Blob([template], { type: 'text/csv' });
+    const template = "0241234567 5GB\n0201234567 2GB\n0271234567 1GB";
+    const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'bulk_order_template.csv';
+    a.download = "bulk_order_template.csv";
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -255,10 +273,14 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   // Helper to get currency symbol
   const getCurrencySymbol = (currency: string) => {
     switch (currency) {
-      case 'GHS': return 'GH₵';
-      case 'NGN': return '₦';
-      case 'USD': return '$';
-      default: return currency + ' ';
+      case "GHS":
+        return "GH₵";
+      case "NGN":
+        return "₦";
+      case "USD":
+        return "$";
+      default:
+        return currency + " ";
     }
   };
 
@@ -266,9 +288,18 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const providerColors = getProviderColors(provider);
 
   // Aggregate total GB and currency
-  const totalGB = validOrders.reduce((sum, item) => sum + (item.dataVolume || 0), 0);
-  const totalPrice = validOrders.reduce((sum, item) => sum + (item.bundle ? item.bundle.price : 0), 0);
-  const currency = validOrders.length > 0 && validOrders[0].bundle ? validOrders[0].bundle.currency : 'GHS';
+  const totalGB = validOrders.reduce(
+    (sum, item) => sum + (item.dataVolume || 0),
+    0
+  );
+  const totalPrice = validOrders.reduce(
+    (sum, item) => sum + (item.bundle ? item.bundle.price : 0),
+    0
+  );
+  const currency =
+    validOrders.length > 0 && validOrders[0].bundle
+      ? validOrders[0].bundle.currency
+      : "GHS";
 
   if (!isOpen) return null;
 
@@ -278,10 +309,12 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            {showSummary ? 'Bulk Order Summary' : `Bulk Order for ${providerName}`}
+            {showSummary
+              ? "Bulk Order Summary"
+              : `Bulk Order for ${providerName}`}
           </h2>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <FaTimes size={20} />
@@ -297,21 +330,33 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{providerName} Package</h3>
-                    <p className="text-sm text-gray-600 mt-1">Available bundles in this package</p>
+                    <h3 className="font-medium text-gray-900">
+                      {providerName} Package
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Available bundles in this package
+                    </p>
                   </div>
                 </div>
                 {/* Make available bundles scrollable */}
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                  {Array.isArray(availableBundles) && availableBundles.length > 0 &&
+                  {Array.isArray(availableBundles) &&
+                    availableBundles.length > 0 &&
                     availableBundles.map((bundle: Bundle) => (
-                      <div key={bundle._id} className="flex items-center justify-between text-sm bg-white p-2 rounded">
+                      <div
+                        key={bundle._id}
+                        className="flex items-center justify-between text-sm bg-white p-2 rounded"
+                      >
                         <div className="flex items-center gap-2">
                           <FaWifi className="text-blue-500" />
-                          <span>{bundle.dataVolume} {bundle.dataUnit}</span>
+                          <span>
+                            {bundle.dataVolume} {bundle.dataUnit}
+                          </span>
                           <span className="text-gray-500">•</span>
                           <FaClock className="text-green-500" />
-                          <span>{bundle.validity} {bundle.validityUnit}</span>
+                          <span>
+                            {bundle.validity} {bundle.validityUnit}
+                          </span>
                         </div>
                         <div className="font-bold text-green-600">
                           {bundle.currency} {bundle.price}
@@ -323,25 +368,27 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
               {/* Import Method Selection */}
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-4">Import Method</h3>
+                <h3 className="font-medium text-gray-900 mb-4">
+                  Import Method
+                </h3>
                 <div className="flex gap-4">
                   <button
-                    onClick={() => setImportMethod('file')}
+                    onClick={() => setImportMethod("file")}
                     className={`flex-1 flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors ${
-                      importMethod === 'file'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 hover:bg-gray-50'
+                      importMethod === "file"
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     <FaFileUpload />
                     Import CSV/Excel
                   </button>
                   <button
-                    onClick={() => setImportMethod('manual')}
+                    onClick={() => setImportMethod("manual")}
                     className={`flex-1 flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors ${
-                      importMethod === 'manual'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 hover:bg-gray-50'
+                      importMethod === "manual"
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     <FaPlus />
@@ -351,7 +398,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               </div>
 
               {/* File Upload */}
-              {importMethod === 'file' && (
+              {importMethod === "file" && (
                 <div className="bg-white border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-medium text-gray-900">Upload File</h3>
@@ -370,16 +417,19 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     className="w-full p-2 border border-gray-300 rounded-lg"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    Supported formats: CSV, Excel. Columns: Customer Name, Phone Number, Data Volume, Data Unit
+                    Supported formats: CSV, Excel. Columns: Customer Name, Phone
+                    Number, Data Volume, Data Unit
                   </p>
                 </div>
               )}
 
               {/* Manual Entry */}
-              {importMethod === 'manual' && (
+              {importMethod === "manual" && (
                 <div className="bg-white border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-gray-900">Bulk Order Input</h3>
+                    <h3 className="font-medium text-gray-900">
+                      Bulk Order Input
+                    </h3>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -388,11 +438,14 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     <textarea
                       value={bulkText}
                       onChange={(e) => handleBulkTextChange(e.target.value)}
-                      placeholder="0241234567 5\n0201234567 2\n0271234567 1"
+                      placeholder={`0241234567 5
+0201234567 2
+0271234567 1`}
                       className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     />
                     <p className="text-xs text-gray-500 mt-2">
-                      Format: PhoneNumber DataVolume (e.g., 0241234567 5). All values are in GB.
+                      Format: PhoneNumber DataVolume (e.g., 0241234567 5). All
+                      values are in GB.
                     </p>
                   </div>
                 </div>
@@ -411,25 +464,46 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 disabled={orderItems.length === 0 || loading}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
               >
-                {loading ? 'Processing...' : `Continue (${orderItems.length} items)`}
+                {loading
+                  ? "Processing..."
+                  : `Continue (${orderItems.length} items)`}
               </button>
             </div>
           ) : (
             // Order Summary
             <div className="space-y-6">
               {/* Package Summary Mini Card */}
-              <div className="rounded-lg shadow flex items-center gap-4 p-4 mb-4" style={{ backgroundColor: providerColors.background, border: `1.5px solid ${providerColors.primary}` }}>
-                <div className="flex items-center justify-center w-14 h-14 rounded-full" style={{ backgroundColor: providerColors.primary }}>
-                  <FaWifi className="text-2xl" style={{ color: providerColors.text }} />
+              <div
+                className="rounded-lg shadow flex items-center gap-4 p-4 mb-4"
+                style={{
+                  backgroundColor: providerColors.background,
+                  border: `1.5px solid ${providerColors.primary}`,
+                }}
+              >
+                <div
+                  className="flex items-center justify-center w-14 h-14 rounded-full"
+                  style={{ backgroundColor: providerColors.primary }}
+                >
+                  <FaWifi
+                    className="text-2xl"
+                    style={{ color: providerColors.text }}
+                  />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg font-bold" style={{ color: providerColors.primary }}>{providerName}</span>
+                    <span
+                      className="text-lg font-bold"
+                      style={{ color: providerColors.primary }}
+                    >
+                      {providerName}
+                    </span>
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 flex items-center gap-1">
-                      <FaCheckCircle className="text-green-500 mr-1" /> {validOrders.length} Valid
+                      <FaCheckCircle className="text-green-500 mr-1" />{" "}
+                      {validOrders.length} Valid
                     </span>
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 flex items-center gap-1">
-                      <FaExclamationCircle className="text-red-500 mr-1" /> {invalidOrders.length} Invalid
+                      <FaExclamationCircle className="text-red-500 mr-1" />{" "}
+                      {invalidOrders.length} Invalid
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
@@ -439,10 +513,17 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     </span>
                     <span className="flex items-center gap-1 text-gray-700">
                       <FaBox className="text-yellow-500" />
-                      <span className="font-semibold">{orderItems.length}</span> Orders
+                      <span className="font-semibold">
+                        {orderItems.length}
+                      </span>{" "}
+                      Orders
                     </span>
                     <span className="flex items-center gap-1 text-gray-700">
-                      <span className="font-semibold">{getCurrencySymbol(currency)}{totalPrice.toFixed(2)}</span> Total
+                      <span className="font-semibold">
+                        {getCurrencySymbol(currency)}
+                        {totalPrice.toFixed(2)}
+                      </span>{" "}
+                      Total
                     </span>
                   </div>
                 </div>
@@ -450,13 +531,20 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
               {/* Valid Orders */}
               <div className="bg-green-50 rounded-lg p-4">
-                <h3 className="font-medium text-green-800 mb-3">Valid Orders ({validOrders.length})</h3>
+                <h3 className="font-medium text-green-800 mb-3">
+                  Valid Orders ({validOrders.length})
+                </h3>
                 <div className="space-y-3 max-h-40 overflow-y-auto">
                   {validOrders.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-white rounded-lg"
+                    >
                       <div className="flex-1">
                         <div className="font-medium">{item.customerPhone}</div>
-                        <div className="text-sm text-gray-600">{item.dataVolume} GB</div>
+                        <div className="text-sm text-gray-600">
+                          {item.dataVolume} GB
+                        </div>
                       </div>
                       <div className="text-right">
                         {item.bundle && (
@@ -473,20 +561,33 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               {/* Invalid Orders */}
               {invalidOrders.length > 0 && (
                 <div className="bg-red-50 rounded-lg p-4">
-                  <h3 className="font-medium text-red-800 mb-3">Invalid Orders ({invalidOrders.length})</h3>
+                  <h3 className="font-medium text-red-800 mb-3">
+                    Invalid Orders ({invalidOrders.length})
+                  </h3>
                   <div className="space-y-3 max-h-40 overflow-y-auto">
                     {invalidOrders.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg"
+                      >
                         <div className="flex-1">
-                          <div className="font-medium">{item.customerPhone}</div>
-                          <div className="text-sm text-gray-600">{item.dataVolume} GB</div>
+                          <div className="font-medium">
+                            {item.customerPhone}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {item.dataVolume} GB
+                          </div>
                         </div>
                         <div className="text-right">
                           {item.phoneError && (
-                            <div className="text-xs text-red-600">{item.phoneError}</div>
+                            <div className="text-xs text-red-600">
+                              {item.phoneError}
+                            </div>
                           )}
                           {item.dataError && (
-                            <div className="text-xs text-red-600">{item.dataError}</div>
+                            <div className="text-xs text-red-600">
+                              {item.dataError}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -500,7 +601,14 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Total Amount:</span>
                   <span className="text-green-600">
-                    GHS {validOrders.reduce((sum, item) => sum + (item.bundle ? item.bundle.price : 0), 0).toFixed(2)}
+                    GHS{" "}
+                    {validOrders
+                      .reduce(
+                        (sum, item) =>
+                          sum + (item.bundle ? item.bundle.price : 0),
+                        0
+                      )
+                      .toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -544,4 +652,4 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       </div>
     </div>
   );
-}; 
+};
