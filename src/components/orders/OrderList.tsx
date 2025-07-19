@@ -294,7 +294,6 @@ export const OrderList: React.FC = () => {
             <OrderTable
               orders={orders}
               onView={handleView}
-              onProcess={handleProcess}
               onCancel={handleCancel}
               onRefresh={() => fetchOrders(filters)}
               loading={loading}
