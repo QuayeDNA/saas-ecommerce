@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '../hooks';
 import { type WalletTransaction } from '../types/wallet';
+import { FaWallet, FaPlus, FaArrowUp, FaArrowDown, FaTimes, FaInfoCircle, FaSync } from 'react-icons/fa';
 
 export const WalletPage = () => {
   const {
@@ -9,24 +10,29 @@ export const WalletPage = () => {
     isLoading,
     error,
     getTransactionHistory,
-    requestTopUp
   } = useWallet();
   
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [topUpAmount, setTopUpAmount] = useState('');
-  const [topUpDescription, setTopUpDescription] = useState('');
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
 
   // Fetch transaction history on page load and when page changes
   useEffect(() => {
     const loadTransactions = async () => {
-      const result = await getTransactionHistory(currentPage);
-      if (result) {
-        setTransactions(result.transactions);
-        setTotalPages(result.pagination.pages);
+      setIsLoadingTransactions(true);
+      try {
+        const result = await getTransactionHistory(currentPage);
+        if (result) {
+          setTransactions(result.transactions);
+          setTotalPages(result.pagination.pages);
+        }
+      } catch (err) {
+        console.error('Failed to load transactions:', err);
+      } finally {
+        setIsLoadingTransactions(false);
       }
     };
     
@@ -45,85 +51,90 @@ export const WalletPage = () => {
     }).format(date);
   };
 
-  // Handle top-up request
-  const handleTopUpRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle top-up request - show contact admin message
+  const handleTopUpRequest = () => {
+    setShowTopUpModal(false);
+    setSuccessMessage('Your top-up request has been submitted. Please contact the super admin for assistance.');
     
-    if (!topUpAmount || !topUpDescription) return;
-    
-    const amount = parseFloat(topUpAmount);
-    if (isNaN(amount) || amount <= 0) return;
-    
-    const result = await requestTopUp(amount, topUpDescription);
-    
-    if (result) {
-      setSuccessMessage('Top-up request submitted successfully.');
-      setTopUpAmount('');
-      setTopUpDescription('');
-      setShowTopUpModal(false);
-      
-      // Refresh wallet data to show updated state
-      refreshWallet();
-      
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
-    }
+    // Hide success message after 5 seconds
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 5000);
   };
   
   // Get status badge class
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'completed': 
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 border border-green-200';
       case 'pending': 
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
       case 'rejected': 
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 border border-red-200';
       default: 
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 border border-gray-200';
+    }
+  };
+
+  // Get transaction type icon and color
+  const getTransactionTypeInfo = (type: string) => {
+    if (type === 'credit') {
+      return {
+        icon: <FaArrowUp className="h-4 w-4" />,
+        color: 'text-green-600',
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200'
+      };
+    } else {
+      return {
+        icon: <FaArrowDown className="h-4 w-4" />,
+        color: 'text-red-600',
+        bgColor: 'bg-red-50',
+        borderColor: 'border-red-200'
+      };
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Wallet Management</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Wallet Management</h1>
+          <p className="text-sm text-gray-600 mt-1">Manage your wallet balance and view transaction history</p>
+        </div>
         <button 
           onClick={() => setShowTopUpModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
         >
+          <FaPlus className="h-4 w-4" />
           Request Top-Up
         </button>
       </div>
       
       {/* Success message */}
       {successMessage && (
-        <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
+            <FaInfoCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
             <div className="ml-3">
               <p className="text-sm text-green-700">{successMessage}</p>
             </div>
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="ml-auto text-green-400 hover:text-green-600"
+            >
+              <FaTimes className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}
       
       {/* Error message */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
+            <FaInfoCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
             <div className="ml-3">
               <p className="text-sm text-red-700">{error}</p>
             </div>
@@ -132,30 +143,32 @@ export const WalletPage = () => {
       )}
       
       {/* Wallet balance card */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-sm font-medium text-gray-500">Current Wallet Balance</h2>
-            <div className="mt-1 flex items-baseline">
-              <p className="text-3xl font-semibold text-green-600">GH₵{walletBalance.toFixed(2)}</p>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <FaWallet className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-gray-500">Current Wallet Balance</h2>
+              <div className="mt-1 flex items-baseline">
+                <p className="text-3xl font-bold text-green-600">GH₵{walletBalance.toFixed(2)}</p>
+              </div>
             </div>
           </div>
           
-          <div className="mt-4 md:mt-0">
+          <div className="mt-4 lg:mt-0">
             <button 
               onClick={() => refreshWallet()} 
-              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               disabled={isLoading}
             >
               {isLoading ? (
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
               ) : (
-                <svg className="-ml-1 mr-2 h-4 w-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+                <FaSync className="h-4 w-4" />
               )}
               Refresh
             </button>
@@ -164,7 +177,7 @@ export const WalletPage = () => {
       </div>
       
       {/* Transactions */}
-      <div className="bg-white shadow-sm rounded-lg border border-gray-100">
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-900">Transaction History</h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -172,65 +185,75 @@ export const WalletPage = () => {
           </p>
         </div>
         
-        {isLoading && (
+        {isLoadingTransactions && (
           <div className="flex justify-center items-center h-32">
-            <svg className="animate-spin h-8 w-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <div className="animate-spin h-8 w-8 border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
           </div>
         )}
         
-        {!isLoading && transactions.length === 0 && (
-          <div className="text-center py-8">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No transactions</h3>
-            <p className="mt-1 text-sm text-gray-500">
+        {!isLoadingTransactions && transactions.length === 0 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaWallet className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions</h3>
+            <p className="text-sm text-gray-500">
               You don't have any wallet transactions yet.
             </p>
           </div>
         )}
         
-        {!isLoading && transactions.length > 0 && (
+        {!isLoadingTransactions && transactions.length > 0 && (
           <>
-            {/* Mobile view */}
+            {/* Mobile view - Enhanced */}
             <div className="sm:hidden">
-              <ul className="divide-y divide-gray-200">
-                {transactions.map((transaction) => (
-                  <li key={transaction._id} className="px-4 py-4">
-                    <div className="flex justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-900 truncate">
-                          {transaction.description}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(transaction.createdAt)}
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className={`text-sm font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                          {transaction.type === 'credit' ? '+' : '-'}GH₵{transaction.amount.toFixed(2)}
-                        </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusBadgeClass(transaction.status)}`}>
-                          {transaction.status}
-                        </span>
+              <div className="divide-y divide-gray-200">
+                {transactions.map((transaction) => {
+                  const typeInfo = getTransactionTypeInfo(transaction.type);
+                  return (
+                    <div key={transaction._id} className="px-4 py-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className={`p-2 rounded-full ${typeInfo.bgColor} ${typeInfo.borderColor}`}>
+                              {typeInfo.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {transaction.description}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {formatDate(transaction.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={`text-sm font-bold ${typeInfo.color}`}>
+                            {transaction.type === 'credit' ? '+' : '-'}GH₵{transaction.amount.toFixed(2)}
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBadgeClass(transaction.status)}`}>
+                            {transaction.status}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            Balance: GH₵{transaction.balanceAfter.toFixed(2)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </li>
-                ))}
-              </ul>
+                  );
+                })}
+              </div>
             </div>
             
-            {/* Desktop view */}
+            {/* Desktop view - Enhanced */}
             <div className="hidden sm:block">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
+                        Date & Time
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Description
@@ -250,63 +273,60 @@ export const WalletPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {transactions.map((transaction) => (
-                      <tr key={transaction._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(transaction.createdAt)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                          {transaction.description}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`inline-flex items-center ${transaction.type === 'credit' ? 'text-green-700' : 'text-red-700'}`}>
-                            {transaction.type === 'credit' ? (
-                              <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                              </svg>
-                            ) : (
-                              <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                              </svg>
-                            )}
-                            {transaction.type === 'credit' ? 'Credit' : 'Debit'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <span className={transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
-                            {transaction.type === 'credit' ? '+' : '-'}GH₵{transaction.amount.toFixed(2)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(transaction.status)}`}>
-                            {transaction.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          GH₵{transaction.balanceAfter.toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
+                    {transactions.map((transaction) => {
+                      const typeInfo = getTransactionTypeInfo(transaction.type);
+                      return (
+                        <tr key={transaction._id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(transaction.createdAt)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                            <div className="truncate" title={transaction.description}>
+                              {transaction.description}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${typeInfo.bgColor} ${typeInfo.borderColor} ${typeInfo.color}`}>
+                              {typeInfo.icon}
+                              {transaction.type === 'credit' ? 'Credit' : 'Debit'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">
+                            <span className={typeInfo.color}>
+                              {transaction.type === 'credit' ? '+' : '-'}GH₵{transaction.amount.toFixed(2)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(transaction.status)}`}>
+                              {transaction.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            GH₵{transaction.balanceAfter.toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             </div>
             
-            {/* Pagination */}
+            {/* Enhanced Pagination */}
             {totalPages > 1 && (
-              <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="px-4 py-4 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button 
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'} transition-colors`}
                   >
                     Previous
                   </button>
                   <button 
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+                    className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'} transition-colors`}
                   >
                     Next
                   </button>
@@ -318,11 +338,11 @@ export const WalletPage = () => {
                     </p>
                   </div>
                   <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <nav className="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px" aria-label="Pagination">
                       <button
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+                        className={`relative inline-flex items-center px-3 py-2 rounded-l-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'} transition-colors`}
                       >
                         <span className="sr-only">Previous</span>
                         <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -348,11 +368,11 @@ export const WalletPage = () => {
                           <button
                             key={pageNumber}
                             onClick={() => setCurrentPage(pageNumber)}
-                            className={`relative inline-flex items-center px-4 py-2 border ${
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${
                               currentPage === pageNumber 
                                 ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' 
                                 : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                            } text-sm font-medium`}
+                            }`}
                           >
                             {pageNumber}
                           </button>
@@ -362,7 +382,7 @@ export const WalletPage = () => {
                       <button
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+                        className={`relative inline-flex items-center px-3 py-2 rounded-r-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'} transition-colors`}
                       >
                         <span className="sr-only">Next</span>
                         <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -378,80 +398,61 @@ export const WalletPage = () => {
         )}
       </div>
       
-      {/* Top-Up Request Modal */}
+      {/* Top-Up Request Modal - Contact Admin Message */}
       {showTopUpModal && (
-        <div className="fixed inset-0 z-10 overflow-y-auto">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <div className="fixed inset-0 bg-gray-500/75 transition-opacity" aria-hidden="true"></div>
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <form onSubmit={handleTopUpRequest}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
-                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                      <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                    </div>
-                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                      <h3 className="text-lg leading-6 font-medium text-gray-900">
-                        Request Wallet Top-Up
-                      </h3>
-                      <div className="mt-4 space-y-4">
-                        <div>
-                          <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                            Amount (GH₵)
-                          </label>
-                          <input
-                            type="number"
-                            name="amount"
-                            id="amount"
-                            min="0.01"
-                            step="0.01"
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            placeholder="0.00"
-                            value={topUpAmount}
-                            onChange={(e) => setTopUpAmount(e.target.value)}
-                            required
-                          />
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                            Reason for Top-Up
-                          </label>
-                          <textarea
-                            id="description"
-                            name="description"
-                            rows={3}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            placeholder="Please provide a reason for this top-up request"
-                            value={topUpDescription}
-                            onChange={(e) => setTopUpDescription(e.target.value)}
-                            required
-                          ></textarea>
+            <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-[10000]">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <FaInfoCircle className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Request Wallet Top-Up
+                    </h3>
+                    <div className="mt-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-start">
+                          <FaInfoCircle className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                          <div className="ml-3">
+                            <p className="text-sm text-blue-700">
+                              To request a wallet top-up, please contact the super administrator for assistance. 
+                              They will be able to process your request and add funds to your wallet.
+                            </p>
+                            <div className="mt-3">
+                              <p className="text-xs text-blue-600">
+                                <strong>Contact:</strong> Super Administrator<br/>
+                                <strong>Email:</strong> admin@example.com<br/>
+                                <strong>Phone:</strong> +233 XX XXX XXXX
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    {isLoading ? 'Submitting...' : 'Submit Request'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowTopUpModal(false)}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={handleTopUpRequest}
+                  className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                >
+                  Got it, thanks!
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowTopUpModal(false)}
+                  className="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
