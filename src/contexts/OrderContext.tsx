@@ -31,6 +31,7 @@ interface OrderContextType {
   processOrderItem: (orderId: string, itemId: string) => Promise<void>;
   processBulkOrder: (orderId: string) => Promise<void>;
   cancelOrder: (orderId: string, reason?: string) => Promise<void>;
+  updateOrderStatus: (orderId: string, status: string, notes?: string) => Promise<void>;
   fetchAnalytics: (timeframe?: string) => Promise<void>;
   getAnalytics: (timeframe?: string) => Promise<OrderAnalytics>;
   setFilters: (filters: OrderFilters) => void;
@@ -130,7 +131,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err: unknown) {
       const message = extractErrorMessage(err, 'Failed to process order item');
       setError(message);
-      addToast(message, 'error');
+      
+      // Check if it's a wallet balance error
+      if (message.includes('Insufficient wallet balance')) {
+        addToast(message, 'error');
+        addToast('Please top up your wallet to continue processing orders', 'warning');
+      } else {
+        addToast(message, 'error');
+      }
       throw new Error(message);
     }
   }, [addToast, fetchOrders, filters]);
@@ -160,6 +168,36 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       throw new Error(message);
     }
   }, [addToast, fetchOrders, filters]);
+
+  const updateOrderStatus = useCallback(async (orderId: string, status: string, notes?: string) => {
+    try {
+      // If changing to processing or completed, check wallet balance first
+      if (status === 'processing' || status === 'completed') {
+        const order = orders.find(o => o._id === orderId);
+        if (order) {
+          const totalCost = order.items.reduce((sum, item) => sum + item.totalPrice, 0);
+          const walletInfo = await orderService.checkWalletBalance();
+          
+          if (walletInfo.balance < totalCost) {
+            const message = `Insufficient wallet balance. Required: GH₵${totalCost.toFixed(2)}, Available: GH₵${walletInfo.balance.toFixed(2)}`;
+            setError(message);
+            addToast(message, 'error');
+            addToast('Please top up your wallet to continue processing orders', 'warning');
+            throw new Error(message);
+          }
+        }
+      }
+      
+      await orderService.updateOrderStatus(orderId, status, notes);
+      addToast('Order status updated successfully', 'success');
+      await fetchOrders(filters);
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err, 'Failed to update order status');
+      setError(message);
+      addToast(message, 'error');
+      throw new Error(message);
+    }
+  }, [addToast, fetchOrders, filters, orders]);
 
   const fetchAnalytics = useCallback(async (timeframe = '30d') => {
     try {
@@ -208,6 +246,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     processOrderItem,
     processBulkOrder,
     cancelOrder,
+    updateOrderStatus,
     fetchAnalytics,
     getAnalytics,
     setFilters,
@@ -225,6 +264,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     processOrderItem,
     processBulkOrder,
     cancelOrder,
+    updateOrderStatus,
     fetchAnalytics,
     getAnalytics,
     setFilters,

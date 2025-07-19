@@ -2,20 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FaEye, 
-  FaPlay, 
   FaTimes, 
   FaClock,
   FaCheckCircle,
   FaExclamationCircle,
   FaSpinner,
+  FaChevronDown,
+  FaWifi
 } from 'react-icons/fa';
 import type { Order } from '../../types/order';
 
 interface OrderTableProps {
   orders: Order[];
   onView: (order: Order) => void;
-  onProcess: (orderId: string) => void;
   onCancel: (orderId: string) => void;
+  onUpdateStatus: (orderId: string, status: string, notes?: string) => void;
   onRefresh?: () => void;
   loading?: boolean;
 }
@@ -23,13 +24,48 @@ interface OrderTableProps {
 export const OrderTable: React.FC<OrderTableProps> = ({
   orders,
   onView,
-  onProcess,
   onCancel,
+  onUpdateStatus,
   onRefresh,
   loading = false
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [, setProcessingOrders] = useState<Set<string>>(new Set());
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
+
+  // Click outside handler to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (statusDropdownOpen && !target.closest('.status-dropdown')) {
+        setStatusDropdownOpen(null);
+      }
+    };
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && statusDropdownOpen) {
+        setStatusDropdownOpen(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [statusDropdownOpen]);
+
+  // Available status options (excluding 'failed' as it's system-controlled)
+  const statusOptions = [
+    { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'confirmed', label: 'Confirmed', color: 'bg-purple-100 text-purple-800' },
+    { value: 'processing', label: 'Processing', color: 'bg-blue-100 text-blue-800' },
+    { value: 'partially_completed', label: 'Partially Completed', color: 'bg-orange-100 text-orange-800' },
+    { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
+    { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800' }
+  ];
 
   // Auto-refresh processing orders
   useEffect(() => {
@@ -82,8 +118,54 @@ export const OrderTable: React.FC<OrderTableProps> = ({
     setExpandedRows(newExpanded);
   };
 
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      await onUpdateStatus(orderId, newStatus);
+      setStatusDropdownOpen(null);
+    } catch (error) {
+      console.error('Failed to update status:', error);
+    }
+  };
 
-  const canProcess = (status: string) => ['pending', 'confirmed'].includes(status);
+  const toggleStatusDropdown = (orderId: string) => {
+    setStatusDropdownOpen(statusDropdownOpen === orderId ? null : orderId);
+  };
+
+  // Get provider from order items
+  const getOrderProvider = (order: Order) => {
+    if (order.items && order.items.length > 0) {
+      return order.items[0].packageDetails?.provider || 'Unknown';
+    }
+    return 'Unknown';
+  };
+
+  // Get recipient info (phone number for single orders, count for bulk)
+  const getOrderRecipient = (order: Order) => {
+    if (order.orderType === 'bulk') {
+      return `${order.items.length} recipients`;
+    }
+    if (order.items && order.items.length > 0) {
+      return order.items[0].customerPhone || 'N/A';
+    }
+    return 'N/A';
+  };
+
+  // Get total volume
+  const getOrderVolume = (order: Order) => {
+    if (!order.items || order.items.length === 0) return 'N/A';
+    
+    const totalVolume = order.items.reduce((sum, item) => {
+      const volume = item.bundleSize?.value || item.packageDetails?.dataVolume || 0;
+      return sum + volume;
+    }, 0);
+    
+    if (totalVolume >= 1) {
+      return `${totalVolume.toFixed(1)} GB`;
+    } else {
+      return `${(totalVolume * 1000).toFixed(0)} MB`;
+    }
+  };
+
   const canCancel = (status: string) => ['pending', 'confirmed', 'processing'].includes(status);
 
   if (loading) {
@@ -131,10 +213,11 @@ export const OrderTable: React.FC<OrderTableProps> = ({
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order #</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"># Items</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volume</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
@@ -146,17 +229,45 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                   {order.orderNumber || order._id?.slice(-6)}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 capitalize">
-                  {order.orderType}
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <FaWifi className="text-gray-400" />
+                    {getOrderProvider(order)}
+                  </div>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
+                  <div className="relative">
+                    <button
+                      onClick={() => toggleStatusDropdown(order._id!)}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)} hover:bg-opacity-80 transition-colors status-dropdown`}
+                    >
                       {getStatusIcon(order.status)}
-                        {order.status.replace('_', ' ')}
-                      </span>
+                      {order.status.replace('_', ' ')}
+                      <FaChevronDown className="text-xs" />
+                    </button>
+                    
+                    {statusDropdownOpen === order._id && (
+                      <div className="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown" style={{ top: '100%', left: '0', minWidth: '12rem' }}>
+                        <div className="py-1 flex flex-col">
+                          {statusOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => handleStatusChange(order._id!, option.value)}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${option.value === order.status ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-center">
-                  {order.items.length}
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                  {getOrderRecipient(order)}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                  {getOrderVolume(order)}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
                   {new Date(order.createdAt).toLocaleString()}
@@ -172,7 +283,7 @@ export const OrderTable: React.FC<OrderTableProps> = ({
               </tr>
               {expandedRows.has(order._id!) && (
                 <tr>
-                  <td colSpan={6} className="bg-gray-50 px-4 py-4">
+                  <td colSpan={7} className="bg-gray-50 px-4 py-4">
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-4 items-center justify-between">
                         <div>
@@ -202,28 +313,20 @@ export const OrderTable: React.FC<OrderTableProps> = ({
                         </div>
                       </div>
                       <div className="flex gap-2 mt-2">
-                    {canProcess(order.status) && (
-                      <button
-                        onClick={() => onProcess(order._id!)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                          >
-                            <FaPlay size={12} /> Process
-                          </button>
-                        )}
                         {canCancel(order.status) && (
                           <button
                             onClick={() => onCancel(order._id!)}
                             className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
                           >
                             <FaTimes size={12} /> Cancel
-                            </button>
-                          )}
-                            <button
+                          </button>
+                        )}
+                        <button
                           onClick={() => onView(order)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-xs"
                         >
                           <FaEye size={12} /> View
-                                </button>
+                        </button>
                       </div>
                     </div>
                   </td>

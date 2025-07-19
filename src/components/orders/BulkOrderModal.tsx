@@ -8,11 +8,15 @@ import {
   FaCheckCircle, 
   FaFileUpload, 
   FaDownload,
-  FaPlus
+  FaPlus,
+  FaBox,
+  FaExclamationCircle,
+  FaDatabase
 } from 'react-icons/fa';
 import { useOrder } from '../../contexts/OrderContext';
 import { bundleService } from '../../services/bundle.service';
 import type { Bundle } from '../../types/package';
+import { getProviderColors } from '../../utils/provider-colors';
 
 interface BulkOrderModalProps {
   isOpen: boolean;
@@ -137,112 +141,43 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     return null;
   };
 
-  // Parse bulk text and validate
+  // Only accept numbers (assume GB) in the textarea input
   const parseBulkText = (text: string): BulkOrderItem[] => {
     const lines = text.trim().split('\n');
     const items: BulkOrderItem[] = [];
-    
     for (const element of lines) {
       const line = element.trim();
       if (!line) continue;
-      
-      // Parse format: "Number 10GB" or "Number 5MB" or just "Number 10"
+      // Parse format: "Number 10" (assume GB)
       const parts = line.split(' ');
-      if (parts.length < 2) {
-        continue;
-      }
-      
-      const phone = parts[0];
-      const dataPart = parts.slice(1).join(' '); // Handle cases like "10 GB" with space
-      
-      // Try to extract data volume and unit (if present)
-      let dataVolume: number | null = null;
-      let dataUnit: 'MB' | 'GB' | 'TB' | undefined = undefined;
-      const dataMatch = RegExp(/^(\d+(?:\.\d+)?)\s*(MB|GB|TB)?$/i).exec(dataPart);
-      if (dataMatch) {
-        dataVolume = parseFloat(dataMatch[1]);
-        if (dataMatch[2]) {
-          dataUnit = dataMatch[2].toUpperCase() as 'MB' | 'GB' | 'TB';
-        }
-      } else {
-        continue;
-      }
-      
-      // Find matching bundle
-      let matchingBundle: Bundle | undefined;
-      if (dataUnit) {
-        matchingBundle = availableBundles.find(bundle => 
-          bundle.dataVolume === dataVolume && 
-          bundle.dataUnit.toUpperCase() === dataUnit
-        );
-      } else {
-        // No unit provided, try to match by dataVolume, prefer GB > MB > TB
-        const candidates = availableBundles.filter(bundle => bundle.dataVolume === dataVolume);
-        if (candidates.length > 0) {
-          // Prefer GB > MB > TB
-          matchingBundle = candidates.find(b => b.dataUnit.toUpperCase() === 'GB')
-            || candidates.find(b => b.dataUnit.toUpperCase() === 'MB')
-            || candidates.find(b => b.dataUnit.toUpperCase() === 'TB')
-            || candidates[0];
-          dataUnit = matchingBundle.dataUnit.toUpperCase() as 'MB' | 'GB' | 'TB';
-        }
-      }
-      
-      if (!matchingBundle) {
-        continue;
-      }
-      
+      if (parts.length < 2) continue;
+      const phoneNum = parts[0];
+      const gbValue = parts[1];
+      const gbVolume = parseFloat(gbValue);
+      if (isNaN(gbVolume)) continue;
+      // Find matching bundle (always in GB)
+      const foundBundle = availableBundles.find(bundle => bundle.dataVolume === gbVolume && bundle.dataUnit.toUpperCase() === 'GB');
       items.push({
-        customerPhone: phone,
-        dataVolume: matchingBundle.dataVolume,
-        // Only allow 'MB' or 'GB' for dataUnit to match type
-        dataUnit: ((): 'MB' | 'GB' => {
-          const unit = matchingBundle.dataUnit.toUpperCase();
-          if (unit === 'MB' || unit === 'GB') return unit;
-          // Fallback: if 'TB', default to 'GB' (or handle as needed)
-          return 'GB';
-        })(),
-        bundle: matchingBundle
+        customerPhone: phoneNum,
+        dataVolume: gbVolume,
+        dataUnit: 'GB',
+        bundle: foundBundle
       });
     }
-    
     return items;
   };
 
-  // Validate all order items
-  const validateOrderItems = (): boolean => {
-    if (orderItems.length === 0) {
-      setError('Please add at least one valid order item');
-      return false;
-    }
-
-    let hasErrors = false;
+  // Validate all order items, but allow continue even if some are invalid
+  const validateOrderItems = (): { valid: BulkOrderItem[]; invalid: BulkOrderItem[] } => {
     const validatedItems = orderItems.map(item => {
       const phoneError = validatePhone(item.customerPhone);
       const dataError = !item.bundle ? 'Data volume not available in this package' : undefined;
-      
-      if (phoneError || dataError) {
-        hasErrors = true;
-      }
-      
-      return { ...item, phoneError, dataError };
+      return { ...item, phoneError: phoneError ?? undefined, dataError };
     });
-
-    // Fix: Convert any null phoneError to undefined to match BulkOrderItem type
-    const sanitizedItems = validatedItems.map(item => ({
-      ...item,
-      phoneError: item.phoneError ?? undefined
-    }));
-
-    setOrderItems(sanitizedItems);
-
-    if (hasErrors) {
-      setError('Please fix validation errors before continuing');
-      return false;
-    }
-
-    setError(null);
-    return true;
+    const valid = validatedItems.filter(item => !item.phoneError && !item.dataError);
+    const invalid = validatedItems.filter(item => item.phoneError || item.dataError);
+    setOrderItems(validatedItems);
+    return { valid, invalid };
   };
 
   // Handle file upload
@@ -271,22 +206,22 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     setOrderItems(items);
   };
 
-  // Handle continue to summary
+  // Handle continue to summary (always allow)
+  const [validOrders, setValidOrders] = useState<BulkOrderItem[]>([]);
+  const [invalidOrders, setInvalidOrders] = useState<BulkOrderItem[]>([]);
   const handleContinue = () => {
-    if (!validateOrderItems()) {
-      return;
-    }
-
+    const { valid, invalid } = validateOrderItems();
+    setValidOrders(valid);
+    setInvalidOrders(invalid);
     setShowSummary(true);
   };
 
-  // Handle confirm order
+  // Handle confirm order (only send valid orders)
   const handleConfirmOrder = async () => {
     try {
       setError(null);
-      const items = orderItems.map(item => `${item.customerPhone},${item.dataVolume}${item.dataUnit}`);
+      const items = validOrders.map(item => `${item.customerPhone},${item.dataVolume}GB`);
       const orderData = { items };
-      // Actually make the backend request
       await createBulkOrder(orderData);
       onSuccess();
       onClose();
@@ -317,12 +252,25 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     window.URL.revokeObjectURL(url);
   };
 
-  if (!isOpen) return null;
+  // Helper to get currency symbol
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'GHS': return 'GH₵';
+      case 'NGN': return '₦';
+      case 'USD': return '$';
+      default: return currency + ' ';
+    }
+  };
 
-  const totalPrice = orderItems.reduce((sum, item) => {
-    if (!item.bundle) return sum;
-    return sum + item.bundle.price;
-  }, 0);
+  // Provider colors for summary card
+  const providerColors = getProviderColors(provider);
+
+  // Aggregate total GB and currency
+  const totalGB = validOrders.reduce((sum, item) => sum + (item.dataVolume || 0), 0);
+  const totalPrice = validOrders.reduce((sum, item) => sum + (item.bundle ? item.bundle.price : 0), 0);
+  const currency = validOrders.length > 0 && validOrders[0].bundle ? validOrders[0].bundle.currency : 'GHS';
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -433,7 +381,6 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-medium text-gray-900">Bulk Order Input</h3>
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Enter orders (one per line)
@@ -441,41 +388,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     <textarea
                       value={bulkText}
                       onChange={(e) => handleBulkTextChange(e.target.value)}
-                      placeholder="0241234567 5&#10;0201234567 2&#10;0271234567 1"
+                      placeholder="0241234567 5\n0201234567 2\n0271234567 1"
                       className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     />
                     <p className="text-xs text-gray-500 mt-2">
-                      Format: PhoneNumber DataVolume (e.g., 0241234567 5).
+                      Format: PhoneNumber DataVolume (e.g., 0241234567 5). All values are in GB.
                     </p>
                   </div>
-                  
-                  {/* Preview */}
-                  {orderItems.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="font-medium text-gray-900 mb-2">Preview ({orderItems.length} items)</h4>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {orderItems.map((item, index) => (
-                          <div key={index} className={`flex items-center justify-between p-2 rounded text-sm ${
-                            item.phoneError || item.dataError ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'
-                          }`}>
-                            <div>
-                              <span className="font-medium">{item.customerPhone}</span>
-                              <span className="mx-2">•</span>
-                              <span>{item.dataVolume} {item.dataUnit}</span>
-                              {item.bundle && (
-                                <span className="ml-2 text-green-600">• {item.bundle.currency} {item.bundle.price}</span>
-                              )}
-                            </div>
-                            <div className="text-xs">
-                              {item.phoneError && <span className="text-red-600">{item.phoneError}</span>}
-                              {item.dataError && <span className="text-red-600">{item.dataError}</span>}
-                              {!item.phoneError && !item.dataError && <span className="text-green-600">✓ Valid</span>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -498,36 +417,46 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
           ) : (
             // Order Summary
             <div className="space-y-6">
-              {/* Package Summary */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-3">Package Summary</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Provider:</span>
-                    <span className="font-medium">{providerName}</span>
+              {/* Package Summary Mini Card */}
+              <div className="rounded-lg shadow flex items-center gap-4 p-4 mb-4" style={{ backgroundColor: providerColors.background, border: `1.5px solid ${providerColors.primary}` }}>
+                <div className="flex items-center justify-center w-14 h-14 rounded-full" style={{ backgroundColor: providerColors.primary }}>
+                  <FaWifi className="text-2xl" style={{ color: providerColors.text }} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg font-bold" style={{ color: providerColors.primary }}>{providerName}</span>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 flex items-center gap-1">
+                      <FaCheckCircle className="text-green-500 mr-1" /> {validOrders.length} Valid
+                    </span>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 flex items-center gap-1">
+                      <FaExclamationCircle className="text-red-500 mr-1" /> {invalidOrders.length} Invalid
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Total Items:</span>
-                    <span className="font-medium">{orderItems.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Valid Items:</span>
-                    <span className="font-medium text-green-600">
-                      {orderItems.filter(item => !item.phoneError && !item.dataError).length}
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <FaDatabase className="text-blue-500" />
+                      <span className="font-semibold">{totalGB} GB</span> Total
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <FaBox className="text-yellow-500" />
+                      <span className="font-semibold">{orderItems.length}</span> Orders
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <span className="font-semibold">{getCurrencySymbol(currency)}{totalPrice.toFixed(2)}</span> Total
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Order Items Summary */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-3">Order Items ({orderItems.length})</h3>
-                <div className="space-y-3 max-h-60 overflow-y-auto">
-                  {orderItems.map((item, index) => (
+              {/* Valid Orders */}
+              <div className="bg-green-50 rounded-lg p-4">
+                <h3 className="font-medium text-green-800 mb-3">Valid Orders ({validOrders.length})</h3>
+                <div className="space-y-3 max-h-40 overflow-y-auto">
+                  {validOrders.map((item, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg">
                       <div className="flex-1">
                         <div className="font-medium">{item.customerPhone}</div>
-                        <div className="text-sm text-gray-600">{item.dataVolume} {item.dataUnit}</div>
+                        <div className="text-sm text-gray-600">{item.dataVolume} GB</div>
                       </div>
                       <div className="text-right">
                         {item.bundle && (
@@ -535,24 +464,43 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                             {item.bundle.currency} {item.bundle.price}
                           </div>
                         )}
-                        {item.phoneError && (
-                          <div className="text-xs text-red-600">{item.phoneError}</div>
-                        )}
-                        {item.dataError && (
-                          <div className="text-xs text-red-600">{item.dataError}</div>
-                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
+              {/* Invalid Orders */}
+              {invalidOrders.length > 0 && (
+                <div className="bg-red-50 rounded-lg p-4">
+                  <h3 className="font-medium text-red-800 mb-3">Invalid Orders ({invalidOrders.length})</h3>
+                  <div className="space-y-3 max-h-40 overflow-y-auto">
+                    {invalidOrders.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium">{item.customerPhone}</div>
+                          <div className="text-sm text-gray-600">{item.dataVolume} GB</div>
+                        </div>
+                        <div className="text-right">
+                          {item.phoneError && (
+                            <div className="text-xs text-red-600">{item.phoneError}</div>
+                          )}
+                          {item.dataError && (
+                            <div className="text-xs text-red-600">{item.dataError}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Total */}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Total Amount:</span>
                   <span className="text-green-600">
-                    GHS {totalPrice.toFixed(2)}
+                    GHS {validOrders.reduce((sum, item) => sum + (item.bundle ? item.bundle.price : 0), 0).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -574,7 +522,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 </button>
                 <button
                   onClick={handleConfirmOrder}
-                  disabled={loading}
+                  disabled={loading || validOrders.length === 0}
                   className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
                 >
                   {loading ? (

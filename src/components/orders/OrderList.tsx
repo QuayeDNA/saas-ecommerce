@@ -1,12 +1,13 @@
 // src/components/orders/OrderList.tsx
 import React, { useEffect, useState } from 'react';
-import { FaFilter, FaSearch, FaTh, FaList, FaChartLine } from 'react-icons/fa';
+import { FaFilter, FaSearch, FaTh, FaList, FaChartLine, FaWallet } from 'react-icons/fa';
 import { OrderCard } from './OrderCard';
 import { OrderTable } from './OrderTable';
 import { OrderFilters } from './OrderFilters';
 import { OrderModal } from './OrderModal';
 import { OrderAnalyticsPage } from './OrderAnalytics';
 import { useOrder } from '../../contexts/OrderContext';
+import { useWallet } from '../../hooks/use-wallet';
 import type { Order } from '../../types/order';
 
 export const OrderList: React.FC = () => {
@@ -20,8 +21,11 @@ export const OrderList: React.FC = () => {
     processOrderItem,
     processBulkOrder,
     cancelOrder,
+    updateOrderStatus,
     setFilters
   } = useOrder();
+
+  const { walletBalance } = useWallet();
 
   const [showFilters, setShowFilters] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -95,6 +99,35 @@ export const OrderList: React.FC = () => {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2">
+          {/* Wallet Balance Display */}
+          <div className={`flex items-center gap-2 px-4 py-2 border rounded-lg ${
+            walletBalance < 50 
+              ? 'bg-red-50 border-red-200' 
+              : walletBalance < 100 
+                ? 'bg-yellow-50 border-yellow-200' 
+                : 'bg-green-50 border-green-200'
+          }`}>
+            <FaWallet className={`${
+              walletBalance < 50 
+                ? 'text-red-600' 
+                : walletBalance < 100 
+                  ? 'text-yellow-600' 
+                  : 'text-green-600'
+            }`} />
+            <span className={`text-sm font-medium ${
+              walletBalance < 50 
+                ? 'text-red-800' 
+                : walletBalance < 100 
+                  ? 'text-yellow-800' 
+                  : 'text-green-800'
+            }`}>
+              GH₵{walletBalance.toFixed(2)}
+            </span>
+            {walletBalance < 50 && (
+              <span className="text-xs text-red-600 font-medium">Low Balance!</span>
+            )}
+          </div>
+          
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
             className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
@@ -229,8 +262,8 @@ export const OrderList: React.FC = () => {
             <OrderTable
               orders={[]}
               onView={handleView}
-              onProcess={handleProcess}
               onCancel={handleCancel}
+              onUpdateStatus={updateOrderStatus}
               loading={true}
             />
           );
@@ -253,6 +286,7 @@ export const OrderList: React.FC = () => {
                   onProcess={handleProcess}
                   onCancel={handleCancel}
                   onProcessItem={handleProcessItem}
+                  onUpdateStatus={updateOrderStatus}
                 />
               ))}
             </div>
@@ -264,6 +298,7 @@ export const OrderList: React.FC = () => {
               onCancel={handleCancel}
               onRefresh={() => fetchOrders(filters)}
               loading={loading}
+              onUpdateStatus={updateOrderStatus}
             />
           );
         }

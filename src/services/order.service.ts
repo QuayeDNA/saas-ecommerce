@@ -51,6 +51,15 @@ class OrderService {
 
   // Process single order item
   async processOrderItem(orderId: string, itemId: string): Promise<Order> {
+    // First check wallet balance
+    const walletInfo = await this.checkWalletBalance();
+    const order = await this.getOrder(orderId);
+    const item = order.items.find(item => item._id === itemId);
+    
+    if (item && walletInfo.balance < item.totalPrice) {
+      throw new Error(`Insufficient wallet balance. Required: GH₵${item.totalPrice.toFixed(2)}, Available: GH₵${walletInfo.balance.toFixed(2)}`);
+    }
+    
     const response = await apiClient.post(`/api/orders/${orderId}/items/${itemId}/process`);
     return response.data.order;
   }
@@ -64,6 +73,21 @@ class OrderService {
   async cancelOrder(orderId: string, reason?: string): Promise<Order> {
     const response = await apiClient.post(`/api/orders/${orderId}/cancel`, { reason });
     return response.data.order;
+  }
+
+  // Update order status manually
+  async updateOrderStatus(orderId: string, status: string, notes?: string): Promise<Order> {
+    const response = await apiClient.patch(`/api/orders/${orderId}/status`, { status, notes });
+    return response.data.order;
+  }
+
+  // Check wallet balance before processing
+  async checkWalletBalance(): Promise<{ balance: number; sufficient: boolean; required?: number }> {
+    const response = await apiClient.get('/api/wallet/info');
+    return {
+      balance: response.data.wallet.balance,
+      sufficient: true // Will be updated based on order requirements
+    };
   }
 
   // Get analytics
