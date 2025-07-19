@@ -1,5 +1,5 @@
 // src/components/orders/OrderTable.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FaEye, 
   FaTimes, 
@@ -30,8 +30,8 @@ export const OrderTable: React.FC<OrderTableProps> = ({
   loading = false
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [, setProcessingOrders] = useState<Set<string>>(new Set());
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Click outside handler to close dropdown
   useEffect(() => {
@@ -67,21 +67,32 @@ export const OrderTable: React.FC<OrderTableProps> = ({
     { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800' }
   ];
 
-  // Auto-refresh processing orders
+  // Improved auto-refresh logic
   useEffect(() => {
-    const processingOrderIds = orders
+    // Clear existing interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
+
+    // Find processing orders
+    const currentProcessingOrders = orders
       .filter(order => ['processing', 'pending'].includes(order.status))
       .map(order => order._id!);
     
-    setProcessingOrders(new Set(processingOrderIds));
-    
-    if (processingOrderIds.length > 0) {
-      const interval = setInterval(() => {
-        onRefresh?.();
-      }, 5000); // Refresh every 5 seconds for processing orders
-      
-      return () => clearInterval(interval);
+    // Only set up auto-refresh if there are processing orders and onRefresh is available
+    if (currentProcessingOrders.length > 0 && onRefresh) {
+      refreshIntervalRef.current = setInterval(() => {
+        onRefresh();
+      }, 15000); // 15 seconds - less aggressive
     }
+
+    // Cleanup on unmount
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
   }, [orders, onRefresh]);
 
   const getStatusColor = (status: string) => {

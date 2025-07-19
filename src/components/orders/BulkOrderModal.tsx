@@ -239,7 +239,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       const items = validOrders.map(
         (item) => `${item.customerPhone},${item.dataVolume}GB`
       );
-      const orderData = { items };
+      const orderData = { items, packageId };
       await createBulkOrder(orderData);
       onSuccess();
       onClose();
