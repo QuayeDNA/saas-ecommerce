@@ -156,6 +156,17 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       if (parts.length < 2) continue;
       const phoneNum = parts[0];
       const gbValue = parts[1];
+      // Check for non-numeric characters (other than .) in gbValue
+      if (/[^0-9.]/.test(gbValue)) {
+        items.push({
+          customerPhone: phoneNum,
+          dataVolume: 0,
+          dataUnit: "GB",
+          bundle: undefined,
+          dataError: "Do not include GB or MB, just enter the number (e.g. 10)"
+        });
+        continue;
+      }
       const gbVolume = parseFloat(gbValue);
       if (isNaN(gbVolume)) continue;
       // Find matching bundle (always in GB)
@@ -438,14 +449,12 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     <textarea
                       value={bulkText}
                       onChange={(e) => handleBulkTextChange(e.target.value)}
-                      placeholder={`0241234567 5
-0201234567 2
-0271234567 1`}
+                      placeholder={`0241234567 5\n0201234567 2\n0271234567 1`}
                       className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     />
                     <p className="text-xs text-gray-500 mt-2">
-                      Format: PhoneNumber DataVolume (e.g., 0241234567 5). All
-                      values are in GB.
+                      Format: PhoneNumber DataVolume (e.g., 0241234567 5). All values are in GB.<br/>
+                      <span className="text-red-500 font-semibold">Do not type GB or MB, just the number.</span>
                     </p>
                   </div>
                 </div>
