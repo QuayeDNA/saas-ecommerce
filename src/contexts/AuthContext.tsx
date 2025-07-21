@@ -278,30 +278,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const { user, token, dashboardUrl } = await authService.login({
-        email,
-        password,
-        rememberMe,
-      });
+      const resp = await authService.login({ email, password, rememberMe });
+      setState((prev) => ({
+        ...prev,
+        user: resp.user,
+        token: resp.token,
+        isAuthenticated: true,
+        dashboardUrl: resp.dashboardUrl, // This will be /superadmin for super_admin
+        isLoading: false,
+        error: null,
+      }));
 
       console.log('✅ AuthContext: Login successful', { 
-        userId: user.id, 
-        userType: user.userType 
+        userId: resp.user.id, 
+        userType: resp.user.userType 
       });
 
-      setAuthenticatedState(user, token);
+      setAuthenticatedState(resp.user, resp.token);
 
       // Show success toast
-      addToast(`Welcome back, ${user.fullName}!`, "success");
+      addToast(`Welcome back, ${resp.user.fullName}!`, "success");
       
       // Navigate to dashboard or intended page
       const locationState = location.state as { from?: { pathname: string } } | null;
-      const from = locationState?.from?.pathname ?? dashboardUrl ?? '/';
+      const from = locationState?.from?.pathname ?? resp.dashboardUrl ?? '/';
       navigate(from, { replace: true });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ AuthContext: Login failed:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to login";
+      const errorMessage = error.message || "Failed to login";
 
       setState((prev) => ({
         ...prev,

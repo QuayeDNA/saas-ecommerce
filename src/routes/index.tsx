@@ -8,6 +8,7 @@ import { ProtectedRoute } from "../components/protected-route";
 import { ButtonExamples } from '../components/examples/button-examples';
 import { WalletPage } from "../pages/wallet-page";
 import { AdminWalletPage } from "../pages/admin-wallet-page";
+import superadminRoutes from "./superadmin-routes";
 
 // Lazy load pages for better performance
 const LandingPage = lazy(() =>
@@ -489,6 +490,7 @@ export const routes: RouteObject[] = [
       },
     ],
   },
+  superadminRoutes,
   // Catch all route - redirect to 404
   {
     path: "*",

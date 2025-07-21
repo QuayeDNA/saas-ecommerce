@@ -1,5 +1,4 @@
 import React, { lazy } from "react";
-import { RouteObject } from "react-router-dom";
 import SuperAdminLayout from "../layouts/superadmin-layout";
 
 const SuperAdminDashboard = lazy(() => import("../pages/superadmin/index"));
@@ -10,7 +9,7 @@ const OrdersPage = lazy(() => import("../pages/superadmin/orders"));
 const WalletPage = lazy(() => import("../pages/superadmin/wallet"));
 const SettingsPage = lazy(() => import("../pages/superadmin/settings"));
 
-const superadminRoutes: RouteObject = {
+const superadminRoutes = {
   path: "/superadmin",
   element: <SuperAdminLayout />,
   children: [

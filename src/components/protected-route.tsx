@@ -56,10 +56,14 @@ export const ProtectedRoute = ({
   // If user type restrictions exist, check them
   if (authState.isAuthenticated && authState.user && allowedUserTypes.length > 0) {
     if (!allowedUserTypes.includes(authState.user.userType)) {
-      const dashboardUrl = authState.user.userType === 'agent' 
-        ? '/agent/dashboard' 
-        : '/customer/dashboard';
-      
+      let dashboardUrl = "/";
+      if (authState.user.userType === 'super_admin') {
+        dashboardUrl = '/superadmin';
+      } else if (authState.user.userType === 'agent') {
+        dashboardUrl = '/agent/dashboard';
+      } else {
+        dashboardUrl = '/customer/dashboard';
+      }
       return <Navigate to={dashboardUrl} replace />;
     }
   }
@@ -81,12 +85,15 @@ export const PublicRoute = ({ redirectTo }: { redirectTo?: string }) => {
   // If user is authenticated, redirect to dashboard or intended page
   if (authState.isAuthenticated && authState.user) {
     const from = (location.state)?.from?.pathname;
-    const defaultDashboard = authState.user.userType === 'agent' 
-      ? '/agent/dashboard' 
-      : '/customer/dashboard';
-    
+    let defaultDashboard = "/";
+    if (authState.user.userType === 'super_admin') {
+      defaultDashboard = '/superadmin';
+    } else if (authState.user.userType === 'agent') {
+      defaultDashboard = '/agent/dashboard';
+    } else {
+      defaultDashboard = '/customer/dashboard';
+    }
     const destination = redirectTo ?? from ?? defaultDashboard;
-    
     return <Navigate to={destination} replace />;
   }
 
