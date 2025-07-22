@@ -140,18 +140,81 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
     // Super Admin specific navigation items
     if (authState.user?.userType === 'super_admin') {
-      baseItems.push(
+      return [
         {
-          label: 'User Management',
-          path: 'admin/users',
-          icon: <FaUsersCog />
+          label: 'Dashboard',
+          path: '/superadmin',
+          icon: <FaBox />,
         },
         {
-          label: 'Wallet Management',
-          path: 'admin/wallet',
-          icon: <FaWallet />
-        }
-      );
+          label: 'User Management',
+          path: '/superadmin/users',
+          icon: <FaUsersCog />,
+        },
+        {
+          label: 'Providers',
+          path: '/superadmin/providers',
+          icon: <FaMobile />,
+        },
+        {
+          label: 'Orders',
+          path: '/superadmin/orders',
+          icon: <FaBox />,
+        },
+        {
+          label: 'Wallet',
+          path: '/superadmin/wallet',
+          icon: <FaWallet />,
+        },
+        {
+          label: 'Settings',
+          path: '/superadmin/settings',
+          icon: <FaChevronRight />,
+        },
+      ];
+    }
+    if (authState.user?.userType === 'agent') {
+      // Only agent routes, all paths absolute
+      return [
+        {
+          label: 'Dashboard',
+          path: '/agent/dashboard',
+          icon: (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          )
+        },
+        {
+          label: 'Packages',
+          path: '/agent/packages',
+          icon: <FaBox />,
+        },
+        {
+          label: 'Orders',
+          path: '/agent/orders',
+          icon: <FaMobile />,
+        },
+        {
+          label: 'My Customers',
+          path: '/agent/users',
+          icon: <FaUsers />,
+        },
+        {
+          label: 'Wallet',
+          path: '/agent/wallet',
+          icon: <FaWallet />,
+        },
+        {
+          label: 'AFA Registration',
+          path: '/agent/afa-registration',
+          icon: (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+          )
+        },
+      ];
     }
 
     // Common navigation items for all users
@@ -177,6 +240,18 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     if (path === '') {
       return location.pathname === '/agent/dashboard' || location.pathname === '/customer/dashboard' || location.pathname === '/admin/dashboard';
     }
+    // For super admin, only highlight exact or subpath matches
+    if (authState.user?.userType === 'super_admin') {
+      if (path === '/superadmin') {
+        return location.pathname === '/superadmin';
+      }
+      return location.pathname.startsWith(path + '/') || location.pathname === path;
+    }
+    // For agent, only highlight exact or subpath matches
+    if (authState.user?.userType === 'agent') {
+      return location.pathname.startsWith(path + '/') || location.pathname === path;
+    }
+    // Default: includes for other users
     return location.pathname.includes(path);
   };
 

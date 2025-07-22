@@ -1,12 +1,12 @@
 // src/components/orders/BulkOrderModal.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FaTimes,
-  FaWifi,
-  FaClock,
-  FaCheckCircle,
-  FaFileUpload,
+import { 
+  FaTimes, 
+  FaWifi, 
+  FaClock, 
+  FaCheckCircle, 
+  FaFileUpload, 
   FaDownload,
   FaPlus,
   FaBox,
@@ -107,14 +107,14 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const validatePhone = (phone: string): string | null => {
     const rules =
       providerPhoneRules[provider as keyof typeof providerPhoneRules];
-
+    
     if (!rules) {
       return "Invalid provider";
     }
 
     // Remove any non-digit characters except +
     const cleanPhone = phone.replace(/[^\d+]/g, "");
-
+    
     // Convert to local format if it starts with +233
     let localPhone = cleanPhone;
     if (cleanPhone.startsWith("+233")) {
@@ -324,8 +324,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               ? "Bulk Order Summary"
               : `Bulk Order for ${providerName}`}
           </h2>
-          <button
-            onClick={onClose}
+          <button 
+            onClick={onClose} 
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <FaTimes size={20} />
@@ -497,7 +497,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     className="text-2xl"
                     style={{ color: providerColors.text }}
                   />
-                </div>
+                  </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span
@@ -661,4 +661,4 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       </div>
     </div>
   );
-};
+}; 

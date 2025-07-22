@@ -133,52 +133,30 @@ export const RegisterPage = () => {
                 <FaCheck className="text-green-600 text-2xl" />
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Registration Successful! 🎉
+                Registration Submitted!
               </h1>
               <p className="text-gray-600">
-                Your agent account has been created successfully
+                Your agent account is pending approval by a super admin.<br/>
+                You will be notified by email once your account is approved and you can then log in.
               </p>
             </CardHeader>
-            
             <CardBody className="text-center pt-0">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-2">Your Agent Code</h3>
-                <div className="flex items-center justify-center space-x-3 mb-4">
-                  <code className="text-2xl font-mono font-bold text-blue-600 bg-white px-4 py-2 rounded-lg border">
-                    {agentCode}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyAgentCode}
-                    leftIcon={<FaCopy />}
-                  >
-                    Copy
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-600">
-                  Share this code with customers to earn commissions from their transactions
-                </p>
-              </div>
-
               <div className="space-y-4 mb-6">
                 <Alert status="info" variant="left-accent">
                   <div className="text-sm">
-                    <div className="font-medium">Next Steps:</div>
+                    <div className="font-medium">What happens next?</div>
                     <ol className="list-decimal list-inside mt-2 space-y-1 text-left">
-                      <li>Check your email for account verification</li>
-                      <li>Complete your profile setup</li>
-                      <li>Start sharing your agent code</li>
-                      <li>Begin earning commissions!</li>
+                      <li>Your registration will be reviewed by a super admin.</li>
+                      <li>You will receive an email once your account is approved.</li>
+                      <li>After approval, you can log in and start using your agent dashboard.</li>
                     </ol>
                   </div>
                 </Alert>
               </div>
-
               <div className="space-y-3">
                 <Link to="/login">
                   <Button variant="primary" size="lg" fullWidth>
-                    Continue to Login
+                    Back to Login
                   </Button>
                 </Link>
                 <Link to="/">

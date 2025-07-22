@@ -4,13 +4,13 @@ import { useTheme } from '../../hooks/use-theme';
 import { Loader2 } from 'lucide-react';
 
 // Button variants
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'accent';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'accent' | 'danger' | 'success' | 'warning' | 'info';
 
 // Button sizes
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 // Button color schemes (beyond the variant)
-type ButtonColorScheme = 'default' | 'success' | 'warning' | 'error' | 'info';
+type ButtonColorScheme = 'default' | 'success' | 'warning' | 'error' | 'info' | 'danger';
 
 /**
  * Button component props

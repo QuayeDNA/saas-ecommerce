@@ -6,19 +6,13 @@
 
 // Base color palette - default theme
 export const colors = {
-  // Primary colors
-  primary: {
-    50: 'var(--color-primary-50, #eef2ff)',
-    100: 'var(--color-primary-100, #e0e7ff)',
-    200: 'var(--color-primary-200, #c7d2fe)',
-    300: 'var(--color-primary-300, #a5b4fc)',
-    400: 'var(--color-primary-400, #818cf8)',
-    500: 'var(--color-primary-500, #6366f1)', // Default primary
-    600: 'var(--color-primary-600, #4f46e5)',
-    700: 'var(--color-primary-700, #4338ca)',
-    800: 'var(--color-primary-800, #3730a3)',
-    900: 'var(--color-primary-900, #312e81)',
-    950: 'var(--color-primary-950, #1e1b4b)',
+  brand: {
+    primary: '#000000', // Black
+    background: '#ffffff', // White
+    accent: '#222222', // Dark gray for contrast
+    secondary: '#f5f5f5', // Light gray for subtle backgrounds
+    text: '#000000', // Black text
+    white: '#ffffff',
   },
   
   // Secondary colors

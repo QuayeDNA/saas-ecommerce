@@ -95,6 +95,12 @@ class OrderService {
     const response = await apiClient.get('/api/orders/analytics/summary', { params: { timeframe } });
     return response.data.analytics;
   }
+
+  // Get recent orders by user ID
+  async getOrdersByUserId(userId: string, limit = 5): Promise<Order[]> {
+    const response = await apiClient.get('/api/orders', { params: { createdBy: userId, limit, sort: '-createdAt' } });
+    return response.data.orders || response.data.data || [];
+  }
 }
 
 export const orderService = new OrderService();

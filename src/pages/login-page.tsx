@@ -55,7 +55,17 @@ export const LoginPage = () => {
     try {
       await login(email, password, rememberMe);
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : 'Login failed');
+      let message = 'Login failed';
+      if (error instanceof Error) {
+        if (error.message.includes('pending approval')) {
+          message = 'Your account is pending approval by a super admin. You will be notified by email once approved.';
+        } else if (error.message.includes('rejected')) {
+          message = 'Your account has been rejected. Please contact support for more information.';
+        } else {
+          message = error.message;
+        }
+      }
+      setLocalError(message);
     } finally {
       setIsSubmitting(false);
     }

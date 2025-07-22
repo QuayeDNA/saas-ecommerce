@@ -219,28 +219,28 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                     (bundle.description?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()))
                 )
                 .map(bundle => (
-                  <div key={bundle._id} className="rounded-lg border border-gray-200 p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition bg-white">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-base text-gray-900">{bundle.name}</span>
-                    </div>
-                    <div className="flex gap-2 text-sm">
-                      <span className="px-2 py-1 rounded bg-gray-100 text-gray-800 border" style={{ borderColor: providerColors.primary }}>{bundle.dataVolume}{bundle.dataUnit}</span>
-                      <span className="px-2 py-1 rounded bg-gray-100 text-gray-800 border" style={{ borderColor: providerColors.secondary }}>
-                        {bundle.validity === 'unlimited' && bundle.validityUnit === 'unlimited'
-                          ? 'Unlimited'
-                          : `${bundle.validity} ${bundle.validityUnit}`}
-                      </span>
-                    </div>
-                    <div className="text-lg font-bold text-gray-900">{bundle.price} {bundle.currency}</div>
-                    <button
-                      className="mt-2 px-4 py-2 rounded-lg font-semibold shadow text-white"
-                      style={{ backgroundColor: providerColors.primary, color: providerColors.text }}
-                      onClick={() => { setSelectedBundle(bundle); setShowOrderModal(true); }}
-                    >
-                      Order Now
-                    </button>
+                <div key={bundle._id} className="rounded-lg border border-gray-200 p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition bg-white">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-base text-gray-900">{bundle.name}</span>
                   </div>
-                ))}
+                  <div className="flex gap-2 text-sm">
+                    <span className="px-2 py-1 rounded bg-gray-100 text-gray-800 border" style={{ borderColor: providerColors.primary }}>{bundle.dataVolume}{bundle.dataUnit}</span>
+                    <span className="px-2 py-1 rounded bg-gray-100 text-gray-800 border" style={{ borderColor: providerColors.secondary }}>
+                      {bundle.validity === 'unlimited' && bundle.validityUnit === 'unlimited'
+                        ? 'Unlimited'
+                        : `${bundle.validity} ${bundle.validityUnit}`}
+                    </span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-900">{bundle.price} {bundle.currency}</div>
+                  <button
+                    className="mt-2 px-4 py-2 rounded-lg font-semibold shadow text-white"
+                    style={{ backgroundColor: providerColors.primary, color: providerColors.text }}
+                    onClick={() => { setSelectedBundle(bundle); setShowOrderModal(true); }}
+                  >
+                    Order Now
+                  </button>
+                </div>
+              ))}
             </div>  
           </div>
         ))}

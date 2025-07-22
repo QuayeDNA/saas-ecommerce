@@ -24,10 +24,10 @@ export const WalletPage = () => {
     const loadTransactions = async () => {
       setIsLoadingTransactions(true);
       try {
-        const result = await getTransactionHistory(currentPage);
-        if (result) {
-          setTransactions(result.transactions);
-          setTotalPages(result.pagination.pages);
+      const result = await getTransactionHistory(currentPage);
+      if (result) {
+        setTransactions(result.transactions);
+        setTotalPages(result.pagination.pages);
         }
       } catch (err) {
         console.error('Failed to load transactions:', err);
@@ -57,8 +57,8 @@ export const WalletPage = () => {
     setSuccessMessage('Your top-up request has been submitted. Please contact the super admin for assistance.');
     
     // Hide success message after 5 seconds
-    setTimeout(() => {
-      setSuccessMessage(null);
+      setTimeout(() => {
+        setSuccessMessage(null);
     }, 5000);
   };
   
@@ -100,7 +100,7 @@ export const WalletPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Wallet Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Wallet Management</h1>
           <p className="text-sm text-gray-600 mt-1">Manage your wallet balance and view transaction history</p>
         </div>
         <button 
@@ -151,9 +151,9 @@ export const WalletPage = () => {
                 <FaWallet className="h-6 w-6 text-green-600" />
               </div>
             </div>
-            <div>
-              <h2 className="text-sm font-medium text-gray-500">Current Wallet Balance</h2>
-              <div className="mt-1 flex items-baseline">
+          <div>
+            <h2 className="text-sm font-medium text-gray-500">Current Wallet Balance</h2>
+            <div className="mt-1 flex items-baseline">
                 <p className="text-3xl font-bold text-green-600">GH₵{walletBalance.toFixed(2)}</p>
               </div>
             </div>
@@ -220,21 +220,21 @@ export const WalletPage = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-900 truncate">
-                                {transaction.description}
+                          {transaction.description}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {formatDate(transaction.createdAt)}
+                          {formatDate(transaction.createdAt)}
                               </p>
                             </div>
                           </div>
-                        </div>
+                      </div>
                         <div className="flex flex-col items-end gap-1">
                           <span className={`text-sm font-bold ${typeInfo.color}`}>
-                            {transaction.type === 'credit' ? '+' : '-'}GH₵{transaction.amount.toFixed(2)}
-                          </span>
+                          {transaction.type === 'credit' ? '+' : '-'}GH₵{transaction.amount.toFixed(2)}
+                        </span>
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBadgeClass(transaction.status)}`}>
-                            {transaction.status}
-                          </span>
+                          {transaction.status}
+                        </span>
                           <span className="text-xs text-gray-500">
                             Balance: GH₵{transaction.balanceAfter.toFixed(2)}
                           </span>
@@ -277,34 +277,34 @@ export const WalletPage = () => {
                       const typeInfo = getTransactionTypeInfo(transaction.type);
                       return (
                         <tr key={transaction._id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(transaction.createdAt)}
-                          </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(transaction.createdAt)}
+                        </td>
                           <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
                             <div className="truncate" title={transaction.description}>
-                              {transaction.description}
+                          {transaction.description}
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${typeInfo.bgColor} ${typeInfo.borderColor} ${typeInfo.color}`}>
                               {typeInfo.icon}
-                              {transaction.type === 'credit' ? 'Credit' : 'Debit'}
-                            </span>
-                          </td>
+                            {transaction.type === 'credit' ? 'Credit' : 'Debit'}
+                          </span>
+                        </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">
                             <span className={typeInfo.color}>
-                              {transaction.type === 'credit' ? '+' : '-'}GH₵{transaction.amount.toFixed(2)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {transaction.type === 'credit' ? '+' : '-'}GH₵{transaction.amount.toFixed(2)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(transaction.status)}`}>
-                              {transaction.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            GH₵{transaction.balanceAfter.toFixed(2)}
-                          </td>
-                        </tr>
+                            {transaction.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          GH₵{transaction.balanceAfter.toFixed(2)}
+                        </td>
+                      </tr>
                       );
                     })}
                   </tbody>
@@ -405,15 +405,15 @@ export const WalletPage = () => {
             <div className="fixed inset-0 bg-gray-500/75 transition-opacity" aria-hidden="true"></div>
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-[10000]">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
                     <FaInfoCircle className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Request Wallet Top-Up
-                    </h3>
+                    </div>
+                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">
+                        Request Wallet Top-Up
+                      </h3>
                     <div className="mt-4">
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <div className="flex items-start">
@@ -430,29 +430,29 @@ export const WalletPage = () => {
                                 <strong>Phone:</strong> +233 XX XXX XXXX
                               </p>
                             </div>
-                          </div>
+                        </div>
+                        </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button
+                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  <button
                   type="button"
                   onClick={handleTopUpRequest}
                   className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
                 >
                   Got it, thanks!
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowTopUpModal(false)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowTopUpModal(false)}
                   className="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
+                  >
+                    Cancel
+                  </button>
+                </div>
             </div>
           </div>
         </div>
