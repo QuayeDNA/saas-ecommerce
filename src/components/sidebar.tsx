@@ -1,4 +1,4 @@
-// src/components/sidebar.tsx
+// src/components/sidebar-new.tsx
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/use-auth';
 import type { ReactNode } from 'react';
@@ -8,11 +8,20 @@ import {
   FaUsers, 
   FaUsersCog, 
   FaChevronRight,
-  FaWallet
+  FaWallet,
+  FaUser,
+  FaCog,
+  FaChartBar,
+  FaTachometerAlt,
+  FaBuilding,
+  FaClipboardList
 } from 'react-icons/fa';
 import { useState } from 'react';
 
-// Nav item type definition
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
+
 interface NavItem {
   label: string;
   path: string;
@@ -24,6 +33,198 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// =============================================================================
+// NAVIGATION CONFIGURATIONS
+// =============================================================================
+
+// Agent navigation configuration
+const getAgentNavItems = (): NavItem[] => [
+  {
+    label: 'Dashboard',
+    path: '/agent/dashboard',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    )
+  },
+  {
+    label: 'Packages',
+    path: '/agent/dashboard/packages',
+    icon: <FaBox />,
+    children: [
+      {
+        label: 'MTN Packages',
+        path: '/agent/dashboard/packages/mtn',
+        icon: <FaBox />
+      },
+      {
+        label: 'Telecel Packages',
+        path: '/agent/dashboard/packages/telecel',
+        icon: <FaBox />
+      },
+      {
+        label: 'AT BIG TIME Packages',
+        path: '/agent/dashboard/packages/at-big-time',
+        icon: <FaBox />
+      },
+      {
+        label: 'AT iShare Premium Packages',
+        path: '/agent/dashboard/packages/at-ishare-premium',
+        icon: <FaBox />
+      },
+    ]
+  },
+  {
+    label: 'Orders',
+    path: '/agent/dashboard/orders',
+    icon: <FaMobile />
+  },
+  {
+    label: 'My Customers',
+    path: '/agent/dashboard/users',
+    icon: <FaUsers />
+  },
+  {
+    label: 'Wallet',
+    path: '/agent/dashboard/wallet',
+    icon: <FaWallet />
+  },
+  {
+    label: 'AFA Registration',
+    path: '/agent/dashboard/afa-registration',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+      </svg>
+    )
+  },
+  {
+    label: 'Profile',
+    path: '/agent/dashboard/profile',
+    icon: <FaUser />
+  },
+  {
+    label: 'History',
+    path: '/agent/dashboard/history',
+    icon: <FaChartBar />
+  },
+  {
+    label: 'Support',
+    path: '/agent/dashboard/support',
+    icon: <FaUsersCog />
+  },
+];
+
+// Customer navigation configuration
+const getCustomerNavItems = (): NavItem[] => [
+  {
+    label: 'Dashboard',
+    path: '/customer/dashboard',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    )
+  },
+  {
+    label: 'Profile',
+    path: '/customer/dashboard/profile',
+    icon: <FaUser />
+  },
+  {
+    label: 'History',
+    path: '/customer/dashboard/history',
+    icon: <FaChartBar />
+  },
+  {
+    label: 'Support',
+    path: '/customer/dashboard/support',
+    icon: <FaUsersCog />
+  },
+];
+
+// Admin navigation configuration
+const getAdminNavItems = (): NavItem[] => [
+  {
+    label: 'Dashboard',
+    path: '/admin/dashboard',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    )
+  },
+  {
+    label: 'User Management',
+    path: '/admin/dashboard/users',
+    icon: <FaUsersCog />
+  },
+  {
+    label: 'Packages',
+    path: '/admin/dashboard/packages',
+    icon: <FaBox />
+  },
+  {
+    label: 'Wallet',
+    path: '/admin/dashboard/wallet',
+    icon: <FaWallet />
+  },
+  {
+    label: 'Profile',
+    path: '/admin/dashboard/profile',
+    icon: <FaUser />
+  },
+  {
+    label: 'Support',
+    path: '/admin/dashboard/support',
+    icon: <FaUsersCog />
+  },
+];
+
+// Super Admin navigation configuration
+const getSuperAdminNavItems = (): NavItem[] => [
+  {
+    label: 'Dashboard',
+    path: '/superadmin',
+    icon: <FaTachometerAlt />,
+  },
+  {
+    label: 'Users',
+    path: '/superadmin/users',
+    icon: <FaUsers />,
+  },
+  {
+    label: 'Providers',
+    path: '/superadmin/providers',
+    icon: <FaBuilding />,
+  },
+  {
+    label: 'Packages',
+    path: '/superadmin/packages',
+    icon: <FaBox />,
+  },
+  {
+    label: 'Orders',
+    path: '/superadmin/orders',
+    icon: <FaClipboardList />,
+  },
+  {
+    label: 'Wallet',
+    path: '/superadmin/wallet',
+    icon: <FaWallet />,
+  },
+  {
+    label: 'Settings',
+    path: '/superadmin/settings',
+    icon: <FaCog />,
+  },
+];
+
+// =============================================================================
+// SIDEBAR COMPONENT
+// =============================================================================
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
@@ -62,175 +263,18 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     return 'SaaS Telecom';
   };
 
-  // Dynamic navigation items based on user type
+  // Get navigation items based on user type
   const getNavItems = (): NavItem[] => {
-    const baseItems: NavItem[] = [
-      {
-        label: 'Dashboard',
-        path: '',
-        icon: (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-        )
-      },
-    ];
-
-    // Agent-specific navigation items
-    if (authState.user?.userType === 'agent') {
-      baseItems.push(
-        {
-          label: 'Packages',
-          path: 'packages',
-          icon: <FaBox />,
-          children: [
-            {
-              label: 'MTN Packages',
-              path: 'packages/mtn',
-              icon: <FaBox />
-            },
-            {
-              label: 'Telecel Packages',
-              path: 'packages/telecel',
-              icon: <FaBox />
-            },
-            {
-              label: 'AT BIG TIME Packages',
-              path: 'packages/at-big-time',
-              icon: <FaBox />
-            },
-            {
-              label: 'AT iShare Premium Packages',
-              path: 'packages/at-ishare-premium',
-              icon: <FaBox />
-            },
-          ]
-        },
-        {
-          label: 'Orders',
-          path: 'orders',
-          icon: <FaMobile />
-        },
-        // {
-        //   label: 'Store',
-        //   path: 'store',
-        //   icon: <FaShoppingBag />
-        // },
-        {
-          label: 'My Customers',
-          path: 'users',
-          icon: <FaUsers />
-        },
-        {
-          label: 'Wallet',
-          path: 'wallet',
-          icon: <FaWallet />
-        },
-        {
-          label: 'AFA Registration',
-          path: 'afa-registration',
-          icon: (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-          )
-        },
-      );
+    switch (authState.user?.userType) {
+      case 'agent':
+        return getAgentNavItems();
+      case 'customer':
+        return getCustomerNavItems();
+      case 'super_admin':
+        return getSuperAdminNavItems();
+      default:
+        return getAdminNavItems(); // Fallback for admin
     }
-
-    // Super Admin specific navigation items
-    if (authState.user?.userType === 'super_admin') {
-      return [
-        {
-          label: 'Dashboard',
-          path: '/superadmin',
-          icon: <FaBox />,
-        },
-        {
-          label: 'User Management',
-          path: '/superadmin/users',
-          icon: <FaUsersCog />,
-        },
-        {
-          label: 'Providers',
-          path: '/superadmin/providers',
-          icon: <FaMobile />,
-        },
-        {
-          label: 'Orders',
-          path: '/superadmin/orders',
-          icon: <FaBox />,
-        },
-        {
-          label: 'Wallet',
-          path: '/superadmin/wallet',
-          icon: <FaWallet />,
-        },
-        {
-          label: 'Settings',
-          path: '/superadmin/settings',
-          icon: <FaChevronRight />,
-        },
-      ];
-    }
-    if (authState.user?.userType === 'agent') {
-      // Only agent routes, all paths absolute
-      return [
-        {
-          label: 'Dashboard',
-          path: '/agent/dashboard',
-          icon: (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          )
-        },
-        {
-          label: 'Packages',
-          path: '/agent/packages',
-          icon: <FaBox />,
-        },
-        {
-          label: 'Orders',
-          path: '/agent/orders',
-          icon: <FaMobile />,
-        },
-        {
-          label: 'My Customers',
-          path: '/agent/users',
-          icon: <FaUsers />,
-        },
-        {
-          label: 'Wallet',
-          path: '/agent/wallet',
-          icon: <FaWallet />,
-        },
-        {
-          label: 'AFA Registration',
-          path: '/agent/afa-registration',
-          icon: (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-          )
-        },
-      ];
-    }
-
-    // Common navigation items for all users
-    baseItems.push(
-      {
-        label: 'Profile',
-        path: 'profile',
-        icon: (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        )
-      },
-    );
-
-    return baseItems;
   };
 
   const navItems = getNavItems();
@@ -238,21 +282,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   // Check if a path is active
   const isActivePath = (path: string) => {
     if (path === '') {
-      return location.pathname === '/agent/dashboard' || location.pathname === '/customer/dashboard' || location.pathname === '/admin/dashboard';
+      return location.pathname === '/agent/dashboard' || 
+             location.pathname === '/customer/dashboard' || 
+             location.pathname === '/admin/dashboard' ||
+             location.pathname === '/superadmin';
     }
-    // For super admin, only highlight exact or subpath matches
-    if (authState.user?.userType === 'super_admin') {
-      if (path === '/superadmin') {
-        return location.pathname === '/superadmin';
-      }
-      return location.pathname.startsWith(path + '/') || location.pathname === path;
-    }
-    // For agent, only highlight exact or subpath matches
-    if (authState.user?.userType === 'agent') {
-      return location.pathname.startsWith(path + '/') || location.pathname === path;
-    }
-    // Default: includes for other users
-    return location.pathname.includes(path);
+    
+    // For exact or subpath matches
+    return location.pathname.startsWith(path + '/') || location.pathname === path;
   };
 
   // Check if parent has active child
@@ -412,4 +449,4 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       </aside>
     </>
   );
-};
+}; 

@@ -5,16 +5,48 @@ import { ToastProvider } from "./design-system/components/toast";
 import "./App.css";
 import "./design-system/theme.css";
 import { AppProvider } from "./providers/app-provider";
+import { Button } from "./design-system/components/button";
 
 function App() {
   const routeElement = useRoutes(routes);
+  const isImpersonating = typeof window !== 'undefined' && localStorage.getItem("impersonation") === "true";
+  
+  const handleReturnToAdmin = async () => {
+    const adminToken = localStorage.getItem("adminToken");
+    if (adminToken) {
+      // Restore admin token to localStorage
+      localStorage.setItem("token", adminToken);
+      
+      // Clear impersonation flags
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("impersonation");
+      
+      // Clear cookies (auth service will handle this)
+      const Cookies = (await import('js-cookie')).default;
+      Cookies.remove('authToken', { path: '/' });
+      Cookies.remove('user', { path: '/' });
+      Cookies.remove('refreshToken', { path: '/' });
+      Cookies.remove('rememberMe', { path: '/' });
+      
+      // Redirect to super admin dashboard
+      window.location.href = '/superadmin';
+    }
+  };
 
   return (
-    <ThemeProvider initialTheme="default">
-      <ToastProvider>
-        <AppProvider>{routeElement}</AppProvider>
-      </ToastProvider>
-    </ThemeProvider>
+    <>
+      {isImpersonating && (
+        <div className="fixed top-0 left-0 right-0 bg-yellow-100 border-b border-yellow-300 p-2 flex flex-col sm:flex-row sm:items-center justify-between z-50">
+          <span className="text-yellow-800 font-semibold text-sm">Impersonation Active: You are acting as another user.</span>
+          <Button variant="danger" size="sm" onClick={handleReturnToAdmin}>Return to Admin</Button>
+        </div>
+      )}
+      <ThemeProvider initialTheme="default">
+        <ToastProvider>
+          <AppProvider>{routeElement}</AppProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </>
   );
 }
 

@@ -1,21 +1,39 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { userService, type User } from "../../services/user.service";
-import { FaCheck, FaTimes, FaSearch, FaUser, FaStore, FaShieldAlt, FaChevronRight } from "react-icons/fa";
+import { SearchAndFilter } from "../../components/common";
+import { 
+  FaCheck, 
+  FaTimes, 
+  FaSearch, 
+  FaUser, 
+  FaStore, 
+  FaShieldAlt, 
+  FaFilter,
+  FaEye,
+  FaUserCheck,
+  FaDownload,
+  FaRedo,
+  FaPhone,
+  FaEnvelope,
+  FaCalendar,
+  FaBuilding
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../design-system/components/button";
+import { Input } from "../../design-system/components/input";
 import { colors } from "../../design-system/tokens";
 
 const userTypeOptions = [
-  { value: '', label: 'All' },
-  { value: 'agent', label: 'Agents' },
-  { value: 'customer', label: 'Customers' },
-  { value: 'super_admin', label: 'Super Admins' },
+  { value: '', label: 'All Users', icon: FaUser },
+  { value: 'agent', label: 'Agents', icon: FaStore },
+  { value: 'super_admin', label: 'Super Admins', icon: FaShieldAlt },
 ];
+
 const statusOptions = [
-  { value: '', label: 'All' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'active', label: 'Active' },
-  { value: 'rejected', label: 'Rejected' },
+  { value: '', label: 'All Status' },
+  { value: 'pending', label: 'Pending Approval', color: 'text-yellow-600 bg-yellow-100' },
+  { value: 'active', label: 'Active', color: 'text-green-600 bg-green-100' },
+  { value: 'rejected', label: 'Rejected', color: 'text-red-600 bg-red-100' },
 ];
 
 export default function SuperAdminUsersPage() {
@@ -25,16 +43,39 @@ export default function SuperAdminUsersPage() {
   const [status, setStatus] = useState('pending');
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [processingUser, setProcessingUser] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Filter options for the reusable component
+  const filterOptions = {
+    userType: {
+      value: userType,
+      options: userTypeOptions,
+      label: 'User Type',
+      placeholder: 'All Users'
+    },
+    status: {
+      value: status,
+      options: statusOptions,
+      label: 'Status',
+      placeholder: 'All Status'
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await userService.fetchUsers({ userType, status });
+      const data = await userService.fetchUsers({ 
+        userType, 
+        status,
+        search: search.trim() || undefined
+      });
       setUsers(data);
-    } catch (e) {
+    } catch (err) {
       setError('Failed to fetch users');
+      console.error('Error fetching users:', err);
     } finally {
       setLoading(false);
     }
@@ -42,86 +83,304 @@ export default function SuperAdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-    // eslint-disable-next-line
   }, [userType, status]);
 
-  const handleApprove = async (id: string) => {
-    await userService.updateAgentStatus(id, 'active');
-    fetchUsers();
-  };
-  const handleReject = async (id: string) => {
-    await userService.updateAgentStatus(id, 'rejected');
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
     fetchUsers();
   };
 
-  const filteredUsers = users.filter(u =>
-    u.fullName.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleClearFilters = () => {
+    setSearch('');
+    setUserType('');
+    setStatus('pending');
+    fetchUsers();
+  };
+
+  const handleFilterChange = (filterKey: string, value: string) => {
+    if (filterKey === 'userType') {
+      setUserType(value);
+    } else if (filterKey === 'status') {
+      setStatus(value);
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    setProcessingUser(id);
+    try {
+      await userService.updateAgentStatus(id, 'active');
+      await fetchUsers();
+    } catch (err) {
+      setError('Failed to approve user');
+      console.error('Error approving user:', err);
+    } finally {
+      setProcessingUser(null);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    setProcessingUser(id);
+    try {
+      await userService.updateAgentStatus(id, 'rejected');
+      await fetchUsers();
+    } catch (err) {
+      setError('Failed to reject user');
+      console.error('Error rejecting user:', err);
+    } finally {
+      setProcessingUser(null);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'text-yellow-600 bg-yellow-100';
+      case 'active': return 'text-green-600 bg-green-100';
+      case 'rejected': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getUserTypeIcon = (userType: string) => {
+    switch (userType) {
+      case 'agent': return <FaStore className="text-blue-600" />;
+      case 'super_admin': return <FaShieldAlt className="text-purple-600" />;
+      default: return <FaUser className="text-gray-600" />;
+    }
+  };
+
+  const getUserTypeLabel = (userType: string) => {
+    switch (userType) {
+      case 'agent': return 'Agent';
+      case 'super_admin': return 'Super Admin';
+      default: return 'User';
+    }
+  };
+
+  const formatDate = (date: string) => {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(new Date(date));
+  };
+
+  // Calculate statistics
+  const stats = {
+    total: users.length,
+    pending: users.filter(u => u.status === 'pending').length,
+    active: users.filter(u => u.status === 'active').length,
+    rejected: users.filter(u => u.status === 'rejected').length,
+    agents: users.filter(u => u.userType === 'agent').length,
+    superAdmins: users.filter(u => u.userType === 'super_admin').length,
+  };
 
   return (
-    <div className="p-2 sm:p-6">
-      <h1 className="text-xl font-bold mb-4" style={{ color: colors.brand.primary }}>User Management</h1>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
-        <div className="flex gap-2">
-          <select className="border rounded px-2 py-1" value={userType} onChange={e => setUserType(e.target.value)}>
-            {userTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
-          <select className="border rounded px-2 py-1" value={status} onChange={e => setStatus(e.target.value)}>
-            {statusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
-        </div>
-        <div className="flex-1 flex items-center gap-2">
-          <FaSearch className="text-gray-400" />
-          <input
-            className="border rounded px-2 py-1 w-full"
-            placeholder="Search by name or email"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+    <div className="space-y-6 p-4 sm:p-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
+              User Management
+            </h1>
+            <p className="text-gray-600">Manage agent registrations and user accounts</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={fetchUsers} disabled={loading}>
+              <FaRedo className="mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline">
+              <FaDownload className="mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
       </div>
-      {error && <div className="text-red-600 mb-2">{error}</div>}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white rounded shadow text-sm border border-gray-200">
-          <thead>
-            <tr style={{ background: colors.brand.background }}>
-              <th className="p-2 text-left font-semibold" style={{ color: colors.brand.primary }}>Name</th>
-              <th className="p-2 text-left font-semibold" style={{ color: colors.brand.primary }}>Email</th>
-              <th className="p-2 text-left font-semibold" style={{ color: colors.brand.primary }}>Type</th>
-              <th className="p-2 text-left font-semibold" style={{ color: colors.brand.primary }}>Status</th>
-              <th className="p-2 text-left font-semibold" style={{ color: colors.brand.primary }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5} className="text-center p-4">Loading...</td></tr>
-            ) : filteredUsers.length === 0 ? (
-              <tr><td colSpan={5} className="text-center p-4">No users found.</td></tr>
-            ) : filteredUsers.map(user => (
-              <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="p-2 flex items-center gap-2">
-                  {user.userType === 'agent' ? <FaStore className="text-black" /> : user.userType === 'super_admin' ? <FaShieldAlt className="text-black" /> : <FaUser className="text-black" />}
-                  <span className="font-medium text-black">{user.fullName}</span>
-                </td>
-                <td className="p-2 text-black">{user.email}</td>
-                <td className="p-2 capitalize text-black">{user.userType.replace('_', ' ')}</td>
-                <td className="p-2">
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${user.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{user.status}</span>
-                </td>
-                <td className="p-2 flex gap-2 items-center">
-                  {user.userType === 'agent' && user.status === 'pending' && (
-                    <>
-                      <Button size="xs" variant="success" onClick={() => handleApprove(user._id)} leftIcon={<FaCheck />}>Approve</Button>
-                      <Button size="xs" variant="danger" onClick={() => handleReject(user._id)} leftIcon={<FaTimes />}>Reject</Button>
-                    </>
-                  )}
-                  <Button size="xs" variant="outline" onClick={() => navigate(`/superadmin/users/${user._id}`)} rightIcon={<FaChevronRight />}>Details</Button>
-                </td>
-              </tr>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Users</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-full">
+              <FaUser className="text-blue-600 text-xl" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+            </div>
+            <div className="p-3 bg-yellow-100 rounded-full">
+              <FaUserCheck className="text-yellow-600 text-xl" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Active</p>
+              <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+            </div>
+            <div className="p-3 bg-green-100 rounded-full">
+              <FaUserCheck className="text-green-600 text-xl" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Agents</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.agents}</p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-full">
+              <FaStore className="text-blue-600 text-xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <SearchAndFilter
+        searchTerm={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name, email, or phone..."
+        filters={filterOptions}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        onClearFilters={handleClearFilters}
+        isLoading={loading}
+      />
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+        </div>
+      )}
+
+      {/* Users List */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Loading users...</span>
+            </div>
+          </div>
+        ) : users.length === 0 ? (
+          <div className="p-8 text-center">
+            <FaUser className="mx-auto text-gray-400 text-4xl mb-4" />
+            <p className="text-gray-500">No users found matching your criteria.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {users.map(user => (
+              <div key={user._id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  {/* User Info */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      {getUserTypeIcon(user.userType)}
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {user.fullName}
+                        </h3>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <FaEnvelope className="w-3 h-3" />
+                            {user.email}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FaPhone className="w-3 h-3" />
+                            {user.phone}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-3 text-sm">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
+                        {user.status === 'pending' ? 'Pending Approval' : user.status}
+                      </span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        {getUserTypeLabel(user.userType)}
+                      </span>
+                      {user.businessName && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <FaBuilding className="w-3 h-3 mr-1" />
+                          {user.businessName}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <FaCalendar className="w-3 h-3 mr-1" />
+                        {formatDate(user.createdAt || '')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    {user.userType === 'agent' && user.status === 'pending' && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="success"
+                          onClick={() => handleApprove(user._id)}
+                          disabled={processingUser === user._id}
+                          className="w-full sm:w-auto"
+                        >
+                          {processingUser === user._id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            <>
+                              <FaCheck className="mr-2" />
+                              Approve
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleReject(user._id)}
+                          disabled={processingUser === user._id}
+                          className="w-full sm:w-auto"
+                        >
+                          {processingUser === user._id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            <>
+                              <FaTimes className="mr-2" />
+                              Reject
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/superadmin/users/${user._id}`)}
+                      className="w-full sm:w-auto"
+                    >
+                      <FaEye className="mr-2" />
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
     </div>
   );

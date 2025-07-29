@@ -37,7 +37,7 @@ interface UserContextValue {
   // Admin functions
   updateUserStatus: (
     id: string,
-    data: { isVerified?: boolean; subscriptionStatus?: string }
+    data: { isVerified?: boolean; subscriptionStatus?: 'active' | 'inactive' | 'suspended' }
   ) => Promise<User>;
   deleteUser: (id: string) => Promise<void>;
 
@@ -221,13 +221,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       id: string,
       data: {
         isVerified?: boolean;
-        subscriptionStatus?: string;
+        subscriptionStatus?: 'active' | 'inactive' | 'suspended';
       }
     ): Promise<User> => {
       setIsLoading(true);
       setError(null);
       try {
-        const user = await userService.updateUserStatus(id, data);
+        const user = await userService.updateUser(id, data);
         addToast("User status updated successfully", "success");
         return user;
       } catch (error) {

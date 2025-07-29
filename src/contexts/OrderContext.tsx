@@ -30,6 +30,7 @@ interface OrderContextType {
   createBulkOrder: (orderData: CreateBulkOrderData) => Promise<void>;
   processOrderItem: (orderId: string, itemId: string) => Promise<void>;
   processBulkOrder: (orderId: string) => Promise<void>;
+  bulkProcessOrders: (orderIds: string[], action: 'processing' | 'completed') => Promise<void>;
   cancelOrder: (orderId: string, reason?: string) => Promise<void>;
   updateOrderStatus: (orderId: string, status: string, notes?: string) => Promise<void>;
   fetchAnalytics: (timeframe?: string) => Promise<void>;
@@ -156,6 +157,19 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [addToast, fetchOrders, filters]);
 
+  const bulkProcessOrders = useCallback(async (orderIds: string[], action: 'processing' | 'completed') => {
+    try {
+      await orderService.bulkProcessOrders(orderIds, action);
+      addToast(`Bulk ${action} orders started`, 'success');
+      await fetchOrders(filters);
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err, `Failed to bulk ${action} orders`);
+      setError(message);
+      addToast(message, 'error');
+      throw new Error(message);
+    }
+  }, [addToast, fetchOrders, filters]);
+
   const cancelOrder = useCallback(async (orderId: string, reason?: string) => {
     try {
       await orderService.cancelOrder(orderId, reason);
@@ -245,6 +259,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     createBulkOrder,
     processOrderItem,
     processBulkOrder,
+    bulkProcessOrders,
     cancelOrder,
     updateOrderStatus,
     fetchAnalytics,
@@ -263,6 +278,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     createBulkOrder,
     processOrderItem,
     processBulkOrder,
+    bulkProcessOrders,
     cancelOrder,
     updateOrderStatus,
     fetchAnalytics,

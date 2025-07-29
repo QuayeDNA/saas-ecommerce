@@ -1,6 +1,9 @@
 // src/pages/admin-wallet-page.tsx
 import { useState, useEffect } from 'react';
 import { useWallet } from '../hooks';
+import { Button, Input, Alert } from '../design-system';
+import { SearchAndFilter } from '../components/common';
+import { FaSearch, FaEye, FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaRefresh, FaUser, FaEnvelope, FaPhone } from 'react-icons/fa';
 import type { WalletTransaction, WalletAnalytics } from '../types/wallet';
 
 export const AdminWalletPage = () => {
@@ -24,6 +27,17 @@ export const AdminWalletPage = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<WalletTransaction | null>(null);
   const [showProcessModal, setShowProcessModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Search is handled by the filteredRequests logic
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+  };
   
   // Load pending requests
   useEffect(() => {
@@ -133,49 +147,63 @@ export const AdminWalletPage = () => {
     }
   };
 
+  // Filter requests based on search term
+  const filteredRequests = pendingRequests.filter(request => {
+    if (!searchTerm) return true;
+    const userInfo = typeof request.user === 'string' ? request.user : request.user.fullName;
+    return userInfo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           request.description.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
         <h1 className="text-2xl font-bold text-gray-900">Wallet Management</h1>
-        <button 
+          <p className="text-sm text-gray-600 mt-1">Manage wallet top-up requests and direct top-ups</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              const loadData = async () => {
+                const updatedRequests = await getPendingRequests(currentPage);
+                if (updatedRequests) {
+                  setPendingRequests(updatedRequests.transactions);
+                }
+                const updatedAnalytics = await getWalletAnalytics();
+                if (updatedAnalytics) {
+                  setAnalytics(updatedAnalytics);
+                }
+              };
+              loadData();
+            }}
+          >
+            <FaRefresh className="mr-2" />
+            Refresh
+          </Button>
+          <Button 
           onClick={() => setShowTopUpModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="bg-blue-600 hover:bg-blue-700"
         >
-          Direct Wallet Top-Up
-        </button>
+            Direct Top-Up
+          </Button>
+        </div>
       </div>
       
       {/* Success message */}
       {successMessage && (
-        <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-green-700">{successMessage}</p>
-            </div>
-          </div>
-        </div>
+        <Alert status="success" className="mb-6">
+          {successMessage}
+        </Alert>
       )}
       
       {/* Error message */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
-        </div>
+        <Alert status="error" className="mb-6">
+          {error}
+        </Alert>
       )}
       
       {/* Wallet Analytics Cards */}
@@ -218,8 +246,21 @@ export const AdminWalletPage = () => {
         </div>
       )}
       
+      {/* Search */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search by user name or description..."
+        filters={{}}
+        onFilterChange={() => {}}
+        onSearch={handleSearch}
+        onClearFilters={handleClearFilters}
+        showSearchButton={false}
+        isLoading={isLoading}
+      />
+      
       {/* Pending Requests */}
-      <div className="bg-white shadow-sm rounded-lg border border-gray-100">
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-900">Pending Top-Up Requests</h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -229,32 +270,29 @@ export const AdminWalletPage = () => {
         
         {isLoading && (
           <div className="flex justify-center items-center h-32">
-            <svg className="animate-spin h-8 w-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <div className="animate-spin h-8 w-8 border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
           </div>
         )}
         
-        {!isLoading && pendingRequests.length === 0 && (
+        {!isLoading && filteredRequests.length === 0 && (
           <div className="text-center py-8">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No pending requests</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              There are no pending wallet top-up requests at the moment.
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaMoneyBillWave className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No pending requests</h3>
+            <p className="text-sm text-gray-500">
+              {searchTerm ? 'No requests match your search criteria.' : 'There are no pending wallet top-up requests at the moment.'}
             </p>
           </div>
         )}
         
-        {!isLoading && pendingRequests.length > 0 && (
+        {!isLoading && filteredRequests.length > 0 && (
           <>
             {/* Mobile view */}
             <div className="sm:hidden">
-              <ul className="divide-y divide-gray-200">
-                {pendingRequests.map((request) => (
-                  <li key={request._id} className="px-4 py-4">
+              <div className="divide-y divide-gray-200">
+                {filteredRequests.map((request) => (
+                  <div key={request._id} className="px-4 py-4">
                     <div className="flex justify-between">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-gray-900 truncate">
@@ -269,24 +307,25 @@ export const AdminWalletPage = () => {
                       </div>
                       <div className="flex flex-col items-end">
                         <span className="text-sm font-semibold text-green-600">
-                          +GH¢{request.amount.toFixed(2)}
+                          +{formatCurrency(request.amount)}
                         </span>
                         <div className="mt-2 flex space-x-2">
-                          <button
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => {
                               setSelectedRequest(request);
                               setShowProcessModal(true);
                             }}
-                            className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
                           >
                             Process
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
             
             {/* Desktop view */}
@@ -313,37 +352,47 @@ export const AdminWalletPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {pendingRequests.map((request) => (
-                      <tr key={request._id}>
+                    {filteredRequests.map((request) => (
+                      <tr key={request._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                <FaUser className="h-5 w-5 text-gray-600" />
+                              </div>
+                            </div>
+                            <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
                             {typeof request.user === 'string' ? request.user : request.user.fullName}
                           </div>
                           {typeof request.user !== 'string' && (
-                            <div className="text-xs text-gray-500">
+                                <div className="text-sm text-gray-500">
                               {request.user.email}
                             </div>
                           )}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
                           {request.description}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                          +GH¢{request.amount.toFixed(2)}
+                          +{formatCurrency(request.amount)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(request.createdAt)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => {
                               setSelectedRequest(request);
                               setShowProcessModal(true);
                             }}
-                            className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             Process
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -356,20 +405,22 @@ export const AdminWalletPage = () => {
             {totalPages > 1 && (
               <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div className="flex-1 flex justify-between sm:hidden">
-                  <button 
+                  <Button 
+                    variant="outline"
+                    size="sm"
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
                   >
                     Previous
-                  </button>
-                  <button 
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="sm"
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
                   >
                     Next
-                  </button>
+                  </Button>
                 </div>
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <div>
@@ -379,20 +430,17 @@ export const AdminWalletPage = () => {
                   </div>
                   <div>
                     <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
                       >
-                        <span className="sr-only">Previous</span>
-                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </button>
+                        Previous
+                      </Button>
                       
                       {/* Page numbers */}
                       {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                        // Show pages around the current page
                         let pageNumber;
                         if (totalPages <= 5) {
                           pageNumber = i + 1;
@@ -405,30 +453,25 @@ export const AdminWalletPage = () => {
                         }
                         
                         return (
-                          <button
+                          <Button
                             key={pageNumber}
+                            size="sm"
+                            variant={pageNumber === currentPage ? "primary" : "outline"}
                             onClick={() => setCurrentPage(pageNumber)}
-                            className={`relative inline-flex items-center px-4 py-2 border ${
-                              currentPage === pageNumber 
-                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' 
-                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                            } text-sm font-medium`}
                           >
                             {pageNumber}
-                          </button>
+                          </Button>
                         );
                       })}
                       
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
                       >
-                        <span className="sr-only">Next</span>
-                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </button>
+                        Next
+                      </Button>
                     </nav>
                   </div>
                 </div>
@@ -449,9 +492,7 @@ export const AdminWalletPage = () => {
                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                   <div className="sm:flex sm:items-start">
                     <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                      <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
+                      <FaMoneyBillWave className="h-6 w-6 text-blue-600" />
                     </div>
                     <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                       <h3 className="text-lg leading-6 font-medium text-gray-900">
@@ -462,33 +503,33 @@ export const AdminWalletPage = () => {
                           <label htmlFor="userId" className="block text-sm font-medium text-gray-700">
                             User ID
                           </label>
-                          <input
+                          <Input
                             type="text"
-                            name="userId"
                             id="userId"
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            name="userId"
                             placeholder="Enter user ID"
                             value={topUpUserId}
                             onChange={(e) => setTopUpUserId(e.target.value)}
                             required
+                            className="mt-1"
                           />
                         </div>
                         
                         <div>
                           <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                            Amount (GH¢)
+                            Amount (GH₵)
                           </label>
-                          <input
+                          <Input
                             type="number"
-                            name="amount"
                             id="amount"
+                            name="amount"
                             min="0.01"
                             step="0.01"
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             placeholder="0.00"
                             value={topUpAmount}
                             onChange={(e) => setTopUpAmount(e.target.value)}
                             required
+                            className="mt-1"
                           />
                         </div>
                         
@@ -500,7 +541,7 @@ export const AdminWalletPage = () => {
                             id="description"
                             name="description"
                             rows={3}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             placeholder="Description for this top-up"
                             value={topUpDescription}
                             onChange={(e) => setTopUpDescription(e.target.value)}
@@ -511,20 +552,21 @@ export const AdminWalletPage = () => {
                   </div>
                 </div>
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <button
+                  <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="w-full sm:w-auto"
                   >
                     {isLoading ? 'Processing...' : 'Top Up Wallet'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => setShowTopUpModal(false)}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    className="mt-3 w-full sm:mt-0 sm:ml-3 sm:w-auto"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -542,9 +584,7 @@ export const AdminWalletPage = () => {
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
                   <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <FaCheck className="h-6 w-6 text-blue-600" />
                   </div>
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                     <h3 className="text-lg leading-6 font-medium text-gray-900">
@@ -565,7 +605,7 @@ export const AdminWalletPage = () => {
                         <div className="py-2 sm:py-3 sm:grid sm:grid-cols-3 sm:gap-4">
                           <dt className="text-sm font-medium text-gray-500">Amount</dt>
                           <dd className="mt-1 text-sm text-green-600 font-semibold sm:mt-0 sm:col-span-2">
-                            GH¢{selectedRequest.amount.toFixed(2)}
+                            {formatCurrency(selectedRequest.amount)}
                           </dd>
                         </div>
                         <div className="py-2 sm:py-3 sm:grid sm:grid-cols-3 sm:gap-4">
@@ -586,32 +626,30 @@ export const AdminWalletPage = () => {
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button
-                  type="button"
+                <Button
                   onClick={() => handleProcessRequest(true)}
                   disabled={isLoading}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="bg-green-600 hover:bg-green-700"
                 >
                   {isLoading ? 'Processing...' : 'Approve'}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
                   onClick={() => handleProcessRequest(false)}
                   disabled={isLoading}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  variant="danger"
+                  className="mr-3"
                 >
                   {isLoading ? 'Processing...' : 'Reject'}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setShowProcessModal(false);
                     setSelectedRequest(null);
                   }}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-// src/components/orders/OrderCard.tsx
+// src/components/orders/UnifiedOrderCard.tsx
 import React, { useState } from 'react';
 import { 
   FaEye,
@@ -9,23 +9,32 @@ import {
   FaCheckCircle,
   FaClock,
   FaSpinner,
-  FaExclamationCircle
+  FaExclamationCircle,
+  FaCheck,
+  FaTimes,
+  FaEdit
 } from 'react-icons/fa';
+import { Button } from '../../design-system';
 import type { Order } from '../../types/order';
 
-interface OrderCardProps {
+interface UnifiedOrderCardProps {
   order: Order;
+  isAdmin: boolean;
   onView: (order: Order) => void;
-  onProcess: (orderId: string) => void;
-  onCancel: (orderId: string) => void;
-  onProcessItem: (orderId: string, itemId: string) => void;
   onUpdateStatus: (orderId: string, status: string, notes?: string) => void;
+  onCancel: (orderId: string) => void;
+  onSelect?: (orderId: string) => void;
+  isSelected?: boolean;
 }
 
-export const OrderCard: React.FC<OrderCardProps> = ({
+export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   order,
+  isAdmin,
   onView,
   onUpdateStatus,
+  onCancel,
+  onSelect,
+  isSelected = false
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
@@ -132,31 +141,62 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency',
+      currency: 'GHS'
+    }).format(amount);
+  };
+
+  const formatDate = (date: Date | string) => {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(date));
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
+      isSelected ? 'ring-2 ring-blue-500' : ''
+    }`}>
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
+              {isAdmin && onSelect && (
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => onSelect(order._id!)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+              )}
               <h3 className="text-sm font-semibold text-gray-900 truncate">
                 {order.orderNumber}
               </h3>
             </div>
+            <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
           </div>
-          <button
-            onClick={() => onView(order)}
-            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-          >
-            <FaEye />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onView(order)}
+              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+              title="View Details"
+            >
+              <FaEye />
+            </button>
+          </div>
         </div>
 
         {/* Order Details */}
         <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <FaWifi className="text-gray-400" />
-            <span className="font-medium">Type:</span>
+            <span className="font-medium">Network:</span>
             <span>{getOrderProvider(order)}</span>
           </div>
           
@@ -167,23 +207,36 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           <div className="text-sm text-gray-600">
             <span className="font-medium">Volume:</span> {getOrderVolume(order)}
           </div>
+
+          <div className="text-sm text-gray-600">
+            <span className="font-medium">Total:</span> {formatCurrency(order.total)}
+          </div>
         </div>
 
         {/* Status Section */}
         <div className="mb-3">
           <div className="relative">
-            <button
-              onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)} hover:bg-opacity-80 transition-colors w-full justify-between status-dropdown`}
-            >
-              <div className="flex items-center gap-1">
+            {isAdmin ? (
+              // Admin can change status
+              <button
+                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)} hover:bg-opacity-80 transition-colors w-full justify-between status-dropdown`}
+              >
+                <div className="flex items-center gap-1">
+                  {getStatusIcon(order.status)}
+                  {order.status.replace('_', ' ')}
+                </div>
+                <FaChevronRight className="text-xs" />
+              </button>
+            ) : (
+              // Agent can only view status
+              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
                 {getStatusIcon(order.status)}
                 {order.status.replace('_', ' ')}
               </div>
-              <FaChevronRight className="text-xs" />
-            </button>
+            )}
             
-            {statusDropdownOpen && (
+            {isAdmin && statusDropdownOpen && (
               <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 status-dropdown" style={{ top: '100%', left: '0' }}>
                 <div className="py-1 flex flex-col">
                   {statusOptions.map((option) => (
@@ -200,6 +253,23 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             )}
           </div>
         </div>
+
+        {/* Admin Actions */}
+        {isAdmin && (
+          <div className="flex gap-2 mb-3">
+            {['pending', 'confirmed', 'processing'].includes(order.status) && (
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={() => onCancel(order._id!)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <FaTimes className="mr-1" />
+                Cancel
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Expandable Items Section */}
         {order.items && order.items.length > 0 && (
@@ -232,5 +302,4 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       </div>
     </div>
   );
-};
- 
+}; 

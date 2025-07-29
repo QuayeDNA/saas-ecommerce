@@ -5,12 +5,11 @@ import type { RouteObject } from "react-router-dom";
 import { DashboardLayout } from "../layouts/dashboard-layout";
 import { PageLoader } from "../components/page-loader";
 import { ProtectedRoute } from "../components/protected-route";
-import { ButtonExamples } from '../components/examples/button-examples';
-import { WalletPage } from "../pages/wallet-page";
-import { AdminWalletPage } from "../pages/admin-wallet-page";
 import superadminRoutes from "./superadmin-routes";
 
-// Lazy load pages for better performance
+// =============================================================================
+// LAZY LOADED COMPONENTS - PUBLIC PAGES
+// =============================================================================
 const LandingPage = lazy(() =>
   import("../pages/landing-page").then((module) => ({
     default: module.LandingPage,
@@ -24,6 +23,11 @@ const LoginPage = lazy(() =>
 const RegisterPage = lazy(() =>
   import("../pages/register-page").then((module) => ({
     default: module.RegisterPage,
+  }))
+);
+const RegisterSuccessPage = lazy(() =>
+  import("../pages/register-success-page").then((module) => ({
+    default: module.RegisterSuccessPage,
   }))
 );
 const ForgotPasswordPage = lazy(() =>
@@ -41,44 +45,9 @@ const VerifyAccountPage = lazy(() =>
     default: module.VerifyAccountPage,
   }))
 );
-const DashboardPage = lazy(() =>
-  import("../pages/dashboard-page").then((module) => ({
-    default: module.DashboardPage,
-  }))
-);
-const HistoryPage = lazy(() =>
-  import("../pages/history-page").then((module) => ({
-    default: module.HistoryPage,
-  }))
-);
-const ProfilePage = lazy(() =>
-  import("../pages/profile-page").then((module) => ({
-    default: module.ProfilePage,
-  }))
-);
-const PackageManagementPage = lazy(() =>
-  import("../pages/packages-page").then((module) => ({
-    default: module.PackageManagementPage,
-  }))
-);
-const OrderManagementPage = lazy(() =>
-  import("../pages/orders-page").then((module) => ({
-    default: module.OrderManagementPage,
-  }))
-);
-const StorefrontManagementPage = lazy(() =>
-  import("../pages/store-page").then((module) => ({
-    default: module.StorefrontManagementPage,
-  }))
-);
 const PublicStorefrontPage = lazy(() =>
   import("../pages/PublicStorefrontPage").then((module) => ({
     default: module.PublicStorefrontPage,
-  }))
-);
-const AfaRegistrationPage = lazy(() =>
-  import("../pages/afa-registration-page").then((module) => ({
-    default: module.AfaRegistrationPage,
   }))
 );
 const NotFoundPage = lazy(() =>
@@ -101,21 +70,63 @@ const SupportPage = lazy(() =>
     default: module.SupportPage,
   }))
 );
+
+// =============================================================================
+// LAZY LOADED COMPONENTS - DASHBOARD PAGES
+// =============================================================================
+const DashboardPage = lazy(() =>
+  import("../pages/dashboard-page").then((module) => ({
+    default: module.DashboardPage,
+  }))
+);
+const HistoryPage = lazy(() =>
+  import("../pages/history-page").then((module) => ({
+    default: module.HistoryPage,
+  }))
+);
+const ProfilePage = lazy(() =>
+  import("../pages/profile-page").then((module) => ({
+    default: module.ProfilePage,
+  }))
+);
+
+// =============================================================================
+// LAZY LOADED COMPONENTS - AGENT SPECIFIC PAGES
+// =============================================================================
+const PackageManagementPage = lazy(() =>
+  import("../pages/packages-page").then((module) => ({
+    default: module.PackageManagementPage,
+  }))
+);
+const OrderManagementPage = lazy(() =>
+  import("../pages/orders-page").then((module) => ({
+    default: module.OrderManagementPage,
+  }))
+);
+const StorefrontManagementPage = lazy(() =>
+  import("../pages/store-page").then((module) => ({
+    default: module.StorefrontManagementPage,
+  }))
+);
+const AfaRegistrationPage = lazy(() =>
+  import("../pages/afa-registration-page").then((module) => ({
+    default: module.AfaRegistrationPage,
+  }))
+);
 const UserManagementPage = lazy(() =>
   import("../pages/user-management-page").then((module) => ({
     default: module.UserManagementPage,
   }))
 );
-const PackageList = lazy(() =>
-  import("../components/products/PackageList").then((module) => ({
-    default: module.PackageList,
+const WalletPage = lazy(() =>
+  import("../pages/wallet-page").then((module) => ({
+    default: module.WalletPage,
   }))
 );
-// const ProviderList = lazy(() =>
-//   import("../components/products/ProviderList").then((module) => ({
-//     default: module.ProviderList,
-//   }))
-// );
+
+// =============================================================================
+// LAZY LOADED COMPONENTS - PACKAGE SPECIFIC PAGES
+// =============================================================================
 const MtnPackagesPage = lazy(() =>
   import("../pages/mtn-packages-page").then((module) => ({
     default: module.MtnPackagesPage,
@@ -136,14 +147,22 @@ const AtISharePremiumPackagesPage = lazy(() =>
     default: module.AtISharePremiumPackagesPage,
   }))
 );
-// const GloPackagesPage = lazy(() =>
-//   import("../pages/glo-packages-page").then((module) => ({
-//     default: module.GloPackagesPage,
-//   }))
-// );
 
-// Define routes
-export const routes: RouteObject[] = [
+// =============================================================================
+// LAZY LOADED COMPONENTS - ADMIN SPECIFIC PAGES
+// =============================================================================
+const AdminWalletPage = lazy(() =>
+  import("../pages/admin-wallet-page").then((module) => ({
+    default: module.AdminWalletPage,
+  }))
+);
+
+// =============================================================================
+// ROUTE CONFIGURATIONS
+// =============================================================================
+
+// Public routes configuration
+const publicRoutes: RouteObject[] = [
   {
     path: "/",
     element: (
@@ -165,6 +184,14 @@ export const routes: RouteObject[] = [
     element: (
       <Suspense fallback={<PageLoader />}>
         <RegisterPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/register/success",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <RegisterSuccessPage />
       </Suspense>
     ),
   },
@@ -192,7 +219,6 @@ export const routes: RouteObject[] = [
       </Suspense>
     ),
   },
-  // Public Storefront Routes (No authentication required)
   {
     path: "/store/:slug",
     element: (
@@ -209,7 +235,34 @@ export const routes: RouteObject[] = [
       </Suspense>
     ),
   },
-  // Protected Agent Routes
+  {
+    path: "/privacy-policy",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PrivacyPolicyPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/support",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <SupportPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/404",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <NotFoundPage />
+      </Suspense>
+    ),
+  },
+];
+
+// Agent routes configuration
+const agentRoutes: RouteObject[] = [
   {
     path: "/agent",
     element: <ProtectedRoute allowedUserTypes={["agent"]} />,
@@ -235,6 +288,38 @@ export const routes: RouteObject[] = [
             )
           },
           {
+            path: "packages/mtn",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <MtnPackagesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "packages/telecel",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <TelecelPackagesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "packages/at-big-time",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AtBigTimePackagesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "packages/at-ishare-premium",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AtISharePremiumPackagesPage />
+              </Suspense>
+            ),
+          },
+          {
             path: "orders",
             element: (
               <Suspense fallback={<PageLoader />}>
@@ -257,14 +342,6 @@ export const routes: RouteObject[] = [
                 <HistoryPage />
               </Suspense>
             ),
-          },
-          {
-            path: "packages",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <PackageList />
-              </Suspense>
-            )
           },
           {
             path: "profile",
@@ -314,42 +391,14 @@ export const routes: RouteObject[] = [
               </Suspense>
             ),
           },
-          {
-            path: "packages/mtn",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <MtnPackagesPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "packages/telecel",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <TelecelPackagesPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "packages/at-big-time",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AtBigTimePackagesPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "packages/at-ishare-premium",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AtISharePremiumPackagesPage />
-              </Suspense>
-            ),
-          },
         ],
       },
     ],
   },
+];
+
+// Customer routes configuration
+const customerRoutes: RouteObject[] = [
   {
     path: "/customer",
     element: <ProtectedRoute allowedUserTypes={["customer"]} />,
@@ -402,42 +451,10 @@ export const routes: RouteObject[] = [
       },
     ],
   },
-  {
-    path: "/button-examples",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <ButtonExamples />
-      </Suspense>
-    ),
-  },
-  // Privacy Policy Page
-  {
-    path: "/privacy-policy",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <PrivacyPolicyPage />
-      </Suspense>
-    ),
-  },
-  // Support Page
-  {
-    path: "/support",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <SupportPage />
-      </Suspense>
-    ),
-  },
-  // 404 Page
-  {
-    path: "/404",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <NotFoundPage />
-      </Suspense>
-    ),
-  },
-  // Protected Super Admin Routes
+];
+
+// Admin routes configuration
+const adminRoutes: RouteObject[] = [
   {
     path: "/admin",
     element: <ProtectedRoute allowedUserTypes={["super_admin"]} />,
@@ -459,6 +476,14 @@ export const routes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <UserManagementPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "packages",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PackageManagementPage />
               </Suspense>
             ),
           },
@@ -490,7 +515,23 @@ export const routes: RouteObject[] = [
       },
     ],
   },
+];
+
+// =============================================================================
+// MAIN ROUTES CONFIGURATION
+// =============================================================================
+export const routes: RouteObject[] = [
+  // Public routes
+  ...publicRoutes,
+  
+  // Protected routes by user type
+  ...agentRoutes,
+  ...customerRoutes,
+  ...adminRoutes,
+  
+  // Super admin routes (separate layout)
   superadminRoutes,
+  
   // Catch all route - redirect to 404
   {
     path: "*",

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useProvider } from '../../hooks/use-provider';
 import { useAuth } from '../../hooks/use-auth';
 import { ProviderFormModal } from './ProviderFormModal';
+import { SearchAndFilter } from '../common';
 import type { Provider } from '../../types/package';
 import type { ProviderFormData } from './ProviderFormModal';
 import { FaPlus, FaEdit, FaTrash, FaUndo, FaEllipsisV, FaToggleOn, FaToggleOff } from 'react-icons/fa';
@@ -37,6 +38,17 @@ export const ProviderList: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const newFilters = { ...filters, search: searchTerm };
+    setFilters(newFilters);
+    fetchProviders(newFilters);
+  };
+
+  const handleFilterChange = (filterKey: string, value: string) => {
+    // Provider list doesn't have additional filters yet
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    const newFilters = { ...filters, search: '' };
     setFilters(newFilters);
     fetchProviders(newFilters);
   };
@@ -113,21 +125,16 @@ export const ProviderList: React.FC = () => {
       </div>
 
       {/* Search */}
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Search providers..."
-          className="flex-1 px-4 py-2 border rounded-lg"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <button
-          type="submit"
-          className="px-4 py-2 bg-gray-100 border rounded-lg hover:bg-gray-200"
-        >
-          Search
-        </button>
-      </form>
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search providers..."
+        filters={{}}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        onClearFilters={handleClearFilters}
+        isLoading={loading}
+      />
 
       {/* Provider Grid */}
       {loading ? (

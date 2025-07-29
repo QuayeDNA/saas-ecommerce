@@ -4,3 +4,4 @@ export { useUser } from './use-user';
 export { useWallet } from './use-wallet';
 export { usePackage } from './use-package';
 export { useBundle } from './use-bundle';
+export { useOrder } from './use-order';

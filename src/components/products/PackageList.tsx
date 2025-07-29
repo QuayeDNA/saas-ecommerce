@@ -1,13 +1,15 @@
 // src/components/products/PackageList.tsx
 import React, { useEffect, useState } from 'react';
 import { usePackage } from '../../hooks/use-package';
+import { SearchAndFilter } from '../common';
 import { getProviderColors } from '../../utils/provider-colors';
 import type { Bundle } from '../../types/package';
 import { 
   FaSearch,
   FaFilter,
   FaBox,
-  FaExclamationCircle
+  FaExclamationCircle,
+  FaPlus
 } from 'react-icons/fa';
 
 export interface PackageListProps {
@@ -40,6 +42,8 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     includeDeleted: false
   });
   const [viewMode, setViewMode] = useState<'packages' | 'bundles'>('packages');
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editPackage, setEditPackage] = useState(null);
 
   useEffect(() => {
     if (viewMode === 'packages') {
@@ -61,7 +65,15 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     }
   };
 
-  const handleFilterChange = () => {
+  const handleFilterChange = (filterKey: string, value: string) => {
+    if (filterKey === 'isActive') {
+      setLocalFilters(prev => ({ ...prev, isActive: value }));
+    } else if (filterKey === 'includeDeleted') {
+      setLocalFilters(prev => ({ ...prev, includeDeleted: value === 'true' }));
+    }
+  };
+
+  const handleFilterApply = () => {
     // Convert isActive from string to boolean or undefined
     let isActive: boolean | undefined;
     if (localFilters.isActive === 'true') isActive = true;
@@ -80,10 +92,9 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     } else {
       fetchBundles(newFilters);
     }
-    setShowFilters(false);
   };
 
-  const clearFilters = () => {
+  const handleClearFilters = () => {
     setSearchTerm('');
     setLocalFilters({
       provider: provider || '',
@@ -96,6 +107,29 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       fetchPackages(provider ? { provider } : undefined);
     } else {
       fetchBundles();
+    }
+  };
+
+  // Filter options for the reusable component
+  const filterOptions = {
+    isActive: {
+      value: localFilters.isActive,
+      options: [
+        { value: '', label: 'All Status' },
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
+      ],
+      label: 'Status',
+      placeholder: 'All Status'
+    },
+    includeDeleted: {
+      value: localFilters.includeDeleted ? 'true' : 'false',
+      options: [
+        { value: 'false', label: 'Exclude Deleted' },
+        { value: 'true', label: 'Include Deleted' }
+      ],
+      label: 'Include Deleted',
+      placeholder: 'Exclude Deleted'
     }
   };
 
@@ -140,6 +174,16 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Create Package Button (only for packages view) */}
+          {viewMode === 'packages' && (
+            <button
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={() => { setEditPackage(null); setShowFormModal(true); }}
+            >
+              <FaPlus className="mr-2" />
+              Create Package
+            </button>
+          )}
           {/* View Mode Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
@@ -167,84 +211,16 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1">
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder={`Search ${viewMode === 'packages' ? 'packages' : 'bundles'}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </form>
-
-          {/* Filter Toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <FaFilter className="text-sm" />
-            Filters
-          </button>
-        </div>
-
-        {/* Filter Panel */}
-        {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  value={localFilters.isActive}
-                  onChange={(e) => setLocalFilters(prev => ({ ...prev, isActive: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">All</option>
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Include Deleted
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={localFilters.includeDeleted}
-                    onChange={(e) => setLocalFilters(prev => ({ ...prev, includeDeleted: e.target.checked }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Show deleted items</span>
-                </label>
-              </div>
-
-              <div className="flex items-end gap-2">
-                <button
-                  onClick={handleFilterChange}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Apply
-                </button>
-                <button
-                  onClick={clearFilters}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder={`Search ${viewMode === 'packages' ? 'packages' : 'bundles'}...`}
+        filters={filterOptions}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        onClearFilters={handleClearFilters}
+        isLoading={loading}
+      />
 
       {/* Content */}
       {loading ? (

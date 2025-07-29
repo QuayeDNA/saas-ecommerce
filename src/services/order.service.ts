@@ -81,6 +81,16 @@ class OrderService {
     return response.data.order;
   }
 
+  // Bulk process multiple orders
+  async bulkProcessOrders(orderIds: string[], action: 'processing' | 'completed'): Promise<{
+    successful: Array<{ orderId: string; orderNumber: string; newStatus: string }>;
+    failed: Array<{ orderId: string; reason: string }>;
+    total: number;
+  }> {
+    const response = await apiClient.post('/api/orders/bulk-process', { orderIds, action });
+    return response.data.results;
+  }
+
   // Check wallet balance before processing
   async checkWalletBalance(): Promise<{ balance: number; sufficient: boolean; required?: number }> {
     const response = await apiClient.get('/api/wallet/info');

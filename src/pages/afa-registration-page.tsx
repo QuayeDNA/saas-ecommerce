@@ -6,8 +6,11 @@ import type { AfaRegistrationData, AfaRegistration } from '../services/user.serv
 export const AfaRegistrationPage: React.FC = () => {
   const { submitAfaRegistration, getAfaRegistration, isLoading } = useUser();
   const [formData, setFormData] = useState<AfaRegistrationData>({
+    afaId: '',
+    registrationType: 'subscriber',
     fullName: '',
     phone: '',
+    registrationFee: 0,
     userType: 'subscriber',
   });
   const [error, setError] = useState<string | null>(null);

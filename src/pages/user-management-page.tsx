@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser, useAuth } from '../hooks';
 import { Button, Card, CardBody, CardHeader, Input, Badge, Alert } from '../design-system';
-import { FaSearch, FaEdit, FaTrash, FaEye, FaCheck, FaTimes } from 'react-icons/fa';
+import { SearchAndFilter } from '../components/common';
+import { FaSearch, FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaUsers, FaClock, FaRocket } from 'react-icons/fa';
 import type { User } from '../types';
 import type { UsersResponse, UserStats } from '../services/user.service';
 
@@ -24,6 +25,106 @@ export const UserManagementPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Filter options for the reusable component
+  const filterOptions = {
+    userType: {
+      value: filterUserType,
+      options: [
+        { value: '', label: 'All User Types' },
+        { value: 'agent', label: 'Agents' },
+        { value: 'customer', label: 'Customers' },
+        { value: 'super_admin', label: 'Super Admins' }
+      ],
+      label: 'User Type',
+      placeholder: 'All User Types'
+    }
+  };
+
+  // Check if user is agent (show coming soon) or admin (show full functionality)
+  const isAgent = authState.user?.userType === 'agent';
+  const isAdmin = authState.user?.userType === 'super_admin' || authState.user?.userType === 'admin';
+
+  // If agent, show coming soon page
+  if (isAgent) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">My Customers</h1>
+                <p className="text-gray-600 mt-2">Manage your customer relationships</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Coming Soon Card */}
+          <Card className="shadow-lg">
+            <CardBody className="p-8 text-center">
+              <div className="mb-6">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FaRocket className="text-blue-600 text-2xl" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon!</h2>
+                <p className="text-gray-600 mb-6">
+                  We're working hard to bring you a comprehensive customer management system.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <FaUsers className="text-green-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Customer Profiles</h3>
+                  <p className="text-sm text-gray-600">Detailed customer information and history</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <FaSearch className="text-purple-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Advanced Search</h3>
+                  <p className="text-sm text-gray-600">Find customers quickly with smart filters</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <FaClock className="text-orange-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Activity Tracking</h3>
+                  <p className="text-sm text-gray-600">Monitor customer interactions and orders</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-6">
+                <h3 className="font-semibold text-blue-900 mb-2">What's Coming:</h3>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Customer registration and onboarding</li>
+                  <li>• Order history and transaction tracking</li>
+                  <li>• Customer communication tools</li>
+                  <li>• Analytics and reporting</li>
+                  <li>• Bulk operations and management</li>
+                </ul>
+              </div>
+
+              <div className="mt-6">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => window.location.href = '/agent/dashboard'}
+                >
+                  Back to Dashboard
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Full functionality for admins
   const fetchUsers = useCallback(
     async (page = 1, search = searchTerm, userType = filterUserType) => {
       try {
@@ -62,15 +163,27 @@ export const UserManagementPage: React.FC = () => {
     fetchStats();
   }, [fetchUsers, fetchStats]);
 
-  const handleSearch = () => {
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
     fetchUsers(1, searchTerm, filterUserType);
+  };
+
+  const handleFilterChange = (filterKey: string, value: string) => {
+    if (filterKey === 'userType') {
+      setFilterUserType(value);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilterUserType('');
   };
 
   const handlePageChange = (newPage: number) => {
     fetchUsers(newPage, searchTerm, filterUserType);
   };
 
-  const handleStatusUpdate = async (userId: string, updates: { isVerified?: boolean; subscriptionStatus?: string }) => {
+  const handleStatusUpdate = async (userId: string, updates: { isVerified?: boolean; subscriptionStatus?: 'active' | 'inactive' | 'suspended'; userType?: 'customer' | 'agent' | 'super_admin' }) => {
     try {
       await updateUserStatus(userId, updates);
       setSuccessMessage('User status updated successfully');
@@ -104,7 +217,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Helper functions for styling
   const getUserTypeColor = (userType: string): "blue" | "green" | "yellow" | "red" | "gray" => {
     switch (userType) {
       case 'agent': return 'blue';
@@ -127,298 +239,238 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  const canManageUsers = authState.user?.userType === 'super_admin' || authState.user?.userType === 'agent';
-
-  if (!canManageUsers) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <Alert color="red" className="mb-4">
-          You don't have permission to access user management.
-        </Alert>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          User Management
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Manage and monitor user accounts
-        </p>
-      </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <Alert color="green" className="mb-4">
-          {successMessage}
-        </Alert>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <Alert color="red" className="mb-4">
-          {error}
-        </Alert>
-      )}
-
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {authState.user?.userType === 'agent' ? (
-            <>
-              <Card>
-                <CardBody className="p-4">
-                  <div className="text-2xl font-bold text-blue-600">{stats.totalCustomers ?? 0}</div>
-                  <div className="text-sm text-gray-600">Total Customers</div>
-                </CardBody>
-              </Card>
-              <Card>
-                <CardBody className="p-4">
-                  <div className="text-2xl font-bold text-green-600">{stats.verifiedCustomers ?? 0}</div>
-                  <div className="text-sm text-gray-600">Verified</div>
-                </CardBody>
-              </Card>
-              <Card>
-                <CardBody className="p-4">
-                  <div className="text-2xl font-bold text-yellow-600">{stats.unverifiedCustomers ?? 0}</div>
-                  <div className="text-sm text-gray-600">Unverified</div>
-                </CardBody>
-              </Card>
-              <Card>
-                <CardBody className="p-4">
-                  <div className="text-2xl font-bold text-purple-600">{stats.recentCustomers ?? 0}</div>
-                  <div className="text-sm text-gray-600">Recent (7 days)</div>
-                </CardBody>
-              </Card>
-            </>
-          ) : (
-            <>
-              <Card>
-                <CardBody className="p-4">
-                  <div className="text-2xl font-bold text-blue-600">{stats.totalUsers ?? 0}</div>
-                  <div className="text-sm text-gray-600">Total Users</div>
-                </CardBody>
-              </Card>
-              <Card>
-                <CardBody className="p-4">
-                  <div className="text-2xl font-bold text-green-600">{stats.totalAgents ?? 0}</div>
-                  <div className="text-sm text-gray-600">Total Agents</div>
-                </CardBody>
-              </Card>
-              <Card>
-                <CardBody className="p-4">
-                  <div className="text-2xl font-bold text-yellow-600">{stats.activeAgents ?? 0}</div>
-                  <div className="text-sm text-gray-600">Active Agents</div>
-                </CardBody>
-              </Card>
-              <Card>
-                <CardBody className="p-4">
-                  <div className="text-2xl font-bold text-red-600">{stats.inactiveAgents ?? 0}</div>
-                  <div className="text-sm text-gray-600">Inactive Agents</div>
-                </CardBody>
-              </Card>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Search and Filter */}
-      <Card className="mb-6">
-        <CardHeader>
-          <h2 className="text-lg font-semibold">Search & Filter</h2>
-        </CardHeader>
-        <CardBody>
-          <div className="flex flex-col sm:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <Input
-                label="Search users"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name, email, or phone..."
-                leftIcon={<FaSearch className="text-gray-400" />}
-              />
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+              <p className="text-gray-600 mt-2">Manage all users in the system</p>
             </div>
-            <div className="w-full sm:w-48">
-              <label htmlFor='user-type' className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                User Type
-              </label>
-              <select
-                value={filterUserType}
-                onChange={(e) => setFilterUserType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Types</option>
-                <option value="customer">Customer</option>
-                <option value="agent">Agent</option>
-                {authState.user?.userType === 'super_admin' && (
-                  <option value="super_admin">Super Admin</option>
-                )}
-              </select>
-            </div>
-            <Button onClick={handleSearch} disabled={isLoading}>
-              <FaSearch className="mr-2" />
-              Search
-            </Button>
           </div>
-        </CardBody>
-      </Card>
+        </div>
 
-      {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-lg font-semibold">Users ({pagination.total})</h2>
-        </CardHeader>
-        <CardBody>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No users found.
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-3">User</th>
-                      <th className="text-left p-3">Type</th>
-                      <th className="text-left p-3">Status</th>
-                      <th className="text-left p-3">Subscription</th>
-                      <th className="text-left p-3">Created</th>
-                      <th className="text-left p-3">Actions</th>
+        {/* Stats Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardBody className="p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <FaUsers className="text-blue-600" />
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Total Users</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.totalUsers || 0}</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody className="p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                      <FaUsers className="text-green-600" />
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Active Agents</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.activeAgents || 0}</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody className="p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <FaUsers className="text-yellow-600" />
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Verified Users</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.verifiedUsers || 0}</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody className="p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                      <FaUsers className="text-red-600" />
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Unverified Users</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.unverifiedUsers || 0}</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Search and Filters */}
+        <SearchAndFilter
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search users..."
+          filters={filterOptions}
+          onFilterChange={handleFilterChange}
+          onSearch={handleSearch}
+          onClearFilters={handleClearFilters}
+          isLoading={isLoading}
+        />
+
+        {/* Alerts */}
+        {error && (
+          <Alert status="error" className="mb-6">
+            {error}
+          </Alert>
+        )}
+
+        {successMessage && (
+          <Alert status="success" className="mb-6">
+            {successMessage}
+          </Alert>
+        )}
+
+        {/* Users Table */}
+        <Card>
+          <CardHeader className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900">Users</h2>
+          </CardHeader>
+          <CardBody className="p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Subscription
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.map((user) => (
+                    <tr key={user._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                              <span className="text-sm font-medium text-gray-700">
+                                {user.fullName.charAt(0)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.fullName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {user.email}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge color={getUserTypeColor(user.userType)}>
+                          {user.userType}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge color={getStatusColor(user.isVerified)}>
+                          {user.isVerified ? 'Verified' : 'Unverified'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge color={getSubscriptionColor(user.subscriptionStatus || 'inactive')}>
+                          {user.subscriptionStatus || 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowModal(true);
+                            }}
+                          >
+                            <FaEye className="mr-1" />
+                            View
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user) => (
-                      <tr key={user.id ?? user._id} className="border-b hover:bg-gray-50">
-                        <td className="p-3">
-                          <div>
-                            <div className="font-medium text-gray-900">{user.fullName}</div>
-                            <div className="text-sm text-gray-500">{user.email}</div>
-                            <div className="text-sm text-gray-500">{user.phone}</div>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <Badge color={getUserTypeColor(user.userType)}>
-                            {user.userType}
-                          </Badge>
-                        </td>
-                        <td className="p-3">
-                          <Badge color={getStatusColor(user.isVerified)}>
-                            {user.isVerified ? 'Verified' : 'Unverified'}
-                          </Badge>
-                        </td>
-                        <td className="p-3">
-                          {user.userType === 'agent' && user.subscriptionStatus && (
-                            <Badge color={getSubscriptionColor(user.subscriptionStatus)}>
-                              {user.subscriptionStatus}
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          <div className="text-sm">
-                            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowModal(true);
-                              }}
-                            >
-                              <FaEye className="w-4 h-4" />
-                            </Button>
-                            {authState.user?.userType === 'super_admin' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleStatusUpdate(user.id ?? user._id ?? '', { isVerified: !user.isVerified })}
-                                >
-                                  <FaEdit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  color="red"
-                                  onClick={() => handleDeleteUser(user.id ?? user._id ?? '')}
-                                >
-                                  <FaTrash className="w-4 h-4" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-              {/* Pagination */}
-              {pagination.pages > 1 && (
-                <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                  <div className="text-sm text-gray-500">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} results
+            {/* Pagination */}
+            {pagination.pages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-700">
+                    Showing page {pagination.page} of {pagination.pages}
                   </div>
                   <div className="flex space-x-2">
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => handlePageChange(pagination.page - 1)}
+                      variant="outline"
                       disabled={pagination.page === 1}
+                      onClick={() => handlePageChange(pagination.page - 1)}
                     >
                       Previous
                     </Button>
-                    {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
-                      const page = i + 1;
-                      return (
-                        <Button
-                          key={page}
-                          variant={page === pagination.page ? "primary" : "outline"}
-                          size="sm"
-                          onClick={() => handlePageChange(page)}
-                        >
-                          {page}
-                        </Button>
-                      );
-                    })}
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => handlePageChange(pagination.page + 1)}
+                      variant="outline"
                       disabled={pagination.page === pagination.pages}
+                      onClick={() => handlePageChange(pagination.page + 1)}
                     >
                       Next
                     </Button>
                   </div>
                 </div>
-              )}
-            </>
-          )}
-        </CardBody>
-      </Card>
+              </div>
+            )}
+          </CardBody>
+        </Card>
 
-      {/* User Details Modal */}
-      {showModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">User Details</h3>
+        {/* User Details Modal */}
+        {showModal && selectedUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">User Details</h3>
                 <Button
-                  variant="outline"
                   size="sm"
+                  variant="outline"
                   onClick={() => setShowModal(false)}
                 >
                   <FaTimes />
@@ -428,83 +480,62 @@ export const UserManagementPage: React.FC = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor='fullName' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.fullName}</p>
+                    <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedUser.fullName}</p>
                   </div>
                   <div>
-                    <label htmlFor='email' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.email}</p>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedUser.email}</p>
                   </div>
                   <div>
-                    <label htmlFor='phone' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.phone}</p>
+                    <label className="block text-sm font-medium text-gray-700">Phone</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedUser.phone}</p>
                   </div>
                   <div>
-                    <label htmlFor='userType' className="block text-sm font-medium text-gray-700 dark:text-gray-300">User Type</label>
+                    <label className="block text-sm font-medium text-gray-700">User Type</label>
                     <Badge color={getUserTypeColor(selectedUser.userType)} className="mt-1">
                       {selectedUser.userType}
                     </Badge>
                   </div>
                   <div>
-                    <label htmlFor='verificationStatus' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Verification Status</label>
+                    <label className="block text-sm font-medium text-gray-700">Verification Status</label>
                     <Badge color={getStatusColor(selectedUser.isVerified)} className="mt-1">
                       {selectedUser.isVerified ? 'Verified' : 'Unverified'}
                     </Badge>
                   </div>
                   <div>
-                    <label htmlFor='walletBalance' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Wallet Balance</label>
-                    <p className="mt-1 text-sm text-gray-900 dark:text-white">GH¢{selectedUser.walletBalance?.toFixed(2) || '0.00'}</p>
+                    <label className="block text-sm font-medium text-gray-700">Subscription Status</label>
+                    <Badge color={getSubscriptionColor(selectedUser.subscriptionStatus || 'inactive')} className="mt-1">
+                      {selectedUser.subscriptionStatus || 'Inactive'}
+                    </Badge>
                   </div>
                 </div>
 
-                {/* Agent-specific fields */}
-                {selectedUser.userType === 'agent' && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-md font-medium mb-3">Agent Information</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor='businessName' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Business Name</label>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.businessName ?? 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label htmlFor='businessCategory' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Business Category</label>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.businessCategory ?? 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label htmlFor='subscriptionPlan' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subscription Plan</label>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.subscriptionPlan ?? 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label htmlFor='subscriptionStatus' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subscription Status</label>
-                        {selectedUser.subscriptionStatus && (
-                          <Badge color={getSubscriptionColor(selectedUser.subscriptionStatus)} className="mt-1">
-                            {selectedUser.subscriptionStatus}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+                {selectedUser.businessName && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Business Name</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedUser.businessName}</p>
                   </div>
                 )}
 
-                {/* AFA Registration */}
                 {selectedUser.afaRegistration && (
                   <div className="border-t pt-4">
                     <h4 className="text-md font-medium mb-3">AFA Registration</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor='afaId' className="block text-sm font-medium text-gray-700 dark:text-gray-300">AFA ID</label>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.afaRegistration.afaId}</p>
+                        <label className="block text-sm font-medium text-gray-700">AFA ID</label>
+                        <p className="mt-1 text-sm text-gray-900">{selectedUser.afaRegistration.afaId}</p>
                       </div>
                       <div>
-                        <label htmlFor='registrationType' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Registration Type</label>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.afaRegistration.registrationType}</p>
+                        <label className="block text-sm font-medium text-gray-700">Registration Type</label>
+                        <p className="mt-1 text-sm text-gray-900">{selectedUser.afaRegistration.registrationType}</p>
                       </div>
                       <div>
-                        <label htmlFor='registrationFee' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Registration Fee</label>
-                        <p className="mt-1 text-sm text-gray-900 dark:text-white">GH¢{selectedUser.afaRegistration.registrationFee?.toFixed(2)}</p>
+                        <label className="block text-sm font-medium text-gray-700">Registration Fee</label>
+                        <p className="mt-1 text-sm text-gray-900">GH¢{selectedUser.afaRegistration.registrationFee?.toFixed(2)}</p>
                       </div>
                       <div>
-                        <label htmlFor='status' className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                        <label className="block text-sm font-medium text-gray-700">Status</label>
                         <Badge color={selectedUser.afaRegistration.status === 'completed' ? 'green' : 'yellow'} className="mt-1">
                           {selectedUser.afaRegistration.status}
                         </Badge>
@@ -514,38 +545,40 @@ export const UserManagementPage: React.FC = () => {
                 )}
 
                 {/* Admin Actions */}
-                {authState.user?.userType === 'super_admin' && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-md font-medium mb-3">Admin Actions</h4>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        color={selectedUser.isVerified ? 'red' : 'green'}
-                        onClick={() => handleStatusUpdate(selectedUser.id || selectedUser._id || '', { isVerified: !selectedUser.isVerified })}
-                      >
-                        {selectedUser.isVerified ? <FaTimes className="mr-1" /> : <FaCheck className="mr-1" />}
-                        {selectedUser.isVerified ? 'Unverify' : 'Verify'} User
-                      </Button>
-                      {selectedUser.userType === 'agent' && (
-                        <Button
-                          size="sm"
-                          color={selectedUser.subscriptionStatus === 'active' ? 'yellow' : 'green'}
-                          onClick={() => handleStatusUpdate(
-                            selectedUser.id || selectedUser._id || '', 
-                            { subscriptionStatus: selectedUser.subscriptionStatus === 'active' ? 'inactive' : 'active' }
-                          )}
-                        >
-                          {selectedUser.subscriptionStatus === 'active' ? 'Deactivate' : 'Activate'} Subscription
-                        </Button>
-                      )}
-                    </div>
+                <div className="border-t pt-4">
+                  <h4 className="text-md font-medium mb-3">Actions</h4>
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleStatusUpdate(selectedUser._id, { isVerified: !selectedUser.isVerified })}
+                    >
+                      {selectedUser.isVerified ? 'Unverify' : 'Verify'} User
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleStatusUpdate(selectedUser._id, { 
+                        subscriptionStatus: selectedUser.subscriptionStatus === 'active' ? 'inactive' : 'active' 
+                      })}
+                    >
+                      {selectedUser.subscriptionStatus === 'active' ? 'Deactivate' : 'Activate'} Subscription
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      color="red"
+                      onClick={() => handleDeleteUser(selectedUser._id)}
+                    >
+                      <FaTrash className="mr-1" />
+                      Delete
+                    </Button>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
