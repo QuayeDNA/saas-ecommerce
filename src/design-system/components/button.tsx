@@ -261,17 +261,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ) : (
           <>
             {leftIcon && (
-              <span className={`inline-flex items-center justify-center ${children ? 'mr-1.5' : ''}`} style={{ lineHeight: 0 }}>
+              <span className={`flex items-center ${children ? 'mr-2' : ''}`}>
                 {leftIcon}
               </span>
             )}
             {children && (
-              <span className={`inline-flex ${iconOnly ? 'sr-only' : ''}`}>
+              <span className={`flex items-center ${iconOnly ? 'sr-only' : ''}`}>
                 {children}
               </span>
             )}
             {rightIcon && (
-              <span className={`inline-flex items-center justify-center ${children ? 'ml-1.5' : ''}`} style={{ lineHeight: 0 }}>
+              <span className={`flex items-center ${children ? 'ml-2' : ''}`}>
                 {rightIcon}
               </span>
             )}

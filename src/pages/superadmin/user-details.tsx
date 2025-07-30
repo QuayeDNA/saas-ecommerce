@@ -64,6 +64,7 @@ export default function SuperAdminUserDetailsPage() {
     });
     setEditMode(true);
     setEditError(null);
+    addToast("Edit mode enabled", "info");
   };
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -82,8 +83,10 @@ export default function SuperAdminUserDetailsPage() {
     } catch (e) {
       if (e instanceof Error) {
         setEditError(e.message || "Failed to update user");
+        addToast(e.message || "Failed to update user", "error");
       } else {
         setEditError("Failed to update user");
+        addToast("Failed to update user", "error");
       }
     } finally {
       setEditLoading(false);
@@ -97,7 +100,7 @@ export default function SuperAdminUserDetailsPage() {
       await userService.updateUser(user._id, { isActive: false });
       fetchUser();
       addToast("User deactivated successfully", "success");
-    } catch (error) {
+    } catch {
       addToast("Failed to deactivate user", "error");
     } finally {
       setActionLoading(false);
@@ -111,7 +114,7 @@ export default function SuperAdminUserDetailsPage() {
       await userService.updateUser(user._id, { isActive: true });
       fetchUser();
       addToast("User reactivated successfully", "success");
-    } catch (error) {
+    } catch {
       addToast("Failed to reactivate user", "error");
     } finally {
       setActionLoading(false);
@@ -130,6 +133,7 @@ export default function SuperAdminUserDetailsPage() {
       }
     } catch {
       setError("Failed to fetch user");
+      addToast("Failed to fetch user details", "error");
     } finally {
       setLoading(false);
     }
@@ -142,7 +146,7 @@ export default function SuperAdminUserDetailsPage() {
       setOrders(recentOrders);
     } catch (error) {
       console.error("Failed to fetch user orders:", error);
-      // Don't show error toast for orders, just log it
+      addToast("Failed to load user orders", "error");
     } finally {
       setOrdersLoading(false);
     }
@@ -160,7 +164,7 @@ export default function SuperAdminUserDetailsPage() {
       await userService.updateAgentStatus(user._id, "active");
       fetchUser();
       addToast("Agent approved successfully", "success");
-    } catch (error) {
+    } catch {
       addToast("Failed to approve agent", "error");
     } finally {
       setActionLoading(false);
@@ -174,7 +178,7 @@ export default function SuperAdminUserDetailsPage() {
       await userService.updateAgentStatus(user._id, "rejected");
       fetchUser();
       addToast("Agent rejected successfully", "success");
-    } catch (error) {
+    } catch {
       addToast("Failed to reject agent", "error");
     } finally {
       setActionLoading(false);
@@ -193,8 +197,10 @@ export default function SuperAdminUserDetailsPage() {
     } catch (e) {
       if (e instanceof Error) {
         setResetError(e.message || "Failed to reset password");
+        addToast(e.message || "Failed to reset password", "error");
       } else {
         setResetError("Failed to reset password");
+        addToast("Failed to reset password", "error");
       }
     } finally {
       setResetLoading(false);
@@ -274,6 +280,16 @@ export default function SuperAdminUserDetailsPage() {
     }
   };
 
+  const handleViewOrder = (orderId: string) => {
+    try {
+      // Navigate to the correct order details page
+      window.open(`/orders/${orderId}`, '_blank');
+      addToast("Opening order details", "info");
+    } catch {
+      addToast("Failed to open order details", "error");
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'text-green-600 bg-green-100';
@@ -320,10 +336,10 @@ export default function SuperAdminUserDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading user details...</p>
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-sm sm:text-base text-gray-600">Loading user details...</p>
         </div>
       </div>
     );
@@ -331,17 +347,18 @@ export default function SuperAdminUserDetailsPage() {
 
   if (error || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
-          <FaExclamationTriangle className="text-red-500 text-4xl mx-auto mb-4" />
-          <p className="text-red-600 text-lg">{error || "User not found"}</p>
+          <FaExclamationTriangle className="text-red-500 text-3xl sm:text-4xl mx-auto mb-4" />
+          <p className="text-red-600 text-base sm:text-lg">{error || "User not found"}</p>
           <Button 
             variant="outline" 
             onClick={() => navigate(-1)}
             className="mt-4"
+            size="sm"
           >
             <FaArrowLeft className="mr-2" />
-            Go Back
+            <span className="hidden sm:inline">Go Back</span>
           </Button>
         </div>
       </div>
@@ -349,22 +366,23 @@ export default function SuperAdminUserDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 p-4 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
             <Button 
               variant="outline" 
               onClick={() => navigate(-1)}
+              size="sm"
               className="flex items-center"
             >
               <FaArrowLeft className="mr-2" />
-              Back
+              <span className="hidden sm:inline">Back</span>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">User Details</h1>
-              <p className="text-gray-600">Manage user account and permissions</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">User Details</h1>
+              <p className="text-sm sm:text-base text-gray-600">Manage user account and permissions</p>
             </div>
           </div>
         </div>
@@ -372,23 +390,25 @@ export default function SuperAdminUserDetailsPage() {
         {/* User Information Card */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-lg sm:text-2xl font-bold">
                   {user.fullName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">{user.fullName}</h2>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    {getUserTypeIcon(user.userType)}
-                    <span>{getUserTypeLabel(user.userType)}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{user.fullName}</h2>
+                  <div className="flex flex-row sm:items-center gap-2 sm:gap-2 text-sm text-gray-600 mt-1">
+                    <div className="flex items-center gap-1">
+                      {getUserTypeIcon(user.userType)}
+                      <span>{getUserTypeLabel(user.userType)}</span>
+                    </div>
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
                       {user.status}
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -396,7 +416,7 @@ export default function SuperAdminUserDetailsPage() {
                   disabled={editMode}
                 >
                   <FaEdit className="mr-2" />
-                  Edit
+                  <span className="">Edit</span>
                 </Button>
                 {user.userType !== 'super_admin' && (
                   <Button
@@ -406,47 +426,47 @@ export default function SuperAdminUserDetailsPage() {
                     isLoading={impersonateLoading}
                   >
                     <FaUserShield className="mr-2" />
-                    Impersonate
+                    <span>Impersonate</span>
                   </Button>
                 )}
               </div>
             </div>
           </CardHeader>
           <CardBody>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Personal Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                   <FaIdCard className="mr-2 text-blue-600" />
                   Personal Information
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <FaEnvelope className="text-gray-400 w-4 h-4" />
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="text-gray-900">{user.email}</p>
+                  <div className="flex items-start space-x-3">
+                    <FaEnvelope className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500">Email</p>
+                      <p className="text-sm sm:text-base text-gray-900 truncate">{user.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <FaPhone className="text-gray-400 w-4 h-4" />
-                    <div>
-                      <p className="text-sm text-gray-500">Phone</p>
-                      <p className="text-gray-900">{user.phone}</p>
+                  <div className="flex items-start space-x-3">
+                    <FaPhone className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500">Phone</p>
+                      <p className="text-sm sm:text-base text-gray-900">{user.phone}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <FaCalendar className="text-gray-400 w-4 h-4" />
-                    <div>
-                      <p className="text-sm text-gray-500">Registered</p>
-                      <p className="text-gray-900">{user.createdAt ? formatDate(user.createdAt) : 'N/A'}</p>
+                  <div className="flex items-start space-x-3">
+                    <FaCalendar className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500">Registered</p>
+                      <p className="text-sm sm:text-base text-gray-900">{user.createdAt ? formatDate(user.createdAt) : 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <FaWallet className="text-gray-400 w-4 h-4" />
-                    <div>
-                      <p className="text-sm text-gray-500">Wallet Balance</p>
-                      <p className="text-gray-900">{formatCurrency(user.walletBalance || 0)}</p>
+                  <div className="flex items-start space-x-3">
+                    <FaWallet className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500">Wallet Balance</p>
+                      <p className="text-sm sm:text-base text-gray-900">{formatCurrency(user.walletBalance || 0)}</p>
                     </div>
                   </div>
                 </div>
@@ -455,37 +475,37 @@ export default function SuperAdminUserDetailsPage() {
               {/* Business Information (for agents) */}
               {user.userType === 'agent' && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                     <FaBuilding className="mr-2 text-green-600" />
                     Business Information
                   </h3>
                   <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <FaBuilding className="text-gray-400 w-4 h-4" />
-                      <div>
-                        <p className="text-sm text-gray-500">Business Name</p>
-                        <p className="text-gray-900">{user.businessName || 'N/A'}</p>
+                    <div className="flex items-start space-x-3">
+                      <FaBuilding className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm text-gray-500">Business Name</p>
+                        <p className="text-sm sm:text-base text-gray-900 truncate">{user.businessName || 'N/A'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <FaUserShield className="text-gray-400 w-4 h-4" />
-                      <div>
-                        <p className="text-sm text-gray-500">Business Category</p>
-                        <p className="text-gray-900 capitalize">{user.businessCategory || 'N/A'}</p>
+                    <div className="flex items-start space-x-3">
+                      <FaUserShield className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm text-gray-500">Business Category</p>
+                        <p className="text-sm sm:text-base text-gray-900 capitalize">{user.businessCategory || 'N/A'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <FaCheckCircle className="text-gray-400 w-4 h-4" />
-                      <div>
-                        <p className="text-sm text-gray-500">Subscription Plan</p>
-                        <p className="text-gray-900 capitalize">{user.subscriptionPlan || 'N/A'}</p>
+                    <div className="flex items-start space-x-3">
+                      <FaCheckCircle className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm text-gray-500">Subscription Plan</p>
+                        <p className="text-sm sm:text-base text-gray-900 capitalize">{user.subscriptionPlan || 'N/A'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <FaClock className="text-gray-400 w-4 h-4" />
-                      <div>
-                        <p className="text-sm text-gray-500">Subscription Status</p>
-                        <p className="text-gray-900 capitalize">{user.subscriptionStatus || 'N/A'}</p>
+                    <div className="flex items-start space-x-3">
+                      <FaClock className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm text-gray-500">Subscription Status</p>
+                        <p className="text-sm sm:text-base text-gray-900 capitalize">{user.subscriptionStatus || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -495,60 +515,72 @@ export default function SuperAdminUserDetailsPage() {
 
             {/* Action Buttons */}
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 {user.userType === 'agent' && user.status === 'pending' && (
                   <>
                     <Button
                       variant="success"
+                      size="sm"
                       onClick={handleApprove}
                       isLoading={actionLoading}
                     >
                       <FaUserCheck className="mr-2" />
-                      Approve Agent
+                      <span className="hidden sm:inline">Approve Agent</span>
+                      <span className="sm:hidden">Approve</span>
                     </Button>
                     <Button
                       variant="danger"
+                      size="sm"
                       onClick={handleReject}
                       isLoading={actionLoading}
                     >
                       <FaUserTimes className="mr-2" />
-                      Reject Agent
+                      <span className="hidden sm:inline">Reject Agent</span>
+                      <span className="sm:hidden">Reject</span>
                     </Button>
                   </>
                 )}
                 {user.isActive ? (
                   <Button
                     variant="danger"
+                    size="sm"
                     onClick={handleDeactivate}
                     isLoading={actionLoading}
                   >
                     <FaUserTimes className="mr-2" />
-                    Deactivate
+                    <span className="hidden sm:inline">Deactivate</span>
+                    <span className="sm:hidden">Deactivate</span>
                   </Button>
                 ) : (
                   <Button
                     variant="success"
+                    size="sm"
                     onClick={handleReactivate}
                     isLoading={actionLoading}
                   >
                     <FaUserCheck className="mr-2" />
-                    Reactivate
+                    <span className="hidden sm:inline">Reactivate</span>
+                    <span className="sm:hidden">Reactivate</span>
                   </Button>
                 )}
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setShowResetModal(true)}
                 >
                   <FaEdit className="mr-2" />
-                  Reset Password
+                  <span className="hidden sm:inline">Reset Password</span>
+                  <span className="sm:hidden">Reset</span>
                 </Button>
                 <Button
                   variant="danger"
+                  size="sm"
                   onClick={() => setShowDeleteConfirm(true)}
                   isLoading={deleteLoading}
                 >
                   <FaTrash className="mr-2" />
-                  Delete User
+                  <span className="hidden sm:inline">Delete User</span>
+                  <span className="sm:hidden">Delete</span>
                 </Button>
               </div>
             </div>
@@ -559,7 +591,7 @@ export default function SuperAdminUserDetailsPage() {
         {editMode && (
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold text-gray-900">Edit User Information</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Edit User Information</h3>
             </CardHeader>
             <CardBody>
               {editError && (
@@ -647,18 +679,23 @@ export default function SuperAdminUserDetailsPage() {
                   </>
                 )}
               </div>
-              <div className="flex gap-3 mt-6">
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
                 <Button
                   variant="primary"
                   onClick={saveEdit}
                   isLoading={editLoading}
+                  size="sm"
                 >
                   Save Changes
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setEditMode(false)}
+                  onClick={() => {
+                    setEditMode(false);
+                    addToast("Edit mode cancelled", "info");
+                  }}
                   disabled={editLoading}
+                  size="sm"
                 >
                   Cancel
                 </Button>
@@ -670,45 +707,45 @@ export default function SuperAdminUserDetailsPage() {
         {/* Recent Orders */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                 <FaShoppingCart className="mr-2 text-blue-600" />
                 Recent Orders
               </h3>
-              <div className="text-sm text-gray-500">
+              <div className="text-xs sm:text-sm text-gray-500">
                 {orders.length} order{orders.length !== 1 ? 's' : ''}
               </div>
             </div>
           </CardHeader>
           <CardBody>
             {ordersLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading orders...</p>
+              <div className="text-center py-6 sm:py-8">
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-sm sm:text-base text-gray-600">Loading orders...</p>
               </div>
             ) : orders.length === 0 ? (
-              <div className="text-center py-8">
-                <FaShoppingCart className="text-gray-400 text-4xl mx-auto mb-4" />
-                <p className="text-gray-500">No orders found for this user.</p>
+              <div className="text-center py-6 sm:py-8">
+                <FaShoppingCart className="text-gray-400 text-3xl sm:text-4xl mx-auto mb-4" />
+                <p className="text-sm sm:text-base text-gray-500">No orders found for this user.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Order
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Total
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Created
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -716,30 +753,30 @@ export default function SuperAdminUserDetailsPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {orders.map(order => (
                       <tr key={order._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900">
                             {order.orderNumber || order._id}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-xs text-gray-500">
                             {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
                             {order.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {formatCurrency(order.total || 0)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                           {order.createdAt ? formatDate(order.createdAt) : 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <Button
                             size="xs"
                             variant="outline"
-                            onClick={() => window.open(`/superadmin/orders/${order._id}`, '_blank')}
+                            onClick={() => handleViewOrder(order._id || '')}
                           >
                             <FaEye className="w-3 h-3" />
                           </Button>
@@ -757,7 +794,7 @@ export default function SuperAdminUserDetailsPage() {
         {showResetModal && (
           <Modal isOpen={showResetModal} onClose={() => setShowResetModal(false)} title="Reset Password">
             <div className="space-y-4">
-              <p className="text-gray-600">Enter a new password for this user.</p>
+              <p className="text-sm sm:text-base text-gray-600">Enter a new password for this user.</p>
               <Input
                 label="New Password"
                 name="newPassword"
@@ -772,18 +809,23 @@ export default function SuperAdminUserDetailsPage() {
                   <p className="text-red-800 text-sm">{resetError}</p>
                 </div>
               )}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   variant="primary"
                   onClick={handleResetPassword}
                   isLoading={resetLoading}
+                  size="sm"
                 >
                   Reset Password
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setShowResetModal(false)}
+                  onClick={() => {
+                    setShowResetModal(false);
+                    addToast("Password reset cancelled", "info");
+                  }}
                   disabled={resetLoading}
+                  size="sm"
                 >
                   Cancel
                 </Button>
@@ -796,28 +838,33 @@ export default function SuperAdminUserDetailsPage() {
           <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Delete User">
             <div className="space-y-4">
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center">
-                  <FaExclamationTriangle className="text-red-500 mr-3" />
+                <div className="flex items-start">
+                  <FaExclamationTriangle className="text-red-500 mr-3 mt-1 flex-shrink-0" />
                   <div>
-                    <h4 className="text-red-800 font-semibold">Warning</h4>
-                    <p className="text-red-700 text-sm mt-1">
+                    <h4 className="text-red-800 font-semibold text-sm sm:text-base">Warning</h4>
+                    <p className="text-red-700 text-xs sm:text-sm mt-1">
                       Are you sure you want to delete this user? This action cannot be undone and will permanently remove all user data.
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   variant="danger"
                   onClick={handleDeleteUser}
                   isLoading={deleteLoading}
+                  size="sm"
                 >
                   Delete User
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setShowDeleteConfirm(false)}
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    addToast("Delete action cancelled", "info");
+                  }}
                   disabled={deleteLoading}
+                  size="sm"
                 >
                   Cancel
                 </Button>

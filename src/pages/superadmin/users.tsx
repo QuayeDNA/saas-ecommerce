@@ -37,7 +37,7 @@ export default function SuperAdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [userType, setUserType] = useState('');
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState(''); // Changed from 'pending' to '' to show all users
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [processingUser, setProcessingUser] = useState<string | null>(null);
@@ -65,7 +65,7 @@ export default function SuperAdminUsersPage() {
     try {
       const data = await userService.fetchUsers({ 
         userType, 
-        status,
+        status: status || undefined, // Only send if status is not empty
         search: search.trim() || undefined
       });
       setUsers(data);
@@ -89,7 +89,7 @@ export default function SuperAdminUsersPage() {
   const handleClearFilters = () => {
     setSearch('');
     setUserType('');
-    setStatus('pending');
+    setStatus(''); // Clear status filter
     fetchUsers();
   };
 
@@ -171,22 +171,22 @@ export default function SuperAdminUsersPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-4 p-4 sm:p-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
+            <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
               User Management
             </h1>
-            <p className="text-gray-600">Manage agent registrations and user accounts</p>
+            <p className="text-sm sm:text-base text-gray-600">Manage agent registrations and user accounts</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchUsers} disabled={loading}>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={fetchUsers} disabled={loading} size="sm">
               <FaRedo className="mr-2" />
               Refresh
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" size="sm">
               <FaDownload className="mr-2" />
               Export
             </Button>
@@ -195,51 +195,51 @@ export default function SuperAdminUsersPage() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Users</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <FaUser className="text-blue-600 text-xl" />
+            <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
+              <FaUser className="text-blue-600 text-lg sm:text-xl" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-lg sm:text-2xl font-bold text-yellow-600">{stats.pending}</p>
             </div>
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <FaUserCheck className="text-yellow-600 text-xl" />
+            <div className="p-2 sm:p-3 bg-yellow-100 rounded-full">
+              <FaUserCheck className="text-yellow-600 text-lg sm:text-xl" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active</p>
-              <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
+              <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.active}</p>
             </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <FaUserCheck className="text-green-600 text-xl" />
+            <div className="p-2 sm:p-3 bg-green-100 rounded-full">
+              <FaUserCheck className="text-green-600 text-lg sm:text-xl" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Agents</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.agents}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Agents</p>
+              <p className="text-lg sm:text-2xl font-bold text-blue-600">{stats.agents}</p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <FaStore className="text-blue-600 text-xl" />
+            <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
+              <FaStore className="text-blue-600 text-lg sm:text-xl" />
             </div>
           </div>
         </div>
@@ -260,74 +260,74 @@ export default function SuperAdminUsersPage() {
       {/* Error Message */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
+          <p className="text-red-800 text-sm sm:text-base">{error}</p>
         </div>
       )}
 
       {/* Users List */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center">
+          <div className="p-6 sm:p-8 text-center">
             <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Loading users...</span>
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-sm sm:text-base text-gray-600">Loading users...</span>
             </div>
           </div>
         ) : users.length === 0 ? (
-          <div className="p-8 text-center">
-            <FaUser className="mx-auto text-gray-400 text-4xl mb-4" />
-            <p className="text-gray-500">No users found matching your criteria.</p>
+          <div className="p-6 sm:p-8 text-center">
+            <FaUser className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
+            <p className="text-sm sm:text-base text-gray-500">No users found matching your criteria.</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
             {users.map(user => (
               <div key={user._id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col gap-4">
                   {/* User Info */}
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-start gap-3 mb-3">
                       {getUserTypeIcon(user.userType)}
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                           {user.fullName}
                         </h3>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <FaEnvelope className="w-3 h-3" />
-                            {user.email}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 mt-1">
+                          <span className="flex items-center gap-1 truncate">
+                            <FaEnvelope className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{user.email}</span>
                           </span>
-                          <span className="flex items-center gap-1">
-                            <FaPhone className="w-3 h-3" />
-                            {user.phone}
+                          <span className="flex items-center gap-1 truncate">
+                            <FaPhone className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{user.phone}</span>
                           </span>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-3 text-sm">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
+                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getStatusColor(user.status)}`}>
                         {user.status === 'pending' ? 'Pending Approval' : user.status}
                       </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800">
                         {getUserTypeLabel(user.userType)}
                       </span>
                       {user.businessName && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          <FaBuilding className="w-3 h-3 mr-1" />
-                          {user.businessName}
+                        <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800">
+                          <FaBuilding className="w-3 h-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">{user.businessName}</span>
                         </span>
                       )}
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        <FaCalendar className="w-3 h-3 mr-1" />
+                      <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800">
+                        <FaCalendar className="w-3 h-3 mr-1 flex-shrink-0" />
                         {formatDate(user.createdAt || '')}
                       </span>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                     {user.userType === 'agent' && user.status === 'pending' && (
-                      <>
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Button
                           size="sm"
                           variant="success"
@@ -336,11 +336,12 @@ export default function SuperAdminUsersPage() {
                           className="w-full sm:w-auto"
                         >
                           {processingUser === user._id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                           ) : (
                             <>
-                              <FaCheck className="mr-2" />
-                              Approve
+                              <FaCheck className="mr-1 sm:mr-2" />
+                              <span className="hidden sm:inline">Approve</span>
+                              <span className="sm:hidden">✓</span>
                             </>
                           )}
                         </Button>
@@ -352,15 +353,16 @@ export default function SuperAdminUsersPage() {
                           className="w-full sm:w-auto"
                         >
                           {processingUser === user._id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                           ) : (
                             <>
-                              <FaTimes className="mr-2" />
-                              Reject
+                              <FaTimes className="mr-1 sm:mr-2" />
+                              <span className="hidden sm:inline">Reject</span>
+                              <span className="sm:hidden">✕</span>
                             </>
                           )}
                         </Button>
-                      </>
+                      </div>
                     )}
                     <Button
                       size="sm"
@@ -368,8 +370,9 @@ export default function SuperAdminUsersPage() {
                       onClick={() => navigate(`/superadmin/users/${user._id}`)}
                       className="w-full sm:w-auto"
                     >
-                      <FaEye className="mr-2" />
-                      View Details
+                      <FaEye className="mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">View Details</span>
+                      <span className="sm:hidden">View</span>
                     </Button>
                   </div>
                 </div>
