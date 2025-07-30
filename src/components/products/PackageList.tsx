@@ -5,8 +5,6 @@ import { SearchAndFilter } from '../common';
 import { getProviderColors } from '../../utils/provider-colors';
 import type { Bundle } from '../../types/package';
 import { 
-  FaSearch,
-  FaFilter,
   FaBox,
   FaExclamationCircle,
   FaPlus
@@ -35,15 +33,12 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
   } = usePackage();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [localFilters, setLocalFilters] = useState({
     provider: provider || '',
     isActive: '',
     includeDeleted: false
   });
   const [viewMode, setViewMode] = useState<'packages' | 'bundles'>('packages');
-  const [showFormModal, setShowFormModal] = useState(false);
-  const [editPackage, setEditPackage] = useState(null);
 
   useEffect(() => {
     if (viewMode === 'packages') {
@@ -70,27 +65,6 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       setLocalFilters(prev => ({ ...prev, isActive: value }));
     } else if (filterKey === 'includeDeleted') {
       setLocalFilters(prev => ({ ...prev, includeDeleted: value === 'true' }));
-    }
-  };
-
-  const handleFilterApply = () => {
-    // Convert isActive from string to boolean or undefined
-    let isActive: boolean | undefined;
-    if (localFilters.isActive === 'true') isActive = true;
-    else if (localFilters.isActive === 'false') isActive = false;
-    else isActive = undefined;
-
-    const newFilters = getEffectiveFilters({
-      ...packageFilters,
-      ...localFilters,
-      isActive,
-      search: searchTerm
-    }, provider);
-    setPackageFilters(newFilters);
-    if (viewMode === 'packages') {
-      fetchPackages(newFilters);
-    } else {
-      fetchBundles(newFilters);
     }
   };
 
@@ -178,7 +152,10 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
           {viewMode === 'packages' && (
             <button
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              onClick={() => { setEditPackage(null); setShowFormModal(true); }}
+              onClick={() => {
+                // TODO: Implement package creation functionality
+                console.log('Create package clicked');
+              }}
             >
               <FaPlus className="mr-2" />
               Create Package

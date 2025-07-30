@@ -49,11 +49,20 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({ open, onClos
     setError(null);
   }, [initialData, open]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value, type } = e.target;
+    let newValue: string | boolean = value;
+
+    if (type === 'checkbox') {
+      // Only HTMLInputElement has 'checked'
+      newValue = (e.target as HTMLInputElement).checked;
+    }
+
     setForm(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: newValue,
     }));
   };
 

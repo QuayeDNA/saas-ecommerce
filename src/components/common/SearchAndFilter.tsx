@@ -59,7 +59,6 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   isLoading = false,
   customActions
 }) => {
-  const [showFilters, setShowFilters] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const hasActiveFilters = Object.values(filters).some(filter => filter.value !== '');

@@ -10,9 +10,7 @@ import {
   FaClock,
   FaSpinner,
   FaExclamationCircle,
-  FaCheck,
   FaTimes,
-  FaEdit
 } from 'react-icons/fa';
 import { Button } from '../../design-system';
 import type { Order } from '../../types/order';

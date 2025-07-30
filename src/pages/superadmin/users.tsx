@@ -4,11 +4,9 @@ import { SearchAndFilter } from "../../components/common";
 import { 
   FaCheck, 
   FaTimes, 
-  FaSearch, 
   FaUser, 
   FaStore, 
   FaShieldAlt, 
-  FaFilter,
   FaEye,
   FaUserCheck,
   FaDownload,
@@ -20,7 +18,6 @@ import {
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../design-system/components/button";
-import { Input } from "../../design-system/components/input";
 import { colors } from "../../design-system/tokens";
 
 const userTypeOptions = [
@@ -43,7 +40,6 @@ export default function SuperAdminUsersPage() {
   const [status, setStatus] = useState('pending');
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [processingUser, setProcessingUser] = useState<string | null>(null);
   const navigate = useNavigate();
 

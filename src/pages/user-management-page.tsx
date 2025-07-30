@@ -1,9 +1,9 @@
 // src/pages/user-management-page.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser, useAuth } from '../hooks';
-import { Button, Card, CardBody, CardHeader, Input, Badge, Alert } from '../design-system';
+import { Button, Card, CardBody, CardHeader, Badge, Alert } from '../design-system';
 import { SearchAndFilter } from '../components/common';
-import { FaSearch, FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaUsers, FaClock, FaRocket } from 'react-icons/fa';
+import { FaSearch, FaTrash, FaEye, FaTimes, FaUsers, FaClock, FaRocket } from 'react-icons/fa';
 import type { User } from '../types';
 import type { UsersResponse, UserStats } from '../services/user.service';
 
@@ -42,89 +42,7 @@ export const UserManagementPage: React.FC = () => {
 
   // Check if user is agent (show coming soon) or admin (show full functionality)
   const isAgent = authState.user?.userType === 'agent';
-  const isAdmin = authState.user?.userType === 'super_admin' || authState.user?.userType === 'admin';
 
-  // If agent, show coming soon page
-  if (isAgent) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Customers</h1>
-                <p className="text-gray-600 mt-2">Manage your customer relationships</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Coming Soon Card */}
-          <Card className="shadow-lg">
-            <CardBody className="p-8 text-center">
-              <div className="mb-6">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FaRocket className="text-blue-600 text-2xl" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon!</h2>
-                <p className="text-gray-600 mb-6">
-                  We're working hard to bring you a comprehensive customer management system.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <FaUsers className="text-green-600" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Customer Profiles</h3>
-                  <p className="text-sm text-gray-600">Detailed customer information and history</p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <FaSearch className="text-purple-600" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Advanced Search</h3>
-                  <p className="text-sm text-gray-600">Find customers quickly with smart filters</p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <FaClock className="text-orange-600" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Activity Tracking</h3>
-                  <p className="text-sm text-gray-600">Monitor customer interactions and orders</p>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 rounded-lg p-6">
-                <h3 className="font-semibold text-blue-900 mb-2">What's Coming:</h3>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Customer registration and onboarding</li>
-                  <li>• Order history and transaction tracking</li>
-                  <li>• Customer communication tools</li>
-                  <li>• Analytics and reporting</li>
-                  <li>• Bulk operations and management</li>
-                </ul>
-              </div>
-
-              <div className="mt-6">
-                <Button 
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={() => window.location.href = '/agent/dashboard'}
-                >
-                  Back to Dashboard
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // Full functionality for admins
   const fetchUsers = useCallback(
     async (page = 1, search = searchTerm, userType = filterUserType) => {
       try {
@@ -239,6 +157,87 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
+  // If agent, show coming soon page
+  if (isAgent) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">My Customers</h1>
+                <p className="text-gray-600 mt-2">Manage your customer relationships</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Coming Soon Card */}
+          <Card className="shadow-lg">
+            <CardBody className="p-8 text-center">
+              <div className="mb-6">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FaRocket className="text-blue-600 text-2xl" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon!</h2>
+                <p className="text-gray-600 mb-6">
+                  We're working hard to bring you a comprehensive customer management system.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <FaUsers className="text-green-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Customer Profiles</h3>
+                  <p className="text-sm text-gray-600">Detailed customer information and history</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <FaSearch className="text-purple-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Advanced Search</h3>
+                  <p className="text-sm text-gray-600">Find customers quickly with smart filters</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <FaClock className="text-orange-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Activity Tracking</h3>
+                  <p className="text-sm text-gray-600">Monitor customer interactions and orders</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-6">
+                <h3 className="font-semibold text-blue-900 mb-2">What's Coming:</h3>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Customer registration and onboarding</li>
+                  <li>• Order history and transaction tracking</li>
+                  <li>• Customer communication tools</li>
+                  <li>• Analytics and reporting</li>
+                  <li>• Bulk operations and management</li>
+                </ul>
+              </div>
+
+              <div className="mt-6">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => window.location.href = '/agent/dashboard'}
+                >
+                  Back to Dashboard
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Full functionality for admins
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -297,7 +296,7 @@ export const UserManagementPage: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-500">Verified Users</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.verifiedUsers || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.verifiedCustomers || 0}</p>
                   </div>
                 </div>
               </CardBody>
@@ -313,7 +312,7 @@ export const UserManagementPage: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-500">Unverified Users</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.unverifiedUsers || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.unverifiedCustomers || 0}</p>
                   </div>
                 </div>
               </CardBody>
@@ -550,16 +549,24 @@ export const UserManagementPage: React.FC = () => {
                   <div className="flex space-x-2">
                     <Button
                       size="sm"
-                      onClick={() => handleStatusUpdate(selectedUser._id, { isVerified: !selectedUser.isVerified })}
+                      onClick={() => {
+                        if (selectedUser._id) {
+                          handleStatusUpdate(selectedUser._id, { isVerified: !selectedUser.isVerified });
+                        }
+                      }}
                     >
                       {selectedUser.isVerified ? 'Unverify' : 'Verify'} User
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleStatusUpdate(selectedUser._id, { 
-                        subscriptionStatus: selectedUser.subscriptionStatus === 'active' ? 'inactive' : 'active' 
-                      })}
+                      onClick={() => {
+                        if (selectedUser._id) {
+                          handleStatusUpdate(selectedUser._id, { 
+                            subscriptionStatus: selectedUser.subscriptionStatus === 'active' ? 'inactive' : 'active' 
+                          });
+                        }
+                      }}
                     >
                       {selectedUser.subscriptionStatus === 'active' ? 'Deactivate' : 'Activate'} Subscription
                     </Button>
@@ -567,7 +574,11 @@ export const UserManagementPage: React.FC = () => {
                       size="sm"
                       variant="outline"
                       color="red"
-                      onClick={() => handleDeleteUser(selectedUser._id)}
+                      onClick={() => {
+                        if (selectedUser._id) {
+                          handleDeleteUser(selectedUser._id);
+                        }
+                      }}
                     >
                       <FaTrash className="mr-1" />
                       Delete

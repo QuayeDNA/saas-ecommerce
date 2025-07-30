@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/components/products/ProviderList.tsx
 import React, { useEffect, useState } from 'react';
 import { useProvider } from '../../hooks/use-provider';
@@ -42,7 +43,7 @@ export const ProviderList: React.FC = () => {
     fetchProviders(newFilters);
   };
 
-  const handleFilterChange = (filterKey: string, value: string) => {
+  const handleFilterChange = (_filterKey: string, _value: string) => {
     // Provider list doesn't have additional filters yet
   };
 

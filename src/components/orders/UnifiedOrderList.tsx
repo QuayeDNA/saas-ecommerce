@@ -1,7 +1,6 @@
 // src/components/orders/UnifiedOrderList.tsx
 import React, { useState, useEffect } from 'react';
 import { useOrder } from '../../hooks/use-order';
-import { useAuth } from '../../hooks/use-auth';
 import { Button, Input } from '../../design-system';
 import { FaSearch, FaFilter, FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaSync } from 'react-icons/fa';
 import type { Order, OrderFilters } from '../../types/order';
@@ -10,14 +9,14 @@ import { UnifiedOrderTable } from './UnifiedOrderTable';
 
 interface UnifiedOrderListProps {
   isAdmin: boolean;
-  isAgent: boolean;
+  isAgent?: boolean;
   userType?: string;
 }
 
 export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   isAdmin,
   isAgent,
-  userType
+  userType,
 }) => {
   const {
     orders,
@@ -32,7 +31,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     bulkProcessOrders
   } = useOrder();
 
-  const { authState } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>('');
@@ -168,10 +166,15 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold mb-2 text-gray-900">
-              {isAdmin ? 'Order Management' : 'My Orders'}
+              {isAdmin ? 'Order Management' : isAgent ? 'Agent Orders' : 'My Orders'}
             </h1>
             <p className="text-gray-600">
-              {isAdmin ? 'Monitor and manage all platform orders' : 'Track your order history and status'}
+              {isAdmin ? 'Monitor and manage all platform orders' : isAgent ? 'Manage your assigned orders' : 'Track your order history and status'}
+              {userType && (
+                <span className="ml-2 text-xs bg-gray-100 px-2 py-1 rounded">
+                  {userType}
+                </span>
+              )}
             </p>
           </div>
           <div className="flex gap-2">
@@ -179,7 +182,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               <FaSync className="mr-2" />
               Refresh
             </Button>
-            {isAdmin && (
+            {(isAdmin || isAgent) && (
               <Button variant="outline">
                 <FaDownload className="mr-2" />
                 Export
@@ -355,8 +358,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         </div>
       </div>
 
-      {/* Bulk Actions - Admin Only */}
-      {selectedOrders.length > 0 && isAdmin && (
+      {/* Bulk Actions - Admin and Agent */}
+      {selectedOrders.length > 0 && (isAdmin || isAgent) && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-blue-800">

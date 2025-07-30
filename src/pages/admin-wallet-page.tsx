@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useWallet } from '../hooks';
 import { Button, Input, Alert } from '../design-system';
 import { SearchAndFilter } from '../components/common';
-import { FaSearch, FaEye, FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaRefresh, FaUser, FaEnvelope, FaPhone } from 'react-icons/fa';
+import { FaCheck, FaMoneyBillWave, FaUser, FaSync } from 'react-icons/fa';
 import type { WalletTransaction, WalletAnalytics } from '../types/wallet';
 
 export const AdminWalletPage = () => {
@@ -180,7 +180,7 @@ export const AdminWalletPage = () => {
               loadData();
             }}
           >
-            <FaRefresh className="mr-2" />
+            <FaSync className="mr-2" />
             Refresh
           </Button>
           <Button 
