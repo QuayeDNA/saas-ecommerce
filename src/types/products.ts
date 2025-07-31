@@ -63,7 +63,7 @@ export interface Product {
   updatedAt: Date;
 }
 
-export type Network = 'MTN' | 'TELECEL' | 'AT' | 'GLO' | 'Other';
+export type Network = 'MTN' | 'TELECEL' | 'AT' | 'Other';
 export type ProductCategory = 
   | 'data-bundle'
   | 'voice-bundle'

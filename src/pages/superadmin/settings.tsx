@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   FaPowerOff, 
   FaUserShield, 
@@ -25,6 +26,8 @@ import { Alert } from "../../design-system/components/alert";
 
 
 export default function SuperAdminSettingsPage() {
+  const navigate = useNavigate();
+  
   // Site Management
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
     isSiteOpen: true,
@@ -636,7 +639,7 @@ export default function SuperAdminSettingsPage() {
               <h3 className="font-medium text-gray-900">MTN Bundles</h3>
             </div>
             <p className="text-sm text-gray-600 mb-3">Manage MTN data bundles and pricing</p>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={() => navigate('/superadmin/packages')}>
               <FaEdit className="w-3 h-3 mr-1" />
               Manage Bundles
             </Button>
@@ -648,7 +651,7 @@ export default function SuperAdminSettingsPage() {
               <h3 className="font-medium text-gray-900">Telecel Bundles</h3>
             </div>
             <p className="text-sm text-gray-600 mb-3">Manage Telecel data bundles and pricing</p>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={() => navigate('/superadmin/packages')}>
               <FaEdit className="w-3 h-3 mr-1" />
               Manage Bundles
             </Button>
@@ -660,7 +663,7 @@ export default function SuperAdminSettingsPage() {
               <h3 className="font-medium text-gray-900">AirtelTigo Bundles</h3>
             </div>
             <p className="text-sm text-gray-600 mb-3">Manage AirtelTigo data bundles and pricing</p>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={() => navigate('/superadmin/packages')}>
               <FaEdit className="w-3 h-3 mr-1" />
               Manage Bundles
             </Button>

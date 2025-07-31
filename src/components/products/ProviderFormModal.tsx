@@ -6,7 +6,7 @@ import type { Provider } from '../../types/package';
 
 // Extended provider interface with tags for the form
 export interface ProviderFormData extends Omit<Partial<Provider>, 'code'> {
-  code?: 'MTN' | 'TELECEL' | 'AT' | 'GLO' | '';
+  code?: 'MTN' | 'TELECEL' | 'AT' | '';
   tags?: string[];
 }
 
@@ -128,7 +128,7 @@ export const ProviderFormModal: React.FC<ProviderFormModalProps> = ({
                 value={formData.code ?? ''}
                 onChange={(e) => {
                   const value = e.target.value.toUpperCase();
-                  const allowedCodes = ['MTN', 'TELECEL', 'AT', 'GLO', ''] as const;
+                  const allowedCodes = ['MTN', 'TELECEL', 'AT', ''] as const;
                   setFormData(prev => ({
                     ...prev,
                     code: allowedCodes.includes(value as any) ? (value as ProviderFormData['code']) : ''

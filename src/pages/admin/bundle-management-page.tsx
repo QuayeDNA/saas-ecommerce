@@ -301,13 +301,16 @@ export const BundleManagementPage: React.FC = () => {
         await bundleService.updateBundle(editBundle._id, finalUpdateData);
         addToast('Bundle updated successfully', 'success');
       } else {
-        // For creation, we need to get the provider ObjectId from the provider code
-        // Since we don't have the provider service here, we'll let the backend handle it
-        // by sending the provider code and letting the backend find the provider
+        // For creation, we need to send the provider code from the package
+        // The backend will convert the provider code to providerId
+        if (!pkg?.provider) {
+          throw new Error('Package provider information is missing');
+        }
+        
         await bundleService.createBundle({
           ...data,
           packageId: packageId || '',
-          providerCode: pkg?.provider || '', // Send provider code instead of providerId
+          providerCode: pkg.provider, // Send the provider code from the package
         });
         addToast('Bundle created successfully', 'success');
       }

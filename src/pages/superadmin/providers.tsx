@@ -157,7 +157,7 @@ export default function SuperAdminProvidersPage() {
       case 'MTN': return 'text-yellow-600 bg-yellow-100';
       case 'TELECEL': return 'text-red-600 bg-red-100';
       case 'AT': return 'text-blue-600 bg-blue-100';
-      case 'GLO': return 'text-green-600 bg-green-100';
+      // case 'GLO': return 'text-green-600 bg-green-100'; // Removed GLO support
       default: return 'text-gray-600 bg-gray-100';
     }
   };
