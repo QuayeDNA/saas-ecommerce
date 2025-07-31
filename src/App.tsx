@@ -37,7 +37,7 @@ function App() {
   return (
     <>
       {isImpersonating && (
-        <div className="fixed top-0 left-0 right-0 bg-yellow-100 border-b border-yellow-300 p-2 flex flex-col sm:flex-row sm:items-center justify-between z-50" style={{ top: '60px' }}>
+        <div className="fixed top-0 left-0 right-0 bg-yellow-100 border-b border-yellow-300 p-2 flex flex-col sm:flex-row sm:items-center justify-between z-50" style={{ top: '0px' }}>
           <span className="text-yellow-800 font-semibold text-sm">Impersonation Active: You are acting as another user.</span>
           <Button variant="danger" size="sm" onClick={handleReturnToAdmin}>Return to Admin</Button>
         </div>
@@ -45,8 +45,12 @@ function App() {
       <ThemeProvider initialTheme="default">
         <ToastProvider>
           <AppProvider>
-            <MaintenanceBanner />
-            {routeElement}
+            <div className="min-h-screen flex flex-col">
+              <MaintenanceBanner />
+              <div className="flex-1">
+                {routeElement}
+              </div>
+            </div>
           </AppProvider>
         </ToastProvider>
       </ThemeProvider>

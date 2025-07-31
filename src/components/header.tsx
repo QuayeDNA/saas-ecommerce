@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth, useWallet } from '../hooks';
+import { useSiteStatus } from '../contexts/site-status-context';
+import { settingsService } from '../services/settings.service';
 import { Link } from 'react-router-dom';
+import { FaPowerOff, FaCheck } from 'react-icons/fa';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -9,7 +12,10 @@ interface HeaderProps {
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { authState, logout } = useAuth();
   const { walletBalance, refreshWallet, isLoading } = useWallet();
+  const { siteStatus } = useSiteStatus();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showSiteMessage, setShowSiteMessage] = useState(false);
+  const [isTogglingSite, setIsTogglingSite] = useState(false);
   
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -17,6 +23,40 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
+  };
+
+  // Handle site toggle for super admins
+  const handleSiteToggle = async () => {
+    if (!authState.user || authState.user.userType !== 'super_admin') return;
+    
+    setIsTogglingSite(true);
+    try {
+      await settingsService.toggleSiteStatus();
+      // The site status will be updated via the context
+    } catch (error) {
+      console.error('Failed to toggle site status:', error);
+    } finally {
+      setIsTogglingSite(false);
+    }
+  };
+
+  // Show site message animation for agents
+  useEffect(() => {
+    if (authState.user?.userType === 'agent' && siteStatus) {
+      setShowSiteMessage(true);
+      const timer = setTimeout(() => {
+        setShowSiteMessage(false);
+      }, 5000); // Show for 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [siteStatus, authState.user?.userType]);
+
+  // Get site message for agents
+  const getSiteMessage = () => {
+    if (!siteStatus) return '';
+    return siteStatus.isSiteOpen 
+      ? "Hi! We are currently open for business! 🎉"
+      : "Sorry, store is currently closed for business 😔";
   };
 
   return (
@@ -43,20 +83,50 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                   </svg>
                 </span>
-                <span className="truncate">
-                  {getGreeting()}, {authState.user?.fullName.split(' ')[0]}
-                </span>
-              </div>
-              <div className="text-xs sm:text-sm text-gray-500 hidden sm:block mt-0.5 truncate">
-                <Link to="/dashboard" className="hover:text-blue-600 font-medium">Home</Link>{' '}
-                <span className="text-gray-400 mx-1">/</span>{' '}
-                <span className="text-gray-600">Dashboard</span>
-              </div>
+                <div className="relative overflow-hidden">
+                  {showSiteMessage && authState.user?.userType === 'agent' ? (
+                    <div className="animate-slide-up">
+                      <span className="truncate text-green-600">
+                        {getSiteMessage()}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="truncate">
+                      {getGreeting()}, {authState.user?.fullName.split(' ')[0]} 👋
+                    </span>
+                  )}
+                </div>
+              </div>        
             </div>
           </div>
 
           {/* Right side: Wallet & User Menu */}
           <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 flex-shrink-0">
+            {/* Site Toggle - Only show for super admins */}
+            {authState.user?.userType === 'super_admin' && (
+              <button
+                onClick={handleSiteToggle}
+                disabled={isTogglingSite}
+                className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
+                  siteStatus?.isSiteOpen
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                } ${isTogglingSite ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={siteStatus?.isSiteOpen ? 'Close Site' : 'Open Site'}
+              >
+                {isTogglingSite ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                ) : siteStatus?.isSiteOpen ? (
+                  <FaCheck className="w-3 h-3" />
+                ) : (
+                  <FaPowerOff className="w-3 h-3" />
+                )}
+                <span className="hidden sm:inline">
+                  {siteStatus?.isSiteOpen ? 'Site Open' : 'Site Closed'}
+                </span>
+              </button>
+            )}
+            
             {/* Wallet - Only show for agents */}
             {authState.user?.userType === 'agent' && (
               <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm shadow-sm relative group min-w-0">
