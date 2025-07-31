@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth, useWallet } from '../hooks';
 import { useSiteStatus } from '../contexts/site-status-context';
 import { settingsService } from '../services/settings.service';
+import { useToast } from '../design-system/components/toast';
 import { Link } from 'react-router-dom';
 import { FaPowerOff, FaCheck } from 'react-icons/fa';
 
@@ -12,7 +13,8 @@ interface HeaderProps {
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { authState, logout } = useAuth();
   const { walletBalance, refreshWallet, isLoading } = useWallet();
-  const { siteStatus } = useSiteStatus();
+  const { siteStatus, refreshSiteStatus } = useSiteStatus();
+  const { addToast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showSiteMessage, setShowSiteMessage] = useState(false);
   const [isTogglingSite, setIsTogglingSite] = useState(false);
@@ -32,15 +34,26 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     setIsTogglingSite(true);
     try {
       await settingsService.toggleSiteStatus();
-      // The site status will be updated via the context
+      
+      // Refresh site status immediately
+      await refreshSiteStatus();
+      
+      // Show success toast based on new status
+      const newStatus = !siteStatus?.isSiteOpen;
+      if (newStatus) {
+        addToast('Site opened successfully! 🎉', 'success', 4000);
+      } else {
+        addToast('Site closed for maintenance 🔧', 'warning', 4000);
+      }
     } catch (error) {
       console.error('Failed to toggle site status:', error);
+      addToast('Failed to update site status. Please try again.', 'error', 5000);
     } finally {
       setIsTogglingSite(false);
     }
   };
 
-  // Show site message animation for agents
+  // Show site message animation for agents and toast notifications for all users
   useEffect(() => {
     if (authState.user?.userType === 'agent' && siteStatus) {
       setShowSiteMessage(true);
@@ -50,6 +63,21 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       return () => clearTimeout(timer);
     }
   }, [siteStatus, authState.user?.userType]);
+
+  // Track previous site status to show toast only on changes
+  const [prevSiteStatus, setPrevSiteStatus] = useState<boolean | null>(null);
+  
+  // Show toast notification when site status changes (for all users)
+  useEffect(() => {
+    if (siteStatus && authState.user && prevSiteStatus !== null && prevSiteStatus !== siteStatus.isSiteOpen) {
+      if (siteStatus.isSiteOpen) {
+        addToast('Site is now open for business! 🎉', 'success', 3000);
+      } else {
+        addToast('Site is currently under maintenance 🔧', 'warning', 4000);
+      }
+    }
+    setPrevSiteStatus(siteStatus?.isSiteOpen ?? null);
+  }, [siteStatus?.isSiteOpen, authState.user, addToast, prevSiteStatus]);
 
   // Get site message for agents
   const getSiteMessage = () => {
@@ -102,30 +130,30 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
           {/* Right side: Wallet & User Menu */}
           <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 flex-shrink-0">
-            {/* Site Toggle - Only show for super admins */}
-            {authState.user?.userType === 'super_admin' && (
-              <button
-                onClick={handleSiteToggle}
-                disabled={isTogglingSite}
-                className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
-                  siteStatus?.isSiteOpen
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : 'bg-red-100 text-red-700 hover:bg-red-200'
-                } ${isTogglingSite ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={siteStatus?.isSiteOpen ? 'Close Site' : 'Open Site'}
-              >
-                {isTogglingSite ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
-                ) : siteStatus?.isSiteOpen ? (
-                  <FaCheck className="w-3 h-3" />
-                ) : (
-                  <FaPowerOff className="w-3 h-3" />
-                )}
-                <span className="hidden sm:inline">
-                  {siteStatus?.isSiteOpen ? 'Site Open' : 'Site Closed'}
-                </span>
-              </button>
-            )}
+                         {/* Site Toggle - Only show for super admins */}
+             {authState.user?.userType === 'super_admin' && (
+               <button
+                 onClick={handleSiteToggle}
+                 disabled={isTogglingSite}
+                 className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
+                   siteStatus?.isSiteOpen
+                     ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                     : 'bg-red-100 text-red-700 hover:bg-red-200'
+                 } ${isTogglingSite ? 'opacity-50 cursor-not-allowed' : ''}`}
+                 title={isTogglingSite ? 'Updating...' : (siteStatus?.isSiteOpen ? 'Close Site' : 'Open Site')}
+               >
+                 {isTogglingSite ? (
+                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                 ) : siteStatus?.isSiteOpen ? (
+                   <FaCheck className="w-3 h-3" />
+                 ) : (
+                   <FaPowerOff className="w-3 h-3" />
+                 )}
+                 <span className="hidden sm:inline">
+                   {isTogglingSite ? 'Updating...' : (siteStatus?.isSiteOpen ? 'Site Open' : 'Site Closed')}
+                 </span>
+               </button>
+             )}
             
             {/* Wallet - Only show for agents */}
             {authState.user?.userType === 'agent' && (
