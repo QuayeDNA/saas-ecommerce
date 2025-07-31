@@ -196,23 +196,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateOrderStatus = useCallback(async (orderId: string, status: string, notes?: string) => {
     try {
-      // If changing to processing or completed, check wallet balance first
-      if (status === 'processing' || status === 'completed') {
-        const order = orders.find(o => o._id === orderId);
-        if (order) {
-          const totalCost = order.items.reduce((sum, item) => sum + item.totalPrice, 0);
-          const walletInfo = await orderService.checkWalletBalance();
-          
-          if (walletInfo.balance < totalCost) {
-            const message = `Insufficient wallet balance. Required: GH₵${totalCost.toFixed(2)}, Available: GH₵${walletInfo.balance.toFixed(2)}`;
-            setError(message);
-            addToast(message, 'error');
-            addToast('Please top up your wallet to continue processing orders', 'warning');
-            throw new Error(message);
-          }
-        }
-      }
-      
       await orderService.updateOrderStatus(orderId, status, notes);
       addToast('Order status updated successfully', 'success');
       await fetchOrders(filters);
@@ -222,7 +205,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addToast(message, 'error');
       throw new Error(message);
     }
-  }, [addToast, fetchOrders, filters, orders]);
+  }, [addToast, fetchOrders, filters]);
 
   const processDraftOrders = useCallback(async () => {
     try {

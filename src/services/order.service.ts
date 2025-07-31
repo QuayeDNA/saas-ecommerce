@@ -51,15 +51,6 @@ class OrderService {
 
   // Process single order item
   async processOrderItem(orderId: string, itemId: string): Promise<Order> {
-    // First check wallet balance
-    const walletInfo = await this.checkWalletBalance();
-    const order = await this.getOrder(orderId);
-    const item = order.items.find(item => item._id === itemId);
-    
-    if (item && walletInfo.balance < item.totalPrice) {
-      throw new Error(`Insufficient wallet balance. Required: GH₵${item.totalPrice.toFixed(2)}, Available: GH₵${walletInfo.balance.toFixed(2)}`);
-    }
-    
     const response = await apiClient.post(`/api/orders/${orderId}/items/${itemId}/process`);
     return response.data.order;
   }
