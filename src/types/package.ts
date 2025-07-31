@@ -192,7 +192,8 @@ export interface CreateBundleData {
   category?: string;
   tags?: string[];
   packageId: string;
-  providerId: string;
+  providerId?: string;
+  providerCode?: string;
 }
 
 export interface UpdateBundleData extends Partial<CreateBundleData> {

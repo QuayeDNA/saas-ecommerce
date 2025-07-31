@@ -1,267 +1,597 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { bundleService } from '../../services/bundle.service';
-import { packageService } from '../../services/package.service';
-import type { Bundle, Package } from '../../types/package';
-import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { bundleService } from "../../services/bundle.service";
+import { packageService } from "../../services/package.service";
+import type { Bundle, Package } from "../../types/package";
+import { SearchAndFilter } from "../../components/common";
+import { 
+  FaCube, 
+  FaEdit, 
+  FaTrash, 
+  FaPlus,
+  FaBuilding,
+  FaDownload,
+  FaRedo,
+  FaCalendar,
+  FaCheckCircle,
+  FaDatabase,
+  FaClock,
+  FaArrowLeft
+} from "react-icons/fa";
+import { Button } from "../../design-system/components/button";
+import { colors } from "../../design-system/tokens";
+import { BundleFormModal } from "../../components/products/BundleFormModal";
+import { useToast } from "../../design-system/components/toast";
 
-const defaultBundle = {
-  name: '',
-  description: '',
-  dataVolume: 0,
-  dataUnit: 'MB' as const,
-  validity: 1,
-  validityUnit: 'days' as const,
-  price: 0,
-  currency: 'GHS' as const,
-  features: [] as string[],
-  isActive: true,
-  tags: [] as string[],
-  packageId: '',
-  providerId: '',
-};
+const statusOptions = [
+  { value: '', label: 'All Status' },
+  { value: 'active', label: 'Active', color: 'text-green-600 bg-green-100' },
+  { value: 'inactive', label: 'Inactive', color: 'text-red-600 bg-red-100' },
+];
+
+const categoryOptions = [
+  { value: '', label: 'All Categories' },
+  { value: 'daily', label: 'Daily', color: 'text-blue-600 bg-blue-100' },
+  { value: 'weekly', label: 'Weekly', color: 'text-purple-600 bg-purple-100' },
+  { value: 'monthly', label: 'Monthly', color: 'text-green-600 bg-green-100' },
+  { value: 'unlimited', label: 'Unlimited', color: 'text-orange-600 bg-orange-100' },
+  { value: 'custom', label: 'Custom', color: 'text-gray-600 bg-gray-100' },
+];
+
+const dataUnitOptions = [
+  { value: '', label: 'All Units' },
+  { value: 'MB', label: 'MB', color: 'text-blue-600 bg-blue-100' },
+  { value: 'GB', label: 'GB', color: 'text-green-600 bg-green-100' },
+  { value: 'TB', label: 'TB', color: 'text-purple-600 bg-purple-100' },
+];
 
 export const BundleManagementPage: React.FC = () => {
   const { packageId } = useParams<{ packageId: string }>();
   const navigate = useNavigate();
+  const { addToast } = useToast();
   const [pkg, setPkg] = useState<Package | null>(null);
   const [bundles, setBundles] = useState<Bundle[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [formBundle, setFormBundle] = useState<Bundle | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 1 });
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editBundle, setEditBundle] = useState<Bundle | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteBundle, setDeleteBundle] = useState<Bundle | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  
+  // Filter states
+  const [status, setStatus] = useState('');
+  const [category, setCategory] = useState('');
+  const [dataUnit, setDataUnit] = useState('');
+  const [search, setSearch] = useState('');
 
-  useEffect(() => {
+  // Filter options for the reusable component
+  const filterOptions = {
+    status: {
+      value: status,
+      options: statusOptions,
+      label: 'Status',
+      placeholder: 'All Status'
+    },
+    category: {
+      value: category,
+      options: categoryOptions,
+      label: 'Category',
+      placeholder: 'All Categories'
+    },
+    dataUnit: {
+      value: dataUnit,
+      options: dataUnitOptions,
+      label: 'Data Unit',
+      placeholder: 'All Units'
+    }
+  };
+
+  const fetchBundles = async () => {
     if (!packageId) return;
     setLoading(true);
     setError(null);
-    bundleService.getBundlesByPackage(packageId, { page: pagination.page, limit: pagination.limit })
-      .then(resp => {
-        setBundles(resp.bundles || []);
-        setPagination(prev => ({ ...prev, total: resp.pagination.total, pages: resp.pagination.pages }));
-      })
-      .catch(e => setError(e.message || 'Failed to fetch bundles'))
-      .finally(() => setLoading(false));
-    packageService.getPackage(packageId).then(setPkg).catch(() => {});
-  }, [packageId, pagination.limit, pagination.page, showForm]);
-
-  const handleAdd = () => {
-    setFormBundle({
-      ...defaultBundle,
-      packageId: packageId || '',
-      providerId: pkg?.provider || '',
-      tenantId: '', // Provide default or fetch as needed
-      createdBy: '', // Provide default or fetch as needed
-      isDeleted: false, // Default to false for new bundle
-    });
-    setShowForm(true);
-  };
-  const handleEdit = (bundle: Bundle) => {
-    setFormBundle(bundle);
-    setShowForm(true);
-  };
-  const handleDelete = async (bundle: Bundle) => {
-    if (!window.confirm(`Delete bundle "${bundle.name}"?`)) return;
-    setFormLoading(true);
-    setFormError(null);
     try {
-      await bundleService.deleteBundle(bundle._id!);
-      setBundles(bundles.filter(b => b._id !== bundle._id));
-    } catch (e) {
-      if (e instanceof Error) {
-        setFormError(e.message || 'Failed to delete bundle');
-      } else {
-        setFormError('Failed to delete bundle');
+      const filters: Record<string, string | boolean> = {};
+      if (status) filters.isActive = status === 'active';
+      if (category) filters.category = category;
+      if (dataUnit) filters.dataUnit = dataUnit;
+      if (search.trim()) filters.search = search.trim();
+
+      const response = await bundleService.getBundlesByPackage(packageId, { 
+        page: 1, 
+        limit: 100, // Get all bundles for this package
+        ...filters 
+      });
+      setBundles(response.bundles || []);
+      if (response.bundles?.length === 0) {
+        addToast('No bundles found matching your criteria', 'info');
       }
+    } catch {
+      setError('Failed to fetch bundles');
+      addToast('Failed to fetch bundles', 'error');
     } finally {
-      setFormLoading(false);
+      setLoading(false);
     }
   };
-  const handleFormSubmit = async (e: React.FormEvent) => {
+
+  const fetchPackage = async () => {
+    if (!packageId) return;
+    try {
+      const packageData = await packageService.getPackage(packageId);
+      setPkg(packageData);
+    } catch {
+      setError('Failed to fetch package details');
+    }
+  };
+
+  useEffect(() => {
+    fetchPackage();
+  }, [packageId]);
+
+  useEffect(() => {
+    fetchBundles();
+  }, [packageId, status, category, dataUnit]);
+
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formBundle) return;
-    setFormLoading(true);
-    setFormError(null);
-    try {
-      if (formBundle._id) {
-        await bundleService.updateBundle(formBundle._id, formBundle);
-      } else {
-        await bundleService.createBundle(formBundle);
-      }
-      setShowForm(false);
-    } catch (e) {
-      if (e instanceof Error) {
-        setFormError(e.message || 'Failed to save bundle');
-      } else {
-        setFormError('Failed to save bundle');
-      }
-    } finally {
-      setFormLoading(false);
+    fetchBundles();
+  };
+
+  const handleClearFilters = () => {
+    setSearch('');
+    setStatus('');
+    setCategory('');
+    setDataUnit('');
+    fetchBundles();
+    addToast('Filters cleared', 'info');
+  };
+
+  const handleFilterChange = (filterKey: string, value: string) => {
+    if (filterKey === 'status') {
+      setStatus(value);
+    } else if (filterKey === 'category') {
+      setCategory(value);
+    } else if (filterKey === 'dataUnit') {
+      setDataUnit(value);
     }
   };
 
-  const handlePageChange = (page: number) => {
-    setPagination(prev => ({ ...prev, page }));
+  const handleCreate = () => {
+    setEditBundle(null);
+    setShowFormModal(true);
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
-  if (error) return <div className="p-8 text-red-600">{error}</div>;
-  return (
-    <div className="p-8 space-y-6">
-      <button className="mb-4 text-blue-600" onClick={() => navigate(-1)}>&larr; Back</button>
-      <h2 className="text-2xl font-bold">Manage Bundles for: {pkg?.name}</h2>
-      <div className="mb-4 text-gray-600">{pkg?.description}</div>
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-semibold">Bundles</h3>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2" onClick={handleAdd}><FaPlus /> Add Bundle</button>
-      </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volume</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Validity</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {bundles.map(bundle => (
-                <tr key={bundle._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">{bundle.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{bundle.dataVolume} {bundle.dataUnit}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{bundle.validity} {bundle.validityUnit}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{bundle.price} {bundle.currency}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{bundle.isActive ? 'Yes' : 'No'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap flex gap-2">
-                    <button className="text-blue-600" onClick={() => handleEdit(bundle)}><FaEdit /></button>
-                    <button className="text-red-600" onClick={() => handleDelete(bundle)} disabled={formLoading}><FaTrash /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  const handleEdit = (bundle: Bundle) => {
+    setEditBundle(bundle);
+    setShowFormModal(true);
+  };
+
+  const handleDelete = (bundle: Bundle) => {
+    setDeleteBundle(bundle);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteBundle?._id) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      await bundleService.deleteBundle(deleteBundle._id);
+      setShowDeleteModal(false);
+      setDeleteBundle(null);
+      await fetchBundles();
+      addToast('Bundle deleted successfully', 'success');
+    } catch {
+      setActionError('Failed to delete bundle');
+      addToast('Failed to delete bundle', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleFormSubmit = async (data: Bundle) => {
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      // Handle providerId - extract the actual ID if it's an object
+      let providerIdValue: string | undefined = data.providerId;
+      if (typeof data.providerId === 'object' && data.providerId !== null) {
+        // If it's a populated object, extract the _id
+        // Handle different possible structures
+        const providerObj = data.providerId as { _id?: string; id?: string };
+        if (providerObj._id) {
+          providerIdValue = providerObj._id;
+        } else if (providerObj.id) {
+          providerIdValue = providerObj.id;
+        } else {
+          // If we can't extract a valid ID, skip the providerId update
+          providerIdValue = undefined;
+        }
+      }
+      
+      const finalUpdateData: {
+        name: string;
+        description?: string;
+        dataVolume: number;
+        dataUnit: 'MB' | 'GB' | 'TB';
+        validity: number | 'unlimited';
+        validityUnit: 'hours' | 'days' | 'weeks' | 'months' | 'unlimited';
+        price: number;
+        currency: string;
+        features: string[];
+        isActive: boolean;
+        bundleCode?: string;
+        category?: string;
+        tags: string[];
+        providerId?: string;
+      } = {
+        name: data.name,
+        description: data.description,
+        dataVolume: data.dataVolume,
+        dataUnit: data.dataUnit,
+        validity: data.validity,
+        validityUnit: data.validityUnit,
+        price: data.price,
+        currency: data.currency,
+        features: data.features,
+        isActive: data.isActive,
+        bundleCode: data.bundleCode,
+        category: data.category,
+        tags: data.tags,
+      };
+      
+      // Only add providerId if we have a valid value
+      if (providerIdValue) {
+        finalUpdateData.providerId = String(providerIdValue);
+      }
+      if (editBundle?._id) {
+        await bundleService.updateBundle(editBundle._id, finalUpdateData);
+        addToast('Bundle updated successfully', 'success');
+      } else {
+        // For creation, we need to get the provider ObjectId from the provider code
+        // Since we don't have the provider service here, we'll let the backend handle it
+        // by sending the provider code and letting the backend find the provider
+        await bundleService.createBundle({
+          ...data,
+          packageId: packageId || '',
+          providerCode: pkg?.provider || '', // Send provider code instead of providerId
+        });
+        addToast('Bundle created successfully', 'success');
+      }
+      setShowFormModal(false);
+      setEditBundle(null);
+      await fetchBundles();
+    } catch {
+      setActionError('Failed to save bundle');
+      addToast('Failed to save bundle', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const getStatusColor = (isActive: boolean) => {
+    return isActive ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'daily': return 'text-blue-600 bg-blue-100';
+      case 'weekly': return 'text-purple-600 bg-purple-100';
+      case 'monthly': return 'text-green-600 bg-green-100';
+      case 'unlimited': return 'text-orange-600 bg-orange-100';
+      case 'custom': return 'text-gray-600 bg-gray-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+
+
+  const formatDate = (date: string | Date) => {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(new Date(date));
+  };
+
+  const formatCurrency = (amount: number, currency: string = 'GHS') => {
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency',
+      currency: currency
+    }).format(amount);
+  };
+
+  // Calculate statistics
+  const stats = {
+    total: bundles.length,
+    active: bundles.filter(b => b.isActive).length,
+    inactive: bundles.filter(b => !b.isActive).length,
+    totalValue: bundles.reduce((sum, b) => sum + (b.price || 0), 0),
+  };
+
+  if (loading && !pkg) {
+    return (
+      <div className="p-6 text-center">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading package details...</span>
         </div>
-        {/* Pagination (unchanged) */}
-        {pagination.pages > 1 && (
-          <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page <= 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page >= pagination.pages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{((pagination.page - 1) * pagination.limit) + 1}</span> to{' '}
-                    <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="font-medium">{pagination.total}</span> results
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => handlePageChange(pagination.page - 1)}
-                      disabled={pagination.page <= 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => handlePageChange(pagination.page + 1)}
-                      disabled={pagination.page >= pagination.pages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  </nav>
-                </div>
-              </div>
+      </div>
+    );
+  }
+
+  if (error && !pkg) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 p-4 sm:p-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2"
+            >
+              <FaArrowLeft />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
+                Bundle Management
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">
+                Managing bundles for: <span className="font-semibold">{pkg?.name}</span>
+              </p>
+              {pkg?.description && (
+                <p className="text-sm text-gray-500 mt-1">{pkg.description}</p>
+              )}
             </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={fetchBundles} disabled={loading} size="sm">
+              <FaRedo className="mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm">
+              <FaDownload className="mr-2" />
+              Export
+            </Button>
+            <Button onClick={handleCreate} size="sm">
+              <FaPlus className="mr-2" />
+              Create Bundle
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Bundles</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.total}</p>
+            </div>
+            <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
+              <FaCube className="text-blue-600 text-lg sm:text-xl" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
+              <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.active}</p>
+            </div>
+            <div className="p-2 sm:p-3 bg-green-100 rounded-full">
+              <FaCheckCircle className="text-green-600 text-lg sm:text-xl" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Value</p>
+              <p className="text-lg sm:text-2xl font-bold text-purple-600">{formatCurrency(stats.totalValue)}</p>
+            </div>
+            <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
+              <FaDatabase className="text-purple-600 text-lg sm:text-xl" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Provider</p>
+              <p className="text-lg sm:text-2xl font-bold text-orange-600">{pkg?.provider || 'N/A'}</p>
+            </div>
+            <div className="p-2 sm:p-3 bg-orange-100 rounded-full">
+              <FaBuilding className="text-orange-600 text-lg sm:text-xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <SearchAndFilter
+        searchTerm={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name, description, or data volume..."
+        filters={filterOptions}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        onClearFilters={handleClearFilters}
+        isLoading={loading}
+      />
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 text-sm sm:text-base">{error}</p>
+        </div>
+      )}
+
+      {/* Action Error */}
+      {actionError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 text-sm sm:text-base">{actionError}</p>
+        </div>
+      )}
+
+      {/* Bundles List */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {loading ? (
+          <div className="p-6 sm:p-8 text-center">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-sm sm:text-base text-gray-600">Loading bundles...</span>
+            </div>
+          </div>
+        ) : bundles.length === 0 ? (
+          <div className="p-6 sm:p-8 text-center">
+            <FaCube className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
+            <p className="text-sm sm:text-base text-gray-500">No bundles found matching your criteria.</p>
+            <Button onClick={handleCreate} className="mt-4">
+              <FaPlus className="mr-2" />
+              Create Your First Bundle
+            </Button>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {bundles.map(bundle => (
+              <div key={bundle._id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col gap-4">
+                  {/* Bundle Info */}
+                  <div className="flex-1">
+                    <div className="flex items-start gap-3 mb-3">
+                      <FaCube className="text-blue-600 text-lg sm:text-xl mt-1 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                          {bundle.name}
+                        </h3>
+                        {bundle.description && (
+                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                            {bundle.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getStatusColor(bundle.isActive)}`}>
+                        {bundle.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                      {bundle.category && (
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getCategoryColor(bundle.category)}`}>
+                          {bundle.category}
+                        </span>
+                      )}
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800`}>
+                        <FaDatabase className="w-3 h-3 mr-1 flex-shrink-0" />
+                        {bundle.dataVolume} {bundle.dataUnit}
+                      </span>
+                                             <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium bg-green-100 text-green-800`}>
+                         <FaClock className="w-3 h-3 mr-1 flex-shrink-0" />
+                         {bundle.validity === 'unlimited' || bundle.validityUnit === 'unlimited' 
+                           ? 'Unlimited' 
+                           : `${bundle.validity} ${bundle.validityUnit}`
+                         }
+                       </span>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-purple-100 text-purple-800">
+                        {formatCurrency(bundle.price, bundle.currency)}
+                      </span>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800">
+                        <FaCalendar className="w-3 h-3 mr-1 flex-shrink-0" />
+                        {formatDate(bundle.createdAt || '')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(bundle)}
+                        disabled={actionLoading}
+                        className="w-full sm:w-auto"
+                      >
+                        <FaEdit className="mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Edit</span>
+                        <span className="sm:hidden">Edit</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleDelete(bundle)}
+                        disabled={actionLoading}
+                        className="w-full sm:w-auto"
+                      >
+                        <FaTrash className="mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Delete</span>
+                        <span className="sm:hidden">Delete</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
-      {/* Add/Edit Bundle Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <form className="bg-white rounded-lg p-6 w-full max-w-lg space-y-4 relative" onSubmit={handleFormSubmit}>
-            <button type="button" className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl" onClick={() => setShowForm(false)} aria-label="Close">&times;</button>
-            <h4 className="text-lg font-bold mb-2">{formBundle?._id ? 'Edit Bundle' : 'Add Bundle'}</h4>
-            <div>
-              <label className="block text-sm font-medium mb-1">Name</label>
-              <input className="w-full border rounded px-3 py-2" required value={formBundle?.name || ''} onChange={e => setFormBundle(fb => ({ ...fb!, name: e.target.value } as Bundle))} />
+
+      {/* Create/Edit Modal */}
+      <BundleFormModal
+        open={showFormModal}
+        onClose={() => { setShowFormModal(false); setEditBundle(null); }}
+        onSubmit={handleFormSubmit}
+        initialData={editBundle}
+        packageId={packageId}
+        providerId={pkg?.provider}
+      />
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative mx-4">
+            <h2 className="text-lg font-bold mb-4">Delete Bundle</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete <span className="font-semibold">{deleteBundle?.name}</span>?
+              This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => { setShowDeleteModal(false); setDeleteBundle(null); }}
+                disabled={actionLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteConfirm}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Deleting...' : 'Delete'}
+              </Button>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea className="w-full border rounded px-3 py-2" value={formBundle?.description || ''} onChange={e => setFormBundle(fb => ({ ...fb!, description: e.target.value } as Bundle))} />
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-1">Data Volume</label>
-                <input type="number" className="w-full border rounded px-3 py-2" required value={formBundle?.dataVolume || ''} onChange={e => setFormBundle(fb => ({ ...fb!, dataVolume: +e.target.value } as Bundle))} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Unit</label>
-                <select className="w-full border rounded px-3 py-2" value={formBundle?.dataUnit || 'MB'} onChange={e => setFormBundle(fb => ({ ...fb!, dataUnit: e.target.value as Bundle['dataUnit'] } as Bundle))}>
-                  <option value="MB">MB</option>
-                  <option value="GB">GB</option>
-                  <option value="TB">TB</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-1">Validity</label>
-                <input type="number" className="w-full border rounded px-3 py-2" required value={formBundle?.validity || ''} onChange={e => setFormBundle(fb => ({ ...fb!, validity: +e.target.value } as Bundle))} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Validity Unit</label>
-                <select className="w-full border rounded px-3 py-2" value={formBundle?.validityUnit || 'days'} onChange={e => setFormBundle(fb => ({ ...fb!, validityUnit: e.target.value as Bundle['validityUnit'] } as Bundle))}>
-                  <option value="hours">Hours</option>
-                  <option value="days">Days</option>
-                  <option value="weeks">Weeks</option>
-                  <option value="months">Months</option>
-                  <option value="unlimited">Unlimited</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-1">Price</label>
-                <input type="number" className="w-full border rounded px-3 py-2" required value={formBundle?.price || ''} onChange={e => setFormBundle(fb => ({ ...fb!, price: +e.target.value } as Bundle))} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Currency</label>
-                <input className="w-full border rounded px-3 py-2" value={formBundle?.currency || 'GHS'} onChange={e => setFormBundle(fb => ({ ...fb!, currency: e.target.value as Bundle['currency'] } as Bundle))} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Active</label>
-              <input type="checkbox" checked={!!formBundle?.isActive} onChange={e => setFormBundle(fb => ({ ...fb!, isActive: e.target.checked } as Bundle))} />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button type="button" className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowForm(false)} disabled={formLoading}>Cancel</button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded" disabled={formLoading}>{formLoading ? 'Saving...' : 'Save'}</button>
-            </div>
-            {formError && <div className="text-red-600 text-sm mt-2">{formError}</div>}
-          </form>
+          </div>
         </div>
       )}
     </div>

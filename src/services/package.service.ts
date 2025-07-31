@@ -164,13 +164,13 @@ class PackageService {
 
   // Legacy methods for backward compatibility (to be removed later)
   async getAllPackageItems(provider?: string) {
-    const params: any = {};
+    const params: Record<string, string> = {};
     if (provider) params.provider = provider;
     const response = await apiClient.get('/api/packages/public/bundles', { params });
     return response.data.bundles;
   }
 
-  async getLowStockAlerts(): Promise<any[]> {
+  async getLowStockAlerts(): Promise<unknown[]> {
     // This endpoint doesn't exist in the new structure, return empty array
     return [];
   }
