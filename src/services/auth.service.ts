@@ -90,19 +90,12 @@ class AuthService {
       const accessToken = this.getToken();
       const refreshToken = this.getRefreshToken();
       
-      console.log('🔐 Initializing auth state...', { 
-        hasAccessToken: !!accessToken, 
-        hasRefreshToken: !!refreshToken 
-      });
-      
       // Case 1: No access token but have refresh token - attempt refresh
       if (!accessToken && refreshToken) {
-        console.log('📱 No access token found, attempting refresh...');
         try {
           await this.refreshAccessToken();
           return true;
         } catch (error) {
-          console.error('❌ Token refresh failed during initialization:', error);
           this.clearAuthData();
           return false;
         }
@@ -112,15 +105,12 @@ class AuthService {
       if (accessToken) {
         const { valid } = await this.verifyToken();
         if (valid) {
-          console.log('✅ Access token is valid');
           return true;
         } else if (refreshToken) {
-          console.log('🔄 Access token invalid, attempting refresh...');
           try {
             await this.refreshAccessToken();
             return true;
           } catch (error) {
-            console.error('❌ Token refresh failed:', error);
             this.clearAuthData();
             return false;
           }
@@ -128,11 +118,9 @@ class AuthService {
       }
       
       // Case 3: No tokens available
-      console.log('🚫 No valid authentication found');
       return false;
       
     } catch (error) {
-      console.error('💥 Auth initialization failed:', error);
       this.clearAuthData();
       return false;
     }
@@ -191,8 +179,6 @@ class AuthService {
         throw new Error('No refresh token available');
       }
       
-      console.log('🔄 Attempting token refresh...');
-      
       const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
         refreshToken
       }, {
@@ -208,10 +194,8 @@ class AuthService {
         this.storeRefreshToken(newRefreshToken, rememberMe);
       }
       
-      console.log('✅ Token refreshed successfully');
       return accessToken;
     } catch (error) {
-      console.error('❌ Token refresh failed:', error);
       this.clearAuthData();
       throw new Error('Failed to refresh access token');
     }
@@ -370,7 +354,6 @@ class AuthService {
         user: response.data.user
       };
     } catch (error) {
-      console.error('Token verification failed:', error);
       return { valid: false };
     }
   }

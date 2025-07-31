@@ -57,43 +57,45 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
           {/* Right side: Wallet & User Menu */}
           <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 flex-shrink-0">
-            {/* Wallet - Responsive design */}
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm shadow-sm relative group min-w-0">
-              <div className="hidden sm:block text-xs font-medium text-green-100 mb-0.5">Wallet Balance</div>
-              <div className="font-bold flex items-center justify-center sm:justify-start">
-                <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-green-100 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="truncate">
-                  GH¢{walletBalance.toFixed(2)}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    refreshWallet();
-                  }}
-                  disabled={isLoading}
-                  className="ml-1 sm:ml-2 p-0.5 sm:p-1 rounded-full opacity-70 hover:opacity-100 focus:outline-none hover:bg-green-700 transition-opacity flex-shrink-0"
-                  aria-label="Refresh wallet balance"
-                  title="Refresh balance"
-                >
-                  <svg 
-                    className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${isLoading ? 'animate-spin' : ''}`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24" 
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
-                    />
+            {/* Wallet - Only show for agents */}
+            {authState.user?.userType === 'agent' && (
+              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm shadow-sm relative group min-w-0">
+                <div className="hidden sm:block text-xs font-medium text-green-100 mb-0.5">Wallet Balance</div>
+                <div className="font-bold flex items-center justify-center sm:justify-start">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-green-100 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                </button>
+                  <span className="truncate">
+                    GH¢{walletBalance.toFixed(2)}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      refreshWallet();
+                    }}
+                    disabled={isLoading}
+                    className="ml-1 sm:ml-2 p-0.5 sm:p-1 rounded-full opacity-70 hover:opacity-100 focus:outline-none hover:bg-green-700 transition-opacity flex-shrink-0"
+                    aria-label="Refresh wallet balance"
+                    title="Refresh balance"
+                  >
+                    <svg 
+                      className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${isLoading ? 'animate-spin' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24" 
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
             
             {/* Notifications button - Hidden on mobile */}
             <button className="relative p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 hidden sm:block flex-shrink-0">

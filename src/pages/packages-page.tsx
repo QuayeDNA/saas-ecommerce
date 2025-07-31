@@ -1,15 +1,20 @@
 // src/pages/packages-page.tsx
 import React from "react";
-import { PackageList } from "../components/products/PackageList";
-import { SuperAdminPackageManagement } from "../components/products/SuperAdminPackageManagement";
+import { useLocation } from "react-router-dom";
+import { PackageManagement } from "../components/products/PackageManagement";
 import { useAuth } from '../hooks/use-auth';
 
-export const PackageManagementPage: React.FC = () => {
+const PackageManagementPage: React.FC = () => {
   const { authState } = useAuth();
+  const location = useLocation();
   const isSuperAdmin = authState.user?.userType === 'super_admin';
+  const isSuperAdminRoute = location.pathname.startsWith('/superadmin');
+  
   return (
-    <div className="space-y-6">  
-      {isSuperAdmin ? <SuperAdminPackageManagement /> : <PackageList />}
-    </div>
+    <PackageManagement 
+      isSuperAdmin={isSuperAdmin || isSuperAdminRoute}
+    />
   );
 };
+
+export default PackageManagementPage;

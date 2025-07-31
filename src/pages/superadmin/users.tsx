@@ -71,7 +71,7 @@ export default function SuperAdminUsersPage() {
       setUsers(data);
     } catch (err) {
       setError('Failed to fetch users');
-      console.error('Error fetching users:', err);
+      // Error fetching users
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ export default function SuperAdminUsersPage() {
       await fetchUsers();
     } catch (err) {
       setError('Failed to approve user');
-      console.error('Error approving user:', err);
+      // Error approving user
     } finally {
       setProcessingUser(null);
     }
@@ -121,7 +121,7 @@ export default function SuperAdminUsersPage() {
       await fetchUsers();
     } catch (err) {
       setError('Failed to reject user');
-      console.error('Error rejecting user:', err);
+      // Error rejecting user
     } finally {
       setProcessingUser(null);
     }

@@ -87,7 +87,7 @@ export default function SuperAdminDashboard() {
         setStats(statsData);
       } catch (err) {
         setError('Failed to load dashboard stats');
-        console.error('Stats error:', err);
+        // Stats error
       } finally {
         setLoadingStats(false);
       }
@@ -104,7 +104,7 @@ export default function SuperAdminDashboard() {
         const chartDataResponse = await userService.fetchChartData();
         setChartData(chartDataResponse);
       } catch (err) {
-        console.error('Chart data error:', err);
+        // Chart data error
         // Don't set error for charts as they're not critical
       } finally {
         setLoadingCharts(false);

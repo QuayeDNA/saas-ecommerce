@@ -40,7 +40,7 @@ function TopUpModal({ isOpen, onClose, user, onTopUp }: TopUpModalProps) {
       setDescription('');
       onClose();
     } catch (error) {
-      console.error('Top-up failed:', error);
+      // Top-up failed
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ export default function SuperAdminWalletPage() {
       }
     } catch (err) {
       setError('Failed to fetch users');
-      console.error('Error fetching users:', err);
+      // Error fetching users
     } finally {
       setLoading(false);
     }
@@ -153,7 +153,7 @@ export default function SuperAdminWalletPage() {
       const analyticsData = await walletService.getWalletAnalytics();
       setAnalytics(analyticsData);
     } catch (err) {
-      console.error('Error fetching analytics:', err);
+      // Error fetching analytics
     }
   };
 
@@ -162,7 +162,7 @@ export default function SuperAdminWalletPage() {
       const response = await walletService.getPendingRequests();
       setPendingRequests(response.transactions);
     } catch (err) {
-      console.error('Error fetching pending requests:', err);
+      // Error fetching pending requests
     }
   };
 
@@ -173,7 +173,6 @@ export default function SuperAdminWalletPage() {
       await fetchAnalytics();
       await refreshWallet();
     } catch (err) {
-      console.error('Error topping up wallet:', err);
       throw new Error('Failed to top up wallet');
     }
   };
@@ -184,7 +183,7 @@ export default function SuperAdminWalletPage() {
       await fetchPendingRequests();
       await fetchAnalytics();
     } catch (err) {
-      console.error('Error processing request:', err);
+      // Error processing request
     }
   };
 

@@ -230,32 +230,20 @@ export default function SuperAdminUserDetailsPage() {
     if (!user) return;
     setImpersonateLoading(true);
     try {
-      // Store the current admin token before impersonating
-      const adminToken = localStorage.getItem("token");
-      if (adminToken) {
-        localStorage.setItem("adminToken", adminToken);
+      // Get current admin token from cookies (auth service uses cookies)
+      const Cookies = (await import('js-cookie')).default;
+      const adminToken = Cookies.get('authToken');
+      
+      if (!adminToken) {
+        throw new Error("No admin token found");
       }
       
+      // Call the impersonation API
       const { token, user: impersonatedUser } = await userService.impersonateUser(user._id);
       
-      // Store impersonation data in localStorage
-      localStorage.setItem("impersonation", "true");
-      localStorage.setItem("token", token);
-      
-      // Store user data in cookies (like auth service does)
-      const Cookies = (await import('js-cookie')).default;
-      Cookies.set('authToken', token, { 
-        secure: import.meta.env.PROD, 
-        sameSite: 'strict', 
-        path: '/',
-        expires: 7 
-      });
-      Cookies.set('user', JSON.stringify(impersonatedUser), { 
-        secure: import.meta.env.PROD, 
-        sameSite: 'strict', 
-        path: '/',
-        expires: 7 
-      });
+      // Use the impersonation service to start impersonation
+      const ImpersonationService = (await import('../../utils/impersonation')).default;
+      ImpersonationService.startImpersonation(adminToken, impersonatedUser, token);
       
       // Show success message
       addToast(`Now impersonating ${impersonatedUser.fullName}`, "success");

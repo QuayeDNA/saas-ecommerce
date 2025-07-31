@@ -26,9 +26,9 @@ export const ProtectedRoute = ({
         setIsVerifying(true);
         try {
           await refreshAuth();
-        } catch (error) {
-          console.error('Auth verification failed:', error);
-        } finally {
+            } catch (error) {
+      // Auth verification failed
+    } finally {
           setIsVerifying(false);
         }
       }

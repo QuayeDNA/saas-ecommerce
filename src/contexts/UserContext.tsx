@@ -81,7 +81,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
       setError(message);
       addToast(message, "error");
-      console.error(`UserContext Error (${action}):`, error);
     },
     [addToast]
   );

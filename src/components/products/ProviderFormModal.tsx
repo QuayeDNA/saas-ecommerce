@@ -62,7 +62,7 @@ export const ProviderFormModal: React.FC<ProviderFormModalProps> = ({
       await onSubmit(formData);
       onClose();
     } catch (error) {
-      console.error('Error submitting provider:', error);
+      // Error submitting provider
     }
   };
 

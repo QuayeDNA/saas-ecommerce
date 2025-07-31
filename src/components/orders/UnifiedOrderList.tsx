@@ -88,7 +88,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     try {
       await updateOrderStatus(orderId, newStatus);
     } catch (error) {
-      console.error('Failed to update order status:', error);
+      // Failed to update order status
     }
   };
 
@@ -96,9 +96,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     if (window.confirm('Are you sure you want to cancel this order?')) {
       try {
         await cancelOrder(orderId, 'Cancelled by user');
-      } catch (error) {
-        console.error('Failed to cancel order:', error);
-      }
+          } catch (error) {
+      // Failed to cancel order
+    }
     }
   };
 
@@ -122,9 +122,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           await bulkProcessOrders(selectedOrders, bulkAction);
         }
         setSelectedOrders([]);
-      } catch (error) {
-        console.error(`Failed to ${action} orders:`, error);
-      }
+          } catch (error) {
+      // Failed to perform bulk action
+    }
     }
   };
 

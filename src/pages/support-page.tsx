@@ -68,7 +68,7 @@ export const SupportPage: React.FC = () => {
     setFormSubmitted(true);
     
     // In a real app, you would send the data to your backend here
-    console.log('Form data:', formData);
+    // Form data submitted
   };
 
   // Sample FAQ data

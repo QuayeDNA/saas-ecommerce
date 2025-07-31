@@ -164,7 +164,7 @@ export const StorefrontModal: React.FC<StorefrontModalProps> = ({
       const available = await checkSlugAvailability(slug);
       setSlugAvailable(available);
     } catch (error) {
-      console.error("Error checking slug availability:", error);
+      // Error checking slug availability
       setSlugAvailable(false);
     } finally {
       setCheckingSlug(false);
@@ -182,7 +182,7 @@ export const StorefrontModal: React.FC<StorefrontModalProps> = ({
       }
       onSuccess();
     } catch (error) {
-      console.error("Failed to save storefront:", error);
+      // Failed to save storefront
     }
   };
 

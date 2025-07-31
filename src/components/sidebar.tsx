@@ -281,15 +281,22 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   
   // Check if a path is active
   const isActivePath = (path: string) => {
-    if (path === '') {
-      return location.pathname === '/agent/dashboard' || 
-             location.pathname === '/customer/dashboard' || 
-             location.pathname === '/admin/dashboard' ||
-             location.pathname === '/superadmin';
+    // Handle dashboard paths specifically - only match exact dashboard paths
+    if (path === '/superadmin') {
+      return location.pathname === '/superadmin' || location.pathname === '/superadmin/';
+    }
+    if (path === '/agent/dashboard') {
+      return location.pathname === '/agent/dashboard' || location.pathname === '/agent/dashboard/';
+    }
+    if (path === '/customer/dashboard') {
+      return location.pathname === '/customer/dashboard' || location.pathname === '/customer/dashboard/';
+    }
+    if (path === '/admin/dashboard') {
+      return location.pathname === '/admin/dashboard' || location.pathname === '/admin/dashboard/';
     }
     
-    // For exact or subpath matches
-    return location.pathname.startsWith(path + '/') || location.pathname === path;
+    // For other paths, check exact match only
+    return location.pathname === path;
   };
 
   // Check if parent has active child

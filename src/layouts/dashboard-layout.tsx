@@ -17,6 +17,7 @@ import GuidedTour from '../components/guided-tour';
 import type { TourStep } from '../components/guided-tour';
 import SetupWizard, { WelcomeStep } from '../components/setup-wizard';
 import { useAuth } from '../hooks';
+import ImpersonationService from '../utils/impersonation';
 
 export const DashboardLayout = () => {
   const { authState, updateFirstTimeFlag } = useAuth();
@@ -25,6 +26,7 @@ export const DashboardLayout = () => {
   const [showTour, setShowTour] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const location = useLocation();
+  const isImpersonating = ImpersonationService.isImpersonating();
 
   // Handle window resize to detect mobile/desktop view
   useEffect(() => {
@@ -98,35 +100,30 @@ export const DashboardLayout = () => {
     {
       target: '.transactions-table',
       title: 'Recent Transactions',
-      content: 'View your recent activity and transaction history.',
+      content: 'View your recent transactions and payment history.',
       position: 'top'
     }
   ];
 
-  // Handle tour completion
   const handleTourComplete = () => {
-    setShowTour(false);
-    
-    // Mark tour as completed in localStorage to prevent showing again on refresh
+    // Mark tour as completed
     localStorage.setItem('tourCompleted', 'true');
     
-    // Update backend and local state
-    if (authState.isAuthenticated && authState.user?.isFirstTime) {
+    // Update first time flag in backend
+    if (authState.user?.isFirstTime) {
       updateFirstTimeFlag();
     }
   };
 
-  // Handle wizard completion
   const handleWizardComplete = () => {
-    setShowSetupWizard(false);
-    
-    // Mark wizard as completed in localStorage to prevent showing again on refresh
+    // Mark wizard as completed
     localStorage.setItem('wizardCompleted', 'true');
     
-    // After wizard, offer the tour
-    setShowTour(true);
+    // Update first time flag in backend
+    if (authState.user?.isFirstTime) {
+      updateFirstTimeFlag();
+    }
     
-    // Note: We don't update the first-time flag here yet
     // We'll update it only after completing the tour
   };
 
@@ -165,7 +162,7 @@ export const DashboardLayout = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className={`flex bg-gray-50 overflow-hidden ${isImpersonating ? '' : 'h-screen'}`}>
       {/* Mobile sidebar overlay */}
       {sidebarOpen && isMobile && (
         <button 
@@ -187,7 +184,7 @@ export const DashboardLayout = () => {
         <Header onMenuClick={toggleSidebar} />
         
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50">
+        <main className={`flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 ${isImpersonating ? 'min-h-screen' : ''}`}>
           <Outlet />
         </main>
       </div>

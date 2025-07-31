@@ -52,9 +52,9 @@ export const DashboardPage = () => {
             successRate: analytics.completionRate
           });
         }
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-      } finally {
+          } catch (error) {
+      // Failed to load dashboard data
+    } finally {
         setLoading(false);
       }
     };

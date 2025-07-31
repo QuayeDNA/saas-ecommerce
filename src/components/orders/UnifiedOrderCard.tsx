@@ -100,7 +100,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
       await onUpdateStatus(order._id!, newStatus);
       setStatusDropdownOpen(false);
     } catch (error) {
-      console.error('Failed to update status:', error);
+      // Failed to update status
     }
   };
 

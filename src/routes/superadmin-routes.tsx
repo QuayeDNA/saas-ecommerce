@@ -9,9 +9,7 @@ const ProvidersPage = lazy(() => import("../pages/superadmin/providers"));
 const OrdersPage = lazy(() => import("../pages/superadmin/orders"));
 const WalletPage = lazy(() => import("../pages/superadmin/wallet"));
 const SettingsPage = lazy(() => import("../pages/superadmin/settings"));
-const PackagesPage = lazy(() => import("../pages/packages-page").then((module) => ({
-  default: module.PackageManagementPage,
-})));
+const PackagesPage = lazy(() => import("../pages/packages-page"));
 const BundleManagementPage = lazy(() => import('../pages/admin/bundle-management-page').then(m => ({ default: m.BundleManagementPage })));
 
 const superadminRoutes = {

@@ -101,31 +101,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isLoading: true,
   });
 
-  // Handle automatic logout from interceptor
-  useEffect(() => {
-    const handleAutoLogout = () => {
-      console.log('Auto logout triggered by token expiry');
-      setState({
-        ...defaultAuthState,
-        isInitialized: true,
-        isLoading: false,
-      });
-      
-      // Only show toast and navigate if not already on login page
-      if (location.pathname !== '/login') {
-        addToast("Session expired. Please log in again.", "warning");
-        navigate('/login', { replace: true, state: { from: location } });
-      }
-    };
-
-    window.addEventListener('auth:logout', handleAutoLogout);
-    return () => {
-      window.removeEventListener('auth:logout', handleAutoLogout);
-      // Clean up token refresh service on unmount
-      tokenRefreshService.stopTokenRefresh();
-    };
-  }, [addToast, navigate, location]);
-
   // Helper function to set authenticated state
   const setAuthenticatedState = useCallback((user: User, token: string) => {
     const dashboardUrl = user.userType === 'agent' ? '/agent/dashboard' : '/customer/dashboard';
@@ -163,13 +138,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const refreshedUser = authService.getCurrentUser();
       
       if (refreshedUser && newToken) {
-        console.log('✅ AuthContext: Token refreshed successfully');
         setAuthenticatedState(refreshedUser, newToken);
       } else {
         throw new Error('User data missing after refresh');
       }
     } catch (refreshError) {
-      console.error('❌ AuthContext: Token refresh failed:', refreshError);
       authService.clearAuthData();
       setUnauthenticatedState();
     }
@@ -177,12 +150,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Refresh authentication state
   const refreshAuth = useCallback(async () => {
-    console.log('🔄 AuthContext: Refreshing authentication state...');
-    
     try {
       // Check if we have any authentication data
       if (!authService.isAuthenticated()) {
-        console.log('🚫 AuthContext: No authentication data found');
         setUnauthenticatedState();
         return;
       }
@@ -194,28 +164,54 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // Token is valid, update state
         const token = authService.getToken();
         if (token) {
-          console.log('✅ AuthContext: Token verified successfully');
           setAuthenticatedState(user, token);
           return;
         }
       }
 
       // Token is invalid, attempt refresh
-      console.log('🔄 AuthContext: Token invalid, attempting refresh...');
       await handleTokenRefresh();
       
     } catch (error) {
-      console.error('❌ AuthContext: Auth refresh error:', error);
       const errorMessage = error instanceof Error ? error.message : "Authentication failed";
       setUnauthenticatedState(errorMessage);
     }
   }, [setAuthenticatedState, setUnauthenticatedState, handleTokenRefresh]);
 
+  // Handle automatic logout from interceptor
+  useEffect(() => {
+    const handleAutoLogout = () => {
+      setState({
+        ...defaultAuthState,
+        isInitialized: true,
+        isLoading: false,
+      });
+      
+      // Only show toast and navigate if not already on login page
+      if (location.pathname !== '/login') {
+        addToast("Session expired. Please log in again.", "warning");
+        navigate('/login', { replace: true, state: { from: location } });
+      }
+    };
+
+    const handleAuthRefresh = () => {
+      refreshAuth();
+    };
+
+    window.addEventListener('auth:logout', handleAutoLogout);
+    window.addEventListener('auth:refresh', handleAuthRefresh);
+    
+    return () => {
+      window.removeEventListener('auth:logout', handleAutoLogout);
+      window.removeEventListener('auth:refresh', handleAuthRefresh);
+      // Clean up token refresh service on unmount
+      tokenRefreshService.stopTokenRefresh();
+    };
+  }, [addToast, navigate, location, refreshAuth]);
+
   // Initialize authentication state on component mount
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log('🔐 AuthContext: Initializing authentication...');
-      
       try {
         // Use the improved auth service initialization
         const isAuthenticated = await authService.initializeAuth();
@@ -229,11 +225,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const dashboardUrl = user.userType === 'agent' 
               ? '/agent/dashboard' 
               : '/customer/dashboard';
-            
-            console.log('✅ AuthContext: Authentication initialized successfully', { 
-              userId: user.id, 
-              userType: user.userType 
-            });
             
             setState({
               user,
@@ -249,7 +240,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         
         // Authentication failed or no valid tokens
-        console.log('🚫 AuthContext: No valid authentication found');
         setState({
           ...defaultAuthState,
           isInitialized: true,
@@ -257,8 +247,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         });
         
       } catch (error) {
-        console.error('❌ AuthContext: Authentication initialization failed:', error);
-        
         // Clear any stale data and set error state
         authService.clearAuthData();
         setState({
@@ -274,7 +262,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
   // Enhanced login method with improved error handling
   const login = useCallback(async (email: string, password: string, rememberMe = false) => {
-    console.log('🔐 AuthContext: Attempting login...');
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -289,11 +276,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         error: null,
       }));
 
-      console.log('✅ AuthContext: Login successful', { 
-        userId: resp.user.id, 
-        userType: resp.user.userType 
-      });
-
       setAuthenticatedState(resp.user, resp.token);
 
       // Show success toast
@@ -305,7 +287,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       navigate(from, { replace: true });
       
     } catch (error: any) {
-      console.error('❌ AuthContext: Login failed:', error);
       const errorMessage = error.message || "Failed to login";
 
       setState((prev) => ({
@@ -428,18 +409,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Logout method with improved error handling
   const logout = useCallback(async () => {
-    console.log('🚪 AuthContext: Logging out...');
     setState((prev) => ({ ...prev, isLoading: true }));
 
     try {
       await authService.logout();
-      console.log('✅ AuthContext: Logout successful');
       
       // Clear localStorage flags for wizard/tour completion
       localStorage.removeItem('wizardCompleted');
       localStorage.removeItem('tourCompleted');
     } catch (error) {
-      console.error('❌ AuthContext: Logout error:', error);
+      // Logout API failed, but we'll still clear local state
     } finally {
       // Stop token refresh service
       tokenRefreshService.stopTokenRefresh();
@@ -466,7 +445,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to update preferences";
-      console.error("Error updating first-time flag:", errorMessage);
+      // Error updating first-time flag
       // Silently fail as this is not critical
     }
   }, []);

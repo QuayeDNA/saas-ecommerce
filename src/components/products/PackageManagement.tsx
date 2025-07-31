@@ -1,17 +1,25 @@
-// src/components/products/PackageList.tsx
+// src/components/products/PackageManagement.tsx
 import React, { useEffect, useState } from 'react';
 import { usePackage } from '../../hooks/use-package';
 import { SearchAndFilter } from '../common';
 import { getProviderColors } from '../../utils/provider-colors';
-import type { Bundle } from '../../types/package';
+import { PackageFormModal } from './PackageFormModal';
+import { packageService } from '../../services/package.service';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/use-auth';
+import type { Package, Bundle } from '../../types/package';
 import { 
   FaBox,
   FaExclamationCircle,
-  FaPlus
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaEye
 } from 'react-icons/fa';
 
-export interface PackageListProps {
+export interface PackageManagementProps {
   provider?: string;
+  isSuperAdmin?: boolean;
 }
 
 // Utility to always include provider in filters if present
@@ -19,7 +27,21 @@ function getEffectiveFilters(baseFilters: Record<string, unknown>, provider?: st
   return provider ? { ...baseFilters, provider } : baseFilters;
 }
 
-export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
+export const PackageManagement: React.FC<PackageManagementProps> = ({ 
+  provider, 
+  isSuperAdmin = false 
+}) => {
+  const { authState } = useAuth();
+  const navigate = useNavigate();
+  
+  // State for modals and selected package
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editPackage, setEditPackage] = useState<Package | null>(null);
+  const [deletePackage, setDeletePackage] = useState<Package | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
   const {
     packages,
     bundles,
@@ -40,6 +62,9 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
   });
   const [viewMode, setViewMode] = useState<'packages' | 'bundles'>('packages');
 
+  // Auto-detect super admin if not explicitly passed
+  const isSuperAdminUser = isSuperAdmin || authState.user?.userType === 'super_admin';
+
   useEffect(() => {
     if (viewMode === 'packages') {
       fetchPackages();
@@ -48,6 +73,43 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode]);
+
+  // Handle create or update
+  const handleFormSubmit = async (data: any) => {
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      if (editPackage?._id) {
+        await packageService.updatePackage(editPackage._id, data);
+      } else {
+        await packageService.createPackage(data);
+      }
+      setShowFormModal(false);
+      setEditPackage(null);
+      fetchPackages(undefined, { page: pagination.page, limit: pagination.limit });
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to save package');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle delete
+  const handleDelete = async () => {
+    if (!deletePackage?._id) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      await packageService.deletePackage(deletePackage._id);
+      setShowDeleteModal(false);
+      setDeletePackage(null);
+      fetchPackages(undefined, { page: pagination.page, limit: pagination.limit });
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to delete package');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +146,17 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    const newFilters = provider ? { provider } : packageFilters;
+    if (viewMode === 'packages') {
+      fetchPackages(newFilters, { page });
+    } else {
+      fetchBundles(newFilters, { page });
+    }
+  };
+
+  const currentItems = viewMode === 'packages' ? (packages || []) : (bundles || []);
+
   // Filter options for the reusable component
   const filterOptions = {
     isActive: {
@@ -107,17 +180,6 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
     }
   };
 
-  const handlePageChange = (page: number) => {
-    const newFilters = provider ? { provider } : packageFilters;
-    if (viewMode === 'packages') {
-      fetchPackages(newFilters, { page });
-    } else {
-      fetchBundles(newFilters, { page });
-    }
-  };
-
-  const currentItems = viewMode === 'packages' ? (packages || []) : (bundles || []);
-
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -140,64 +202,76 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            {viewMode === 'packages' ? 'Package Groups' : 'Data Bundles'}
+            {isSuperAdminUser ? 'Package Management' : (viewMode === 'packages' ? 'Package Groups' : 'Data Bundles')}
           </h2>
           <p className="text-gray-600">
-            Manage your {viewMode === 'packages' ? 'package groups' : 'data bundles'} and configurations
+            {isSuperAdminUser 
+              ? 'Create, update, and manage all packages'
+              : `Manage your ${viewMode === 'packages' ? 'package groups' : 'data bundles'} and configurations`
+            }
           </p>
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Create Package Button (only for packages view) */}
-          {viewMode === 'packages' && (
+          {/* Create Package Button (only for super admin or packages view) */}
+          {(isSuperAdminUser || viewMode === 'packages') && (
             <button
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              onClick={() => {
-                // TODO: Implement package creation functionality
-                // Create package clicked
+              onClick={() => { 
+                setEditPackage(null); 
+                setShowFormModal(true); 
               }}
             >
               <FaPlus className="mr-2" />
               Create Package
             </button>
           )}
-          {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('packages')}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'packages'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Packages
-            </button>
-            <button
-              onClick={() => setViewMode('bundles')}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'bundles'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Bundles
-            </button>
-          </div>
+          
+          {/* View Mode Toggle (only for non-super admin) */}
+          {!isSuperAdminUser && (
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('packages')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'packages'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Packages
+              </button>
+              <button
+                onClick={() => setViewMode('bundles')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'bundles'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Bundles
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <SearchAndFilter
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        searchPlaceholder={`Search ${viewMode === 'packages' ? 'packages' : 'bundles'}...`}
-        filters={filterOptions}
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
-        onClearFilters={handleClearFilters}
-        isLoading={loading}
-      />
+      {/* Search and Filters (only for non-super admin) */}
+      {!isSuperAdminUser && (
+        <SearchAndFilter
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder={`Search ${viewMode === 'packages' ? 'packages' : 'bundles'}...`}
+          filters={filterOptions}
+          onFilterChange={handleFilterChange}
+          onSearch={handleSearch}
+          onClearFilters={handleClearFilters}
+          isLoading={loading}
+        />
+      )}
+
+      {/* Error/Loading States */}
+      {actionError && <div className="text-red-600 text-sm mb-2">{actionError}</div>}
+      {(loading || actionLoading) && <div className="text-gray-500 text-sm mb-2">Loading...</div>}
 
       {/* Content */}
       {loading ? (
@@ -217,7 +291,10 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
             </p>
             <div className="mt-6">
               <p className="text-sm text-gray-500">
-                Contact your administrator to add new {viewMode === 'packages' ? 'packages' : 'bundles'}.
+                {isSuperAdminUser 
+                  ? 'Create a new package to get started.'
+                  : 'Contact your administrator to add new packages.'
+                }
               </p>
             </div>
           </div>
@@ -250,6 +327,16 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
+                  {isSuperAdminUser && viewMode === 'packages' && (
+                    <>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -299,6 +386,36 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
                           {item.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
+                      {isSuperAdminUser && viewMode === 'packages' && (
+                        <>
+                          <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                            {(item as Package).createdAt ? new Date((item as Package).createdAt).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap flex gap-2">
+                            <button 
+                              className="text-blue-600 hover:text-blue-900" 
+                              onClick={() => { setEditPackage(item as Package); setShowFormModal(true); }}
+                              title="Edit Package"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button 
+                              className="text-red-600 hover:text-red-900" 
+                              onClick={() => { setDeletePackage(item as Package); setShowDeleteModal(true); }}
+                              title="Delete Package"
+                            >
+                              <FaTrash />
+                            </button>
+                            <button 
+                              className="text-green-600 hover:text-green-900" 
+                              onClick={() => navigate(`/superadmin/packages/${item._id}/bundles`)}
+                              title="View Bundles"
+                            >
+                              <FaEye />
+                            </button>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   );
                 })}
@@ -361,6 +478,41 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
         </div>
       )}
 
+      {/* Create/Edit Modal (only for super admin) */}
+      {isSuperAdminUser && (
+        <PackageFormModal
+          open={showFormModal}
+          onClose={() => { setShowFormModal(false); setEditPackage(null); }}
+          onSubmit={handleFormSubmit}
+          initialData={editPackage}
+        />
+      )}
+
+      {/* Delete Confirmation Modal (only for super admin) */}
+      {isSuperAdminUser && showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+            <h2 className="text-lg font-bold mb-4">Delete Package</h2>
+            <p>Are you sure you want to delete <span className="font-semibold">{deletePackage?.name}</span>?</p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                onClick={() => { setShowDeleteModal(false); setDeletePackage(null); }}
+                disabled={actionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                onClick={handleDelete}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+}; 

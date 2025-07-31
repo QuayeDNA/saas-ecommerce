@@ -4,12 +4,14 @@ import type { ReactNode } from 'react';
 import { ProviderContext, type ProviderContextType } from './provider-context';
 import { providerService } from '../services/provider.service';
 import type { Provider, ProviderFilters } from '../types/package';
+import { useAuth } from '../hooks/use-auth';
 
 interface ProviderProviderProps {
   children: ReactNode;
 }
 
 export const ProviderProvider: React.FC<ProviderProviderProps> = ({ children }) => {
+  const { authState } = useAuth();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,16 +42,17 @@ export const ProviderProvider: React.FC<ProviderProviderProps> = ({ children }) 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to fetch providers';
       setError(message);
-      console.error("Failed to fetch providers", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Fetch providers on mount
+  // Fetch providers only after authentication is initialized and user is authenticated
   useEffect(() => {
-    fetchProviders();
-  }, [fetchProviders]);
+    if (authState.isInitialized && authState.isAuthenticated) {
+      fetchProviders();
+    }
+  }, [authState.isInitialized, authState.isAuthenticated, fetchProviders]);
 
   const createProvider = useCallback(async (providerData: Partial<Provider>) => {
     setLoading(true);
@@ -61,7 +64,7 @@ export const ProviderProvider: React.FC<ProviderProviderProps> = ({ children }) 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create provider';
       setError(message);
-      console.error("Failed to create provider", err);
+      // Failed to create provider
       throw err;
     } finally {
       setLoading(false);
@@ -78,7 +81,7 @@ export const ProviderProvider: React.FC<ProviderProviderProps> = ({ children }) 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to update provider';
       setError(message);
-      console.error("Failed to update provider", err);
+      // Failed to update provider
       throw err;
     } finally {
       setLoading(false);
@@ -95,7 +98,7 @@ export const ProviderProvider: React.FC<ProviderProviderProps> = ({ children }) 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to delete provider';
       setError(message);
-      console.error("Failed to delete provider", err);
+      // Failed to delete provider
       throw err;
     } finally {
       setLoading(false);
@@ -112,7 +115,7 @@ export const ProviderProvider: React.FC<ProviderProviderProps> = ({ children }) 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to restore provider';
       setError(message);
-      console.error("Failed to restore provider", err);
+      // Failed to restore provider
       throw err;
     } finally {
       setLoading(false);

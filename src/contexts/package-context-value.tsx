@@ -53,7 +53,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to fetch packages';
       setError(message);
-      console.error("Failed to fetch packages", err);
     } finally {
       setLoading(false);
     }
@@ -69,7 +68,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create package';
       setError(message);
-      console.error("Failed to create package", err);
       throw err;
     } finally {
       setLoading(false);
@@ -86,7 +84,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to update package';
       setError(message);
-      console.error("Failed to update package", err);
       throw err;
     } finally {
       setLoading(false);
@@ -103,7 +100,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to delete package';
       setError(message);
-      console.error("Failed to delete package", err);
       throw err;
     } finally {
       setLoading(false);
@@ -120,7 +116,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to restore package';
       setError(message);
-      console.error("Failed to restore package", err);
       throw err;
     } finally {
       setLoading(false);
@@ -133,7 +128,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to get package';
       setError(message);
-      console.error("Failed to get package", err);
       throw err;
     }
   }, []);
@@ -157,7 +151,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to fetch bundles';
       setError(message);
-      console.error("Failed to fetch bundles", err);
     } finally {
       setLoading(false);
     }
@@ -173,7 +166,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create bundle';
       setError(message);
-      console.error("Failed to create bundle", err);
       throw err;
     } finally {
       setLoading(false);
@@ -190,7 +182,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to update bundle';
       setError(message);
-      console.error("Failed to update bundle", err);
       throw err;
     } finally {
       setLoading(false);
@@ -207,7 +198,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to delete bundle';
       setError(message);
-      console.error("Failed to delete bundle", err);
       throw err;
     } finally {
       setLoading(false);
@@ -220,7 +210,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to get bundle';
       setError(message);
-      console.error("Failed to get bundle", err);
       throw err;
     }
   }, []);
@@ -236,7 +225,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to fetch bundles by provider';
       setError(message);
-      console.error("Failed to fetch bundles by provider", err);
     } finally {
       setLoading(false);
     }
@@ -253,7 +241,6 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to fetch bundles by package';
       setError(message);
-      console.error("Failed to fetch bundles by package", err);
     } finally {
       setLoading(false);
     }
@@ -265,7 +252,7 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
       const data = await packageService.getAnalytics(timeframe);
       setPackageAnalytics(data);
     } catch (err: unknown) {
-      console.error("Failed to fetch package analytics", err);
+      // Silently fail analytics requests
     }
   }, []);
 
@@ -274,7 +261,7 @@ export const PackageProvider: React.FC<PackageProviderProps> = ({ children }) =>
       const data = await bundleService.getBundleAnalytics(timeframe);
       setBundleAnalytics(data);
     } catch (err: unknown) {
-      console.error("Failed to fetch bundle analytics", err);
+      // Silently fail analytics requests
     }
   }, []);
 

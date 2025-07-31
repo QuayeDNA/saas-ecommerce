@@ -31,12 +31,6 @@ export const providerColors: ProviderColorMap = {
     background: '#E3F2FD', // Subtle blue-tinted background
     text: '#FFFFFF'
   },
-  GLO: {
-    primary: '#4CAF50', // Glo Green (official brand color)
-    secondary: '#2E7D32', // Glo Dark Green
-    background: '#E8F5E9', // Subtle green-tinted background
-    text: '#FFFFFF'
-  },
   default: {
     primary: '#9CA3AF', // Neutral gray
     secondary: '#4B5563', // Darker gray

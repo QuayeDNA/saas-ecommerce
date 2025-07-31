@@ -93,7 +93,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
       onUpdateStatus(orderId, newStatus);
       setStatusDropdowns(new Set());
     } catch (error) {
-      console.error('Failed to update status:', error);
+      // Failed to update status
     }
   };
 

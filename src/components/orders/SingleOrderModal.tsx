@@ -180,8 +180,8 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
         quantity: 1
       };
 
-      console.log('Frontend sending order data:', orderData);
-      console.log('Bundle data:', bundle);
+          // Frontend sending order data
+    // Bundle data
 
       await createSingleOrder(orderData);
       
