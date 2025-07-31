@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } else {
         throw new Error('User data missing after refresh');
       }
-    } catch (refreshError) {
+    } catch {
       authService.clearAuthData();
       setUnauthenticatedState();
     }
@@ -286,8 +286,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const from = locationState?.from?.pathname ?? resp.dashboardUrl ?? '/';
       navigate(from, { replace: true });
       
-    } catch (error: any) {
-      const errorMessage = error.message || "Failed to login";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to login";
 
       setState((prev) => ({
         ...prev,
@@ -417,7 +417,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Clear localStorage flags for wizard/tour completion
       localStorage.removeItem('wizardCompleted');
       localStorage.removeItem('tourCompleted');
-    } catch (error) {
+    } catch {
       // Logout API failed, but we'll still clear local state
     } finally {
       // Stop token refresh service
@@ -443,8 +443,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         user: prev.user ? { ...prev.user, isFirstTime: false } : null
       }));
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to update preferences";
+    } catch {
       // Error updating first-time flag
       // Silently fail as this is not critical
     }

@@ -11,7 +11,6 @@ import {
   FaWallet,
   FaUser,
   FaCog,
-  FaChartBar,
   FaTachometerAlt,
   FaBuilding,
   FaClipboardList
@@ -105,16 +104,6 @@ const getAgentNavItems = (): NavItem[] => [
     path: '/agent/dashboard/profile',
     icon: <FaUser />
   },
-  {
-    label: 'History',
-    path: '/agent/dashboard/history',
-    icon: <FaChartBar />
-  },
-  {
-    label: 'Support',
-    path: '/agent/dashboard/support',
-    icon: <FaUsersCog />
-  },
 ];
 
 // Customer navigation configuration
@@ -132,16 +121,6 @@ const getCustomerNavItems = (): NavItem[] => [
     label: 'Profile',
     path: '/customer/dashboard/profile',
     icon: <FaUser />
-  },
-  {
-    label: 'History',
-    path: '/customer/dashboard/history',
-    icon: <FaChartBar />
-  },
-  {
-    label: 'Support',
-    path: '/customer/dashboard/support',
-    icon: <FaUsersCog />
   },
 ];
 
@@ -175,11 +154,6 @@ const getAdminNavItems = (): NavItem[] => [
     label: 'Profile',
     path: '/admin/dashboard/profile',
     icon: <FaUser />
-  },
-  {
-    label: 'Support',
-    path: '/admin/dashboard/support',
-    icon: <FaUsersCog />
   },
 ];
 

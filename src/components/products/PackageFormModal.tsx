@@ -13,7 +13,6 @@ const PROVIDER_OPTIONS = [
   { value: 'MTN', label: 'MTN' },
   { value: 'TELECEL', label: 'TELECEL' },
   { value: 'AT', label: 'AT' },
-  { value: 'GLO', label: 'GLO' },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -79,8 +78,8 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({ open, onClos
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative mx-4">
         <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" onClick={onClose}>
           <FaTimes />
         </button>
@@ -94,7 +93,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({ open, onClos
               name="name"
               value={form.name}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
@@ -104,8 +103,8 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({ open, onClos
               name="description"
               value={form.description}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              rows={2}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              rows={3}
             />
           </div>
           <div>
@@ -114,7 +113,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({ open, onClos
               name="provider"
               value={form.provider}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             >
               <option value="">Select provider</option>
@@ -129,7 +128,7 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({ open, onClos
               name="category"
               value={form.category}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             >
               {CATEGORY_OPTIONS.map(opt => (
@@ -144,12 +143,24 @@ export const PackageFormModal: React.FC<PackageFormModalProps> = ({ open, onClos
               checked={!!form.isActive}
               onChange={handleChange}
               id="isActive"
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <label htmlFor="isActive" className="text-sm text-gray-700">Active</label>
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <button type="button" className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" onClick={onClose}>Cancel</button>
-            <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">{initialData ? 'Update' : 'Create'}</button>
+          <div className="flex justify-end gap-2 mt-6">
+            <button 
+              type="button" 
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors" 
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            >
+              {initialData ? 'Update' : 'Create'}
+            </button>
           </div>
         </form>
       </div>

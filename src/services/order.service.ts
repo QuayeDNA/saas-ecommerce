@@ -100,6 +100,16 @@ class OrderService {
     };
   }
 
+  // Process draft orders when wallet is topped up
+  async processDraftOrders(): Promise<{
+    processed: number;
+    message: string;
+    totalAmount: number;
+  }> {
+    const response = await apiClient.post('/api/orders/process-drafts');
+    return response.data;
+  }
+
   // Get analytics
   async getAnalytics(timeframe = '30d'): Promise<OrderAnalytics> {
     const response = await apiClient.get('/api/orders/analytics/summary', { params: { timeframe } });

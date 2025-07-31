@@ -14,6 +14,7 @@ import {
   FaDatabase,
 } from "react-icons/fa";
 import { useOrder } from "../../contexts/OrderContext";
+import { useSiteStatus } from "../../contexts/site-status-context";
 import { bundleService } from "../../services/bundle.service";
 import type { Bundle } from "../../types/package";
 import { getProviderColors } from "../../utils/provider-colors";
@@ -69,6 +70,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   providerName,
 }) => {
   const { loading, createBulkOrder } = useOrder();
+  const { siteStatus } = useSiteStatus();
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const navigate = useNavigate();
   const [bulkText, setBulkText] = useState("");
@@ -247,6 +249,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const handleConfirmOrder = async () => {
     try {
       setError(null);
+      
+      // Check if site is closed
+      if (siteStatus?.isSiteOpen === false) {
+        setError(`Site is currently under maintenance: ${siteStatus.customMessage}`);
+        return;
+      }
+      
       const items = validOrders.map(
         (item) => `${item.customerPhone},${item.dataVolume}GB`
       );
@@ -257,7 +266,15 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       navigate("/agent/dashboard/orders");
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to create bulk order");
+        const errorMessage = err.message;
+        
+        // Check if site is closed
+        if (errorMessage.includes('maintenance') || errorMessage.includes('Site is currently under maintenance')) {
+          setError(errorMessage);
+          return;
+        }
+        
+        setError(errorMessage || "Failed to create bulk order");
       } else {
         setError("Failed to create bulk order");
       }
@@ -470,11 +487,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               {/* Continue Button */}
               <button
                 onClick={handleContinue}
-                disabled={orderItems.length === 0 || loading}
+                disabled={orderItems.length === 0 || loading || (siteStatus?.isSiteOpen === false)}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
               >
                 {loading
                   ? "Processing..."
+                  : (siteStatus?.isSiteOpen === false)
+                  ? "Site Under Maintenance"
                   : `Continue (${orderItems.length} items)`}
               </button>
             </div>
@@ -639,13 +658,18 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 </button>
                 <button
                   onClick={handleConfirmOrder}
-                  disabled={loading || validOrders.length === 0}
+                  disabled={loading || validOrders.length === 0 || (siteStatus?.isSiteOpen === false)}
                   className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       Processing...
+                    </>
+                  ) : (siteStatus?.isSiteOpen === false) ? (
+                    <>
+                      <FaTimes />
+                      Site Under Maintenance
                     </>
                   ) : (
                     <>

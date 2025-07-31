@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTimes, FaPhone, FaWifi, FaClock, FaCheckCircle } from 'react-icons/fa';
 import { useOrder } from '../../contexts/OrderContext';
+import { useSiteStatus } from '../../contexts/site-status-context';
 import type { Bundle } from '../../types/package';
 import type { CreateSingleOrderData } from '../../types/order';
 
@@ -49,6 +50,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   bundle
 }) => {
   const { createSingleOrder, loading } = useOrder();
+  const { siteStatus } = useSiteStatus();
   const navigate = useNavigate();
   const [customerPhone, setCustomerPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
@@ -167,6 +169,12 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
     try {
       setError(null);
       
+      // Check if site is closed
+      if (siteStatus && !siteStatus.isSiteOpen) {
+        setError(`Site is currently under maintenance: ${siteStatus.customMessage}`);
+        return;
+      }
+      
       const orderData: CreateSingleOrderData = {
         packageGroupId: typeof bundle.packageId === 'object' && bundle.packageId !== null && '_id' in bundle.packageId
           ? (bundle.packageId as { _id: string })._id
@@ -180,10 +188,11 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
         quantity: 1
       };
 
-          // Frontend sending order data
-    // Bundle data
-
       await createSingleOrder(orderData);
+      
+      // Check if the order was created as a draft (insufficient wallet balance)
+      // The backend will return an error message if it's a draft order
+      // We'll handle this in the OrderContext and show appropriate message
       
       // Show success briefly before navigating to orders page
       setTimeout(() => {
@@ -194,7 +203,22 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message || 'Failed to create order');
+        const errorMessage = err.message;
+        
+        // Check if this is a draft order (insufficient wallet balance)
+        if (errorMessage.includes('draft') || errorMessage.includes('insufficient')) {
+          setError(errorMessage);
+          // Don't close modal, let user see the error and potentially top up wallet
+          return;
+        }
+        
+        // Check if site is closed
+        if (errorMessage.includes('maintenance') || errorMessage.includes('Site is currently under maintenance')) {
+          setError(errorMessage);
+          return;
+        }
+        
+        setError(errorMessage || 'Failed to create order');
       } else {
         setError('Failed to create order');
       }
@@ -288,10 +312,10 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
               {/* Continue Button */}
               <button
                 onClick={handleContinue}
-                disabled={!customerPhone || loading}
+                disabled={!customerPhone || loading || (siteStatus?.isSiteOpen === false)}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
               >
-                {loading ? 'Processing...' : 'Continue'}
+                {loading ? 'Processing...' : (siteStatus && !siteStatus.isSiteOpen) ? 'Site Under Maintenance' : 'Continue'}
               </button>
             </div>
           ) : (
@@ -362,13 +386,18 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                 </button>
                 <button
                   onClick={handleConfirmOrder}
-                  disabled={loading}
+                  disabled={loading || (siteStatus?.isSiteOpen === false)}
                   className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       Processing...
+                    </>
+                  ) : (siteStatus && !siteStatus.isSiteOpen) ? (
+                    <>
+                      <FaTimes />
+                      Site Under Maintenance
                     </>
                   ) : (
                     <>

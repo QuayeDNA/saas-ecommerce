@@ -33,6 +33,7 @@ interface OrderContextType {
   bulkProcessOrders: (orderIds: string[], action: 'processing' | 'completed') => Promise<void>;
   cancelOrder: (orderId: string, reason?: string) => Promise<void>;
   updateOrderStatus: (orderId: string, status: string, notes?: string) => Promise<void>;
+  processDraftOrders: () => Promise<{ processed: number; message: string; totalAmount: number }>;
   fetchAnalytics: (timeframe?: string) => Promise<void>;
   getAnalytics: (timeframe?: string) => Promise<OrderAnalytics>;
   setFilters: (filters: OrderFilters) => void;
@@ -92,7 +93,17 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setError(null);
     
     try {
-      await orderService.createSingleOrder(orderData);
+      const order = await orderService.createSingleOrder(orderData);
+      
+      // Check if order was created as draft
+      if (order.status === 'draft') {
+        const message = `Order created as draft due to insufficient wallet balance. Please top up your wallet to process this order.`;
+        setError(message);
+        addToast(message, 'warning');
+        await fetchOrders(filters);
+        throw new Error(message);
+      }
+      
       addToast('Single order created successfully', 'success');
       await fetchOrders(filters);
     } catch (err: unknown) {
@@ -213,6 +224,20 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [addToast, fetchOrders, filters, orders]);
 
+  const processDraftOrders = useCallback(async () => {
+    try {
+      const result = await orderService.processDraftOrders();
+      addToast(result.message, 'success');
+      await fetchOrders(filters);
+      return result;
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err, 'Failed to process draft orders');
+      setError(message);
+      addToast(message, 'error');
+      throw new Error(message);
+    }
+  }, [addToast, fetchOrders, filters]);
+
   const fetchAnalytics = useCallback(async (timeframe = '30d') => {
     try {
       const analyticsData = await orderService.getAnalytics(timeframe);
@@ -262,6 +287,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     bulkProcessOrders,
     cancelOrder,
     updateOrderStatus,
+    processDraftOrders,
     fetchAnalytics,
     getAnalytics,
     setFilters,
@@ -281,6 +307,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     bulkProcessOrders,
     cancelOrder,
     updateOrderStatus,
+    processDraftOrders,
     fetchAnalytics,
     getAnalytics,
     setFilters,

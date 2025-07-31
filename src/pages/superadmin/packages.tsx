@@ -20,6 +20,7 @@ import { Button } from "../../design-system/components/button";
 import { colors } from "../../design-system/tokens";
 import { PackageFormModal } from "../../components/products/PackageFormModal";
 import { getProviderColors } from "../../utils/provider-colors";
+import { useToast } from "../../design-system/components/toast";
 
 const providerOptions = [
   { value: '', label: 'All Providers', icon: FaBuilding },
@@ -58,6 +59,7 @@ export default function SuperAdminPackagesPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { addToast } = useToast();
 
   // Filter options for the reusable component
   const filterOptions = {
@@ -94,9 +96,12 @@ export default function SuperAdminPackagesPage() {
       const response = await packageService.getPackages(filters);
       setPackages(response.packages);
 
+      if (response.packages.length === 0 && (provider || status || category || search.trim())) {
+        addToast('No packages found matching your criteria', 'info');
+      }
     } catch {
       setError('Failed to fetch packages');
-      // Error fetching packages
+      addToast('Failed to fetch packages', 'error');
     } finally {
       setLoading(false);
     }
@@ -109,6 +114,9 @@ export default function SuperAdminPackagesPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchPackages();
+    if (search.trim()) {
+      addToast(`Searching for packages matching "${search}"`, 'info');
+    }
   };
 
   const handleClearFilters = () => {
@@ -117,6 +125,7 @@ export default function SuperAdminPackagesPage() {
     setStatus('');
     setCategory('');
     fetchPackages();
+    addToast('Filters cleared', 'info');
   };
 
   const handleFilterChange = (filterKey: string, value: string) => {
@@ -153,9 +162,10 @@ export default function SuperAdminPackagesPage() {
       setShowDeleteModal(false);
       setDeletePackage(null);
       await fetchPackages();
+      addToast(`Package "${deletePackage.name}" deleted successfully`, 'success');
     } catch {
       setActionError('Failed to delete package');
-      // Error deleting package
+      addToast('Failed to delete package', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -166,31 +176,34 @@ export default function SuperAdminPackagesPage() {
     setActionError(null);
     try {
       if (editPackage?._id) {
-        await packageService.updatePackage(editPackage._id, data);
+        // For updates, only send allowed fields
+        const updateData: {
+          name: string;
+          description?: string;
+          provider: string;
+          category: 'daily' | 'weekly' | 'monthly' | 'unlimited' | 'custom';
+          isActive: boolean;
+        } = {
+          name: data.name,
+          description: data.description,
+          provider: data.provider,
+          category: data.category,
+          isActive: data.isActive,
+        };
+        await packageService.updatePackage(editPackage._id, updateData);
       } else {
+        // For creation, send the data as is
         await packageService.createPackage(data);
       }
       setShowFormModal(false);
       setEditPackage(null);
       await fetchPackages();
+      addToast(`Package "${data.name}" saved successfully`, 'success');
     } catch {
       setActionError('Failed to save package');
-      // Error saving package
+      addToast('Failed to save package', 'error');
     } finally {
       setActionLoading(false);
-    }
-  };
-
-  const getStatusColor = (isActive: boolean) => {
-    return isActive ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
-  };
-
-  const getProviderColor = (providerCode: string) => {
-    switch (providerCode) {
-      case 'MTN': return 'text-yellow-600 bg-yellow-100';
-      case 'TELECEL': return 'text-blue-600 bg-blue-100';
-      case 'AT': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
     }
   };
 
@@ -328,7 +341,7 @@ export default function SuperAdminPackagesPage() {
         </div>
       )}
 
-      {/* Packages List */}
+      {/* Packages Grid */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {loading ? (
           <div className="p-6 sm:p-8 text-center">
@@ -341,85 +354,129 @@ export default function SuperAdminPackagesPage() {
           <div className="p-6 sm:p-8 text-center">
             <FaBox className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
             <p className="text-sm sm:text-base text-gray-500">No packages found matching your criteria.</p>
+            <Button onClick={handleCreate} className="mt-4">
+              <FaPlus className="mr-2" />
+              Create Your First Package
+            </Button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {packages.map(pkg => (
-              <div key={pkg._id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col gap-4">
-                  {/* Package Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start gap-3 mb-3">
-                      <FaBox className="text-blue-600 text-lg sm:text-xl mt-1 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                          {pkg.name}
-                        </h3>
-                        {pkg.description && (
-                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                            {pkg.description}
-                          </p>
-                        )}
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              {packages.map(pkg => {
+                const providerColors = getProviderColors(pkg.provider);
+                return (
+                  <div 
+                    key={pkg._id} 
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 overflow-hidden group"
+                    style={{
+                      borderTop: `4px solid ${providerColors.primary}`
+                    }}
+                  >
+                    {/* Card Header with Provider Branding */}
+                    <div 
+                      className="p-4 pb-3"
+                      style={{ backgroundColor: providerColors.background }}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="p-2 rounded-full"
+                            style={{ backgroundColor: providerColors.primary }}
+                          >
+                            <FaBox className="text-white text-sm" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-semibold text-gray-900 truncate">
+                              {pkg.name}
+                            </h3>
+                            <p 
+                              className="text-xs font-medium mt-1"
+                              style={{ color: providerColors.primary }}
+                            >
+                              {pkg.provider}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            pkg.isActive 
+                              ? 'text-green-600 bg-green-100' 
+                              : 'text-red-600 bg-red-100'
+                          }`}>
+                            {pkg.isActive ? <FaCheckCircle className="w-3 h-3 mr-1" /> : <FaTimesCircle className="w-3 h-3 mr-1" />}
+                            {pkg.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Description */}
+                      {pkg.description && (
+                        <p className="text-xs text-gray-600 line-clamp-2 mb-3">
+                          {pkg.description}
+                        </p>
+                      )}
+                      
+                      {/* Tags */}
+                      <div className="flex flex-wrap items-center gap-1">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(pkg.category)}`}>
+                          {pkg.category}
+                        </span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                          <FaCalendar className="w-3 h-3 mr-1" />
+                          {formatDate(pkg.createdAt || '')}
+                        </span>
                       </div>
                     </div>
-                    
-                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getProviderColor(pkg.provider)}`}>
-                        {pkg.provider}
-                      </span>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getStatusColor(pkg.isActive)}`}>
-                        {pkg.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getCategoryColor(pkg.category)}`}>
-                        {pkg.category}
-                      </span>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800">
-                        <FaCalendar className="w-3 h-3 mr-1 flex-shrink-0" />
-                        {formatDate(pkg.createdAt || '')}
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(pkg)}
-                        disabled={actionLoading}
-                        className="w-full sm:w-auto"
-                      >
-                        <FaEdit className="mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Edit</span>
-                        <span className="sm:hidden">Edit</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleDelete(pkg)}
-                        disabled={actionLoading}
-                        className="w-full sm:w-auto"
-                      >
-                        <FaTrash className="mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Delete</span>
-                        <span className="sm:hidden">Delete</span>
-                      </Button>
+                    {/* Card Actions */}
+                    <div className="p-4 pt-3 border-t border-gray-100">
+                      <div className="flex flex-col gap-2">
+                        {/* Primary Actions */}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(pkg)}
+                            disabled={actionLoading}
+                            className="flex-1 text-xs"
+                          >
+                            <FaEdit className="mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/superadmin/packages/${pkg._id}/bundles`)}
+                            className="flex-1 text-xs"
+                            style={{
+                              borderColor: providerColors.primary,
+                              color: providerColors.primary
+                            }}
+                          >
+                            <FaEye className="mr-1" />
+                            Bundles
+                          </Button>
+                        </div>
+                        
+                        {/* Secondary Actions */}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => handleDelete(pkg)}
+                            disabled={actionLoading}
+                            className="flex-1 text-xs"
+                          >
+                            <FaTrash className="mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => navigate(`/superadmin/packages/${pkg._id}/bundles`)}
-                      className="w-full sm:w-auto"
-                    >
-                      <FaEye className="mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">View Bundles</span>
-                      <span className="sm:hidden">Bundles</span>
-                    </Button>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -434,7 +491,7 @@ export default function SuperAdminPackagesPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative mx-4">
             <h2 className="text-lg font-bold mb-4">Delete Package</h2>
             <p className="text-gray-600 mb-6">

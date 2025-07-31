@@ -15,13 +15,14 @@ import {
   FaCalendar,
   FaCheckCircle,
   FaDatabase,
-  FaClock,
-  FaArrowLeft
+  FaArrowLeft,
+  FaTimesCircle
 } from "react-icons/fa";
 import { Button } from "../../design-system/components/button";
 import { colors } from "../../design-system/tokens";
 import { BundleFormModal } from "../../components/products/BundleFormModal";
 import { useToast } from "../../design-system/components/toast";
+import { getProviderColors } from "../../utils/provider-colors";
 
 const statusOptions = [
   { value: '', label: 'All Status' },
@@ -51,6 +52,7 @@ export const BundleManagementPage: React.FC = () => {
   const { addToast } = useToast();
   const [pkg, setPkg] = useState<Package | null>(null);
   const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [allBundles, setAllBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
@@ -93,26 +95,65 @@ export const BundleManagementPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const filters: Record<string, string | boolean> = {};
-      if (status) filters.isActive = status === 'active';
-      if (category) filters.category = category;
-      if (dataUnit) filters.dataUnit = dataUnit;
-      if (search.trim()) filters.search = search.trim();
-
+      // Fetch all bundles for this package without filters
       const response = await bundleService.getBundlesByPackage(packageId, { 
         page: 1, 
-        limit: 100, // Get all bundles for this package
-        ...filters 
+        limit: 1000 // Get all bundles for this package
       });
-      setBundles(response.bundles || []);
-      if (response.bundles?.length === 0) {
-        addToast('No bundles found matching your criteria', 'info');
-      }
+      
+      const fetchedBundles = response.bundles || [];
+      setAllBundles(fetchedBundles); // Store all bundles for filtering
+      
+      // Apply current filters to the fetched bundles
+      applyFiltersToBundles(fetchedBundles);
+      
     } catch {
       setError('Failed to fetch bundles');
       addToast('Failed to fetch bundles', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const applyFiltersToBundles = (bundlesToFilter: Bundle[]) => {
+    let filteredBundles = bundlesToFilter;
+    
+    // Filter by status
+    if (status) {
+      filteredBundles = filteredBundles.filter(bundle => 
+        status === 'active' ? bundle.isActive : !bundle.isActive
+      );
+    }
+    
+    // Filter by category
+    if (category) {
+      filteredBundles = filteredBundles.filter(bundle => 
+        bundle.category === category
+      );
+    }
+    
+    // Filter by data unit
+    if (dataUnit) {
+      filteredBundles = filteredBundles.filter(bundle => 
+        bundle.dataUnit === dataUnit
+      );
+    }
+    
+    // Filter by search term
+    if (search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      filteredBundles = filteredBundles.filter(bundle => 
+        bundle.name.toLowerCase().includes(searchTerm) ||
+        bundle.description?.toLowerCase().includes(searchTerm) ||
+        bundle.dataVolume.toString().includes(searchTerm) ||
+        bundle.dataUnit.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    setBundles(filteredBundles);
+    
+    if (filteredBundles.length === 0 && (status || category || dataUnit || search.trim())) {
+      addToast('No bundles found matching your criteria', 'info');
     }
   };
 
@@ -132,11 +173,14 @@ export const BundleManagementPage: React.FC = () => {
 
   useEffect(() => {
     fetchBundles();
-  }, [packageId, status, category, dataUnit]);
+  }, [packageId]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchBundles();
+    applyFilters();
+    if (search.trim()) {
+      addToast(`Searching for bundles matching "${search}"`, 'info');
+    }
   };
 
   const handleClearFilters = () => {
@@ -144,8 +188,13 @@ export const BundleManagementPage: React.FC = () => {
     setStatus('');
     setCategory('');
     setDataUnit('');
-    fetchBundles();
+    applyFilters();
     addToast('Filters cleared', 'info');
+  };
+
+  const applyFilters = () => {
+    if (!allBundles) return;
+    applyFiltersToBundles(allBundles);
   };
 
   const handleFilterChange = (filterKey: string, value: string) => {
@@ -156,6 +205,8 @@ export const BundleManagementPage: React.FC = () => {
     } else if (filterKey === 'dataUnit') {
       setDataUnit(value);
     }
+    // Apply filters immediately when filter changes
+    setTimeout(() => applyFilters(), 0);
   };
 
   const handleCreate = () => {
@@ -269,10 +320,6 @@ export const BundleManagementPage: React.FC = () => {
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const getStatusColor = (isActive: boolean) => {
-    return isActive ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
   };
 
   const getCategoryColor = (category: string) => {
@@ -453,7 +500,7 @@ export const BundleManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Bundles List */}
+      {/* Bundles Grid */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {loading ? (
           <div className="p-6 sm:p-8 text-center">
@@ -472,86 +519,138 @@ export const BundleManagementPage: React.FC = () => {
             </Button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {bundles.map(bundle => (
-              <div key={bundle._id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col gap-4">
-                  {/* Bundle Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start gap-3 mb-3">
-                      <FaCube className="text-blue-600 text-lg sm:text-xl mt-1 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                          {bundle.name}
-                        </h3>
-                        {bundle.description && (
-                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                            {bundle.description}
-                          </p>
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              {bundles.map(bundle => {
+                const providerColors = getProviderColors(pkg?.provider);
+                return (
+                  <div 
+                    key={bundle._id} 
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 overflow-hidden group"
+                    style={{
+                      borderTop: `4px solid ${providerColors.primary}`
+                    }}
+                  >
+                    {/* Card Header with Provider Branding */}
+                    <div 
+                      className="p-4 pb-3"
+                      style={{ backgroundColor: providerColors.background }}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="p-2 rounded-full"
+                            style={{ backgroundColor: providerColors.primary }}
+                          >
+                            <FaCube className="text-white text-sm" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-semibold text-gray-900 truncate">
+                              {bundle.name}
+                            </h3>
+                            <p 
+                              className="text-xs font-medium mt-1"
+                              style={{ color: providerColors.primary }}
+                            >
+                              {pkg?.provider || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            bundle.isActive 
+                              ? 'text-green-600 bg-green-100' 
+                              : 'text-red-600 bg-red-100'
+                          }`}>
+                            {bundle.isActive ? <FaCheckCircle className="w-3 h-3 mr-1" /> : <FaTimesCircle className="w-3 h-3 mr-1" />}
+                            {bundle.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Description */}
+                      {bundle.description && (
+                        <p className="text-xs text-gray-600 line-clamp-2 mb-3">
+                          {bundle.description}
+                        </p>
+                      )}
+                      
+                      {/* Bundle Details */}
+                      <div className="space-y-2 mb-3">
+                        {/* Data Volume */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Data:</span>
+                          <span className="text-xs font-medium text-gray-900">
+                            {bundle.dataVolume} {bundle.dataUnit}
+                          </span>
+                        </div>
+                        
+                        {/* Validity */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Validity:</span>
+                          <span className="text-xs font-medium text-gray-900">
+                            {bundle.validity === 'unlimited' || bundle.validityUnit === 'unlimited' 
+                              ? 'Unlimited' 
+                              : `${bundle.validity} ${bundle.validityUnit}`
+                            }
+                          </span>
+                        </div>
+                        
+                        {/* Price */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Price:</span>
+                          <span className="text-xs font-medium text-gray-900">
+                            {formatCurrency(bundle.price, bundle.currency)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Tags */}
+                      <div className="flex flex-wrap items-center gap-1">
+                        {bundle.category && (
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(bundle.category)}`}>
+                            {bundle.category}
+                          </span>
                         )}
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                          <FaCalendar className="w-3 h-3 mr-1" />
+                          {formatDate(bundle.createdAt || '')}
+                        </span>
                       </div>
                     </div>
-                    
-                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getStatusColor(bundle.isActive)}`}>
-                        {bundle.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                      {bundle.category && (
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getCategoryColor(bundle.category)}`}>
-                          {bundle.category}
-                        </span>
-                      )}
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800`}>
-                        <FaDatabase className="w-3 h-3 mr-1 flex-shrink-0" />
-                        {bundle.dataVolume} {bundle.dataUnit}
-                      </span>
-                                             <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium bg-green-100 text-green-800`}>
-                         <FaClock className="w-3 h-3 mr-1 flex-shrink-0" />
-                         {bundle.validity === 'unlimited' || bundle.validityUnit === 'unlimited' 
-                           ? 'Unlimited' 
-                           : `${bundle.validity} ${bundle.validityUnit}`
-                         }
-                       </span>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-purple-100 text-purple-800">
-                        {formatCurrency(bundle.price, bundle.currency)}
-                      </span>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800">
-                        <FaCalendar className="w-3 h-3 mr-1 flex-shrink-0" />
-                        {formatDate(bundle.createdAt || '')}
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(bundle)}
-                        disabled={actionLoading}
-                        className="w-full sm:w-auto"
-                      >
-                        <FaEdit className="mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Edit</span>
-                        <span className="sm:hidden">Edit</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleDelete(bundle)}
-                        disabled={actionLoading}
-                        className="w-full sm:w-auto"
-                      >
-                        <FaTrash className="mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Delete</span>
-                        <span className="sm:hidden">Delete</span>
-                      </Button>
+                    {/* Card Actions */}
+                    <div className="p-4 pt-3 border-t border-gray-100">
+                      <div className="flex flex-col gap-2">
+                        {/* Primary Actions */}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(bundle)}
+                            disabled={actionLoading}
+                            className="flex-1 text-xs"
+                          >
+                            <FaEdit className="mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => handleDelete(bundle)}
+                            disabled={actionLoading}
+                            className="flex-1 text-xs"
+                          >
+                            <FaTrash className="mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

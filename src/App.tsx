@@ -6,6 +6,7 @@ import "./App.css";
 import "./design-system/theme.css";
 import { AppProvider } from "./providers/app-provider";
 import { Button } from "./design-system/components/button";
+import { MaintenanceBanner } from "./components/maintenance-banner";
 
 function App() {
   const routeElement = useRoutes(routes);
@@ -36,14 +37,17 @@ function App() {
   return (
     <>
       {isImpersonating && (
-        <div className="fixed top-0 left-0 right-0 bg-yellow-100 border-b border-yellow-300 p-2 flex flex-col sm:flex-row sm:items-center justify-between z-50">
+        <div className="fixed top-0 left-0 right-0 bg-yellow-100 border-b border-yellow-300 p-2 flex flex-col sm:flex-row sm:items-center justify-between z-50" style={{ top: '60px' }}>
           <span className="text-yellow-800 font-semibold text-sm">Impersonation Active: You are acting as another user.</span>
           <Button variant="danger" size="sm" onClick={handleReturnToAdmin}>Return to Admin</Button>
         </div>
       )}
       <ThemeProvider initialTheme="default">
         <ToastProvider>
-          <AppProvider>{routeElement}</AppProvider>
+          <AppProvider>
+            <MaintenanceBanner />
+            {routeElement}
+          </AppProvider>
         </ToastProvider>
       </ThemeProvider>
     </>

@@ -4,7 +4,7 @@ import { useTheme } from '../../hooks/use-theme';
 import type { ThemeColor } from '../../contexts/theme-context-value';
 
 // Alert variants
-type AlertVariant = 'solid' | 'subtle' | 'outline' | 'left-accent' | 'top-accent';
+export type AlertVariant = 'solid' | 'subtle' | 'outline' | 'left-accent' | 'top-accent';
 
 // Alert statuses 
 type AlertStatus = ThemeColor | 'success' | 'error' | 'warning' | 'info' | 'neutral';

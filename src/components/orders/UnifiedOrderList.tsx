@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useOrder } from '../../hooks/use-order';
 import { Button, Input } from '../../design-system';
-import { FaSearch, FaFilter, FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaSync } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaSync, FaExclamationTriangle } from 'react-icons/fa';
 import type { Order, OrderFilters } from '../../types/order';
 import { UnifiedOrderCard } from './UnifiedOrderCard';
 import { UnifiedOrderTable } from './UnifiedOrderTable';
+import { DraftOrdersHandler } from './DraftOrdersHandler';
 
 interface UnifiedOrderListProps {
   isAdmin: boolean;
@@ -38,6 +39,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [showDraftHandler, setShowDraftHandler] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -52,6 +54,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     completed: orders.filter((o: Order) => o.status === 'completed').length,
     cancelled: orders.filter((o: Order) => o.status === 'cancelled').length,
     failed: orders.filter((o: Order) => o.status === 'failed').length,
+    draft: orders.filter((o: Order) => o.status === 'draft').length,
     single: orders.filter((o: Order) => o.orderType === 'single').length,
     bulk: orders.filter((o: Order) => o.orderType === 'bulk').length,
     totalRevenue: orders.reduce((sum: number, order: Order) => sum + order.total, 0),
@@ -242,6 +245,32 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Draft Orders Alert - Only for Agents */}
+      {isAgent && stats.draft > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <FaExclamationTriangle className="text-yellow-500 mt-1" />
+            <div className="flex-1">
+              <h3 className="font-medium text-yellow-800 mb-2">
+                Draft Orders Require Attention
+              </h3>
+              <p className="text-sm text-yellow-700 mb-3">
+                You have {stats.draft} order(s) that were created as drafts due to insufficient wallet balance. 
+                These orders need to be processed once you top up your wallet.
+              </p>
+              <Button
+                onClick={() => setShowDraftHandler(true)}
+                variant="primary"
+                size="sm"
+              >
+                <FaExclamationTriangle className="mr-2" />
+                Manage Draft Orders
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow p-6">
@@ -466,6 +495,12 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </div>
         </div>
       )}
+
+      {/* Draft Orders Handler Modal */}
+      <DraftOrdersHandler
+        isOpen={showDraftHandler}
+        onClose={() => setShowDraftHandler(false)}
+      />
     </div>
   );
 }; 

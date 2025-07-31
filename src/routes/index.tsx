@@ -65,23 +65,12 @@ const PrivacyPolicyPage = lazy(() =>
     default: module.PrivacyPolicyPage,
   }))
 );
-const SupportPage = lazy(() =>
-  import("../pages/support-page").then((module) => ({
-    default: module.SupportPage,
-  }))
-);
-
 // =============================================================================
 // LAZY LOADED COMPONENTS - DASHBOARD PAGES
 // =============================================================================
 const DashboardPage = lazy(() =>
   import("../pages/dashboard-page").then((module) => ({
     default: module.DashboardPage,
-  }))
-);
-const HistoryPage = lazy(() =>
-  import("../pages/history-page").then((module) => ({
-    default: module.HistoryPage,
   }))
 );
 const ProfilePage = lazy(() =>
@@ -95,7 +84,7 @@ const ProfilePage = lazy(() =>
 // =============================================================================
 const PackageManagementPage = lazy(() =>
   import("../pages/packages-page").then((module) => ({
-    default: module.PackageManagementPage,
+    default: module.default,
   }))
 );
 const OrderManagementPage = lazy(() =>
@@ -243,14 +232,7 @@ const publicRoutes: RouteObject[] = [
       </Suspense>
     ),
   },
-  {
-    path: "/support",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <SupportPage />
-      </Suspense>
-    ),
-  },
+
   {
     path: "/404",
     element: (
@@ -336,14 +318,6 @@ const agentRoutes: RouteObject[] = [
             )
           },
           {
-            path: "history",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <HistoryPage />
-              </Suspense>
-            ),
-          },
-          {
             path: "profile",
             element: (
               <Suspense fallback={<PageLoader />}>
@@ -364,14 +338,6 @@ const agentRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <WalletPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "support",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <SupportPage />
               </Suspense>
             ),
           },
@@ -423,22 +389,7 @@ const customerRoutes: RouteObject[] = [
               </Suspense>
             ),
           },
-          {
-            path: "history",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <HistoryPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "support",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <SupportPage />
-              </Suspense>
-            ),
-          },
+
           {
             path: "privacy-policy",
             element: (
@@ -492,14 +443,6 @@ const adminRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "support",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <SupportPage />
               </Suspense>
             ),
           },

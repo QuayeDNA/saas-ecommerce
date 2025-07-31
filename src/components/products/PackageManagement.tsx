@@ -7,7 +7,7 @@ import { PackageFormModal } from './PackageFormModal';
 import { packageService } from '../../services/package.service';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/use-auth';
-import type { Package, Bundle } from '../../types/package';
+import type { Package, Bundle, CreatePackageData, UpdatePackageData } from '../../types/package';
 import { 
   FaBox,
   FaExclamationCircle,
@@ -75,20 +75,21 @@ export const PackageManagement: React.FC<PackageManagementProps> = ({
   }, [viewMode]);
 
   // Handle create or update
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: CreatePackageData | UpdatePackageData) => {
     setActionLoading(true);
     setActionError(null);
     try {
       if (editPackage?._id) {
-        await packageService.updatePackage(editPackage._id, data);
+        await packageService.updatePackage(editPackage._id, data as UpdatePackageData);
       } else {
-        await packageService.createPackage(data);
+        await packageService.createPackage(data as CreatePackageData);
       }
       setShowFormModal(false);
       setEditPackage(null);
       fetchPackages(undefined, { page: pagination.page, limit: pagination.limit });
-    } catch (err: any) {
-      setActionError(err?.message || 'Failed to save package');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save package';
+      setActionError(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -104,8 +105,9 @@ export const PackageManagement: React.FC<PackageManagementProps> = ({
       setShowDeleteModal(false);
       setDeletePackage(null);
       fetchPackages(undefined, { page: pagination.page, limit: pagination.limit });
-    } catch (err: any) {
-      setActionError(err?.message || 'Failed to delete package');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete package';
+      setActionError(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -389,7 +391,18 @@ export const PackageManagement: React.FC<PackageManagementProps> = ({
                       {isSuperAdminUser && viewMode === 'packages' && (
                         <>
                           <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
-                            {(item as Package).createdAt ? new Date((item as Package).createdAt).toLocaleDateString() : '-'}
+                            {(item as Package).createdAt
+                              ? (() => {
+                                  const createdAt = (item as Package).createdAt;
+                                  if (typeof createdAt === 'string' || typeof createdAt === 'number') {
+                                    return new Date(createdAt).toLocaleDateString();
+                                  }
+                                  if (createdAt instanceof Date) {
+                                    return createdAt.toLocaleDateString();
+                                  }
+                                  return '-';
+                                })()
+                              : '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap flex gap-2">
                             <button 

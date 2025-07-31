@@ -40,7 +40,7 @@ export interface Order {
   tax: number;
   discount: number;
   total: number;
-  status: 'pending' | 'confirmed' | 'processing' | 'partially_completed' | 'completed' | 'cancelled' | 'failed';
+  status: 'draft' | 'pending' | 'confirmed' | 'processing' | 'partially_completed' | 'completed' | 'cancelled' | 'failed';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   paymentMethod: 'cash' | 'card' | 'mobile_money' | 'bank_transfer' | 'wallet';
   paymentReference?: string;
