@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '../hooks';
 import { type WalletTransaction } from '../types/wallet';
-import { FaWallet, FaPlus, FaArrowUp, FaArrowDown, FaInfoCircle, FaSync, FaMoneyBillWave } from 'react-icons/fa';
-import { Button, Input, Alert } from '../design-system';
+import { FaWallet, FaPlus, FaArrowUp, FaArrowDown, FaSync } from 'react-icons/fa';
+import { Alert } from '../design-system';
+import { TopUpRequestModal } from '../components/wallet/TopUpRequestModal';
 
 export const WalletPage = () => {
   const {
@@ -20,8 +21,6 @@ export const WalletPage = () => {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
-  const [topUpAmount, setTopUpAmount] = useState('');
-  const [topUpDescription, setTopUpDescription] = useState('');
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
   // Fetch transaction history on page load and when page changes
@@ -57,34 +56,23 @@ export const WalletPage = () => {
   };
 
   // Handle top-up request submission
-  const handleTopUpRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!topUpAmount || parseFloat(topUpAmount) <= 0) {
-      setSuccessMessage('Please enter a valid amount.');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      return;
-    }
-
+  const handleTopUpRequest = async (amount: number, description: string) => {
     setIsSubmittingRequest(true);
     try {
-      await requestTopUp(parseFloat(topUpAmount), topUpDescription || 'Wallet top-up request');
+      await requestTopUp(amount, description);
       setSuccessMessage('Top-up request submitted successfully! An admin will review your request.');
-      setTopUpAmount('');
-      setTopUpDescription('');
-      setShowTopUpModal(false);
       
       // Refresh transactions to show the new request
       const result = await getTransactionHistory(currentPage);
       if (result) {
         setTransactions(result.transactions);
-        }
-      } catch (err) {
-        console.error('Failed to submit top-up request:', err);
-        setSuccessMessage('Failed to submit top-up request. Please try again.');
-      } finally {
-        setIsSubmittingRequest(false);
-        setTimeout(() => setSuccessMessage(null), 5000);
+      }
+    } catch (err) {
+      console.error('Failed to submit top-up request:', err);
+      setSuccessMessage('Failed to submit top-up request. Please try again.');
+    } finally {
+      setIsSubmittingRequest(false);
+      setTimeout(() => setSuccessMessage(null), 5000);
     }
   };
   
@@ -409,91 +397,12 @@ export const WalletPage = () => {
       </div>
       
       {/* Top-Up Request Modal */}
-      {showTopUpModal && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500/75 transition-opacity" aria-hidden="true"></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-[10000]">
-              <form onSubmit={handleTopUpRequest}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
-                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                      <FaMoneyBillWave className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                      <h3 className="text-lg leading-6 font-medium text-gray-900">
-                        Request Wallet Top-Up
-                      </h3>
-                      <div className="mt-4 space-y-4">
-                        <div>
-                          <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                            Amount (GH₵)
-                          </label>
-                          <Input
-                            type="number"
-                            id="amount"
-                            name="amount"
-                            min="0.01"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={topUpAmount}
-                            onChange={(e) => setTopUpAmount(e.target.value)}
-                            required
-                            className="mt-1"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                            Description (Optional)
-                          </label>
-                          <textarea
-                            id="description"
-                            name="description"
-                            rows={3}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            placeholder="Reason for top-up request..."
-                            value={topUpDescription}
-                            onChange={(e) => setTopUpDescription(e.target.value)}
-                          ></textarea>
-                        </div>
-                        
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <div className="flex items-start">
-                            <FaInfoCircle className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                            <div className="ml-3">
-                              <p className="text-sm text-blue-700">
-                                Your top-up request will be reviewed by an administrator. You'll be notified once it's processed.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <Button
-                    type="submit"
-                    disabled={isSubmittingRequest}
-                    className="w-full sm:w-auto"
-                  >
-                    {isSubmittingRequest ? 'Submitting...' : 'Submit Request'}
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => setShowTopUpModal(false)}
-                    className="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <TopUpRequestModal
+        isOpen={showTopUpModal}
+        onClose={() => setShowTopUpModal(false)}
+        onSubmit={handleTopUpRequest}
+        isSubmitting={isSubmittingRequest}
+      />
     </div>
   );
 };

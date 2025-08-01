@@ -1,0 +1,409 @@
+import React, { useState } from 'react';
+import { FaMoneyBillWave, FaWhatsapp, FaPhone, FaCheck, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
+import { Button, Input, Alert } from '../../design-system';
+
+interface TopUpRequestModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (amount: number, description: string) => Promise<void>;
+  isSubmitting: boolean;
+}
+
+type ContactMethod = 'whatsapp' | 'call' | null;
+
+interface StepData {
+  amount: string;
+  description: string;
+  contactMethod: ContactMethod;
+}
+
+export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  isSubmitting
+}) => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [stepData, setStepData] = useState<StepData>({
+    amount: '',
+    description: '',
+    contactMethod: null
+  });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const totalSteps = 3;
+
+  const validateStep = (step: number): boolean => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (step === 1) {
+      if (!stepData.amount) {
+        newErrors.amount = 'Amount is required';
+      } else if (parseFloat(stepData.amount) <= 0) {
+        newErrors.amount = 'Amount must be greater than 0';
+      } else if (parseFloat(stepData.amount) > 10000) {
+        newErrors.amount = 'Amount cannot exceed GH₵10,000';
+      }
+    }
+
+    if (step === 2) {
+      if (!stepData.contactMethod) {
+        newErrors.contactMethod = 'Please select a contact method';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep(currentStep - 1);
+    setErrors({});
+  };
+
+  const handleSubmit = async () => {
+    if (validateStep(currentStep)) {
+      const description = stepData.description || `Top-up request via ${stepData.contactMethod}`;
+      await onSubmit(parseFloat(stepData.amount), description);
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    setCurrentStep(1);
+    setStepData({
+      amount: '',
+      description: '',
+      contactMethod: null
+    });
+    setErrors({});
+    onClose();
+  };
+
+  const updateStepData = (field: keyof StepData, value: string | ContactMethod) => {
+    setStepData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleWhatsAppContact = () => {
+    const message = `Hi, I need a wallet top-up of GH₵${stepData.amount}. Please process my request.`;
+    const whatsappUrl = `https://wa.me/+233548983019?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleCallContact = () => {
+    window.open('tel:+233548983019', '_blank');
+  };
+
+  // Auto-trigger contact method when reaching step 3
+  React.useEffect(() => {
+    if (currentStep === 3 && stepData.contactMethod) {
+      // Small delay to let user see the confirmation first
+      const timer = setTimeout(() => {
+        if (stepData.contactMethod === 'whatsapp') {
+          handleWhatsAppContact();
+        } else if (stepData.contactMethod === 'call') {
+          handleCallContact();
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep, stepData.contactMethod]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] overflow-y-auto">
+      <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 bg-gray-500/75 transition-opacity" aria-hidden="true"></div>
+        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        
+        <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-[10000]">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <FaMoneyBillWave className="h-6 w-6 text-white" />
+                <h3 className="text-lg font-semibold text-white">
+                  Request Wallet Top-Up
+                </h3>
+              </div>
+              <button
+                onClick={handleClose}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                {Array.from({ length: totalSteps }).map((_, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      index + 1 <= currentStep 
+                        ? 'bg-white text-blue-600' 
+                        : 'bg-blue-200 text-blue-400'
+                    }`}>
+                      {index + 1 < currentStep ? (
+                        <FaCheck className="w-4 h-4" />
+                      ) : (
+                        index + 1
+                      )}
+                    </div>
+                    {index < totalSteps - 1 && (
+                      <div className={`w-12 h-1 mx-2 ${
+                        index + 1 < currentStep ? 'bg-white' : 'bg-blue-200'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-blue-100 text-center">
+                Step {currentStep} of {totalSteps}
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="px-6 py-6">
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
+                    Top-Up Amount (GH₵)
+                  </label>
+                  <Input
+                    type="number"
+                    id="amount"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={stepData.amount}
+                    onChange={(e) => updateStepData('amount', e.target.value)}
+                    className={errors.amount ? 'border-red-500' : ''}
+                  />
+                  {errors.amount && (
+                    <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    id="description"
+                    rows={3}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Reason for top-up request..."
+                    value={stepData.description}
+                    onChange={(e) => updateStepData('description', e.target.value)}
+                  />
+                </div>
+                
+                <Alert status="info" className="mt-4">
+                  <div className="flex items-start">
+                    <FaCheck className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div className="ml-3">
+                      <p className="text-sm">
+                        Your top-up request will be reviewed by an administrator. You'll be notified once it's processed.
+                      </p>
+                    </div>
+                  </div>
+                </Alert>
+              </div>
+            )}
+
+            {currentStep === 2 && (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">
+                    Choose Contact Method
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Select how you'd like to inform the admin about your top-up request:
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => updateStepData('contactMethod', 'whatsapp')}
+                    className={`w-full p-4 border-2 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+                      stepData.contactMethod === 'whatsapp'
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
+                    }`}
+                  >
+                    <FaWhatsapp className={`w-6 h-6 ${stepData.contactMethod === 'whatsapp' ? 'text-green-600' : 'text-gray-400'}`} />
+                    <div className="text-left">
+                      <div className="font-medium">WhatsApp Message</div>
+                      <div className="text-sm opacity-75">Send a pre-filled message to admin</div>
+                    </div>
+                    {stepData.contactMethod === 'whatsapp' && (
+                      <FaCheck className="w-5 h-5 text-green-600 ml-auto" />
+                    )}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => updateStepData('contactMethod', 'call')}
+                    className={`w-full p-4 border-2 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
+                      stepData.contactMethod === 'call'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                    }`}
+                  >
+                    <FaPhone className={`w-6 h-6 ${stepData.contactMethod === 'call' ? 'text-blue-600' : 'text-gray-400'}`} />
+                    <div className="text-left">
+                      <div className="font-medium">Phone Call</div>
+                      <div className="text-sm opacity-75">Call admin directly</div>
+                    </div>
+                    {stepData.contactMethod === 'call' && (
+                      <FaCheck className="w-5 h-5 text-blue-600 ml-auto" />
+                    )}
+                  </button>
+                </div>
+                
+                {errors.contactMethod && (
+                  <p className="text-sm text-red-600">{errors.contactMethod}</p>
+                )}
+              </div>
+            )}
+
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">
+                    Confirm Your Request
+                  </h4>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Amount:</span>
+                    <span className="font-medium">GH₵{stepData.amount}</span>
+                  </div>
+                  {stepData.description && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Description:</span>
+                      <span className="font-medium text-sm">{stepData.description}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Contact Method:</span>
+                    <span className="font-medium capitalize">{stepData.contactMethod}</span>
+                  </div>
+                </div>
+                
+                <Alert status="info">
+                  <div className="flex items-start">
+                    <FaCheck className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div className="ml-3">
+                      <p className="text-sm">
+                        Your request will be submitted and you can contact the admin using your selected method.
+                      </p>
+                    </div>
+                  </div>
+                </Alert>
+                
+                <div className="flex space-x-3">
+                  {stepData.contactMethod === 'whatsapp' && (
+                    <Button
+                      variant="outline"
+                      onClick={handleWhatsAppContact}
+                      className="flex items-center space-x-2"
+                    >
+                      <FaWhatsapp className="w-4 h-4" />
+                      <span>Open WhatsApp</span>
+                    </Button>
+                  )}
+                  
+                  {stepData.contactMethod === 'call' && (
+                    <Button
+                      variant="outline"
+                      onClick={handleCallContact}
+                      className="flex items-center space-x-2"
+                    >
+                      <FaPhone className="w-4 h-4" />
+                      <span>Call Admin</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="bg-gray-50 px-6 py-4 flex justify-between">
+            {currentStep > 1 && (
+              <Button
+                variant="secondary"
+                onClick={handleBack}
+                disabled={isSubmitting}
+                className="flex items-center space-x-2"
+              >
+                <FaArrowLeft className="w-4 h-4" />
+                <span>Back</span>
+              </Button>
+            )}
+            
+            {currentStep < totalSteps && (
+              <Button
+                onClick={handleNext}
+                disabled={isSubmitting}
+                className="flex items-center space-x-2 ml-auto"
+              >
+                <span>Next</span>
+                <FaArrowRight className="w-4 h-4" />
+              </Button>
+            )}
+            
+            {currentStep === totalSteps && (
+              <div className="flex space-x-3 ml-auto">
+                <Button
+                  variant="secondary"
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="flex items-center space-x-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaCheck className="w-4 h-4" />
+                      <span>Submit Request</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}; 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaUsers, FaBuilding, FaClipboardList, FaWallet, FaCog, FaChartLine, FaCheckCircle, FaMoneyBillWave, FaBox, FaCube } from "react-icons/fa";
+import { FaUsers, FaBuilding, FaClipboardList, FaWallet, FaCog, FaCheckCircle, FaMoneyBillWave, FaBox, FaChartLine } from "react-icons/fa";
 import { userService, type DashboardStats, type ChartData } from "../../services/user.service";
 import { colors } from "../../design-system/tokens";
 import {
@@ -31,7 +31,6 @@ const quickLinks = [
   { to: "/superadmin/users", label: "Manage Users", icon: <FaUsers className="text-blue-600 text-2xl" /> },
   { to: "/superadmin/providers", label: "Manage Providers", icon: <FaBuilding className="text-green-600 text-2xl" /> },
   { to: "/superadmin/packages", label: "Manage Packages", icon: <FaBox className="text-orange-600 text-2xl" /> },
-  { to: "/superadmin/bundles", label: "Manage Bundles", icon: <FaCube className="text-purple-600 text-2xl" /> },
   { to: "/superadmin/orders", label: "View Orders", icon: <FaClipboardList className="text-yellow-600 text-2xl" /> },
   { to: "/superadmin/wallet", label: "Wallet & Transactions", icon: <FaWallet className="text-purple-600 text-2xl" /> },
   { to: "/superadmin/settings", label: "Settings", icon: <FaCog className="text-gray-600 text-2xl" /> },
