@@ -71,7 +71,13 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
     if (validateStep(currentStep)) {
       const description = stepData.description || `Top-up request via ${stepData.contactMethod}`;
       await onSubmit(parseFloat(stepData.amount), description);
-      handleClose();
+      
+      // Handle routing after successful submission
+      if (stepData.contactMethod === 'whatsapp') {
+        handleWhatsAppContact();
+      } else if (stepData.contactMethod === 'call') {
+        handleCallContact();
+      }
     }
   };
 
@@ -104,28 +110,12 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
     window.open('tel:+233548983019', '_blank');
   };
 
-  // Auto-trigger contact method when reaching step 3
-  React.useEffect(() => {
-    if (currentStep === 3 && stepData.contactMethod) {
-      // Small delay to let user see the confirmation first
-      const timer = setTimeout(() => {
-        if (stepData.contactMethod === 'whatsapp') {
-          handleWhatsAppContact();
-        } else if (stepData.contactMethod === 'call') {
-          handleCallContact();
-        }
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [currentStep, stepData.contactMethod]);
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] overflow-y-auto">
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500/75 transition-opacity" aria-hidden="true"></div>
+        <div className="fixed inset-0 bg-black/75 transition-opacity" aria-hidden="true"></div>
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
         
         <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-[10000]">
@@ -320,30 +310,6 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                     </div>
                   </div>
                 </Alert>
-                
-                <div className="flex space-x-3">
-                  {stepData.contactMethod === 'whatsapp' && (
-                    <Button
-                      variant="outline"
-                      onClick={handleWhatsAppContact}
-                      className="flex items-center space-x-2"
-                    >
-                      <FaWhatsapp className="w-4 h-4" />
-                      <span>Open WhatsApp</span>
-                    </Button>
-                  )}
-                  
-                  {stepData.contactMethod === 'call' && (
-                    <Button
-                      variant="outline"
-                      onClick={handleCallContact}
-                      className="flex items-center space-x-2"
-                    >
-                      <FaPhone className="w-4 h-4" />
-                      <span>Call Admin</span>
-                    </Button>
-                  )}
-                </div>
               </div>
             )}
           </div>
@@ -355,9 +321,9 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                 variant="secondary"
                 onClick={handleBack}
                 disabled={isSubmitting}
-                className="flex items-center space-x-2"
+                className="flex items-center"
               >
-                <FaArrowLeft className="w-4 h-4" />
+                <FaArrowLeft className="w-4 h-4 ml-2" />
                 <span>Back</span>
               </Button>
             )}
