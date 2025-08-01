@@ -1,12 +1,11 @@
 // src/services/websocket.service.ts
-import { useAuth } from '../hooks/use-auth';
 
 class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000; // 1 second
-  private listeners: Map<string, Function[]> = new Map();
+  private readonly maxReconnectAttempts = 5;
+  private readonly reconnectDelay = 1000; // 1 second
+  private readonly listeners: Map<string, ((data: unknown) => void)[]> = new Map();
 
   connect(userId: string) {
     if (this.ws?.readyState === WebSocket.OPEN) {
@@ -58,7 +57,7 @@ class WebSocketService {
     }
   }
 
-  private handleMessage(data: any) {
+  private handleMessage(data: { type: string; data?: unknown }) {
     if (data.type === 'notification') {
       this.emit('notification', data.data);
     }
@@ -72,14 +71,14 @@ class WebSocketService {
   }
 
   // Event listener methods
-  on(event: string, callback: Function) {
+  on(event: string, callback: (data: unknown) => void) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
     this.listeners.get(event)!.push(callback);
   }
 
-  off(event: string, callback: Function) {
+  off(event: string, callback: (data: unknown) => void) {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
       const index = callbacks.indexOf(callback);
@@ -89,7 +88,7 @@ class WebSocketService {
     }
   }
 
-  private emit(event: string, data: any) {
+  private emit(event: string, data: unknown) {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
       callbacks.forEach(callback => callback(data));

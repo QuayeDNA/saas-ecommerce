@@ -116,26 +116,31 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   // WebSocket connection for real-time notifications
   useEffect(() => {
-    if (!authState.isAuthenticated || !authState.user?.userId) return;
+    if (!authState.isAuthenticated || !authState.user?._id) return;
 
     // Connect to WebSocket
-    websocketService.connect(authState.user.userId);
+    websocketService.connect(authState.user._id);
 
     // Listen for real-time notifications
-    const handleNotification = (data: any) => {
-      if (data.type === 'new_notification') {
-        // Add new notification to the list
-        setNotifications(prev => [data.notification, ...prev]);
-        // Update count
-        setUnreadCount(prev => prev + 1);
+    const handleNotification = (data: unknown) => {
+      // Type guard to ensure data has the expected structure
+      if (typeof data === 'object' && data !== null && 'type' in data && 'notification' in data) {
+        const notificationData = data as { type: string; notification: Notification };
         
-        // Show toast notification for new notifications
-        addToast(
-          `New notification: ${data.notification.title}`,
-          data.notification.type === 'success' ? 'success' : 
-          data.notification.type === 'error' ? 'error' : 'info',
-          3000
-        );
+        if (notificationData.type === 'new_notification') {
+          // Add new notification to the list
+          setNotifications(prev => [notificationData.notification, ...prev]);
+          // Update count
+          setUnreadCount(prev => prev + 1);
+          
+          // Show toast notification for new notifications
+          addToast(
+            `New notification: ${notificationData.notification.title}`,
+            notificationData.notification.type === 'success' ? 'success' : 
+            notificationData.notification.type === 'error' ? 'error' : 'info',
+            3000
+          );
+        }
       }
     };
 
@@ -146,7 +151,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       websocketService.off('notification', handleNotification);
       websocketService.disconnect();
     };
-  }, [authState.isAuthenticated, authState.user?.userId]);
+  }, [authState.isAuthenticated, authState.user?._id]);
 
   const value: NotificationContextType = {
     notifications,
