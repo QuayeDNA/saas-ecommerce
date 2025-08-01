@@ -299,18 +299,25 @@ export const ProfilePage: React.FC = () => {
               <CardBody className="p-6 sm:p-8 pt-6 space-y-4">
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-sm text-gray-600 mb-1">Need help? Contact support</p>
-                  <p className="font-medium text-gray-900">+233 55 987 6543</p>
+                  <a 
+                    href="https://wa.me/+233548983019" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                  >
+                    +233 54 898 3019
+                  </a>
                 </div>
                 
                 <div className="bg-green-50 rounded-lg p-4">
                   <p className="text-sm text-gray-600 mb-1">Join our community</p>
                   <a 
-                    href="https://t.me/ecommerce-group" 
+                    href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t" 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="text-blue-600 hover:text-blue-500 font-medium transition-colors"
+                    className="text-green-600 hover:text-green-500 font-medium transition-colors"
                   >
-                    Telegram Group Link
+                    WhatsApp Community
                   </a>
                 </div>
               </CardBody>

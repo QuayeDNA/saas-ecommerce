@@ -195,7 +195,7 @@ export const PrivacyPolicyPage: React.FC = () => {
                   </p>
                   <ul className="list-disc pl-6 space-y-1 mt-2">
                     <li>By email: privacy@telecomsaas.com</li>
-                    <li>By phone: +233 55 123 4567</li>
+                    <li>By phone: +233 54 898 3019</li>
                     <li>By mail: P.O. Box 123, Accra, Ghana</li>
                   </ul>
                 </section>

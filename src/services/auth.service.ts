@@ -31,7 +31,7 @@ export interface RegisterAgentData {
   phone: string;
   password: string;
   businessName: string;
-  businessCategory: 'electronics' | 'fashion' | 'food' | 'services' | 'other';
+  businessCategory?: 'electronics' | 'fashion' | 'food' | 'services' | 'other';
   subscriptionPlan?: 'basic' | 'premium' | 'enterprise';
 }
 

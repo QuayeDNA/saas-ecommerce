@@ -151,21 +151,25 @@ export const SupportPage: React.FC = () => {
             {/* Quick contact options */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-8">
               <a 
-                href="tel:+233551234567"
+                href="https://wa.me/+233548983019"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
               >
                 <FaPhone className="text-2xl mb-2" />
-                <span className="text-sm font-medium">Call Us</span>
+                <span className="text-sm font-medium">WhatsApp Support</span>
                 <span className="text-xs opacity-80">24/7 Support</span>
               </a>
               
               <a 
-                href="mailto:support@telecomsaas.com"
+                href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
               >
                 <FaEnvelope className="text-2xl mb-2" />
-                <span className="text-sm font-medium">Email</span>
-                <span className="text-xs opacity-80">24hr Response</span>
+                <span className="text-sm font-medium">Community</span>
+                <span className="text-xs opacity-80">Join WhatsApp Group</span>
               </a>
               
               <a 

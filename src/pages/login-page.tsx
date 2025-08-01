@@ -228,18 +228,20 @@ export const LoginPage = () => {
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
                     <a 
-                      href="tel:+233559876543" 
-                      className="text-blue-600 hover:text-blue-500 transition-colors"
-                    >
-                      📞 +233 55 987 6543
-                    </a>
-                    <a 
-                      href="https://t.me/telecomsaas" 
+                      href="https://wa.me/+233548983019" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-500 transition-colors"
+                      className="text-green-600 hover:text-green-500 transition-colors"
                     >
-                      📱 Join our Telegram
+                      📞 +233 54 898 3019
+                    </a>
+                    <a 
+                      href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-green-600 hover:text-green-500 transition-colors"
+                    >
+                      📱 Join our WhatsApp Community
                     </a>
                   </div>
                 </div>

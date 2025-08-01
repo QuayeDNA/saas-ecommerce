@@ -84,8 +84,8 @@ export const RegisterPage = () => {
       phone: formData.get('phone') as string,
       password: formData.get('password') as string,
       businessName: formData.get('businessName') as string,
-      businessCategory: formData.get('businessCategory') as 'electronics' | 'fashion' | 'food' | 'services' | 'other',
-      subscriptionPlan: (formData.get('subscriptionPlan') as 'basic' | 'premium' | 'enterprise') || 'basic',
+      businessCategory: 'services', // Default to 'services'
+      subscriptionPlan: 'basic', // Default to 'basic' (free)
     };
     
     try {
@@ -197,48 +197,14 @@ export const RegisterPage = () => {
                   Business Information
                 </h3>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Business Name"
-                    name="businessName"
-                    type="text"
-                    required
-                    placeholder="Enter your business name"
-                    leftIcon={<FaBuilding className="text-gray-400" />}
-                  />
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Business Category
-                    </label>
-                    <select
-                      name="businessCategory"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select category</option>
-                      <option value="electronics">Electronics</option>
-                      <option value="fashion">Fashion</option>
-                      <option value="food">Food & Beverages</option>
-                      <option value="services">Services</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Subscription Plan
-                  </label>
-                  <select
-                    name="subscriptionPlan"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="basic">Basic - Free</option>
-                    <option value="premium">Premium - $29/month</option>
-                    <option value="enterprise">Enterprise - $99/month</option>
-                  </select>
-                </div>
+                <Input
+                  label="Business Name"
+                  name="businessName"
+                  type="text"
+                  required
+                  placeholder="Enter your business name"
+                  leftIcon={<FaBuilding className="text-gray-400" />}
+                />
               </div>
 
               {/* Security */}
@@ -327,7 +293,7 @@ export const RegisterPage = () => {
                   <div className="text-sm text-blue-800">
                     <p className="font-medium mb-2">Important Information:</p>
                     <ul className="space-y-1 text-sm">
-                      <li>• Your account will be reviewed by a super admin</li>
+                      <li>• Your account will be reviewed by the admin</li>
                       <li>• You will receive an email once approved</li>
                       <li>• After approval, you can log in and start earning</li>
                       <li>• By registering, you agree to our terms of service</li>
