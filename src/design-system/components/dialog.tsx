@@ -55,14 +55,14 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div
-          className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
+          className="absolute inset-0 bg-black/50 transition-opacity"
           onClick={closeOnOverlay ? onClose : undefined}
         />
         <div
           ref={ref}
           className={[
             'relative w-full bg-white rounded-lg shadow-xl',
-            'max-h-[90vh] overflow-hidden',
+            'max-h-[90vh] flex flex-col',
             'transform transition-all',
             sizeClasses[size],
             className,

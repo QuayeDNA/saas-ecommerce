@@ -5,6 +5,19 @@ import { useNavigate } from 'react-router-dom';
 import { FaTimes, FaPhone, FaWifi, FaClock, FaCheckCircle } from 'react-icons/fa';
 import { useOrder } from '../../contexts/OrderContext';
 import { useSiteStatus } from '../../contexts/site-status-context';
+import { getProviderColors } from '../../utils/provider-colors';
+import { 
+  Dialog, 
+  DialogHeader, 
+  DialogBody, 
+  DialogFooter,
+  Button, 
+  Card, 
+  CardBody, 
+  Alert, 
+  Spinner,
+  Input
+} from '../../design-system';
 import type { Bundle } from '../../types/package';
 import type { CreateSingleOrderData } from '../../types/order';
 
@@ -45,6 +58,9 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
     totalPrice: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Get provider colors for branding
+  const providerColors = getProviderColors(bundle.provider?.toString() || 'MTN');
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -161,16 +177,10 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
       await createSingleOrder(orderData);
       
-      // Check if the order was created as a draft (insufficient wallet balance)
-      // The backend will return an error message if it's a draft order
-      // We'll handle this in the OrderContext and show appropriate message
-      
-      // Show success briefly before navigating to orders page
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-        navigate('/agent/dashboard/orders');
-      }, 2000);
+      // Order created successfully (including draft orders)
+      onSuccess();
+      onClose();
+      navigate('/agent/dashboard/orders');
 
     } catch (err) {
       if (err instanceof Error) {
@@ -204,35 +214,38 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto max-h-[95vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {showSummary ? 'Order Summary' : 'Order Bundle'}
-          </h2>
-          <button 
-            onClick={onClose} 
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <FaTimes size={20} />
-          </button>
-        </div>
+    <Dialog isOpen={isOpen} onClose={onClose} size="md">
+       <DialogHeader className="flex items-start justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">
+          {showSummary ? 'Order Summary' : 'Order Bundle'}
+        </h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-600"
+        >
+          <FaTimes size={20} />
+        </Button>
+      </DialogHeader>
 
-        {/* Content */}
-        <div className="flex-1 p-4 overflow-y-auto">
-          {!showSummary ? (
-            // Order Form
-            <div className="space-y-6">
-              {/* Bundle Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
+      <DialogBody>
+        {!showSummary ? (
+          // Order Form
+          <div className="space-y-4">
+            {/* Bundle Info */}
+            <Card>
+              <CardBody>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">{bundle.name}</h3>
                     <p className="text-sm text-gray-600 mt-1">{bundle.description}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-green-600">
+                    <div 
+                      className="text-lg font-bold"
+                      style={{ color: providerColors.primary }}
+                    >
                       {bundle.currency} {bundle.price}
                     </div>
                   </div>
@@ -245,47 +258,60 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     <FaClock className="text-green-500" />
-                    <span>{bundle.validity} {bundle.validityUnit}</span>
+                    <span>
+                      {bundle.validity === 'unlimited' && bundle.validityUnit === 'unlimited'
+                        ? 'Unlimited'
+                        : `${bundle.validity} ${bundle.validityUnit}`}
+                    </span>
                   </div>
                 </div>
-              </div>
+              </CardBody>
+            </Card>
 
-              {/* Phone Number Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Customer Phone Number
-                </label>
-                <div className="relative">
-                  <FaPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="tel"
-                    value={customerPhone}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    placeholder="Enter 10-digit phone number"
-                    className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      phoneError ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                  />
-                </div>
-                {phoneError && (
-                  <p className="mt-1 text-sm text-red-600">{phoneError}</p>
-                )}
-              </div>
-
-              {/* Continue Button */}
-              <button
-                onClick={handleContinue}
-                disabled={!customerPhone || loading || (siteStatus?.isSiteOpen === false)}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
-              >
-                {loading ? 'Processing...' : (siteStatus && !siteStatus.isSiteOpen) ? 'Site Under Maintenance' : 'Continue'}
-              </button>
+            {/* Phone Number Input */}
+            <div>
+              <label htmlFor="Phone Number" className="block text-sm font-medium text-gray-700 mb-2">
+                Customer Phone Number
+              </label>
+              <Input
+                type="tel"
+                value={customerPhone}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                placeholder="Enter 10-digit phone number"
+                leftIcon={<FaPhone className="text-gray-400" />}
+                isInvalid={!!phoneError}
+                errorText={phoneError}
+              />
             </div>
-          ) : (
-            // Order Summary
-            <div className="space-y-6">
-              {/* Bundle Summary */}
-              <div className="bg-gray-50 rounded-lg p-4">
+
+            {/* Continue Button */}
+            <Button
+              onClick={handleContinue}
+              disabled={!customerPhone || loading || (siteStatus?.isSiteOpen === false)}
+              className="w-full"
+              style={{ 
+                backgroundColor: providerColors.primary, 
+                color: providerColors.text 
+              }}
+            >
+              {loading ? (
+                <>
+                  <Spinner size="sm" />
+                  Processing...
+                </>
+              ) : (siteStatus && !siteStatus.isSiteOpen) ? (
+                'Site Under Maintenance'
+              ) : (
+                'Continue'
+              )}
+            </Button>
+          </div>
+        ) : (
+          // Order Summary
+          <div className="space-y-4">
+            {/* Bundle Summary */}
+            <Card>
+              <CardBody>
                 <h3 className="font-medium text-gray-900 mb-3">Bundle Details</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -301,79 +327,96 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                   <div className="flex justify-between">
                     <span className="text-gray-600">Validity:</span>
                     <span className="font-medium">
-                      {orderSummary?.bundle.validity} {orderSummary?.bundle.validityUnit}
+                      {orderSummary?.bundle.validityUnit === 'unlimited'
+                        ? 'Unlimited'
+                        : `${orderSummary?.bundle.validity} ${orderSummary?.bundle.validityUnit}`}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Price:</span>
-                    <span className="font-bold text-green-600">
+                    <span 
+                      className="font-bold"
+                      style={{ color: providerColors.primary }}
+                    >
                       {orderSummary?.bundle.currency} {orderSummary?.bundle.price}
                     </span>
                   </div>
                 </div>
-              </div>
+              </CardBody>
+            </Card>
 
-              {/* Customer Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
+            {/* Customer Info */}
+            <Card>
+              <CardBody>
                 <h3 className="font-medium text-gray-900 mb-3">Customer Information</h3>
                 <div className="flex items-center gap-2 text-sm">
                   <FaPhone className="text-blue-500" />
                   <span>{orderSummary?.customerPhone}</span>
                 </div>
-              </div>
+              </CardBody>
+            </Card>
 
-              {/* Total */}
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total Amount:</span>
-                  <span className="text-green-600">
-                    {orderSummary?.bundle.currency} {orderSummary?.totalPrice}
-                  </span>
-                </div>
-              </div>
-
-              {/* Error Display */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={handleBack}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+            {/* Total */}
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center text-lg font-bold">
+                <span>Total Amount:</span>
+                <span 
+                  style={{ color: providerColors.primary }}
                 >
-                  Back
-                </button>
-                <button
-                  onClick={handleConfirmOrder}
-                  disabled={loading || (siteStatus?.isSiteOpen === false)}
-                  className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Processing...
-                    </>
-                  ) : (siteStatus && !siteStatus.isSiteOpen) ? (
-                    <>
-                      <FaTimes />
-                      Site Under Maintenance
-                    </>
-                  ) : (
-                    <>
-                      <FaCheckCircle />
-                      Confirm Order
-                    </>
-                  )}
-                </button>
+                  {orderSummary?.bundle.currency} {orderSummary?.totalPrice}
+                </span>
               </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+
+            {/* Error Display */}
+            {error && (
+              <Alert status="error" title="Error">
+                {error}
+              </Alert>
+            )}
+          </div>
+        )}
+      </DialogBody>
+
+      {showSummary && (
+        <DialogFooter>
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="secondary"
+              onClick={handleBack}
+              className="flex-1"
+            >
+              Back
+            </Button>
+            <Button
+              onClick={handleConfirmOrder}
+              disabled={loading || (siteStatus?.isSiteOpen === false)}
+              className="flex-1"
+              style={{ 
+                backgroundColor: providerColors.primary, 
+                color: providerColors.text 
+              }}
+            >
+              {loading ? (
+                <>
+                  <Spinner size="sm" />
+                  Processing...
+                </>
+              ) : (siteStatus && !siteStatus.isSiteOpen) ? (
+                <>
+                  <FaTimes />
+                  Site Under Maintenance
+                </>
+              ) : (
+                <>
+                  <FaCheckCircle />
+                  Confirm Order
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogFooter>
+      )}
+    </Dialog>
   );
 }; 

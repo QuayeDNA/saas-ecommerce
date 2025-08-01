@@ -17,6 +17,7 @@ import type { Order } from '../../types/order';
 interface UnifiedOrderCardProps {
   order: Order;
   isAdmin: boolean;
+  currentUserId?: string;
   onUpdateStatus: (orderId: string, status: string, notes?: string) => void;
   onCancel: (orderId: string) => void;
   onSelect?: (orderId: string) => void;
@@ -26,6 +27,7 @@ interface UnifiedOrderCardProps {
 export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   order,
   isAdmin,
+  currentUserId,
   onUpdateStatus,
   onCancel,
   onSelect,
@@ -63,7 +65,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
     { value: 'confirmed', label: 'Confirmed', color: 'bg-purple-100 text-purple-800' },
     { value: 'processing', label: 'Processing', color: 'bg-blue-100 text-blue-800' },
-    { value: 'partially_completed', label: 'Partially Completed', color: 'bg-orange-100 text-orange-800' },
+
     { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
     { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800' }
   ];
@@ -75,7 +77,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
       case 'failed': return 'bg-red-100 text-red-800';
       case 'cancelled': return 'bg-gray-100 text-gray-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'partially_completed': return 'bg-orange-100 text-orange-800';
+  
       case 'confirmed': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -151,6 +153,22 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
       hour: '2-digit',
       minute: '2-digit'
     }).format(new Date(date));
+  };
+
+  const canCancel = (status: string) => ['pending', 'confirmed', 'processing', 'draft'].includes(status);
+
+  const canUserCancelOrder = (order: Order) => {
+    if (!canCancel(order.status)) return false;
+    
+    // Admins can cancel any order
+    if (isAdmin) return true;
+    
+    // Agents can only cancel their own draft orders
+    if (order.status === 'draft' && currentUserId && order.createdBy?._id === currentUserId) {
+      return true;
+    }
+    
+    return false;
   };
 
   return (
@@ -240,20 +258,18 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
           </div>
         </div>
 
-        {/* Admin Actions */}
-        {isAdmin && (
+        {/* Cancel Order Action */}
+        {canUserCancelOrder(order) && (
           <div className="flex gap-2 mb-3">
-            {['pending', 'confirmed', 'processing'].includes(order.status) && (
-              <Button
-                size="xs"
-                variant="outline"
-                onClick={() => onCancel(order._id!)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <FaTimes className="mr-1" />
-                Cancel
-              </Button>
-            )}
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={() => onCancel(order._id!)}
+              className="text-red-600 hover:text-red-700"
+            >
+              <FaTimes className="mr-1" />
+              {order.status === 'draft' ? 'Delete Draft' : 'Cancel'}
+            </Button>
           </div>
         )}
 

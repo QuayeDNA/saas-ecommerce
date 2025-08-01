@@ -60,8 +60,12 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
           const pkg = await packageService.getPackage(packageId);
           if (pkg) pkgList = [pkg];
         } else {
-          // Build filters
-          const pkgFilters: Record<string, unknown> = { provider, ...filters };
+          // Build filters - ensure we get all active packages
+          const pkgFilters: Record<string, unknown> = { 
+            provider, 
+            isActive: true, // Ensure only active packages
+            ...filters 
+          };
           if (category) pkgFilters.category = category;
           // Fetch all packages for provider/category
           const resp = await packageService.getPackages(pkgFilters);
@@ -72,7 +76,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
         const bundleMap: Record<string, Bundle[]> = {};
         for (const pkg of pkgList) {
           if (pkg._id) {
-            const resp = await bundleService.getBundles({ packageId: pkg._id });
+            const resp = await bundleService.getBundlesByPackage(pkg._id);
             bundleMap[pkg._id] = resp.bundles || [];
           }
         }
@@ -269,6 +273,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                             searchTerm.toLowerCase()
                           )
                       )
+
                       .map((bundle) => (
                         <Card
                           key={bundle._id}

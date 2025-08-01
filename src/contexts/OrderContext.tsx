@@ -108,7 +108,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setError(message);
         addToast(message, 'warning');
         await fetchOrders(filters);
-        throw new Error(message);
+        return; // Don't throw error, just return
       }
       
       addToast('Single order created successfully', 'success');

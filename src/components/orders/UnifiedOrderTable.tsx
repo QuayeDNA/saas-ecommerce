@@ -7,6 +7,7 @@ import type { Order } from '../../types/order';
 interface UnifiedOrderTableProps {
   orders: Order[];
   isAdmin: boolean;
+  currentUserId?: string;
   onUpdateStatus: (orderId: string, status: string, notes?: string) => void;
   onCancel: (orderId: string) => void;
   onSelect?: (orderId: string) => void;
@@ -18,6 +19,7 @@ interface UnifiedOrderTableProps {
 export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   orders,
   isAdmin,
+  currentUserId,
   onUpdateStatus,
   onCancel,
   onSelect,
@@ -59,7 +61,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
       case 'failed': return 'text-red-600 bg-red-100';
       case 'cancelled': return 'text-gray-600 bg-gray-100';
       case 'pending': return 'text-yellow-600 bg-yellow-100';
-      case 'partially_completed': return 'text-orange-600 bg-orange-100';
+  
       case 'confirmed': return 'text-purple-600 bg-purple-100';
       default: return 'text-gray-600 bg-gray-100';
     }
@@ -144,13 +146,27 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     }).format(new Date(date));
   };
 
-  const canCancel = (status: string) => ['pending', 'confirmed', 'processing'].includes(status);
+  const canCancel = (status: string) => ['pending', 'confirmed', 'processing', 'draft'].includes(status);
+
+  const canUserCancelOrder = (order: Order) => {
+    if (!canCancel(order.status)) return false;
+    
+    // Admins can cancel any order
+    if (isAdmin) return true;
+    
+    // Agents can only cancel their own draft orders
+    if (order.status === 'draft' && currentUserId && order.createdBy?._id === currentUserId) {
+      return true;
+    }
+    
+    return false;
+  };
 
   const statusOptions = [
     { value: 'pending', label: 'Pending' },
     { value: 'confirmed', label: 'Confirmed' },
     { value: 'processing', label: 'Processing' },
-    { value: 'partially_completed', label: 'Partially Completed' },
+    
     { value: 'completed', label: 'Completed' },
     { value: 'cancelled', label: 'Cancelled' }
   ];
@@ -304,20 +320,16 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                       <div className="flex items-center space-x-2">
                         
                         
-                        {/* Admin-only actions */}
-                        {isAdmin && (
-                          <>
-                            {canCancel(order.status) && (
-                              <Button
-                                size="xs"
-                                variant="danger"
-                                onClick={() => onCancel(order._id!)}
-                                title="Cancel Order"
-                              >
-                                <FaTimes className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </>
+                        {/* Cancel order action */}
+                        {canUserCancelOrder(order) && (
+                          <Button
+                            size="xs"
+                            variant="danger"
+                            onClick={() => onCancel(order._id!)}
+                            title={order.status === 'draft' ? 'Delete Draft Order' : 'Cancel Order'}
+                          >
+                            <FaTimes className="w-3 h-3" />
+                          </Button>
                         )}
                         
                         {/* Expand/Collapse button */}

@@ -1,7 +1,8 @@
 // src/components/orders/UnifiedOrderList.tsx
 import React, { useState, useEffect } from 'react';
 import { useOrder } from '../../hooks/use-order';
-import { Button, Input, Card, CardHeader, CardBody, Pagination, Badge, Spinner, StatsGrid } from '../../design-system';
+import { useAuth } from '../../hooks/use-auth';
+import { Button, Input, Card, CardHeader, CardBody, Pagination, Badge, Spinner, StatsGrid, Dialog, DialogHeader, DialogBody, DialogFooter } from '../../design-system';
 import { FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaSync, FaExclamationTriangle } from 'react-icons/fa';
 import type { Order, OrderFilters } from '../../types/order';
 import { UnifiedOrderCard } from './UnifiedOrderCard';
@@ -20,6 +21,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   isAgent,
   userType,
 }) => {
+  const { authState } = useAuth();
   const {
     orders,
     loading,
@@ -41,6 +43,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [showDraftHandler, setShowDraftHandler] = useState(false);
+  const [showBulkConfirmDialog, setShowBulkConfirmDialog] = useState(false);
+  const [pendingBulkAction, setPendingBulkAction] = useState<'cancel' | 'process' | 'complete' | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -106,30 +110,37 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     }
   };
 
-  const handleBulkAction = async (action: 'cancel' | 'process' | 'complete') => {
+  const handleBulkAction = (action: 'cancel' | 'process' | 'complete') => {
     if (selectedOrders.length === 0) return;
 
-    const confirmMessage = {
-      cancel: 'Are you sure you want to cancel the selected orders?',
-      process: 'Are you sure you want to process the selected orders?',
-      complete: 'Are you sure you want to mark the selected orders as completed?'
-    };
+    setPendingBulkAction(action);
+    setShowBulkConfirmDialog(true);
+  };
 
-    if (window.confirm(confirmMessage[action])) {
-      try {
-        if (action === 'cancel') {
-          for (const orderId of selectedOrders) {
-            await cancelOrder(orderId, 'Bulk cancelled by admin');
-          }
-        } else {
-          const bulkAction = action === 'process' ? 'processing' : 'completed';
-          await bulkProcessOrders(selectedOrders, bulkAction);
+  const confirmBulkAction = async () => {
+    if (!pendingBulkAction || selectedOrders.length === 0) return;
+
+    try {
+      if (pendingBulkAction === 'cancel') {
+        for (const orderId of selectedOrders) {
+          await cancelOrder(orderId, 'Bulk cancelled by admin');
         }
-        setSelectedOrders([]);
-          } catch {
+      } else {
+        const bulkAction = pendingBulkAction === 'process' ? 'processing' : 'completed';
+        await bulkProcessOrders(selectedOrders, bulkAction);
+      }
+      setSelectedOrders([]);
+    } catch {
       // Failed to perform bulk action
+    } finally {
+      setShowBulkConfirmDialog(false);
+      setPendingBulkAction(null);
     }
-    }
+  };
+
+  const cancelBulkAction = () => {
+    setShowBulkConfirmDialog(false);
+    setPendingBulkAction(null);
   };
 
   const handleSelectAll = () => {
@@ -454,6 +465,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               key={order._id}
               order={order}
               isAdmin={isAdmin}
+              currentUserId={authState.user?._id}
               onUpdateStatus={handleStatusUpdate}
               onCancel={handleCancelOrder}
               onSelect={handleSelectOrder}
@@ -465,6 +477,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         <UnifiedOrderTable
           orders={orders}
           isAdmin={isAdmin}
+          currentUserId={authState.user?._id}
           onUpdateStatus={handleStatusUpdate}
           onCancel={handleCancelOrder}
           onSelect={handleSelectOrder}
@@ -496,6 +509,76 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         isOpen={showDraftHandler}
         onClose={() => setShowDraftHandler(false)}
       />
+
+      {/* Bulk Action Confirmation Dialog */}
+      <Dialog isOpen={showBulkConfirmDialog} onClose={cancelBulkAction} size="md">
+        <DialogHeader>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Confirm Bulk Action
+          </h2>
+        </DialogHeader>
+        <DialogBody>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              {pendingBulkAction === 'cancel' && <FaTimes className="text-red-500 text-xl" />}
+              {pendingBulkAction === 'process' && <FaSync className="text-blue-500 text-xl" />}
+              {pendingBulkAction === 'complete' && <FaCheck className="text-green-500 text-xl" />}
+              <div>
+                <h3 className="font-medium text-gray-900">
+                  {pendingBulkAction === 'cancel' && 'Cancel Orders'}
+                  {pendingBulkAction === 'process' && 'Process Orders'}
+                  {pendingBulkAction === 'complete' && 'Complete Orders'}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {pendingBulkAction === 'cancel' && `Are you sure you want to cancel ${selectedOrders.length} selected order(s)?`}
+                  {pendingBulkAction === 'process' && `Are you sure you want to process ${selectedOrders.length} selected order(s)? This will update their status to processing.`}
+                  {pendingBulkAction === 'complete' && `Are you sure you want to mark ${selectedOrders.length} selected order(s) as completed?`}
+                </p>
+              </div>
+            </div>
+            
+            {/* Show selected orders info */}
+            <div className="bg-gray-50 rounded-lg p-3">
+              <h4 className="font-medium text-sm text-gray-700 mb-2">Selected Orders:</h4>
+              <div className="space-y-1">
+                {orders
+                  .filter(order => selectedOrders.includes(order._id || ''))
+                  .slice(0, 3)
+                  .map(order => (
+                    <div key={order._id} className="text-sm text-gray-600">
+                      {order.orderNumber} - {order.status}
+                    </div>
+                  ))}
+                {selectedOrders.length > 3 && (
+                  <div className="text-sm text-gray-500">
+                    ...and {selectedOrders.length - 3} more
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="secondary"
+              onClick={cancelBulkAction}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmBulkAction}
+              className="flex-1"
+              variant={pendingBulkAction === 'cancel' ? 'danger' : 'primary'}
+            >
+              {pendingBulkAction === 'cancel' && 'Cancel Orders'}
+              {pendingBulkAction === 'process' && 'Process Orders'}
+              {pendingBulkAction === 'complete' && 'Complete Orders'}
+            </Button>
+          </div>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 }; 
