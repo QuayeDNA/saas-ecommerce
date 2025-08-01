@@ -160,7 +160,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-full">
+        <table className="min-w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
               {isAdmin && onSelect && (
@@ -173,25 +173,25 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                   />
                 </th>
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Order
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Customer
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Network
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Total
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Created
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -217,7 +217,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                 <React.Fragment key={order._id}>
                   <tr className="hover:bg-gray-50">
                     {isAdmin && onSelect && (
-                      <td className="px-6 py-4">
+                      <td className="px-3 sm:px-6 py-4">
                         <input
                           type="checkbox"
                           checked={selectedOrders.includes(order._id || '')}
@@ -226,7 +226,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                         />
                       </td>
                     )}
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {order.orderNumber}

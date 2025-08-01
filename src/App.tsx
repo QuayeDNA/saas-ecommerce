@@ -5,6 +5,7 @@ import { ToastProvider } from "./design-system/components/toast";
 import "./App.css";
 import "./design-system/theme.css";
 import { AppProvider } from "./providers/app-provider";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import { Button } from "./design-system/components/button";
 import { MaintenanceBanner } from "./components/maintenance-banner";
 
@@ -45,12 +46,14 @@ function App() {
       <ThemeProvider initialTheme="default">
         <ToastProvider>
           <AppProvider>
-            <div className="min-h-screen flex flex-col">
-              <MaintenanceBanner />
-              <div className="flex-1">
-                {routeElement}
+            <NotificationProvider>
+              <div className="min-h-screen flex flex-col">
+                <MaintenanceBanner />
+                <div className="flex-1">
+                  {routeElement}
+                </div>
               </div>
-            </div>
+            </NotificationProvider>
           </AppProvider>
         </ToastProvider>
       </ThemeProvider>

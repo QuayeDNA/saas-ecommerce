@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaMoneyBillWave, FaWhatsapp, FaPhone, FaCheck, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { Button, Input, Alert } from '../../design-system';
+import { useToast } from '../../design-system/components/toast';
 
 interface TopUpRequestModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
   isSubmitting
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const { addToast } = useToast();
   const [stepData, setStepData] = useState<StepData>({
     amount: '',
     description: '',
@@ -70,7 +72,19 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
   const handleSubmit = async () => {
     if (validateStep(currentStep)) {
       const description = stepData.description || `Top-up request via ${stepData.contactMethod}`;
+      
+      // Close the modal first
+      handleClose();
+      
+      // Submit the request
       await onSubmit(parseFloat(stepData.amount), description);
+      
+      // Show success toast notification
+      addToast(
+        `Your wallet top-up request of GH₵${stepData.amount} has been submitted successfully. You will be notified when it's processed.`,
+        'success',
+        5000
+      );
       
       // Handle routing after successful submission
       if (stepData.contactMethod === 'whatsapp') {

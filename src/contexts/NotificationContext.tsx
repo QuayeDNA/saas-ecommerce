@@ -1,0 +1,167 @@
+// src/contexts/NotificationContext.tsx
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { notificationService, type Notification } from '../services/notification.service';
+import { websocketService } from '../services/websocket.service';
+import { useAuth } from '../hooks/use-auth';
+import { useToast } from '../design-system/components/toast';
+
+interface NotificationContextType {
+  notifications: Notification[];
+  unreadCount: number;
+  isLoading: boolean;
+  error: string | null;
+  fetchNotifications: () => Promise<void>;
+  markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  refreshCount: () => Promise<void>;
+}
+
+const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+
+export const useNotifications = () => {
+  const context = useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotifications must be used within a NotificationProvider');
+  }
+  return context;
+};
+
+interface NotificationProviderProps {
+  children: React.ReactNode;
+}
+
+export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { authState } = useAuth();
+  const { addToast } = useToast();
+
+  const fetchNotifications = useCallback(async () => {
+    if (!authState.isAuthenticated) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await notificationService.getUnreadNotifications();
+      setNotifications(response.notifications);
+    } catch (err) {
+      setError('Failed to fetch notifications');
+      console.error('Error fetching notifications:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [authState.isAuthenticated]);
+
+  const refreshCount = useCallback(async () => {
+    if (!authState.isAuthenticated) return;
+
+    try {
+      const response = await notificationService.getNotificationCount();
+      setUnreadCount(response.count);
+    } catch (err) {
+      console.error('Error fetching notification count:', err);
+    }
+  }, [authState.isAuthenticated]);
+
+  const markAsRead = useCallback(async (notificationId: string) => {
+    try {
+      await notificationService.markNotificationAsRead(notificationId);
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification._id === notificationId 
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+      
+      // Refresh count
+      await refreshCount();
+    } catch (err) {
+      setError('Failed to mark notification as read');
+      console.error('Error marking notification as read:', err);
+    }
+  }, [refreshCount]);
+
+  const markAllAsRead = useCallback(async () => {
+    try {
+      await notificationService.markAllNotificationsAsRead();
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+      
+      // Refresh count
+      await refreshCount();
+    } catch (err) {
+      setError('Failed to mark all notifications as read');
+      console.error('Error marking all notifications as read:', err);
+    }
+  }, [refreshCount]);
+
+  // Initial load
+  useEffect(() => {
+    if (authState.isAuthenticated) {
+      fetchNotifications();
+      refreshCount();
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [authState.isAuthenticated, fetchNotifications, refreshCount]);
+
+  // WebSocket connection for real-time notifications
+  useEffect(() => {
+    if (!authState.isAuthenticated || !authState.user?.userId) return;
+
+    // Connect to WebSocket
+    websocketService.connect(authState.user.userId);
+
+    // Listen for real-time notifications
+    const handleNotification = (data: any) => {
+      if (data.type === 'new_notification') {
+        // Add new notification to the list
+        setNotifications(prev => [data.notification, ...prev]);
+        // Update count
+        setUnreadCount(prev => prev + 1);
+        
+        // Show toast notification for new notifications
+        addToast(
+          `New notification: ${data.notification.title}`,
+          data.notification.type === 'success' ? 'success' : 
+          data.notification.type === 'error' ? 'error' : 'info',
+          3000
+        );
+      }
+    };
+
+    websocketService.on('notification', handleNotification);
+
+    // Cleanup on unmount
+    return () => {
+      websocketService.off('notification', handleNotification);
+      websocketService.disconnect();
+    };
+  }, [authState.isAuthenticated, authState.user?.userId]);
+
+  const value: NotificationContextType = {
+    notifications,
+    unreadCount,
+    isLoading,
+    error,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    refreshCount
+  };
+
+  return (
+    <NotificationContext.Provider value={value}>
+      {children}
+    </NotificationContext.Provider>
+  );
+}; 

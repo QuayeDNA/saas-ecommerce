@@ -318,14 +318,16 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 <option value="regular">Regular</option>
               </select>
             </div>
-            <div className="flex items-end gap-2">
-              <Button type="submit" disabled={loading}>
+            <div className="flex flex-col sm:flex-row items-end gap-2">
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                 <FaSearch className="mr-2" />
-                Search
+                <span className="hidden sm:inline">Search</span>
+                <span className="sm:hidden">Search</span>
               </Button>
-              <Button type="button" variant="outline" onClick={handleClearFilters}>
+              <Button type="button" variant="outline" onClick={handleClearFilters} className="w-full sm:w-auto">
                 <FaFilter className="mr-2" />
-                Clear
+                <span className="hidden sm:inline">Clear</span>
+                <span className="sm:hidden">Clear</span>
               </Button>
             </div>
           </div>
@@ -390,34 +392,40 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       {/* Bulk Actions - Admin and Agent */}
       {selectedOrders.length > 0 && (isAdmin || isAgent) && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-blue-800">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <span className="text-sm text-blue-800 font-medium">
               {selectedOrders.length} order(s) selected for bulk processing
             </span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => handleBulkAction('process')}
+                className="flex-1 sm:flex-none"
               >
                 <FaClock className="mr-1" />
-                Start Processing
+                <span className="hidden sm:inline">Start Processing</span>
+                <span className="sm:hidden">Process</span>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => handleBulkAction('complete')}
+                className="flex-1 sm:flex-none"
               >
                 <FaCheck className="mr-1" />
-                Mark as Completed
+                <span className="hidden sm:inline">Mark as Completed</span>
+                <span className="sm:hidden">Complete</span>
               </Button>
               <Button
                 size="sm"
                 variant="danger"
                 onClick={() => handleBulkAction('cancel')}
+                className="flex-1 sm:flex-none"
               >
                 <FaTimes className="mr-1" />
-                Cancel Orders
+                <span className="hidden sm:inline">Cancel Orders</span>
+                <span className="sm:hidden">Cancel</span>
               </Button>
             </div>
           </div>
@@ -474,19 +482,20 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       {/* Pagination */}
       {pagination.pages > 1 && (
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-sm text-gray-700 text-center sm:text-left">
               Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
               {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
               {pagination.total} results
             </div>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap justify-center sm:justify-end gap-2">
               {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
                 <Button
                   key={page}
                   size="sm"
                   variant={page === pagination.page ? "primary" : "outline"}
                   onClick={() => fetchOrders(filters, { page })}
+                  className="min-w-[40px]"
                 >
                   {page}
                 </Button>
