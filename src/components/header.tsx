@@ -3,8 +3,9 @@ import { useAuth, useWallet } from "../hooks";
 import { useSiteStatus } from "../contexts/site-status-context";
 import { settingsService } from "../services/settings.service";
 import { useToast } from "../design-system/components/toast";
+import { Button } from "../design-system";
 import { Link } from "react-router-dom";
-import { FaPowerOff, FaCheck } from "react-icons/fa";
+import { FaPowerOff, FaCheck, FaBars, FaUser, FaSignOutAlt, FaWallet, FaSync, FaStar } from "react-icons/fa";
 import { NotificationDropdown } from "./notifications/NotificationDropdown";
 
 interface HeaderProps {
@@ -99,54 +100,30 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           {/* Left side: Menu button and Greeting */}
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
             {/* Menu button for mobile */}
-            <button
-              aria-label="Open sidebar menu"
-              className="text-gray-600 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md p-1.5 flex-shrink-0 md:hidden"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onMenuClick}
+              className="md:hidden p-1.5"
+              aria-label="Open sidebar menu"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
+              <FaBars className="w-5 h-5" />
+            </Button>
 
             <div className="min-w-0 flex-1">
               <div className="text-sm sm:text-base lg:text-lg font-bold text-gray-800 truncate flex items-center">
-                <span className="bg-blue-50 text-blue-600 p-1 rounded-md mr-2 hidden sm:flex flex-shrink-0">
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                    />
-                  </svg>
-                </span>
+                <div className="bg-blue-50 text-blue-600 p-1 rounded-md mr-2 hidden sm:flex flex-shrink-0">
+                  <FaStar className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
                 <div className="relative overflow-hidden">
                   {showSiteMessage && isAgent ? (
                     <div className="animate-slide-up">
-                      <span className="truncate text-green-600">
+                      <span className="text-wrap truncate text-green-600">
                         {getSiteMessage()}
                       </span>
                     </div>
                   ) : (
-                    <span className="truncate">
+                    <span className="text-wrap truncate">
                       {getGreeting()}, {authState.user?.fullName.split(" ")[0]}{" "}
                       👋
                     </span>
@@ -160,14 +137,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 flex-shrink-0">
             {/* Site Toggle - Only show for super admins */}
             {isAdmin && (
-              <button
+              <Button
+                variant={siteStatus?.isSiteOpen ? "success" : "danger"}
+                size="sm"
                 onClick={handleSiteToggle}
                 disabled={isTogglingSite}
-                className={`px-2 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-1 ${
-                  siteStatus?.isSiteOpen
-                    ? "bg-green-100 text-green-700 hover:bg-green-200"
-                    : "bg-red-100 text-red-700 hover:bg-red-200"
-                } ${isTogglingSite ? "opacity-50 cursor-not-allowed" : ""}`}
+                className="text-xs sm:text-sm"
                 title={
                   isTogglingSite
                     ? "Updating..."
@@ -177,11 +152,11 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 }
               >
                 {isTogglingSite ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
                 ) : siteStatus?.isSiteOpen ? (
-                  <FaCheck className="w-3 h-3" />
+                  <FaCheck className="w-3 h-3 mr-1" />
                 ) : (
-                  <FaPowerOff className="w-3 h-3" />
+                  <FaPowerOff className="w-3 h-3 mr-1" />
                 )}
                 <span className="hidden sm:inline">
                   {isTogglingSite
@@ -190,7 +165,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     ? "Site Open"
                     : "Site Closed"}
                 </span>
-              </button>
+              </Button>
             )}
 
             {/* Notifications dropdown */}
@@ -198,29 +173,18 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
             {/* User dropdown menu */}
             <div className="relative flex-shrink-0">
-              <button
-                aria-label="User menu"
-                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-full p-1"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="p-1"
+                aria-label="User menu"
               >
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-medium shadow-sm text-xs sm:text-sm">
                   {authState.user?.fullName.charAt(0)}
                   {authState.user?.fullName.split(" ")[1]?.charAt(0) ?? ""}
                 </div>
-                <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5 hidden sm:block text-gray-500 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
+              </Button>
 
               {isDropdownOpen && (
                 <>
@@ -249,19 +213,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                         className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         onClick={() => setIsDropdownOpen(false)}
                       >
-                        <svg
-                          className="w-5 h-5 mr-3 text-gray-500 flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          />
-                        </svg>
+                        <FaUser className="w-5 h-5 mr-3 text-gray-500 flex-shrink-0" />
                         <span className="truncate">My Profile</span>
                       </Link>
                     )}
@@ -292,28 +244,18 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
                     <div className="border-t border-gray-100 my-1"></div>
 
-                    <button
-                      className="flex items-center w-full px-4 py-3 text-sm text-left text-red-600 hover:bg-red-50 transition-colors"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => {
                         setIsDropdownOpen(false);
                         logout();
                       }}
+                      className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
                     >
-                      <svg
-                        className="w-5 h-5 mr-3 text-red-500 flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
+                      <FaSignOutAlt className="w-5 h-5 mr-3 text-red-500 flex-shrink-0" />
                       <span className="truncate">Logout</span>
-                    </button>
+                    </Button>
                   </div>
                 </>
               )}
@@ -324,53 +266,31 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         {/* Bottom row: Wallet Widget (only for agents) */}
         {isAgent && (
           <div className="flex justify-start">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-md text-sm sm:text-base shadow-sm relative group min-w-0">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-2 rounded-md text-sm sm:text-base shadow-sm relative group min-w-0">
               <div className="hidden sm:block text-xs font-medium text-green-100 mb-1">
                 Wallet Balance
               </div>
               <div className="font-bold flex items-center justify-center sm:justify-start">
-                <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-100 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
+                <FaWallet className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-100 flex-shrink-0" />
                 <span className="truncate">GH¢{walletBalance.toFixed(2)}</span>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     refreshWallet();
                   }}
                   disabled={isLoading}
-                  className="ml-2 sm:ml-3 p-1 sm:p-1.5 rounded-full opacity-70 hover:opacity-100 focus:outline-none hover:bg-green-700 transition-opacity flex-shrink-0"
+                  className="ml-2 sm:ml-3 rounded-full opacity-70 hover:opacity-100 hover:bg-green-700 transition-opacity flex-shrink-0 text-white"
                   aria-label="Refresh wallet balance"
                   title="Refresh balance"
                 >
-                  <svg
+                  <FaSync
                     className={`w-3 h-3 sm:w-4 sm:h-4 ${
                       isLoading ? "animate-spin" : ""
                     }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                </button>
+                  />
+                </Button>
               </div>
             </div>
           </div>

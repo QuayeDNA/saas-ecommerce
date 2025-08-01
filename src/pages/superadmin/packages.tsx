@@ -237,7 +237,7 @@ export default function SuperAdminPackagesPage() {
   };
 
   return (
-    <div className="space-y-4 p-4 sm:p-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
