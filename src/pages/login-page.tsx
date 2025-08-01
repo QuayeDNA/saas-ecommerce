@@ -100,9 +100,9 @@ export const LoginPage = () => {
       {/* Main content */}
       <div className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-lg">
-          <Card className="shadow-xl border-0" variant="elevated" size="lg">
+          <Card className="shadow-xl border-0" variant="elevated">
             <CardHeader className="text-center mb-6">
-              <div className="mx-auto bg-gradient-to-br from-blue-100 to-indigo-100 p-4 rounded-2xl w-20 h-20 flex items-center justify-center mb-6">
+              <div className="mx-auto bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl w-20 h-20 flex items-center justify-center mb-6">
                 <FaLock className="text-blue-600 text-2xl" />
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>

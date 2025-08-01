@@ -34,11 +34,11 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     },
     ref
   ) => {
-    // Size styles
+    // Size styles with responsive padding
     const sizeClasses = {
-      sm: 'p-3',
-      md: 'p-4',
-      lg: 'p-5',
+      sm: 'p-2 sm:p-3',
+      md: 'p-3 sm:p-4',
+      lg: 'p-4 sm:p-5',
     };
     
     // Variant styles
@@ -52,23 +52,21 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     // Combine all classes
     const cardClasses = [
       variantClasses[variant],
-      !withHeader && !withFooter ? sizeClasses[size] : '',
+      sizeClasses[size],
       'overflow-hidden',
       className,
     ].join(' ');
 
-    // Header and footer styles
+    // Header and footer styles without padding (handled by parent)
     const headerClasses = [
-      'px-4 py-3 border-b border-gray-100 bg-gray-50 font-medium',
+      'border-b border-gray-100 bg-gray-50 font-medium',
       size === 'sm' ? 'text-sm' : 'text-base',
     ].join(' ');
     
     const footerClasses = [
-      'px-4 py-3 border-t border-gray-100 bg-gray-50',
+      'border-t border-gray-100 bg-gray-50',
       size === 'sm' ? 'text-sm' : 'text-base',
     ].join(' ');
-    
-    const bodyClasses = sizeClasses[size];
 
     // Return the card component
     return (
@@ -76,7 +74,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
         {withHeader && header && (
           <div className={headerClasses}>{header}</div>
         )}
-        <div className={bodyClasses}>{children}</div>
+        <div>{children}</div>
         {withFooter && footer && (
           <div className={footerClasses}>{footer}</div>
         )}
@@ -98,7 +96,7 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     return (
       <div
         ref={ref}
-        className={`px-4 py-3 border-b border-gray-100 font-medium ${className}`}
+        className={`border-b border-gray-100 font-medium ${className}`}
         {...props}
       >
         {children}
@@ -118,7 +116,7 @@ interface CardBodyProps extends HTMLAttributes<HTMLDivElement> {
 export const CardBody = forwardRef<HTMLDivElement, CardBodyProps>(
   ({ children, className = '', ...props }, ref) => {
     return (
-      <div ref={ref} className={`p-4 ${className}`} {...props}>
+      <div ref={ref} className={`pt-2 ${className}`} {...props}>
         {children}
       </div>
     );
@@ -138,7 +136,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
     return (
       <div
         ref={ref}
-        className={`px-4 py-3 border-t border-gray-100 bg-gray-50 ${className}`}
+        className={`border-t border-gray-100 bg-gray-50 ${className}`}
         {...props}
       >
         {children}

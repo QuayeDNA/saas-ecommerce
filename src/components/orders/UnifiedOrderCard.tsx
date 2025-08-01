@@ -1,7 +1,6 @@
 // src/components/orders/UnifiedOrderCard.tsx
 import React, { useState } from 'react';
 import { 
-  FaEye,
   FaChevronDown,
   FaChevronUp,
   FaWifi,
@@ -18,7 +17,6 @@ import type { Order } from '../../types/order';
 interface UnifiedOrderCardProps {
   order: Order;
   isAdmin: boolean;
-  onView: (order: Order) => void;
   onUpdateStatus: (orderId: string, status: string, notes?: string) => void;
   onCancel: (orderId: string) => void;
   onSelect?: (orderId: string) => void;
@@ -28,7 +26,6 @@ interface UnifiedOrderCardProps {
 export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   order,
   isAdmin,
-  onView,
   onUpdateStatus,
   onCancel,
   onSelect,
@@ -97,10 +94,10 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      await onUpdateStatus(order._id!, newStatus);
+      onUpdateStatus(order._id!, newStatus);
       setStatusDropdownOpen(false);
     } catch (error) {
-      // Failed to update status
+      console.error('Failed to update status:', error);
     }
   };
 
@@ -178,15 +175,6 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
               </h3>
             </div>
             <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onView(order)}
-              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-              title="View Details"
-            >
-              <FaEye />
-            </button>
           </div>
         </div>
 

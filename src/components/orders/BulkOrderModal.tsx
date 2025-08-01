@@ -37,30 +37,6 @@ interface BulkOrderItem {
   dataError?: string;
 }
 
-// Provider-specific phone number validation rules
-const providerPhoneRules = {
-  MTN: {
-    prefixes: ["024", "025", "054", "055", "059"],
-    length: 10,
-    example: "0241234567",
-  },
-  TELECEL: {
-    prefixes: ["020", "050"],
-    length: 10,
-    example: "0201234567",
-  },
-  AT: {
-    prefixes: ["027", "057", "026", "056"],
-    length: 10,
-    example: "0271234567",
-  },
-  GLO: {
-    prefixes: ["023"],
-    length: 10,
-    example: "0231234567",
-  },
-};
-
 export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   isOpen,
   onClose,
@@ -105,15 +81,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     ? bundles.filter((bundle: Bundle) => bundle.isActive)
     : [];
 
-  // Validate phone number based on provider
+  // Validate phone number - simplified validation
   const validatePhone = (phone: string): string | null => {
-    const rules =
-      providerPhoneRules[provider as keyof typeof providerPhoneRules];
-    
-    if (!rules) {
-      return "Invalid provider";
-    }
-
     // Remove any non-digit characters except +
     const cleanPhone = phone.replace(/[^\d+]/g, "");
     
@@ -125,22 +94,23 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       localPhone = "0" + cleanPhone.substring(3);
     }
 
-    // Check length
-    if (localPhone.length !== rules.length) {
-      return `Phone number must be ${rules.length} digits`;
+    // Check for unnecessary spaces between digits
+    if (phone.includes(" ") && phone.replace(/\s/g, "").length === 10) {
+      return "Remove unnecessary spaces between digits";
+    }
+
+    // Check length - must be exactly 10 digits
+    if (localPhone.length !== 10) {
+      if (localPhone.length > 10) {
+        return "Phone number must be exactly 10 digits";
+      } else {
+        return "Phone number must be exactly 10 digits";
+      }
     }
 
     // Check if it starts with 0
     if (!localPhone.startsWith("0")) {
       return "Phone number must start with 0";
-    }
-
-    // Check prefix
-    const prefix = localPhone.substring(0, 3);
-    if (!rules.prefixes.includes(prefix)) {
-      return `Invalid prefix for ${provider}. Must start with: ${rules.prefixes.join(
-        ", "
-      )}`;
     }
 
     return null;
@@ -332,61 +302,61 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-auto max-h-[95vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
             {showSummary
               ? "Bulk Order Summary"
               : `Bulk Order for ${providerName}`}
           </h2>
           <button 
             onClick={onClose} 
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1"
           >
-            <FaTimes size={20} />
+            <FaTimes size={18} className="sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-4 overflow-y-auto">
+        <div className="flex-1 p-3 sm:p-4 overflow-y-auto">
           {!showSummary ? (
             // Order Form
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Package Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">
+                    <h3 className="font-medium text-gray-900 text-sm sm:text-base">
                       {providerName} Package
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                       Available bundles in this package
                     </p>
                   </div>
                 </div>
                 {/* Make available bundles scrollable */}
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-32 sm:max-h-48 overflow-y-auto pr-2">
                   {Array.isArray(availableBundles) &&
                     availableBundles.length > 0 &&
                     availableBundles.map((bundle: Bundle) => (
                       <div
                         key={bundle._id}
-                        className="flex items-center justify-between text-sm bg-white p-2 rounded"
+                        className="flex items-center justify-between text-xs sm:text-sm bg-white p-2 rounded"
                       >
-                        <div className="flex items-center gap-2">
-                          <FaWifi className="text-blue-500" />
-                          <span>
+                        <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
+                          <FaWifi className="text-blue-500 flex-shrink-0" />
+                          <span className="truncate">
                             {bundle.dataVolume} {bundle.dataUnit}
                           </span>
-                          <span className="text-gray-500">•</span>
-                          <FaClock className="text-green-500" />
-                          <span>
+                          <span className="text-gray-500 hidden sm:inline">•</span>
+                          <FaClock className="text-green-500 flex-shrink-0" />
+                          <span className="truncate">
                             {bundle.validity} {bundle.validityUnit}
                           </span>
                         </div>
-                        <div className="font-bold text-green-600">
+                        <div className="font-bold text-green-600 text-xs sm:text-sm flex-shrink-0 ml-2">
                           {bundle.currency} {bundle.price}
                         </div>
                       </div>
@@ -395,79 +365,78 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               </div>
 
               {/* Import Method Selection */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                <h3 className="font-medium text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">
                   Import Method
                 </h3>
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                   <button
                     onClick={() => setImportMethod("file")}
-                    className={`flex-1 flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors ${
+                    className={`flex-1 flex items-center justify-center gap-2 p-2 sm:p-3 border rounded-lg transition-colors text-xs sm:text-sm ${
                       importMethod === "file"
                         ? "border-blue-500 bg-blue-50 text-blue-700"
                         : "border-gray-300 hover:bg-gray-50"
                     }`}
                   >
-                    <FaFileUpload />
-                    Import CSV/Excel
+                    <FaFileUpload className="flex-shrink-0" />
+                    <span className="truncate">Import CSV/Excel</span>
                   </button>
                   <button
                     onClick={() => setImportMethod("manual")}
-                    className={`flex-1 flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors ${
+                    className={`flex-1 flex items-center justify-center gap-2 p-2 sm:p-3 border rounded-lg transition-colors text-xs sm:text-sm ${
                       importMethod === "manual"
                         ? "border-blue-500 bg-blue-50 text-blue-700"
                         : "border-gray-300 hover:bg-gray-50"
                     }`}
                   >
-                    <FaPlus />
-                    Manual Entry
+                    <FaPlus className="flex-shrink-0" />
+                    <span className="truncate">Manual Entry</span>
                   </button>
                 </div>
               </div>
 
               {/* File Upload */}
               {importMethod === "file" && (
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-gray-900">Upload File</h3>
+                <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
+                    <h3 className="font-medium text-gray-900 text-sm sm:text-base">Upload File</h3>
                     <button
                       onClick={downloadTemplate}
-                      className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                      className="flex items-center gap-2 text-xs sm:text-sm text-blue-600 hover:text-blue-700 self-start sm:self-center"
                     >
-                      <FaDownload />
-                      Download Template
+                      <FaDownload className="flex-shrink-0" />
+                      <span className="truncate">Download Template</span>
                     </button>
                   </div>
                   <input
                     type="file"
                     accept=".csv,.xlsx,.xls"
                     onChange={handleFileUpload}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    className="w-full p-2 border border-gray-300 rounded-lg text-xs sm:text-sm"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    Supported formats: CSV, Excel. Columns: Customer Name, Phone
-                    Number, Data Volume, Data Unit
+                    Supported formats: CSV, Excel. Format: PhoneNumber DataVolume
                   </p>
                 </div>
               )}
 
               {/* Manual Entry */}
               {importMethod === "manual" && (
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-gray-900">
+                <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <h3 className="font-medium text-gray-900 text-sm sm:text-base">
                       Bulk Order Input
                     </h3>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                       Enter orders (one per line)
                     </label>
                     <textarea
                       value={bulkText}
                       onChange={(e) => handleBulkTextChange(e.target.value)}
                       placeholder={`0241234567 5\n0201234567 2\n0271234567 1`}
-                      className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full h-24 sm:h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-xs sm:text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-2">
                       Format: PhoneNumber DataVolume (e.g., 0241234567 5). All values are in GB.<br/>
@@ -480,7 +449,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               {/* Error Display */}
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-700">{error}</p>
+                  <p className="text-xs sm:text-sm text-red-700">{error}</p>
                 </div>
               )}
 
@@ -488,7 +457,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               <button
                 onClick={handleContinue}
                 disabled={orderItems.length === 0 || loading || (siteStatus?.isSiteOpen === false)}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm sm:text-base"
               >
                 {loading
                   ? "Processing..."
@@ -499,84 +468,84 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             </div>
           ) : (
             // Order Summary
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Package Summary Mini Card */}
               <div
-                className="rounded-lg shadow flex items-center gap-4 p-4 mb-4"
+                className="rounded-lg shadow flex items-center gap-3 sm:gap-4 p-3 sm:p-4 mb-4"
                 style={{
                   backgroundColor: providerColors.background,
                   border: `1.5px solid ${providerColors.primary}`,
                 }}
               >
                 <div
-                  className="flex items-center justify-center w-14 h-14 rounded-full"
+                  className="flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-full flex-shrink-0"
                   style={{ backgroundColor: providerColors.primary }}
                 >
                   <FaWifi
-                    className="text-2xl"
+                    className="text-lg sm:text-2xl"
                     style={{ color: providerColors.text }}
                   />
-                  </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
                     <span
-                      className="text-lg font-bold"
+                      className="text-base sm:text-lg font-bold truncate"
                       style={{ color: providerColors.primary }}
                     >
                       {providerName}
                     </span>
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 flex items-center gap-1">
-                      <FaCheckCircle className="text-green-500 mr-1" />{" "}
-                      {validOrders.length} Valid
-                    </span>
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 flex items-center gap-1">
-                      <FaExclamationCircle className="text-red-500 mr-1" />{" "}
-                      {invalidOrders.length} Invalid
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 flex items-center gap-1">
+                        <FaCheckCircle className="text-green-500 flex-shrink-0" />
+                        <span className="truncate">{validOrders.length} Valid</span>
+                      </span>
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 flex items-center gap-1">
+                        <FaExclamationCircle className="text-red-500 flex-shrink-0" />
+                        <span className="truncate">{invalidOrders.length} Invalid</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                     <span className="flex items-center gap-1 text-gray-700">
-                      <FaDatabase className="text-blue-500" />
-                      <span className="font-semibold">{totalGB} GB</span> Total
+                      <FaDatabase className="text-blue-500 flex-shrink-0" />
+                      <span className="font-semibold">{totalGB} GB</span>
+                      <span className="hidden sm:inline">Total</span>
                     </span>
                     <span className="flex items-center gap-1 text-gray-700">
-                      <FaBox className="text-yellow-500" />
-                      <span className="font-semibold">
-                        {orderItems.length}
-                      </span>{" "}
-                      Orders
+                      <FaBox className="text-yellow-500 flex-shrink-0" />
+                      <span className="font-semibold">{orderItems.length}</span>
+                      <span className="hidden sm:inline">Orders</span>
                     </span>
                     <span className="flex items-center gap-1 text-gray-700">
                       <span className="font-semibold">
-                        {getCurrencySymbol(currency)}
-                        {totalPrice.toFixed(2)}
-                      </span>{" "}
-                      Total
+                        {getCurrencySymbol(currency)}{totalPrice.toFixed(2)}
+                      </span>
+                      <span className="hidden sm:inline">Total</span>
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Valid Orders */}
-              <div className="bg-green-50 rounded-lg p-4">
-                <h3 className="font-medium text-green-800 mb-3">
+              <div className="bg-green-50 rounded-lg p-3 sm:p-4">
+                <h3 className="font-medium text-green-800 mb-3 text-sm sm:text-base">
                   Valid Orders ({validOrders.length})
                 </h3>
-                <div className="space-y-3 max-h-40 overflow-y-auto">
+                <div className="space-y-2 sm:space-y-3 max-h-32 sm:max-h-40 overflow-y-auto">
                   {validOrders.map((item, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 bg-white rounded-lg"
+                      className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg"
                     >
-                      <div className="flex-1">
-                        <div className="font-medium">{item.customerPhone}</div>
-                        <div className="text-sm text-gray-600">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-xs sm:text-sm truncate">{item.customerPhone}</div>
+                        <div className="text-xs text-gray-600">
                           {item.dataVolume} GB
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right ml-2">
                         {item.bundle && (
-                          <div className="text-sm font-medium text-green-600">
+                          <div className="text-xs sm:text-sm font-medium text-green-600">
                             {item.bundle.currency} {item.bundle.price}
                           </div>
                         )}
@@ -588,32 +557,32 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
               {/* Invalid Orders */}
               {invalidOrders.length > 0 && (
-                <div className="bg-red-50 rounded-lg p-4">
-                  <h3 className="font-medium text-red-800 mb-3">
+                <div className="bg-red-50 rounded-lg p-3 sm:p-4">
+                  <h3 className="font-medium text-red-800 mb-3 text-sm sm:text-base">
                     Invalid Orders ({invalidOrders.length})
                   </h3>
-                  <div className="space-y-3 max-h-40 overflow-y-auto">
+                  <div className="space-y-2 sm:space-y-3 max-h-32 sm:max-h-40 overflow-y-auto">
                     {invalidOrders.map((item, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 bg-white rounded-lg"
+                        className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg"
                       >
-                        <div className="flex-1">
-                          <div className="font-medium">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-xs sm:text-sm truncate">
                             {item.customerPhone}
                           </div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-xs text-gray-600">
                             {item.dataVolume} GB
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right ml-2">
                           {item.phoneError && (
-                            <div className="text-xs text-red-600">
+                            <div className="text-xs text-red-600 truncate max-w-24 sm:max-w-32">
                               {item.phoneError}
                             </div>
                           )}
                           {item.dataError && (
-                            <div className="text-xs text-red-600">
+                            <div className="text-xs text-red-600 truncate max-w-24 sm:max-w-32">
                               {item.dataError}
                             </div>
                           )}
@@ -625,10 +594,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               )}
 
               {/* Total */}
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total Amount:</span>
-                  <span className="text-green-600">
+              <div className="border-t pt-3 sm:pt-4">
+                <div className="flex justify-between items-center text-base sm:text-lg font-bold">
+                  <span className="text-sm sm:text-base">Total Amount:</span>
+                  <span className="text-green-600 text-sm sm:text-base">
                     GHS{" "}
                     {validOrders
                       .reduce(
@@ -644,37 +613,37 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               {/* Error Display */}
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-700">{error}</p>
+                  <p className="text-xs sm:text-sm text-red-700">{error}</p>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   onClick={handleBack}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
                 >
                   Back
                 </button>
                 <button
                   onClick={handleConfirmOrder}
                   disabled={loading || validOrders.length === 0 || (siteStatus?.isSiteOpen === false)}
-                  className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                  className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Processing...
+                      <span className="truncate">Processing...</span>
                     </>
                   ) : (siteStatus?.isSiteOpen === false) ? (
                     <>
-                      <FaTimes />
-                      Site Under Maintenance
+                      <FaTimes className="flex-shrink-0" />
+                      <span className="truncate">Site Under Maintenance</span>
                     </>
                   ) : (
                     <>
-                      <FaCheckCircle />
-                      Confirm Bulk Order
+                      <FaCheckCircle className="flex-shrink-0" />
+                      <span className="truncate">Confirm Bulk Order</span>
                     </>
                   )}
                 </button>

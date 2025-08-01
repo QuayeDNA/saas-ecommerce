@@ -90,7 +90,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       await updateOrderStatus(orderId, newStatus);
-    } catch (error) {
+    } catch {
       // Failed to update order status
     }
   };
@@ -99,7 +99,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     if (window.confirm('Are you sure you want to cancel this order?')) {
       try {
         await cancelOrder(orderId, 'Cancelled by user');
-          } catch (error) {
+          } catch {
       // Failed to cancel order
     }
     }
@@ -125,7 +125,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           await bulkProcessOrders(selectedOrders, bulkAction);
         }
         setSelectedOrders([]);
-          } catch (error) {
+          } catch {
       // Failed to perform bulk action
     }
     }
@@ -457,7 +457,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               key={order._id}
               order={order}
               isAdmin={isAdmin}
-              onView={(order) => window.open(`/orders/${order._id}`, '_blank')}
               onUpdateStatus={handleStatusUpdate}
               onCancel={handleCancelOrder}
               onSelect={handleSelectOrder}
@@ -469,7 +468,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         <UnifiedOrderTable
           orders={orders}
           isAdmin={isAdmin}
-          onView={(order) => window.open(`/orders/${order._id}`, '_blank')}
           onUpdateStatus={handleStatusUpdate}
           onCancel={handleCancelOrder}
           onSelect={handleSelectOrder}

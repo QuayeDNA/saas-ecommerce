@@ -1,5 +1,5 @@
 // src/contexts/OrderContext.tsx
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type{
   Order,
   OrderFilters,
@@ -38,6 +38,7 @@ interface OrderContextType {
   getAnalytics: (timeframe?: string) => Promise<OrderAnalytics>;
   setFilters: (filters: OrderFilters) => void;
   clearError: () => void;
+  isInitialized: boolean;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -57,6 +58,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -67,6 +69,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [analytics, setAnalytics] = useState<OrderAnalytics | null>(null);
   
   const { addToast } = useToast();
+
+  // Initialize the provider
+  useEffect(() => {
+    setIsInitialized(true);
+  }, []);
 
   const fetchOrders = useCallback(async (
     newFilters: OrderFilters = {},
@@ -210,16 +217,16 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const processDraftOrders = useCallback(async () => {
     try {
       const result = await orderService.processDraftOrders();
-      addToast(result.message, 'success');
+      // Removed toast notification - handled by component
       await fetchOrders(filters);
       return result;
     } catch (err: unknown) {
       const message = extractErrorMessage(err, 'Failed to process draft orders');
       setError(message);
-      addToast(message, 'error');
+      // Removed toast notification - handled by component
       throw new Error(message);
     }
-  }, [addToast, fetchOrders, filters]);
+  }, [fetchOrders, filters]);
 
   const fetchAnalytics = useCallback(async (timeframe = '30d') => {
     try {
@@ -275,6 +282,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     getAnalytics,
     setFilters,
     clearError,
+    isInitialized,
   }), [
     orders,
     loading,
@@ -295,6 +303,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     getAnalytics,
     setFilters,
     clearError,
+    isInitialized,
   ]);
 
   return (
@@ -308,6 +317,38 @@ export const useOrder = () => {
   const context = useContext(OrderContext);
   if (context === undefined) {
     throw new Error('useOrder must be used within an OrderProvider');
+  }
+  if (!context.isInitialized) {
+    // Return a fallback context while initializing
+    return {
+      orders: [],
+      loading: false,
+      error: null,
+      pagination: { total: 0, page: 1, pages: 0, limit: 20 },
+      filters: {},
+      analytics: null,
+      fetchOrders: async () => {},
+      createSingleOrder: async () => {},
+      createBulkOrder: async () => {},
+      processOrderItem: async () => {},
+      processBulkOrder: async () => {},
+      bulkProcessOrders: async () => {},
+      cancelOrder: async () => {},
+      updateOrderStatus: async () => {},
+      processDraftOrders: async () => ({ processed: 0, message: '', totalAmount: 0 }),
+      fetchAnalytics: async () => {},
+      getAnalytics: async () => ({
+        totalOrders: 0,
+        completedOrders: 0,
+        totalRevenue: 0,
+        completionRate: 0,
+        averageOrderValue: 0,
+        topProducts: []
+      }),
+      setFilters: () => {},
+      clearError: () => {},
+      isInitialized: false
+    };
   }
   return context;
 };

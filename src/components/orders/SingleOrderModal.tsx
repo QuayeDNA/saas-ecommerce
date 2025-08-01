@@ -19,30 +19,6 @@ interface SingleOrderModalProps {
   bundle: Bundle; // Must be fetched using ProviderPackageDisplay or direct bundleService
 }
 
-// Provider-specific phone number validation rules
-const providerPhoneRules = {
-  MTN: {
-    prefixes: ['024', '025', '054', '055', '059'],
-    length: 10,
-    example: '0241234567'
-  },
-  TELECEL: {
-    prefixes: ['020', '050'],
-    length: 10,
-    example: '0201234567'
-  },
-  AT: {
-    prefixes: ['027', '057', '026', '056'],
-    length: 10,
-    example: '0271234567'
-  },
-  GLO: {
-    prefixes: ['023'],
-    length: 10,
-    example: '0231234567'
-  }
-};
-
 export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   isOpen,
   onClose,
@@ -81,16 +57,8 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
     }
   }, [isOpen]);
 
-  // Validate phone number based on provider
+  // Validate phone number - simplified validation
   const validatePhone = (phone: string): boolean => {
-    const provider = (bundle.providerId as any)?.code || bundle.providerId;
-    const rules = providerPhoneRules[provider as keyof typeof providerPhoneRules];
-    
-    if (!rules) {
-      setPhoneError('Invalid provider');
-      return false;
-    }
-
     // Remove any non-digit characters except +
     const cleanPhone = phone.replace(/[^\d+]/g, '');
     
@@ -102,22 +70,25 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       localPhone = '0' + cleanPhone.substring(3);
     }
 
-    // Check length
-    if (localPhone.length !== rules.length) {
-      setPhoneError(`Phone number must be ${rules.length} digits`);
+    // Check for unnecessary spaces between digits
+    if (phone.includes(' ') && phone.replace(/\s/g, '').length === 10) {
+      setPhoneError('Remove unnecessary spaces between digits');
+      return false;
+    }
+
+    // Check length - must be exactly 10 digits
+    if (localPhone.length !== 10) {
+      if (localPhone.length > 10) {
+        setPhoneError('Phone number must be exactly 10 digits');
+      } else {
+        setPhoneError('Phone number must be exactly 10 digits');
+      }
       return false;
     }
 
     // Check if it starts with 0
     if (!localPhone.startsWith('0')) {
       setPhoneError('Phone number must start with 0');
-      return false;
-    }
-
-    // Check prefix
-    const prefix = localPhone.substring(0, 3);
-    if (!rules.prefixes.includes(prefix)) {
-      setPhoneError(`Invalid prefix for ${provider}. Must start with: ${rules.prefixes.join(', ')}`);
       return false;
     }
 
@@ -232,9 +203,6 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
   if (!isOpen) return null;
 
-  const provider = (bundle.providerId as any)?.code || bundle.providerId;
-  const rules = providerPhoneRules[provider as keyof typeof providerPhoneRules];
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto max-h-[95vh] flex flex-col">
@@ -293,7 +261,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                     type="tel"
                     value={customerPhone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
-                    placeholder={rules?.example || "Enter phone number"}
+                    placeholder="Enter 10-digit phone number"
                     className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       phoneError ? 'border-red-300' : 'border-gray-300'
                     }`}
@@ -301,11 +269,6 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                 </div>
                 {phoneError && (
                   <p className="mt-1 text-sm text-red-600">{phoneError}</p>
-                )}
-                {rules && (
-                  <p className="mt-1 text-xs text-gray-500">
-                    Valid prefixes: {rules.prefixes.join(', ')}
-                  </p>
                 )}
               </div>
 

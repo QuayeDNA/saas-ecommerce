@@ -1,13 +1,12 @@
 // src/components/orders/UnifiedOrderTable.tsx
 import React, { useState } from 'react';
 import { Button } from '../../design-system';
-import { FaEye, FaCheck, FaTimes, FaClock, FaChevronRight, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaCheck, FaTimes, FaClock, FaChevronRight, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import type { Order } from '../../types/order';
 
 interface UnifiedOrderTableProps {
   orders: Order[];
   isAdmin: boolean;
-  onView: (order: Order) => void;
   onUpdateStatus: (orderId: string, status: string, notes?: string) => void;
   onCancel: (orderId: string) => void;
   onSelect?: (orderId: string) => void;
@@ -19,7 +18,6 @@ interface UnifiedOrderTableProps {
 export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   orders,
   isAdmin,
-  onView,
   onUpdateStatus,
   onCancel,
   onSelect,
@@ -92,7 +90,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     try {
       onUpdateStatus(orderId, newStatus);
       setStatusDropdowns(new Set());
-    } catch (error) {
+    } catch {
       // Failed to update status
     }
   };
@@ -304,13 +302,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                     </td>
                     <td className="px-6 py-4 text-sm font-medium">
                       <div className="flex items-center space-x-2">
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          onClick={() => onView(order)}
-                        >
-                          <FaEye className="w-3 h-3" />
-                        </Button>
+                        
                         
                         {/* Admin-only actions */}
                         {isAdmin && (
