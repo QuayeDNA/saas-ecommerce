@@ -81,11 +81,11 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     }
   }, [isOpen]);
 
-  // Fetch bundles for the selected packageId
+  // Fetch bundles for the selected packageId - get all bundles without pagination
   useEffect(() => {
     if (isOpen && packageId) {
       bundleService
-        .getBundles({ packageId })
+        .getBundlesByPackage(packageId, { limit: 1000 })
         .then((resp) => setBundles(resp.bundles || []))
         .catch(() => setBundles([]));
     }
@@ -336,7 +336,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
           // Order Form
           <div className="space-y-4">
             {/* Package Info */}
-            <Card>
+            <Card variant="outlined">
               <CardBody>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">

@@ -164,8 +164,11 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     if (isAdmin) return true;
     
     // Agents can only cancel their own draft orders
-    if (order.status === 'draft' && currentUserId && order.createdBy?._id === currentUserId) {
-      return true;
+    if (order.status === 'draft' && currentUserId) {
+      const createdById = typeof order.createdBy === 'string' ? order.createdBy : (order.createdBy as any)?._id;
+      if (createdById === currentUserId) {
+        return true;
+      }
     }
     
     return false;

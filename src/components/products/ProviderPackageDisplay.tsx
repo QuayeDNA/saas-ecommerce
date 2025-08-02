@@ -72,11 +72,12 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
           pkgList = resp.packages || [];
         }
         setPackages(pkgList);
-        // Fetch bundles for each package
+        // Fetch bundles for each package - get all bundles without pagination
         const bundleMap: Record<string, Bundle[]> = {};
         for (const pkg of pkgList) {
           if (pkg._id) {
-            const resp = await bundleService.getBundlesByPackage(pkg._id);
+            // Get all bundles by setting a high limit
+            const resp = await bundleService.getBundlesByPackage(pkg._id, { limit: 1000 });
             bundleMap[pkg._id] = resp.bundles || [];
           }
         }
