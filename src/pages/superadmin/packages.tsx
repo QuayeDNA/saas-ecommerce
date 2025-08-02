@@ -16,8 +16,18 @@ import {
   FaTimesCircle
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../../design-system/components/button";
-import { colors } from "../../design-system/tokens";
+import { 
+  Button, 
+  Card, 
+  CardHeader, 
+  CardBody, 
+  Badge, 
+  Spinner,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter
+} from "../../design-system";
 import { PackageFormModal } from "../../components/products/PackageFormModal";
 import { getProviderColors } from "../../utils/provider-colors";
 import { useToast } from "../../design-system/components/toast";
@@ -239,80 +249,90 @@ export default function SuperAdminPackagesPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
-              Package Management
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600">Create and manage data packages</p>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold mb-2">
+                Package Management
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">Create and manage data packages</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={fetchPackages} disabled={loading} size="sm">
+                <FaRedo className="mr-2" />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm">
+                <FaDownload className="mr-2" />
+                Export
+              </Button>
+              <Button onClick={handleCreate} size="sm">
+                <FaPlus className="mr-2" />
+                Create Package
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={fetchPackages} disabled={loading} size="sm">
-              <FaRedo className="mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm">
-              <FaDownload className="mr-2" />
-              Export
-            </Button>
-            <Button onClick={handleCreate} size="sm">
-              <FaPlus className="mr-2" />
-              Create Package
-            </Button>
-          </div>
-        </div>
-      </div>
+        </CardHeader>
+      </Card>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Packages</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.total}</p>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Packages</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.total}</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
+                <FaBox className="text-blue-600 text-lg sm:text-xl" />
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
-              <FaBox className="text-blue-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
-              <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.active}</p>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
+                <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.active}</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-green-100 rounded-full">
+                <FaCheckCircle className="text-green-600 text-lg sm:text-xl" />
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-green-100 rounded-full">
-              <FaCheckCircle className="text-green-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Inactive</p>
-              <p className="text-lg sm:text-2xl font-bold text-red-600">{stats.inactive}</p>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Inactive</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-600">{stats.inactive}</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-red-100 rounded-full">
+                <FaTimesCircle className="text-red-600 text-lg sm:text-xl" />
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-red-100 rounded-full">
-              <FaTimesCircle className="text-red-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Providers</p>
-              <p className="text-lg sm:text-2xl font-bold text-purple-600">{stats.mtn + stats.telecel + stats.at}</p>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Providers</p>
+                <p className="text-lg sm:text-2xl font-bold text-purple-600">{stats.mtn + stats.telecel + stats.at}</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
+                <FaBuilding className="text-purple-600 text-lg sm:text-xl" />
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
-              <FaBuilding className="text-purple-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       </div>
 
       {/* Search and Filters */}
@@ -329,53 +349,55 @@ export default function SuperAdminPackagesPage() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 text-sm sm:text-base">{error}</p>
-        </div>
+        <Card>
+          <CardBody>
+            <p className="text-red-800 text-sm sm:text-base">{error}</p>
+          </CardBody>
+        </Card>
       )}
 
       {/* Action Error */}
       {actionError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 text-sm sm:text-base">{actionError}</p>
-        </div>
+        <Card>
+          <CardBody>
+            <p className="text-red-800 text-sm sm:text-base">{actionError}</p>
+          </CardBody>
+        </Card>
       )}
 
       {/* Packages Grid */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading ? (
-          <div className="p-6 sm:p-8 text-center">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
+      <Card>
+        <CardBody>
+          {loading ? (
+            <div className="p-6 sm:p-8 text-center">
+              <Spinner size="lg" />
               <span className="ml-3 text-sm sm:text-base text-gray-600">Loading packages...</span>
             </div>
-          </div>
-        ) : packages.length === 0 ? (
-          <div className="p-6 sm:p-8 text-center">
-            <FaBox className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
-            <p className="text-sm sm:text-base text-gray-500">No packages found matching your criteria.</p>
-            <Button onClick={handleCreate} className="mt-4">
-              <FaPlus className="mr-2" />
-              Create Your First Package
-            </Button>
-          </div>
-        ) : (
-          <div className="p-4 sm:p-6">
+          ) : packages.length === 0 ? (
+            <div className="p-6 sm:p-8 text-center">
+              <FaBox className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
+              <p className="text-sm sm:text-base text-gray-500">No packages found matching your criteria.</p>
+              <Button onClick={handleCreate} className="mt-4">
+                <FaPlus className="mr-2" />
+                Create Your First Package
+              </Button>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {packages.map(pkg => {
                 const providerColors = getProviderColors(pkg.provider);
                 return (
-                  <div 
+                  <Card 
                     key={pkg._id} 
-                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 overflow-hidden group"
+                    className="hover:shadow-lg transition-all duration-200 group"
                     style={{
-                      borderTop: `4px solid ${providerColors.primary}`
+                      borderTop: `4px solid ${providerColors.primary}`,
+                      backgroundColor: providerColors.background
                     }}
                   >
                     {/* Card Header with Provider Branding */}
                     <div 
-                      className="p-4 pb-3"
-                      style={{ backgroundColor: providerColors.background }}
+                      className="pb-3"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
@@ -398,14 +420,13 @@ export default function SuperAdminPackagesPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            pkg.isActive 
-                              ? 'text-green-600 bg-green-100' 
-                              : 'text-red-600 bg-red-100'
-                          }`}>
+                          <Badge 
+                            colorScheme={pkg.isActive ? "success" : "error"}
+                            size="sm"
+                          >
                             {pkg.isActive ? <FaCheckCircle className="w-3 h-3 mr-1" /> : <FaTimesCircle className="w-3 h-3 mr-1" />}
                             {pkg.isActive ? 'Active' : 'Inactive'}
-                          </span>
+                          </Badge>
                         </div>
                       </div>
                       
@@ -418,18 +439,18 @@ export default function SuperAdminPackagesPage() {
                       
                       {/* Tags */}
                       <div className="flex flex-wrap items-center gap-1">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(pkg.category)}`}>
+                        <Badge variant="outline" size="sm" className={getCategoryColor(pkg.category)}>
                           {pkg.category}
-                        </span>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        </Badge>
+                        <Badge variant="outline" size="sm" className="bg-gray-100 text-gray-700">
                           <FaCalendar className="w-3 h-3 mr-1" />
                           {formatDate(pkg.createdAt || '')}
-                        </span>
+                        </Badge>
                       </div>
                     </div>
 
                     {/* Card Actions */}
-                    <div className="p-4 pt-3 border-t border-gray-100">
+                    <div className="pt-3 border-t border-gray-100">
                       <div className="flex flex-col gap-2">
                         {/* Primary Actions */}
                         <div className="flex gap-2">
@@ -447,10 +468,10 @@ export default function SuperAdminPackagesPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => navigate(`/superadmin/packages/${pkg._id}/bundles`)}
-                            className="flex-1 text-xs"
+                            className="flex-1 text-xs border-none"
                             style={{
-                              borderColor: providerColors.primary,
-                              color: providerColors.primary
+                              backgroundColor: providerColors.primary,
+                              color: providerColors.background
                             }}
                           >
                             <FaEye className="mr-1" />
@@ -473,13 +494,13 @@ export default function SuperAdminPackagesPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 );
               })}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Create/Edit Modal */}
       <PackageFormModal
@@ -490,33 +511,33 @@ export default function SuperAdminPackagesPage() {
       />
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative mx-4">
-            <h2 className="text-lg font-bold mb-4">Delete Package</h2>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete <span className="font-semibold">{deletePackage?.name}</span>?
-              This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => { setShowDeleteModal(false); setDeletePackage(null); }}
-                disabled={actionLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleDeleteConfirm}
-                disabled={actionLoading}
-              >
-                {actionLoading ? 'Deleting...' : 'Delete'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog isOpen={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeletePackage(null); }}>
+        <DialogHeader>
+          <h2 className="text-lg font-bold">Delete Package</h2>
+        </DialogHeader>
+        <DialogBody>
+          <p className="text-gray-600">
+            Are you sure you want to delete <span className="font-semibold">{deletePackage?.name}</span>?
+            This action cannot be undone.
+          </p>
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => { setShowDeleteModal(false); setDeletePackage(null); }}
+            disabled={actionLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteConfirm}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 } 

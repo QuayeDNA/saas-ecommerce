@@ -18,9 +18,19 @@ import {
   FaArrowLeft,
   FaTimesCircle
 } from "react-icons/fa";
-import { Button } from "../../design-system/components/button";
-import { colors } from "../../design-system/tokens";
-import { BundleFormModal } from "../../components/products/BundleFormModal";
+import { 
+  Button, 
+  Card, 
+  CardHeader, 
+  CardBody, 
+  Badge, 
+  Spinner,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter
+} from "../../design-system";
+import { BundleCreationModal } from "../../components/products/BundleCreationModal";
 import { useToast } from "../../design-system/components/toast";
 import { getProviderColors } from "../../utils/provider-colors";
 
@@ -246,78 +256,82 @@ export const BundleManagementPage: React.FC = () => {
     setActionLoading(true);
     setActionError(null);
     try {
-      // Handle providerId - extract the actual ID if it's an object
-      let providerIdValue: string | undefined = data.providerId;
-      if (typeof data.providerId === 'object' && data.providerId !== null) {
-        // If it's a populated object, extract the _id
-        // Handle different possible structures
-        const providerObj = data.providerId as { _id?: string; id?: string };
-        if (providerObj._id) {
-          providerIdValue = providerObj._id;
-        } else if (providerObj.id) {
-          providerIdValue = providerObj.id;
-        } else {
-          // If we can't extract a valid ID, skip the providerId update
-          providerIdValue = undefined;
-        }
-      }
-      
-      const finalUpdateData: {
-        name: string;
-        description?: string;
-        dataVolume: number;
-        dataUnit: 'MB' | 'GB' | 'TB';
-        validity: number | 'unlimited';
-        validityUnit: 'hours' | 'days' | 'weeks' | 'months' | 'unlimited';
-        price: number;
-        currency: string;
-        features: string[];
-        isActive: boolean;
-        bundleCode?: string;
-        category?: string;
-        tags: string[];
-        providerId?: string;
-      } = {
-        name: data.name,
-        description: data.description,
-        dataVolume: data.dataVolume,
-        dataUnit: data.dataUnit,
-        validity: data.validity,
-        validityUnit: data.validityUnit,
-        price: data.price,
-        currency: data.currency,
-        features: data.features,
-        isActive: data.isActive,
-        bundleCode: data.bundleCode,
-        category: data.category,
-        tags: data.tags,
-      };
-      
-      // Only add providerId if we have a valid value
-      if (providerIdValue) {
-        finalUpdateData.providerId = String(providerIdValue);
-      }
       if (editBundle?._id) {
+        // For updates, handle providerId properly
+        let providerIdValue: string | undefined = data.providerId;
+        if (typeof data.providerId === 'object' && data.providerId !== null) {
+          const providerObj = data.providerId as { _id?: string; id?: string };
+          providerIdValue = providerObj._id || providerObj.id;
+        }
+        
+        const finalUpdateData: {
+          name: string;
+          description?: string;
+          dataVolume: number;
+          dataUnit: 'MB' | 'GB' | 'TB';
+          validity: number | 'unlimited';
+          validityUnit: 'hours' | 'days' | 'weeks' | 'months' | 'unlimited';
+          price: number;
+          currency: string;
+          features: string[];
+          isActive: boolean;
+          bundleCode?: string;
+          category?: string;
+          tags: string[];
+          providerId?: string;
+        } = {
+          name: data.name,
+          description: data.description,
+          dataVolume: data.dataVolume,
+          dataUnit: data.dataUnit,
+          validity: data.validity,
+          validityUnit: data.validityUnit,
+          price: data.price,
+          currency: data.currency,
+          features: data.features,
+          isActive: data.isActive,
+          bundleCode: data.bundleCode,
+          category: data.category,
+          tags: data.tags,
+        };
+        
+        // Only add providerId if we have a valid value
+        if (providerIdValue) {
+          finalUpdateData.providerId = String(providerIdValue);
+        }
+        
         await bundleService.updateBundle(editBundle._id, finalUpdateData);
         addToast('Bundle updated successfully', 'success');
       } else {
-        // For creation, we need to send the provider code from the package
-        // The backend will convert the provider code to providerId
+        // For creation, only send providerCode, not providerId
         if (!pkg?.provider) {
           throw new Error('Package provider information is missing');
         }
         
         await bundleService.createBundle({
-          ...data,
+          name: data.name,
+          description: data.description,
+          dataVolume: data.dataVolume,
+          dataUnit: data.dataUnit,
+          validity: data.validity,
+          validityUnit: data.validityUnit,
+          price: data.price,
+          currency: data.currency,
+          features: data.features,
+          isActive: data.isActive,
+          bundleCode: data.bundleCode,
+          category: data.category,
+          tags: data.tags,
           packageId: packageId || '',
-          providerCode: pkg.provider, // Send the provider code from the package
+          providerCode: pkg.provider, // Only send providerCode for creation
         });
         addToast('Bundle created successfully', 'success');
       }
       setShowFormModal(false);
       setEditBundle(null);
       await fetchBundles();
-    } catch {
+    } catch (error) {
+      console.error('Bundle save error:', error);
       setActionError('Failed to save bundle');
       addToast('Failed to save bundle', 'error');
     } finally {
@@ -383,98 +397,116 @@ export const BundleManagementPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 p-4 sm:p-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2"
-            >
-              <FaArrowLeft />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
-                Bundle Management
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Managing bundles for: <span className="font-semibold">{pkg?.name}</span>
-              </p>
-              {pkg?.description && (
-                <p className="text-sm text-gray-500 mt-1">{pkg.description}</p>
-              )}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2"
+              >
+                <FaArrowLeft />
+                Back
+              </Button>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold mb-2">
+                  Bundle Management
+                </h1>
+                <p className="text-sm sm:text-base text-gray-600">
+                  Managing bundles for: <span className="font-semibold">{pkg?.name}</span>
+                </p>
+                {pkg?.description && (
+                  <p className="text-sm text-gray-500 mt-1">{pkg.description}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={fetchBundles} disabled={loading} size="sm">
+                <FaRedo className="mr-2" />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm">
+                <FaDownload className="mr-2" />
+                Export
+              </Button>
+              <Button onClick={handleCreate} size="sm">
+                <FaPlus className="mr-2" />
+                Create Bundle
+              </Button>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={fetchBundles} disabled={loading} size="sm">
-              <FaRedo className="mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm">
-              <FaDownload className="mr-2" />
-              Export
-            </Button>
-            <Button onClick={handleCreate} size="sm">
-              <FaPlus className="mr-2" />
-              Create Bundle
-            </Button>
-          </div>
-        </div>
-      </div>
+        </CardHeader>
+      </Card>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Bundles</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.total}</p>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Bundles</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.total}</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
+                <FaCube className="text-blue-600 text-lg sm:text-xl" />
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
-              <FaCube className="text-blue-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
-              <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.active}</p>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
+                <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.active}</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-green-100 rounded-full">
+                <FaCheckCircle className="text-green-600 text-lg sm:text-xl" />
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-green-100 rounded-full">
-              <FaCheckCircle className="text-green-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Value</p>
-              <p className="text-lg sm:text-2xl font-bold text-purple-600">{formatCurrency(stats.totalValue)}</p>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Value</p>
+                <p className="text-lg sm:text-2xl font-bold text-purple-600">{formatCurrency(stats.totalValue)}</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
+                <FaDatabase className="text-purple-600 text-lg sm:text-xl" />
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
-              <FaDatabase className="text-purple-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Provider</p>
-              <p className="text-lg sm:text-2xl font-bold text-orange-600">{pkg?.provider || 'N/A'}</p>
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Provider</p>
+                <p className="text-lg sm:text-2xl font-bold"
+                style={{
+                  color: getProviderColors(pkg?.provider)?.primary
+                }}
+                >{pkg?.provider || 'N/A'}</p>
+              </div>
+              <div className="p-2 sm:p-3 rounded-full"
+              style={{
+                backgroundColor: getProviderColors(pkg?.provider)?.background
+              }}
+              >
+                <FaBuilding className={`text-lg sm:text-xl ${getProviderColors(pkg?.provider)?.primary}`} />
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-orange-100 rounded-full">
-              <FaBuilding className="text-orange-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       </div>
 
       {/* Search and Filters */}
@@ -491,53 +523,55 @@ export const BundleManagementPage: React.FC = () => {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 text-sm sm:text-base">{error}</p>
-        </div>
+        <Card>
+          <CardBody>
+            <p className="text-red-800 text-sm sm:text-base">{error}</p>
+          </CardBody>
+        </Card>
       )}
 
       {/* Action Error */}
       {actionError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 text-sm sm:text-base">{actionError}</p>
-        </div>
+        <Card>
+          <CardBody>
+            <p className="text-red-800 text-sm sm:text-base">{actionError}</p>
+          </CardBody>
+        </Card>
       )}
 
       {/* Bundles Grid */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading ? (
-          <div className="p-6 sm:p-8 text-center">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
+      <Card>
+        <CardBody>
+          {loading ? (
+            <div className="p-6 sm:p-8 text-center">
+              <Spinner size="lg" />
               <span className="ml-3 text-sm sm:text-base text-gray-600">Loading bundles...</span>
             </div>
-          </div>
-        ) : bundles.length === 0 ? (
-          <div className="p-6 sm:p-8 text-center">
-            <FaCube className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
-            <p className="text-sm sm:text-base text-gray-500">No bundles found matching your criteria.</p>
-            <Button onClick={handleCreate} className="mt-4">
-              <FaPlus className="mr-2" />
-              Create Your First Bundle
-            </Button>
-          </div>
-        ) : (
-          <div className="p-4 sm:p-6">
+          ) : bundles.length === 0 ? (
+            <div className="p-6 sm:p-8 text-center">
+              <FaCube className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
+              <p className="text-sm sm:text-base text-gray-500">No bundles found matching your criteria.</p>
+              <Button onClick={handleCreate} className="mt-4">
+                <FaPlus className="mr-2" />
+                Create Your First Bundle
+              </Button>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {bundles.map(bundle => {
                 const providerColors = getProviderColors(pkg?.provider);
                 return (
-                  <div 
+                  <Card 
                     key={bundle._id} 
-                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 overflow-hidden group"
+                    className="hover:shadow-lg transition-all duration-200 group"
                     style={{
-                      borderTop: `4px solid ${providerColors.primary}`
+                      borderTop: `4px solid ${providerColors.primary}`,
+                      backgroundColor: providerColors.background
                     }}
                   >
                     {/* Card Header with Provider Branding */}
                     <div 
-                      className="p-4 pb-3"
-                      style={{ backgroundColor: providerColors.background }}
+                      className="pb-3"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
@@ -560,14 +594,13 @@ export const BundleManagementPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            bundle.isActive 
-                              ? 'text-green-600 bg-green-100' 
-                              : 'text-red-600 bg-red-100'
-                          }`}>
+                          <Badge 
+                            colorScheme={bundle.isActive ? "success" : "error"}
+                            size="sm"
+                          >
                             {bundle.isActive ? <FaCheckCircle className="w-3 h-3 mr-1" /> : <FaTimesCircle className="w-3 h-3 mr-1" />}
                             {bundle.isActive ? 'Active' : 'Inactive'}
-                          </span>
+                          </Badge>
                         </div>
                       </div>
                       
@@ -611,19 +644,19 @@ export const BundleManagementPage: React.FC = () => {
                       {/* Tags */}
                       <div className="flex flex-wrap items-center gap-1">
                         {bundle.category && (
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(bundle.category)}`}>
+                          <Badge variant="outline" size="sm" className={getCategoryColor(bundle.category)}>
                             {bundle.category}
-                          </span>
+                          </Badge>
                         )}
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        <Badge variant="outline" size="sm" className="bg-gray-100 text-gray-700">
                           <FaCalendar className="w-3 h-3 mr-1" />
                           {formatDate(bundle.createdAt || '')}
-                        </span>
+                        </Badge>
                       </div>
                     </div>
 
                     {/* Card Actions */}
-                    <div className="p-4 pt-3 border-t border-gray-100">
+                    <div className="pt-3 border-t border-gray-100">
                       <div className="flex flex-col gap-2">
                         {/* Primary Actions */}
                         <div className="flex gap-2">
@@ -642,7 +675,11 @@ export const BundleManagementPage: React.FC = () => {
                             variant="danger"
                             onClick={() => handleDelete(bundle)}
                             disabled={actionLoading}
-                            className="flex-1 text-xs"
+                            className="flex-1 text-xs border-none"
+                            style={{
+                              backgroundColor: providerColors.primary,
+                              color: providerColors.background
+                            }}
                           >
                             <FaTrash className="mr-1" />
                             Delete
@@ -650,17 +687,17 @@ export const BundleManagementPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 );
               })}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Create/Edit Modal */}
-      <BundleFormModal
-        open={showFormModal}
+      <BundleCreationModal
+        isOpen={showFormModal}
         onClose={() => { setShowFormModal(false); setEditBundle(null); }}
         onSubmit={handleFormSubmit}
         initialData={editBundle}
@@ -669,33 +706,33 @@ export const BundleManagementPage: React.FC = () => {
       />
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative mx-4">
-            <h2 className="text-lg font-bold mb-4">Delete Bundle</h2>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete <span className="font-semibold">{deleteBundle?.name}</span>?
-              This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => { setShowDeleteModal(false); setDeleteBundle(null); }}
-                disabled={actionLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleDeleteConfirm}
-                disabled={actionLoading}
-              >
-                {actionLoading ? 'Deleting...' : 'Delete'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog isOpen={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeleteBundle(null); }}>
+        <DialogHeader>
+          <h2 className="text-lg font-bold">Delete Bundle</h2>
+        </DialogHeader>
+        <DialogBody>
+          <p className="text-gray-600">
+            Are you sure you want to delete <span className="font-semibold">{deleteBundle?.name}</span>?
+            This action cannot be undone.
+          </p>
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => { setShowDeleteModal(false); setDeleteBundle(null); }}
+            disabled={actionLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteConfirm}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 };

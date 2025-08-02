@@ -41,6 +41,21 @@ a, button, input, select, textarea {
   }
 }
 
+@keyframes slide-in-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-slide-up {
-  animation: slide-up 0.3s ease-out;
+  animation: slide-up 0.5s ease-out;
+}
+
+.animate-slide-in-from-bottom {
+  animation: slide-in-from-bottom 0.5s ease-out;
 }

@@ -19,14 +19,15 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const { addToast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showSiteMessage, setShowSiteMessage] = useState(false);
+  const [showGreeting, setShowGreeting] = useState(true);
   const [isTogglingSite, setIsTogglingSite] = useState(false);
 
-  // Get greeting based on time of day
+  // Get greeting based on time of day with emoji
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
+    if (hour < 12) return { text: "Good morning", emoji: "☀️" };
+    if (hour < 18) return { text: "Good afternoon", emoji: "☀️" };
+    return { text: "Good evening", emoji: "🌙" };
   };
 
   // Handle site toggle for super admins
@@ -49,9 +50,16 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   // Show site message animation for agents and toast notifications for all users
   useEffect(() => {
     if (authState.user?.userType === "agent" && siteStatus) {
-      setShowSiteMessage(true);
+      setShowGreeting(false);
+      setTimeout(() => {
+        setShowSiteMessage(true);
+      }, 300); // Wait for greeting to slide out
+      
       const timer = setTimeout(() => {
         setShowSiteMessage(false);
+        setTimeout(() => {
+          setShowGreeting(true);
+        }, 300); // Wait for site message to slide out
       }, 5000); // Show for 5 seconds
       return () => clearTimeout(timer);
     }
@@ -94,93 +102,111 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
   return (
     <header className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200">
-      <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
-        {/* Top row: Menu, Greeting, Site Toggle, Notifications, User Avatar */}
-        <div className="flex justify-between items-center min-w-0 mb-2">
-          {/* Left side: Menu button and Greeting */}
-          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-            {/* Menu button for mobile */}
+      <div className="px-2 sm:px-6 lg:px-8 py-4 sm:py-5">
+        {/* Main Header Row */}
+        <div className="flex items-center justify-between gap-4">
+          {/* Left Section: Menu + Greeting */}
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+            {/* Mobile Menu Button */}
             <Button
               variant="ghost"
               size="sm"
               onClick={onMenuClick}
-              className="md:hidden p-1.5"
+              className="md:hidden flex-shrink-0"
               aria-label="Open sidebar menu"
             >
               <FaBars className="w-5 h-5" />
             </Button>
 
+            {/* Greeting Section */}
             <div className="min-w-0 flex-1">
-              <div className="text-sm sm:text-base lg:text-lg font-bold text-gray-800 truncate flex items-center">
-                <div className="bg-blue-50 text-blue-600 p-1 rounded-md mr-2 hidden sm:flex flex-shrink-0">
-                  <FaStar className="w-4 h-4 sm:w-5 sm:h-5" />
-                </div>
-                <div className="relative overflow-hidden">
-                  {showSiteMessage && isAgent ? (
-                    <div className="animate-slide-up">
-                      <span className="text-wrap truncate text-green-600">
+              <div className="relative overflow-hidden">
+                {showSiteMessage && isAgent ? (
+                  <div className="transform transition-all duration-500 ease-in-out animate-slide-up">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-green-50 text-green-600 p-1.5 rounded-md flex-shrink-0">
+                        <FaStar className="w-4 h-4" />
+                      </div>
+                      <span className="text-sm sm:text-base font-medium text-green-700 truncate">
                         {getSiteMessage()}
                       </span>
                     </div>
-                  ) : (
-                    <span className="text-wrap truncate">
-                      {getGreeting()}, {authState.user?.fullName.split(" ")[0]}{" "}
-                      👋
-                    </span>
-                  )}
-                </div>
+                  </div>
+                ) : showGreeting ? (
+                  <div className="transform transition-all duration-500 ease-in-out animate-slide-in-from-bottom">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-50 text-blue-600 p-1.5 rounded-md flex-shrink-0">
+                        <span className="text-lg sm:text-xl">
+                          {getGreeting().emoji}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 truncate">
+                          {getGreeting().text}, {authState.user?.fullName.split(" ")[0]}
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-500 truncate">
+                          Welcome back! 👋
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
 
-          {/* Right side: Site Toggle, Notifications, User Avatar */}
-          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 flex-shrink-0">
-            {/* Site Toggle - Only show for super admins */}
+          {/* Right Section: Actions + User */}
+          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 flex-shrink-0">
+            {/* Site Toggle - Only for admins */}
             {isAdmin && (
-              <Button
-                variant={siteStatus?.isSiteOpen ? "success" : "danger"}
-                size="sm"
-                onClick={handleSiteToggle}
-                disabled={isTogglingSite}
-                className="text-xs sm:text-sm"
-                title={
-                  isTogglingSite
-                    ? "Updating..."
-                    : siteStatus?.isSiteOpen
-                    ? "Close Site"
-                    : "Open Site"
-                }
-              >
-                {isTogglingSite ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
-                ) : siteStatus?.isSiteOpen ? (
-                  <FaCheck className="w-3 h-3 mr-1" />
-                ) : (
-                  <FaPowerOff className="w-3 h-3 mr-1" />
-                )}
-                <span className="hidden sm:inline">
-                  {isTogglingSite
-                    ? "Updating..."
-                    : siteStatus?.isSiteOpen
-                    ? "Site Open"
-                    : "Site Closed"}
-                </span>
-              </Button>
+              <div className="hidden sm:block">
+                <Button
+                  variant={siteStatus?.isSiteOpen ? "success" : "danger"}
+                  size="sm"
+                  onClick={handleSiteToggle}
+                  disabled={isTogglingSite}
+                  className="text-xs"
+                  title={
+                    isTogglingSite
+                      ? "Updating..."
+                      : siteStatus?.isSiteOpen
+                      ? "Close Site"
+                      : "Open Site"
+                  }
+                >
+                  {isTogglingSite ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                  ) : siteStatus?.isSiteOpen ? (
+                    <FaCheck className="w-3 h-3" />
+                  ) : (
+                    <FaPowerOff className="w-3 h-3" />
+                  )}
+                  <span className="ml-1">
+                    {isTogglingSite
+                      ? "Updating..."
+                      : siteStatus?.isSiteOpen
+                      ? "Site Open"
+                      : "Site Closed"}
+                  </span>
+                </Button>
+              </div>
             )}
 
-            {/* Notifications dropdown */}
-            <NotificationDropdown />
+            {/* Notifications */}
+            <div className="flex-shrink-0">
+              <NotificationDropdown />
+            </div>
 
-            {/* User dropdown menu */}
+            {/* User Menu */}
             <div className="relative flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="p-1"
+                className="p-1.5"
                 aria-label="User menu"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-medium shadow-sm text-xs sm:text-sm">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-medium shadow-sm text-sm">
                   {authState.user?.fullName.charAt(0)}
                   {authState.user?.fullName.split(" ")[1]?.charAt(0) ?? ""}
                 </div>
@@ -196,7 +222,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       if (e.key === "Escape") setIsDropdownOpen(false);
                     }}
                   />
-                  <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-white rounded-lg shadow-xl py-1 z-20 border border-gray-200 max-h-96 overflow-y-auto">
+                  <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-white rounded-lg shadow-xl py-1 z-20 border border-gray-200 max-h-96 overflow-y-auto">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <div className="font-medium text-sm truncate">
                         {authState.user?.fullName}
@@ -206,19 +232,19 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       </div>
                     </div>
 
-                    {/* Profile Link - Only show for agents */}
+                    {/* Profile Link - Only for agents */}
                     {isAgent && (
                       <Link
                         to="/agent/dashboard/profile"
                         className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         onClick={() => setIsDropdownOpen(false)}
                       >
-                        <FaUser className="w-5 h-5 mr-3 text-gray-500 flex-shrink-0" />
+                        <FaUser className="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" />
                         <span className="truncate">My Profile</span>
                       </Link>
                     )}
 
-                    {/* AFA Registration - Only show for agents */}
+                    {/* AFA Registration - Only for agents */}
                     {isAgent && (
                       <Link
                         to="/agent/dashboard/afa-registration"
@@ -226,7 +252,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <svg
-                          className="w-5 h-5 mr-3 text-gray-500 flex-shrink-0"
+                          className="w-4 h-4 mr-3 text-gray-500 flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -253,7 +279,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       }}
                       className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
                     >
-                      <FaSignOutAlt className="w-5 h-5 mr-3 text-red-500 flex-shrink-0" />
+                      <FaSignOutAlt className="w-4 h-4 mr-3 text-red-500 flex-shrink-0" />
                       <span className="truncate">Logout</span>
                     </Button>
                   </div>
@@ -263,16 +289,24 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           </div>
         </div>
 
-        {/* Bottom row: Wallet Widget (only for agents) */}
+        {/* Wallet Section - Only for agents */}
         {isAgent && (
-          <div className="flex justify-start">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-2 rounded-md text-sm sm:text-base shadow-sm relative group min-w-0">
-              <div className="hidden sm:block text-xs font-medium text-green-100 mb-1">
-                Wallet Balance
-              </div>
-              <div className="font-bold flex items-center justify-center sm:justify-start">
-                <FaWallet className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-100 flex-shrink-0" />
-                <span className="truncate">GH¢{walletBalance.toFixed(2)}</span>
+          <div className="mt-2">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-1 rounded-lg shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-400 bg-opacity-30 rounded-full">
+                    <FaWallet className="w-5 h-5 text-green-100" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-green-100 mb-1">
+                      Wallet Balance
+                    </div>
+                    <div className="text-lg sm:text-xl font-bold">
+                      GH¢{walletBalance.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -281,12 +315,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     refreshWallet();
                   }}
                   disabled={isLoading}
-                  className="ml-2 sm:ml-3 rounded-full opacity-70 hover:opacity-100 hover:bg-green-700 transition-opacity flex-shrink-0 text-white"
+                  className="rounded-full opacity-70 hover:opacity-100 hover:bg-green-700 transition-opacity flex-shrink-0 text-white p-2"
                   aria-label="Refresh wallet balance"
                   title="Refresh balance"
                 >
                   <FaSync
-                    className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                    className={`w-4 h-4 ${
                       isLoading ? "animate-spin" : ""
                     }`}
                   />
