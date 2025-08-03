@@ -90,6 +90,22 @@ export const walletService = {
   },
 
   /**
+   * Admin: Debit a user's wallet
+   * @param userId User ID to debit
+   * @param amount Amount to debit
+   * @param description Optional description
+   * @returns The created transaction
+   */
+  adminDebitWallet: async (userId: string, amount: number, description = 'Wallet debit by admin'): Promise<WalletTransaction> => {
+    const response = await apiClient.post<{success: boolean; transaction: WalletTransaction}>(
+      '/api/wallet/debit',
+      { userId, amount, description }
+    );
+    
+    return response.data.transaction;
+  },
+
+  /**
    * Admin: Get pending top-up requests
    * @param page Page number
    * @param limit Items per page
