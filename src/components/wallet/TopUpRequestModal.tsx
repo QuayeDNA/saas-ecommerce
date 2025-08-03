@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaMoneyBillWave, FaWhatsapp, FaPhone, FaCheck, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
+import { FaMoneyBillWave, FaWhatsapp, FaCheck, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { Button, Input, Alert } from '../../design-system';
 import { useToast } from '../../design-system/components/toast';
 
@@ -10,7 +10,7 @@ interface TopUpRequestModalProps {
   isSubmitting: boolean;
 }
 
-type ContactMethod = 'whatsapp' | 'call' | null;
+type ContactMethod = 'whatsapp' | null;
 
 interface StepData {
   amount: string;
@@ -29,7 +29,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
   const [stepData, setStepData] = useState<StepData>({
     amount: '',
     description: '',
-    contactMethod: null
+    contactMethod: 'whatsapp'
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -45,12 +45,6 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
         newErrors.amount = 'Amount must be greater than 0';
       } else if (parseFloat(stepData.amount) > 10000) {
         newErrors.amount = 'Amount cannot exceed GH₵10,000';
-      }
-    }
-
-    if (step === 2) {
-      if (!stepData.contactMethod) {
-        newErrors.contactMethod = 'Please select a contact method';
       }
     }
 
@@ -89,8 +83,6 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
       // Handle routing after successful submission
       if (stepData.contactMethod === 'whatsapp') {
         handleWhatsAppContact();
-      } else if (stepData.contactMethod === 'call') {
-        handleCallContact();
       }
     }
   };
@@ -100,7 +92,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
     setStepData({
       amount: '',
       description: '',
-      contactMethod: null
+      contactMethod: 'whatsapp'
     });
     setErrors({});
     onClose();
@@ -118,10 +110,6 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
     const message = `Hi, I need a wallet top-up of GH₵${stepData.amount}. Please process my request.`;
     const whatsappUrl = `https://wa.me/+233548983019?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
-  };
-
-  const handleCallContact = () => {
-    window.open('tel:+233548983019', '_blank');
   };
 
   if (!isOpen) return null;
@@ -260,25 +248,6 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                     </div>
                     {stepData.contactMethod === 'whatsapp' && (
                       <FaCheck className="w-5 h-5 text-green-600 ml-auto" />
-                    )}
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => updateStepData('contactMethod', 'call')}
-                    className={`w-full p-4 border-2 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
-                      stepData.contactMethod === 'call'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-                    }`}
-                  >
-                    <FaPhone className={`w-6 h-6 ${stepData.contactMethod === 'call' ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <div className="text-left">
-                      <div className="font-medium">Phone Call</div>
-                      <div className="text-sm opacity-75">Call admin directly</div>
-                    </div>
-                    {stepData.contactMethod === 'call' && (
-                      <FaCheck className="w-5 h-5 text-blue-600 ml-auto" />
                     )}
                   </button>
                 </div>
