@@ -8,6 +8,7 @@ import {
   type AfaRegistrationData,
   type UserStats,
   type AfaRegistration,
+  type AfaRegistrationResponse,
   type UsersResponse,
 } from "../services/user.service";
 import type { User } from "../types";
@@ -22,7 +23,7 @@ interface UserContextValue {
   submitAfaRegistration: (
     data: AfaRegistrationData
   ) => Promise<AfaRegistration>;
-  getAfaRegistration: () => Promise<AfaRegistration | null>;
+  getAfaRegistration: () => Promise<AfaRegistrationResponse>;
 
   // User management
   getUsers: (params?: {

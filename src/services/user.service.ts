@@ -37,23 +37,43 @@ export interface ChangePasswordData {
 }
 
 export interface AfaRegistrationData {
-  afaId: string;
-  registrationType: 'agent' | 'subscriber';
   fullName: string;
   phone: string;
-  registrationFee: number;
-  userType?: 'agent' | 'subscriber';
+  userType: 'agent' | 'subscriber';
 }
 
 export interface AfaRegistration {
+  orderNumber: string;
+  totalAmount: number;
+  status: string;
+  customerName: string;
+  customerPhone: string;
+}
+
+export interface AfaOrder {
   _id: string;
-  afaId: string;
-  registrationType: 'agent' | 'subscriber';
-  fullName: string;
-  phone: string;
-  registrationFee: number;
-  status: 'pending' | 'completed' | 'failed';
-  registrationDate: string;
+  orderNumber: string;
+  customerInfo: {
+    name: string;
+    phone: string;
+  };
+  total: number;
+  status: string;
+  createdAt: string;
+  items: Array<{
+    packageDetails: {
+      name: string;
+      price: number;
+    };
+    quantity: number;
+    totalPrice: number;
+    customerPhone: string;
+  }>;
+}
+
+export interface AfaRegistrationResponse {
+  afaOrders: AfaOrder[];
+  total: number;
 }
 
 export interface UserStats {
@@ -218,11 +238,11 @@ export const userService = {
   },
   async submitAfaRegistration(data: AfaRegistrationData): Promise<AfaRegistration> {
     const resp = await apiClient.post('/api/users/afa-registration', data);
-    return resp.data.afaRegistration;
+    return resp.data.order;
   },
-  async getAfaRegistration(): Promise<AfaRegistration | null> {
+  async getAfaRegistration(): Promise<AfaRegistrationResponse> {
     const resp = await apiClient.get('/api/users/afa-registration');
-    return resp.data.afaRegistration;
+    return resp.data;
   },
   async getUsers(params: FetchUsersParams = {}): Promise<UsersResponse> {
     const resp = await apiClient.get('/api/auth/users', { params });
