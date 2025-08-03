@@ -66,7 +66,7 @@ export interface AuthContextValue {
   logout: () => Promise<void>;                                                      // User logout
   forgotPassword: (email: string) => Promise<void>;                                 // Request password reset
   resetPassword: (token: string, password: string) => Promise<void>;                // Complete password reset
-  verifyAccount: (token: string) => Promise<{ userType: string }>;                  // Verify user account
+  verifyAccount: (token: string) => Promise<{ userType: string }>;                  // Verify user account (kept for backward compatibility)
   clearErrors: () => void;                                                          // Clear error state
   refreshAuth: () => Promise<void>;                                                 // Refresh authentication
   updateFirstTimeFlag: () => Promise<void>;                                         // Update first-time flag after tour
@@ -307,7 +307,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const result = await authService.registerAgent(data);
       setState((prev) => ({ ...prev, isLoading: false }));
-      addToast("Agent account created successfully! Check your email for verification.", "success");
+              addToast("Agent account created successfully! Your account is pending approval by a super admin.", "success");
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to register agent";
@@ -329,7 +329,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       await authService.registerCustomer(data);
       setState((prev) => ({ ...prev, isLoading: false }));
-      addToast("Customer account created successfully! Check your email for verification.", "success");
+              addToast("Customer account created successfully! You can now log in.", "success");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to register customer";
       

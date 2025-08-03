@@ -95,7 +95,7 @@ class AuthService {
         try {
           await this.refreshAccessToken();
           return true;
-        } catch (error) {
+        } catch {
           this.clearAuthData();
           return false;
         }
@@ -110,7 +110,7 @@ class AuthService {
           try {
             await this.refreshAccessToken();
             return true;
-          } catch (error) {
+          } catch {
             this.clearAuthData();
             return false;
           }
@@ -120,7 +120,7 @@ class AuthService {
       // Case 3: No tokens available
       return false;
       
-    } catch (error) {
+    } catch {
       this.clearAuthData();
       return false;
     }
@@ -195,7 +195,7 @@ class AuthService {
       }
       
       return accessToken;
-    } catch (error) {
+    } catch {
       this.clearAuthData();
       throw new Error('Failed to refresh access token');
     }
@@ -302,6 +302,8 @@ class AuthService {
   /**
    * Verify user account
    */
+  // Email verification is no longer required - all users are auto-verified
+  // This method is kept for backward compatibility but is no longer used
   async verifyAccount(data: VerifyAccountData): Promise<{ userType: string }> {
     try {
       const response = await api.post('/api/auth/verify-account', data);
@@ -353,7 +355,7 @@ class AuthService {
         valid: response.data.valid,
         user: response.data.user
       };
-    } catch (error) {
+    } catch {
       return { valid: false };
     }
   }

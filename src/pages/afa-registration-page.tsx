@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../hooks';
-import { Button, Card, CardBody, Input, Alert, Badge } from '../design-system';
+import { Button, Card, CardBody, Input, Alert, Badge, Container } from '../design-system';
 import { useNavigate } from 'react-router-dom';
 import type { AfaOrder } from '../services/user.service';
 
@@ -100,7 +100,7 @@ export const AfaRegistrationPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-6 sm:py-8">
+      <Container>
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -301,7 +301,7 @@ export const AfaRegistrationPage: React.FC = () => {
             </Card>
           </div>
         )}
-      </div>
+      </Container>
     </div>
   );
 };
