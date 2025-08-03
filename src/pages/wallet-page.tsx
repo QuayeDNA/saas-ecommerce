@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '../hooks';
 import { type WalletTransaction } from '../types/wallet';
 import { FaWallet, FaPlus, FaArrowUp, FaArrowDown, FaSync } from 'react-icons/fa';
@@ -23,25 +23,32 @@ export const WalletPage = () => {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
-  // Fetch transaction history on page load and when page changes
-  useEffect(() => {
-    const loadTransactions = async () => {
-      setIsLoadingTransactions(true);
-      try {
+  // Load transactions function
+  const loadTransactions = useCallback(async () => {
+    setIsLoadingTransactions(true);
+    try {
       const result = await getTransactionHistory(currentPage);
       if (result) {
         setTransactions(result.transactions);
         setTotalPages(result.pagination.pages);
-        }
-      } catch (err) {
-        console.error('Failed to load transactions:', err);
-      } finally {
-        setIsLoadingTransactions(false);
       }
-    };
-    
-    loadTransactions();
+    } catch (err) {
+      console.error('Failed to load transactions:', err);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
   }, [currentPage, getTransactionHistory]);
+
+  // Fetch transaction history on page load and when page changes
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
+
+  // Listen for wallet balance changes and refresh transactions
+  useEffect(() => {
+    // Refresh transactions when wallet balance changes (indicating a transaction occurred)
+    loadTransactions();
+  }, [walletBalance, loadTransactions]);
 
   // Format date for display
   const formatDate = (dateStr: string | Date) => {
@@ -63,10 +70,7 @@ export const WalletPage = () => {
       setSuccessMessage('Top-up request submitted successfully! An admin will review your request.');
       
       // Refresh transactions to show the new request
-      const result = await getTransactionHistory(currentPage);
-      if (result) {
-        setTransactions(result.transactions);
-      }
+      await loadTransactions();
     } catch (err) {
       console.error('Failed to submit top-up request:', err);
       setSuccessMessage('Failed to submit top-up request. Please try again.');
