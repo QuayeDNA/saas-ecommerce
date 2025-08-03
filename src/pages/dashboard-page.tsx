@@ -6,11 +6,11 @@ import { useOrder } from '../contexts/OrderContext';
 import { Card, CardHeader, CardBody, Badge, Spinner } from '../design-system';
 import { FaPhone, FaChartLine, FaWallet } from 'react-icons/fa';
 import type { WalletTransaction } from '../types/wallet';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 
-// Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+// Register Chart.js components including Filler plugin
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 export const DashboardPage = () => {
   const { authState } = useAuth();
@@ -76,7 +76,6 @@ export const DashboardPage = () => {
         // Load agent analytics
         try {
           const analytics = await getAgentAnalytics('30d');
-          console.log('Agent analytics:', analytics); // Debug log
           if (analytics) {
             setOrderStats({
               totalOrders: analytics.totalOrders || 0,

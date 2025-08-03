@@ -6,19 +6,20 @@ class WebSocketService {
   private readonly maxReconnectAttempts = 5;
   private readonly reconnectDelay = 1000; // 1 second
   private readonly listeners: Map<string, ((data: unknown) => void)[]> = new Map();
+  private currentUserId: string | null = null;
 
   connect(userId: string) {
     if (this.ws?.readyState === WebSocket.OPEN) {
       return; // Already connected
     }
 
+    this.currentUserId = userId;
     const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:5050'}?userId=${userId}`;
     
     try {
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
-        console.log('WebSocket connected');
         this.reconnectAttempts = 0;
       };
 
@@ -32,7 +33,6 @@ class WebSocketService {
       };
 
       this.ws.onclose = () => {
-        console.log('WebSocket disconnected');
         this.handleReconnect(userId);
       };
 
@@ -47,7 +47,6 @@ class WebSocketService {
   private handleReconnect(userId: string) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
       
       setTimeout(() => {
         this.connect(userId);
@@ -86,6 +85,7 @@ class WebSocketService {
       this.ws.close();
       this.ws = null;
     }
+    this.currentUserId = null;
   }
 
   // Event listener methods
@@ -109,12 +109,22 @@ class WebSocketService {
   private emit(event: string, data: unknown) {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
-      callbacks.forEach(callback => callback(data));
+      callbacks.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error('Error in WebSocket callback:', error);
+        }
+      });
     }
   }
 
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  getCurrentUserId(): string | null {
+    return this.currentUserId;
   }
 }
 

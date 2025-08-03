@@ -23,8 +23,20 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper function to get user ID (handles both 'id' and '_id' properties)
+  const getUserId = useCallback(() => {
+    if (!authState.user) {
+      return null;
+    }
+    
+    return authState.user.id || authState.user._id;
+  }, [authState.user]);
+
   const refreshWallet = useCallback(async () => {
-    if (!authState.isAuthenticated) return;
+    const userId = getUserId();
+    if (!authState.isAuthenticated || !userId) {
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -33,46 +45,63 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
       const data = await walletService.getWalletInfo();
       setWalletInfo(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch wallet information');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch wallet information';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [authState.isAuthenticated]);
+  }, [authState.isAuthenticated, getUserId]);
 
   // WebSocket wallet update handler
-  const handleWalletUpdate = useCallback((data: WalletUpdateEvent) => {
-    if (data.type === 'wallet_update' && data.userId === authState.user?.id) {
-      // Update wallet balance in real-time
-      setWalletInfo(prev => prev ? {
-        ...prev,
-        balance: data.balance,
-        recentTransactions: data.recentTransactions || prev.recentTransactions
-      } : null);
+  const handleWalletUpdate = useCallback((data: unknown) => {
+    // Type guard to ensure data is WalletUpdateEvent
+    if (typeof data === 'object' && data !== null && 'type' in data && 'userId' in data) {
+      const walletUpdate = data as WalletUpdateEvent;
+      const currentUserId = getUserId();
+      
+      if (walletUpdate.type === 'wallet_update' && walletUpdate.userId === currentUserId) {
+        // Update wallet balance in real-time
+        setWalletInfo(prev => {
+          const updatedWallet = prev ? {
+            ...prev,
+            balance: walletUpdate.balance,
+            recentTransactions: walletUpdate.recentTransactions || prev.recentTransactions
+          } : {
+            balance: walletUpdate.balance,
+            recentTransactions: walletUpdate.recentTransactions || []
+          };
+          
+          return updatedWallet;
+        });
+      }
     }
-  }, [authState.user?.id]);
+  }, [getUserId]);
 
   // Load wallet data on initial render and when auth state changes
   useEffect(() => {
-    if (authState.isAuthenticated) {
+    const userId = getUserId();
+    
+    if (authState.isAuthenticated && userId) {
+      // Initial wallet load
       refreshWallet();
       
       // Connect to WebSocket for real-time updates
-      if (authState.user?.id) {
-        websocketService.connect(authState.user.id);
-        
-        // Listen for wallet updates
-        websocketService.on('wallet_update', handleWalletUpdate as (data: unknown) => void);
-        
-        // Cleanup WebSocket listeners on unmount
-        return () => {
-          websocketService.off('wallet_update', handleWalletUpdate as (data: unknown) => void);
-        };
-      }
-    } else {
+      websocketService.connect(userId);
+      
+      // Listen for wallet updates
+      websocketService.on('wallet_update', handleWalletUpdate);
+      
+      // Cleanup WebSocket listeners on unmount
+      return () => {
+        websocketService.off('wallet_update', handleWalletUpdate);
+      };
+    } else if (!authState.isAuthenticated) {
       // Disconnect WebSocket when user logs out
       websocketService.disconnect();
+      // Clear wallet data
+      setWalletInfo(null);
     }
-  }, [authState.isAuthenticated, authState.user?.id, refreshWallet, handleWalletUpdate]);
+  }, [authState.isAuthenticated, authState.user, refreshWallet, handleWalletUpdate, getUserId]);
 
   const value = useMemo(() => ({
     walletBalance: walletInfo?.balance ?? 0,

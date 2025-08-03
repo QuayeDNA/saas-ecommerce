@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth, useWallet } from "../hooks";
 import { useSiteStatus } from "../contexts/site-status-context";
 import { settingsService } from "../services/settings.service";
@@ -21,6 +21,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const [showSiteMessage, setShowSiteMessage] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
   const [isTogglingSite, setIsTogglingSite] = useState(false);
+
+  // Helper function to get user ID (handles both 'id' and '_id' properties)
+  const getUserId = useCallback(() => {
+    if (!authState.user) return null;
+    return authState.user.id || authState.user._id;
+  }, [authState.user]);
 
   // Get greeting based on time of day with emoji
   const getGreeting = () => {
