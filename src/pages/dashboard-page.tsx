@@ -202,7 +202,7 @@ export const DashboardPage = () => {
         ticks: {
           callback: function(tickValue: string | number) {
             const value = typeof tickValue === 'string' ? parseFloat(tickValue) : tickValue;
-            return `GHS${value}`;
+            return `₵${value}`;
           }
         }
       }
