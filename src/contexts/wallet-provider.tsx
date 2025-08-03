@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { walletService } from '../services/wallet-service';
+import { websocketService } from '../services/websocket.service';
 import type { WalletInfo } from '../types/wallet';
 import { useAuth } from '../hooks/use-auth';
 import { WalletContext } from './wallet-context';
@@ -31,12 +32,40 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
     }
   }, [authState.isAuthenticated]);
 
+  // WebSocket wallet update handler
+  const handleWalletUpdate = useCallback((data: any) => {
+    if (data.type === 'wallet_update' && data.userId === authState.user?.id) {
+      // Update wallet balance in real-time
+      setWalletInfo(prev => prev ? {
+        ...prev,
+        balance: data.balance,
+        recentTransactions: data.recentTransactions || prev.recentTransactions
+      } : null);
+    }
+  }, [authState.user?.id]);
+
   // Load wallet data on initial render and when auth state changes
   useEffect(() => {
     if (authState.isAuthenticated) {
       refreshWallet();
+      
+      // Connect to WebSocket for real-time updates
+      if (authState.user?.id) {
+        websocketService.connect(authState.user.id);
+        
+        // Listen for wallet updates
+        websocketService.on('wallet_update', handleWalletUpdate);
+        
+        // Cleanup WebSocket listeners on unmount
+        return () => {
+          websocketService.off('wallet_update', handleWalletUpdate);
+        };
+      }
+    } else {
+      // Disconnect WebSocket when user logs out
+      websocketService.disconnect();
     }
-  }, [authState.isAuthenticated, refreshWallet]);
+  }, [authState.isAuthenticated, authState.user?.id, refreshWallet, handleWalletUpdate]);
 
   const value = useMemo(() => ({
     walletBalance: walletInfo?.balance ?? 0,

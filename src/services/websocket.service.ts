@@ -57,9 +57,27 @@ class WebSocketService {
     }
   }
 
-  private handleMessage(data: { type: string; data?: unknown }) {
-    if (data.type === 'notification') {
-      this.emit('notification', data.data);
+  private handleMessage(data: { type: string; data?: unknown; userId?: string; balance?: number; recentTransactions?: unknown[] }) {
+    switch (data.type) {
+      case 'notification':
+        this.emit('notification', data.data);
+        break;
+      case 'wallet_update':
+        this.emit('wallet_update', {
+          type: 'wallet_update',
+          userId: data.userId,
+          balance: data.balance,
+          recentTransactions: data.recentTransactions
+        });
+        break;
+      case 'order_update':
+        this.emit('order_update', data.data);
+        break;
+      case 'transaction_update':
+        this.emit('transaction_update', data.data);
+        break;
+      default:
+        console.log('Unknown WebSocket message type:', data.type);
     }
   }
 
