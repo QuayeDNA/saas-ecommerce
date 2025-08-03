@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FaSearch, FaFilter, FaEye, FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaDownload, FaUsers, FaWallet, FaPlus, FaMinus } from "react-icons/fa";
 import { useWallet } from "../../hooks/use-wallet";
+import { useToast } from "../../design-system/components/toast";
 import { Button } from "../../design-system/components/button";
 import { Input } from "../../design-system/components/input";
 import { Modal } from "../../design-system/components/modal";
@@ -130,6 +131,7 @@ function WalletTransactionModal({ isOpen, onClose, user, mode, onTransaction }: 
 
 export default function SuperAdminWalletPage() {
   const { refreshWallet } = useWallet();
+  const { addToast } = useToast();
   
   // State for users
   const [users, setUsers] = useState<User[]>([]);
@@ -227,25 +229,45 @@ export default function SuperAdminWalletPage() {
     try {
       if (mode === 'credit') {
         await walletService.adminTopUpWallet(userId, amount, description);
+        addToast(
+          `Successfully credited GH₵${amount.toFixed(2)} to wallet`, 
+          'success', 
+          4000
+        );
       } else {
         await walletService.adminDebitWallet(userId, amount, description);
+        addToast(
+          `Successfully debited GH₵${amount.toFixed(2)} from wallet`, 
+          'warning', 
+          4000
+        );
       }
       
       await fetchUsers();
       await fetchAnalytics();
       await refreshWallet();
-    } catch {
-      throw new Error(`Failed to ${mode} wallet`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : `Failed to ${mode} wallet`;
+      addToast(errorMessage, 'error', 5000);
+      throw new Error(errorMessage);
     }
   };
 
   const handleProcessRequest = async (transactionId: string, approve: boolean) => {
     try {
       await walletService.processTopUpRequest(transactionId, approve);
+      
+      if (approve) {
+        addToast('Top-up request approved successfully', 'success', 4000);
+      } else {
+        addToast('Top-up request rejected', 'warning', 4000);
+      }
+      
       await fetchPendingRequests();
       await fetchAnalytics();
-    } catch {
-      // Error processing request
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process request';
+      addToast(errorMessage, 'error', 5000);
     }
   };
 
