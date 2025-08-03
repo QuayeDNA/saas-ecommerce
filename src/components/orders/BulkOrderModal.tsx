@@ -138,8 +138,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     for (const element of lines) {
       const line = element.trim();
       if (!line) continue;
-      // Parse format: "Number 10" (assume GB)
-      const parts = line.split(" ");
+      // Parse format: "Number 10" (assume GB) - handle multiple spaces
+      const parts = line.split(/\s+/);
       if (parts.length < 2) continue;
       const phoneNum = parts[0];
       const gbValue = parts[1];
