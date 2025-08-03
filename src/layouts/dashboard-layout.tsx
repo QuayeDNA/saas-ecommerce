@@ -5,7 +5,7 @@
  * - Responsive sidebar that collapses on mobile
  * - Modern header with user profile and notifications
  * - Smooth animations and transitions
- * - Support for guided tour and setup wizard
+ * - Support for guided tour
  * - Mobile-first design with touch-friendly controls
  */
 
@@ -15,16 +15,15 @@ import { Sidebar } from '../components/sidebar';
 import { Header } from '../components/header';
 import GuidedTour from '../components/guided-tour';
 import type { TourStep } from '../components/guided-tour';
-import SetupWizard, { WelcomeStep } from '../components/setup-wizard';
 import { useAuth } from '../hooks';
 import ImpersonationService from '../utils/impersonation';
+import { FaPhone, FaWallet, FaClipboardList, FaChartLine, FaUser } from 'react-icons/fa';
 
 export const DashboardLayout = () => {
   const { authState, updateFirstTimeFlag } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showTour, setShowTour] = useState(false);
-  const [showSetupWizard, setShowSetupWizard] = useState(false);
   const location = useLocation();
   const isImpersonating = ImpersonationService.isImpersonating();
 
@@ -48,60 +47,62 @@ export const DashboardLayout = () => {
     };
   }, []);
 
-  // Check if user is new and should see the tour/wizard
+  // Check if user is new and should see the tour
   useEffect(() => {
     if (authState.isAuthenticated && authState.user) {
       // Check if this is the user's first login using the isFirstTime flag from backend
       const isFirstTime = authState.user.isFirstTime === true;
       
-      // Check if we've already completed the wizard in this session
-      const wizardCompletedThisSession = localStorage.getItem('wizardCompleted') === 'true';
+      // Check if we've already completed the tour in this session
       const tourCompletedThisSession = localStorage.getItem('tourCompleted') === 'true';
       
-      // Only show the wizard on dashboard pages for first-time users
-      // and only if not already completed in this session
-      if (isFirstTime && location.pathname.includes('/dashboard') && !wizardCompletedThisSession) {
-        // Show setup wizard first time
-        setShowSetupWizard(true);
-      }
-      
-      // For the tour, if the wizard was completed but the tour wasn't,
-      // and if the user is still a first-time user
-      if (isFirstTime && wizardCompletedThisSession && !tourCompletedThisSession && !showSetupWizard) {
+      // Show the tour for first-time users on dashboard pages
+      if (isFirstTime && location.pathname.includes('/dashboard') && !tourCompletedThisSession) {
         setShowTour(true);
       }
     }
-  }, [authState.isAuthenticated, authState.user, location.pathname, showSetupWizard]);
+  }, [authState.isAuthenticated, authState.user, location.pathname]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Tour step definitions
+  // Updated tour step definitions for telecom app
   const tourSteps: TourStep[] = [
     {
       target: '.dashboard-welcome',
-      title: 'Welcome to Your Dashboard',
-      content: 'This is your main dashboard where you can see an overview of your account and services.',
-      position: 'bottom'
+      title: 'Welcome to Your Telecom Dashboard',
+      content: 'This is your main dashboard where you can manage airtime and data orders, track your wallet, and view your transaction history.',
+      position: 'bottom',
+      icon: <FaUser className="text-blue-600" />
     },
     {
-      target: '.network-actions',
-      title: 'Quick Actions',
-      content: 'Access different network services quickly using these buttons.',
-      position: 'bottom'
+      target: '.quick-actions',
+      title: 'Quick Network Actions',
+      content: 'Order airtime and data bundles for MTN, Telecel, AT Big Time, and AT iShare Premium networks. Click any network to start ordering.',
+      position: 'bottom',
+      icon: <FaPhone className="text-green-600" />
+    },
+    {
+      target: '.account-overview',
+      title: 'Account Overview',
+      content: 'Track your total orders, amount spent, success rate, and current wallet balance. These metrics help you monitor your business performance.',
+      position: 'bottom',
+      icon: <FaChartLine className="text-purple-600" />
     },
     {
       target: '.wallet-balance',
-      title: 'Your Wallet',
-      content: 'Keep track of your wallet balance and fund your account here.',
-      position: 'right'
+      title: 'Wallet Management',
+      content: 'Your wallet balance is automatically deducted when you place orders. Keep it topped up to ensure smooth order processing.',
+      position: 'right',
+      icon: <FaWallet className="text-green-600" />
     },
     {
-      target: '.transactions-table',
+      target: '.recent-transactions',
       title: 'Recent Transactions',
-      content: 'View your recent transactions and payment history.',
-      position: 'top'
+      content: 'View your latest wallet transactions and order history. This helps you track all your financial activities and order statuses.',
+      position: 'top',
+      icon: <FaClipboardList className="text-orange-600" />
     }
   ];
 
@@ -114,52 +115,6 @@ export const DashboardLayout = () => {
       updateFirstTimeFlag();
     }
   };
-
-  const handleWizardComplete = () => {
-    // Mark wizard as completed
-    localStorage.setItem('wizardCompleted', 'true');
-    
-    // Update first time flag in backend
-    if (authState.user?.isFirstTime) {
-      updateFirstTimeFlag();
-    }
-    
-    // We'll update it only after completing the tour
-  };
-
-  // Setup wizard steps
-  const wizardSteps = [
-    {
-      id: 'welcome',
-      title: 'Welcome',
-      component: <WelcomeStep />,
-      isCompleted: false
-    },
-    {
-      id: 'profile',
-      title: 'Your Profile',
-      component: (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Complete Your Profile</h3>
-          <p className="text-gray-600">These details help us customize your experience.</p>
-          {/* Profile fields would go here */}
-        </div>
-      ),
-      isCompleted: false
-    },
-    {
-      id: 'preferences',
-      title: 'Preferences',
-      component: (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Set Your Preferences</h3>
-          <p className="text-gray-600">Choose your notification and display settings.</p>
-          {/* Preference options would go here */}
-        </div>
-      ),
-      isCompleted: false
-    }
-  ];
 
   return (
     <div className={`flex bg-gray-50 overflow-hidden ${isImpersonating ? '' : 'h-screen'}`}>
@@ -200,25 +155,6 @@ export const DashboardLayout = () => {
           }}
           onComplete={handleTourComplete}
         />
-      )}
-      
-      {/* Setup Wizard Modal */}
-      {showSetupWizard && localStorage.getItem('wizardCompleted') !== 'true' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <SetupWizard
-                steps={wizardSteps}
-                onComplete={handleWizardComplete}
-                onClose={() => {
-                  setShowSetupWizard(false);
-                  localStorage.setItem('wizardCompleted', 'true');
-                }}
-                showSkip
-              />
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

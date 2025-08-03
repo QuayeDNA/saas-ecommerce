@@ -36,6 +36,14 @@ interface OrderContextType {
   processDraftOrders: () => Promise<{ processed: number; message: string; totalAmount: number }>;
   fetchAnalytics: (timeframe?: string) => Promise<void>;
   getAnalytics: (timeframe?: string) => Promise<OrderAnalytics>;
+  getAgentAnalytics: (timeframe?: string) => Promise<{
+    totalOrders: number;
+    completedOrders: number;
+    totalRevenue: number;
+    successRate: number;
+    walletBalance: number;
+    timeframe: string;
+  }>;
   setFilters: (filters: OrderFilters) => void;
   clearError: () => void;
   isInitialized: boolean;
@@ -256,6 +264,23 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [addToast]);
 
+  const getAgentAnalytics = useCallback(async (timeframe = '30d') => {
+    try {
+      const analytics = await orderService.getAgentAnalytics(timeframe);
+      return analytics;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to fetch agent analytics');
+        addToast('Failed to fetch agent analytics', 'error');
+        throw err;
+      } else {
+        setError('Failed to fetch agent analytics');
+        addToast('Failed to fetch agent analytics', 'error');
+        throw err;
+      }
+    }
+  }, [addToast]);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -280,6 +305,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     processDraftOrders,
     fetchAnalytics,
     getAnalytics,
+    getAgentAnalytics,
     setFilters,
     clearError,
     isInitialized,
@@ -301,6 +327,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     processDraftOrders,
     fetchAnalytics,
     getAnalytics,
+    getAgentAnalytics,
     setFilters,
     clearError,
     isInitialized,
@@ -344,6 +371,14 @@ export const useOrder = () => {
         completionRate: 0,
         averageOrderValue: 0,
         topProducts: []
+      }),
+      getAgentAnalytics: async () => ({
+        totalOrders: 0,
+        completedOrders: 0,
+        totalRevenue: 0,
+        successRate: 0,
+        walletBalance: 0,
+        timeframe: '30d'
       }),
       setFilters: () => {},
       clearError: () => {},

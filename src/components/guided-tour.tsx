@@ -4,7 +4,7 @@
  * Guided Tour Component
  * 
  * Features:
- * - Step-by-step introduction to key features
+ * - Step-by-step introduction to key telecom features
  * - Highlights important elements on the page
  * - Progress tracking
  * - Dismissible and can be restarted
@@ -13,7 +13,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FaArrowRight, FaArrowLeft, FaTimes, FaLightbulb, FaRedo } from 'react-icons/fa';
+import { FaArrowRight, FaArrowLeft, FaTimes, FaLightbulb, FaRedo, FaCheck } from 'react-icons/fa';
 import { Button } from '../design-system';
 
 export interface TourStep {
@@ -22,6 +22,7 @@ export interface TourStep {
   content: string;
   position?: 'top' | 'right' | 'bottom' | 'left';
   action?: () => void; // Optional action to perform when reaching this step
+  icon?: React.ReactNode; // Optional icon for the step
 }
 
 interface GuidedTourProps {
@@ -62,28 +63,28 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
       
       switch(position) {
         case 'top':
-          top = rect.top - 10 - 150; // 150px is approx height of tooltip
-          left = rect.left + rect.width / 2 - 150; // 150px is half the width of tooltip
+          top = rect.top - 10 - 180; // Increased height for better content
+          left = rect.left + rect.width / 2 - 180; // Increased width
           break;
         case 'right':
-          top = rect.top + rect.height / 2 - 75;
+          top = rect.top + rect.height / 2 - 90;
           left = rect.right + 10;
           break;
         case 'left':
-          top = rect.top + rect.height / 2 - 75;
-          left = rect.left - 10 - 300; // 300px is approx width of tooltip
+          top = rect.top + rect.height / 2 - 90;
+          left = rect.left - 10 - 360; // Increased width
           break;
         case 'bottom':
         default:
           top = rect.bottom + 10;
-          left = rect.left + rect.width / 2 - 150;
+          left = rect.left + rect.width / 2 - 180;
       }
       
       // Keep tooltip within viewport
       if (left < 20) left = 20;
-      if (left > window.innerWidth - 320) left = window.innerWidth - 320;
+      if (left > window.innerWidth - 380) left = window.innerWidth - 380;
       if (top < 20) top = 20;
-      if (top > window.innerHeight - 200) top = window.innerHeight - 200;
+      if (top > window.innerHeight - 250) top = window.innerHeight - 250;
       
       setTooltipStyle({
         top: `${top}px`,
@@ -159,8 +160,6 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
     onClose();
   };
   
-  // Removed unused handleRestart function
-  
   if (!isOpen) return null;
   
   // Calculate progress percentage
@@ -186,20 +185,25 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
         />
       )}
       
-      {/* Tooltip */}
+      {/* Enhanced Tooltip */}
       <div 
-        className="absolute bg-white rounded-lg shadow-xl w-80 p-4 pointer-events-auto z-70 border-2 border-blue-500"
+        className="absolute bg-white rounded-lg shadow-xl w-96 p-6 pointer-events-auto z-70 border-2 border-blue-500"
         style={tooltipStyle}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2">
+        {/* Header with Icon */}
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <FaLightbulb className="text-yellow-500 mr-2" />
-            <h3 className="font-bold text-gray-900">{steps[currentStep]?.title}</h3>
+            <div className="bg-blue-100 p-2 rounded-full mr-3">
+              {steps[currentStep]?.icon || <FaLightbulb className="text-blue-600" />}
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg">{steps[currentStep]?.title}</h3>
+              <p className="text-sm text-gray-500">Step {currentStep + 1} of {steps.length}</p>
+            </div>
           </div>
           <button
             onClick={handleSkip}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 p-1"
             aria-label="Close tour"
           >
             <FaTimes />
@@ -207,14 +211,14 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
         </div>
         
         {/* Content */}
-        <div className="text-gray-600 mb-4">
+        <div className="text-gray-600 mb-6 leading-relaxed">
           {steps[currentStep]?.content}
         </div>
         
         {/* Progress bar */}
-        <div className="h-1 w-full bg-gray-200 rounded-full mb-4">
+        <div className="h-2 w-full bg-gray-200 rounded-full mb-6">
           <div 
-            className="h-1 bg-blue-500 rounded-full transition-all duration-300"
+            className="h-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -222,10 +226,10 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
         {/* Footer with navigation */}
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-500">
-            Step {currentStep + 1} of {steps.length}
+            {Math.round(progressPercentage)}% Complete
           </div>
           
-          <div className="flex space-x-2">
+          <div className="flex space-x-3">
             {currentStep > 0 && (
               <Button
                 variant="outline"
@@ -243,7 +247,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
                 size="sm"
                 onClick={handleSkip}
               >
-                Skip
+                Skip Tour
               </Button>
             )}
             
@@ -261,8 +265,9 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
                 variant="primary"
                 size="sm"
                 onClick={handleComplete}
+                className="flex items-center"
               >
-                Finish
+                <FaCheck className="mr-1" /> Finish
               </Button>
             )}
           </div>
@@ -325,4 +330,3 @@ addTourStyles();
 
 // Export the component as default
 export default GuidedTour;
-// No need to re-export TourStep and TourTrigger as they are already exported with 'export' keyword

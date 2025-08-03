@@ -107,6 +107,19 @@ class OrderService {
     return response.data.analytics;
   }
 
+  // Get agent analytics for dashboard
+  async getAgentAnalytics(timeframe = '30d'): Promise<{
+    totalOrders: number;
+    completedOrders: number;
+    totalRevenue: number;
+    successRate: number;
+    walletBalance: number;
+    timeframe: string;
+  }> {
+    const response = await apiClient.get('/api/orders/analytics/agent', { params: { timeframe } });
+    return response.data.analytics;
+  }
+
   // Get recent orders by user ID
   async getOrdersByUserId(userId: string, limit = 5): Promise<Order[]> {
     const response = await apiClient.get('/api/orders', { params: { createdBy: userId, limit, sort: '-createdAt' } });

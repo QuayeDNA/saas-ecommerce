@@ -6,11 +6,16 @@ import { useOrder } from '../contexts/OrderContext';
 import { Card, CardHeader, CardBody, Badge, Spinner } from '../design-system';
 import { FaPhone, FaChartLine, FaWallet } from 'react-icons/fa';
 import type { WalletTransaction } from '../types/wallet';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export const DashboardPage = () => {
   const { authState } = useAuth();
   const { walletBalance, getTransactionHistory } = useWallet();
-  const { getAnalytics } = useOrder();
+  const { getAgentAnalytics } = useOrder();
   
   // State for modals and data
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
@@ -68,17 +73,30 @@ export const DashboardPage = () => {
           setRecentTransactions(transactionData.transactions);
         }
         
-        // Load order analytics
-        const analytics = await getAnalytics('30d');
-        if (analytics) {
+        // Load agent analytics
+        try {
+          const analytics = await getAgentAnalytics('30d');
+          console.log('Agent analytics:', analytics); // Debug log
+          if (analytics) {
+            setOrderStats({
+              totalOrders: analytics.totalOrders || 0,
+              completedOrders: analytics.completedOrders || 0,
+              totalRevenue: analytics.totalRevenue || 0,
+              successRate: analytics.successRate || 0
+            });
+          }
+        } catch (analyticsError) {
+          console.error('Analytics error:', analyticsError);
+          // Set default values if analytics fails
           setOrderStats({
-            totalOrders: analytics.totalOrders,
-            completedOrders: analytics.completedOrders,
-            totalRevenue: analytics.totalRevenue,
-            successRate: analytics.completionRate
+            totalOrders: 0,
+            completedOrders: 0,
+            totalRevenue: 0,
+            successRate: 0
           });
         }
       } catch (error) {
+        console.error('Dashboard data loading error:', error);
         // Failed to load dashboard data
       } finally {
         setLoading(false);
@@ -86,7 +104,7 @@ export const DashboardPage = () => {
     };
 
     loadDashboardData();
-  }, [getTransactionHistory, getAnalytics]);
+  }, [getTransactionHistory, getAgentAnalytics]);
 
   // Handle quick link click
   const handleQuickLinkClick = (providerCode: string) => {
@@ -116,10 +134,85 @@ export const DashboardPage = () => {
     return type === 'credit' ? 'success' : 'error';
   };
 
+  // Prepare chart data from transactions
+  const prepareChartData = (transactions: WalletTransaction[]) => {
+    if (transactions.length === 0) {
+      return {
+        labels: ['No data'],
+        datasets: [{
+          label: 'Transaction Amount',
+          data: [0],
+          borderColor: 'rgb(59, 130, 246)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.1
+        }]
+      };
+    }
+
+    // Group transactions by date and sum amounts
+    const groupedData = transactions.reduce((acc, transaction) => {
+      const date = new Date(transaction.createdAt).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short'
+      });
+      
+      if (!acc[date]) {
+        acc[date] = 0;
+      }
+      acc[date] += transaction.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const labels = Object.keys(groupedData);
+    const data = Object.values(groupedData);
+
+    return {
+      labels,
+      datasets: [{
+        label: 'Transaction Amount (GH₵)',
+        data,
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.1,
+        fill: true
+      }]
+    };
+  };
+
+  const chartData = prepareChartData(recentTransactions);
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: { parsed: { y: number } }) {
+            return `Amount: GH₵${context.parsed.y.toFixed(2)}`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function(tickValue: string | number) {
+            const value = typeof tickValue === 'string' ? parseFloat(tickValue) : tickValue;
+            return `GHS${value}`;
+          }
+        }
+      }
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Welcome section - Mobile-first design */}
-      <Card className="md:hidden">
+      <Card className="md:hidden dashboard-welcome">
         <CardBody className="text-center">
           <h1 className="text-xl font-semibold text-gray-900 mb-2">
             Welcome, {authState.user?.fullName.split(' ')[0]}
@@ -127,7 +220,7 @@ export const DashboardPage = () => {
           <p className="text-gray-600 text-sm mb-4">
             Manage your telecom services and view your transaction history here.
           </p>
-          <div className="bg-green-50 p-3 rounded-lg flex justify-between items-center">
+          <div className="bg-green-50 p-3 rounded-lg flex justify-between items-center wallet-balance">
             <span className="text-sm text-gray-600">Wallet Balance</span>
             <span className="font-bold text-green-700">{formatAmount(walletBalance)}</span>
           </div>
@@ -135,7 +228,7 @@ export const DashboardPage = () => {
       </Card>
       
       {/* Quick Actions */}
-      <div>
+      <div className="quick-actions">
         <h2 className="text-lg font-medium text-gray-800 mb-3 px-2 sm:px-0">Quick Actions</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {networks.map((network) => (
@@ -159,7 +252,7 @@ export const DashboardPage = () => {
       </div>
       
       {/* Stats */}
-      <div>
+      <div className="account-overview">
         <h2 className="text-lg font-medium text-gray-800 mb-3 px-2 sm:px-0">Account Overview</h2>
         <div className="grid grid-cols-2 gap-3">
           <Card size="sm">
@@ -189,7 +282,7 @@ export const DashboardPage = () => {
         </div>
       </div>
       
-      {/* Transaction Chart - Placeholder */}
+      {/* Transaction Chart */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -200,17 +293,27 @@ export const DashboardPage = () => {
           </div>
         </CardHeader>
         <CardBody>
-          <div className="bg-gray-50 h-40 sm:h-48 flex items-center justify-center rounded">
-            <div className="text-center">
-              <FaChartLine className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-              <p className="text-gray-400 text-sm">Transaction chart will be displayed here</p>
+          {loading ? (
+            <div className="flex justify-center items-center h-40 sm:h-48">
+              <Spinner />
             </div>
-          </div>
+          ) : recentTransactions.length === 0 ? (
+            <div className="bg-gray-50 h-40 sm:h-48 flex items-center justify-center rounded">
+              <div className="text-center">
+                <FaChartLine className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                <p className="text-gray-400 text-sm">No transaction data available</p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-40 sm:h-48">
+              <Line data={chartData} options={chartOptions} />
+            </div>
+          )}
         </CardBody>
       </Card>
       
       {/* Recent Transactions */}
-      <Card>
+      <Card className="recent-transactions">
         <CardHeader>
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-800">Recent Transactions</h3>
