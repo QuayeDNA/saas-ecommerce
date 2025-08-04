@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { FaBell, FaCheck, FaTimes, FaSpinner, FaExternalLinkAlt } from 'react-icons/fa';
-import { Button, Badge, Card, CardBody } from '../../design-system';
+import { Button, Badge, Card, CardBody, CardHeader } from '../../design-system';
 import { useNavigate } from 'react-router-dom';
 import { NotificationManagementModal } from './NotificationManagementModal';
 
@@ -203,12 +203,11 @@ export const NotificationDropdown: React.FC = () => {
           <div 
             ref={dropdownRef}
             style={dropdownStyle}
-            className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+            className="overflow-hidden"
           >
-            <Card>
-              <CardBody className="p-0">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <Card variant='outlined'>
+              <CardHeader>
+                <div className="flex items-center justify-between pb-2">
                   <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
                   {unreadCount > 0 && (
                     <Button
@@ -221,6 +220,8 @@ export const NotificationDropdown: React.FC = () => {
                     </Button>
                   )}
                 </div>
+              </CardHeader>
+              <CardBody className="p-0">
 
                 {/* Notifications List - Now Scrollable */}
                 <div className="overflow-y-auto" style={{ maxHeight: 'calc(100% - 140px)' }}>
@@ -278,7 +279,7 @@ export const NotificationDropdown: React.FC = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-200">
+                <div className="border-t border-gray-200">
                   <Button
                     variant="ghost"
                     size="sm"

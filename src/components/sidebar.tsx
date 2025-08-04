@@ -7,7 +7,6 @@ import {
   FaMobile, 
   FaUsers, 
   FaUsersCog, 
-  FaChevronRight,
   FaWallet,
   FaUser,
   FaCog,
@@ -15,6 +14,13 @@ import {
   FaBuilding,
   FaClipboardList
 } from 'react-icons/fa';
+import { 
+  Home,
+  Plus,
+  LogOut,
+  ChevronRight,
+  Check
+} from 'lucide-react';
 import { useState } from 'react';
 
 // =============================================================================
@@ -42,11 +48,7 @@ const getAgentNavItems = (): NavItem[] => [
   {
     label: 'Dashboard',
     path: '/agent/dashboard',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    )
+    icon: <Home className="w-5 h-5" />
   },
   {
     label: 'Packages',
@@ -93,11 +95,7 @@ const getAgentNavItems = (): NavItem[] => [
   {
     label: 'AFA Registration',
     path: '/agent/dashboard/afa-registration',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-      </svg>
-    )
+    icon: <Plus className="w-5 h-5" />
   },
   {
     label: 'Profile',
@@ -111,11 +109,7 @@ const getCustomerNavItems = (): NavItem[] => [
   {
     label: 'Dashboard',
     path: '/customer/dashboard',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    )
+    icon: <Home className="w-5 h-5" />
   },
   {
     label: 'Profile',
@@ -129,11 +123,7 @@ const getAdminNavItems = (): NavItem[] => [
   {
     label: 'Dashboard',
     path: '/admin/dashboard',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    )
+    icon: <Home className="w-5 h-5" />
   },
   {
     label: 'User Management',
@@ -304,7 +294,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 <span className="font-medium">{item.label}</span>
               </div>
               <span className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
-                <FaChevronRight size={12} />
+                <ChevronRight size={12} />
               </span>
             </button>
             
@@ -332,9 +322,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             {/* Show indicator for active link */}
             {isActive && (
               <span className="ml-auto">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-                </svg>
+                <Check className="w-5 h-5" />
               </span>
             )}
           </Link>
@@ -390,9 +378,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <div className="p-4 border-t border-gray-700">
             <div className="flex items-center space-x-3 mb-3">
               <div className="flex-shrink-0 relative">
-                {authState.user?.userType === 'agent' && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full border-2 border-gray-900 z-10"></div>
-                )}
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md">
                   {authState.user?.fullName.charAt(0)}{authState.user?.fullName.split(' ')[1]?.charAt(0) ?? ''}
                 </div>
@@ -414,9 +399,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               }} 
               className="w-full flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+              <LogOut className="w-5 h-5 mr-2" />
               Logout
             </button>
           </div>
