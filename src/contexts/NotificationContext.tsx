@@ -11,6 +11,7 @@ interface NotificationContextType {
   isLoading: boolean;
   error: string | null;
   fetchNotifications: () => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fetchAllNotifications: (page?: number, limit?: number, read?: boolean) => Promise<{ notifications: Notification[]; pagination?: any }>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAsUnread: (notificationId: string) => Promise<void>;
@@ -52,9 +53,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setError(null);
       const response = await notificationService.getUnreadNotifications();
       setNotifications(response.notifications);
-    } catch (err) {
+    } catch {
       setError('Failed to fetch notifications');
-      console.error('Error fetching notifications:', err);
     } finally {
       setIsLoading(false);
     }
@@ -69,9 +69,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         notifications: response.notifications,
         pagination: response.pagination
       };
-    } catch (err) {
+    } catch {
       setError('Failed to fetch all notifications');
-      console.error('Error fetching all notifications:', err);
       return { notifications: [], pagination: undefined };
     }
   }, [authState.isAuthenticated]);
@@ -82,8 +81,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     try {
       const response = await notificationService.getNotificationCount();
       setUnreadCount(response.count);
-    } catch (err) {
-      console.error('Error fetching notification count:', err);
+    } catch {
+      // Error fetching notification count
     }
   }, [authState.isAuthenticated]);
 
@@ -100,13 +99,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         )
       );
       
-      // Refresh count
-      await refreshCount();
-    } catch (err) {
-      setError('Failed to mark notification as read');
-      console.error('Error marking notification as read:', err);
+      // Update unread count
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      
+      // Show success toast
+      addToast('Notification marked as read', 'success');
+    } catch {
+      // Error marking notification as read
     }
-  }, [refreshCount]);
+  }, [addToast]);
 
   const markAsUnread = useCallback(async (notificationId: string) => {
     try {
@@ -121,13 +122,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         )
       );
       
-      // Refresh count
-      await refreshCount();
-    } catch (err) {
-      setError('Failed to mark notification as unread');
-      console.error('Error marking notification as unread:', err);
+      // Update unread count
+      setUnreadCount(prev => prev + 1);
+      
+      // Show success toast
+      addToast('Notification marked as unread', 'success');
+    } catch {
+      // Error marking notification as unread
     }
-  }, [refreshCount]);
+  }, [addToast]);
 
   const markAllAsRead = useCallback(async () => {
     try {
@@ -138,66 +141,73 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         prev.map(notification => ({ ...notification, read: true }))
       );
       
-      // Refresh count
-      await refreshCount();
-    } catch (err) {
-      setError('Failed to mark all notifications as read');
-      console.error('Error marking all notifications as read:', err);
+      // Reset unread count
+      setUnreadCount(0);
+      
+      // Show success toast
+      addToast('All notifications marked as read', 'success');
+    } catch {
+      // Error marking all notifications as read
     }
-  }, [refreshCount]);
+  }, [addToast]);
 
   const deleteNotification = useCallback(async (notificationId: string) => {
     try {
       await notificationService.deleteNotification(notificationId);
       
-      // Remove from local state
+      // Update local state
       setNotifications(prev => 
         prev.filter(notification => notification._id !== notificationId)
       );
       
-      // Refresh count
-      await refreshCount();
+      // Update unread count if the deleted notification was unread
+      const deletedNotification = notifications.find(n => n._id === notificationId);
+      if (deletedNotification && !deletedNotification.read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
       
-      addToast('Notification deleted successfully', 'success');
-    } catch (err) {
-      setError('Failed to delete notification');
-      console.error('Error deleting notification:', err);
-      addToast('Failed to delete notification', 'error');
+      // Show success toast
+      addToast('Notification deleted', 'success');
+    } catch {
+      // Error deleting notification
     }
-  }, [refreshCount, addToast]);
+  }, [notifications, addToast]);
 
   const deleteMultipleNotifications = useCallback(async (notificationIds: string[]) => {
     try {
       await notificationService.deleteMultipleNotifications(notificationIds);
       
-      // Remove from local state
+      // Update local state
       setNotifications(prev => 
         prev.filter(notification => !notificationIds.includes(notification._id))
       );
       
-      // Refresh count
-      await refreshCount();
+      // Update unread count
+      const deletedUnreadCount = notifications
+        .filter(notification => 
+          notificationIds.includes(notification._id) && !notification.read
+        ).length;
       
-      addToast(`${notificationIds.length} notifications deleted successfully`, 'success');
-    } catch (err) {
-      setError('Failed to delete notifications');
-      console.error('Error deleting notifications:', err);
-      addToast('Failed to delete notifications', 'error');
+      setUnreadCount(prev => Math.max(0, prev - deletedUnreadCount));
+      
+      // Show success toast
+      addToast(`${notificationIds.length} notifications deleted`, 'success');
+    } catch {
+      // Error deleting notifications
     }
-  }, [refreshCount, addToast]);
+  }, [notifications, addToast]);
 
   const clearReadNotifications = useCallback(async () => {
     try {
       await notificationService.clearReadNotifications();
       
-      // Remove read notifications from local state
+      // Update local state - remove read notifications
       setNotifications(prev => prev.filter(notification => !notification.read));
       
-      addToast('Read notifications cleared successfully', 'success');
-    } catch (err) {
-      setError('Failed to clear read notifications');
-      console.error('Error clearing read notifications:', err);
-      addToast('Failed to clear read notifications', 'error');
+      // Show success toast
+      addToast('Read notifications cleared', 'success');
+    } catch {
+      // Error clearing read notifications
     }
   }, [addToast]);
 
@@ -205,15 +215,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     try {
       await notificationService.clearAllNotifications();
       
-      // Clear all notifications from local state
+      // Clear local state
       setNotifications([]);
       setUnreadCount(0);
       
-      addToast('All notifications cleared successfully', 'success');
-    } catch (err) {
-      setError('Failed to clear all notifications');
-      console.error('Error clearing all notifications:', err);
-      addToast('Failed to clear all notifications', 'error');
+      // Show success toast
+      addToast('All notifications cleared', 'success');
+    } catch {
+      // Error clearing all notifications
     }
   }, [addToast]);
 
