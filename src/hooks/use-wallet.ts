@@ -134,6 +134,7 @@ export function useWallet() {
     walletBalance: context.walletBalance,
     recentTransactions: context.recentTransactions,
     refreshWallet: context.refreshWallet,
+    connectionStatus: context.connectionStatus,
     
     // Local state
     transactions,
