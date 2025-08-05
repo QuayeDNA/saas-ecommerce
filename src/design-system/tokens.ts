@@ -4,45 +4,63 @@
  * They will eventually be overridable by user preferences
  */
 
-// Base color palette - default theme
+// Base color palette - updated with new primary color #142850
 export const colors = {
   brand: {
-    primary: '#000000', // Black
+    primary: '#142850', // New primary color - deep navy blue
+    primaryLight: '#1e3a5f', // Lighter variant for hover states
+    primaryDark: '#0f1f3a', // Darker variant for active states
     background: '#ffffff', // White
-    accent: '#222222', // Dark gray for contrast
-    secondary: '#f5f5f5', // Light gray for subtle backgrounds
-    text: '#000000', // Black text
+    accent: '#f8fafc', // Very light gray for subtle backgrounds
+    secondary: '#f1f5f9', // Light gray for backgrounds
+    text: '#1e293b', // Dark text for good contrast
+    textLight: '#64748b', // Light text for secondary content
     white: '#ffffff',
   },
   
-  // Secondary colors
-  secondary: {
-    50: 'var(--color-secondary-50, #f0f9ff)',
-    100: 'var(--color-secondary-100, #e0f2fe)',
-    200: 'var(--color-secondary-200, #bae6fd)',
-    300: 'var(--color-secondary-300, #7dd3fc)',
-    400: 'var(--color-secondary-400, #38bdf8)',
-    500: 'var(--color-secondary-500, #0ea5e9)', // Default secondary
-    600: 'var(--color-secondary-600, #0284c7)',
-    700: 'var(--color-secondary-700, #0369a1)',
-    800: 'var(--color-secondary-800, #075985)',
-    900: 'var(--color-secondary-900, #0c4a6e)',
-    950: 'var(--color-secondary-950, #082f49)',
+  // Primary color palette based on #142850
+  primary: {
+    50: '#f0f4f8', // Very light blue-gray
+    100: '#d9e2ec', // Light blue-gray
+    200: '#bcccdc', // Medium light blue-gray
+    300: '#9fb3c8', // Medium blue-gray
+    400: '#829ab1', // Medium dark blue-gray
+    500: '#142850', // Main primary color
+    600: '#0f1f3a', // Darker variant
+    700: '#0a1628', // Even darker
+    800: '#061016', // Very dark
+    900: '#030a0c', // Darkest
+    950: '#020608', // Almost black
   },
   
-  // Accent colors
+  // Secondary colors - complementary to primary
+  secondary: {
+    50: '#f0f9ff', // Very light blue
+    100: '#e0f2fe', // Light blue
+    200: '#bae6fd', // Medium light blue
+    300: '#7dd3fc', // Medium blue
+    400: '#38bdf8', // Medium dark blue
+    500: '#0ea5e9', // Main secondary
+    600: '#0284c7', // Darker secondary
+    700: '#0369a1', // Even darker
+    800: '#075985', // Very dark
+    900: '#0c4a6e', // Darkest
+    950: '#082f49', // Almost black
+  },
+  
+  // Accent colors - teal/green for success states
   accent: {
-    50: 'var(--color-accent-50, #f0fdfa)',
-    100: 'var(--color-accent-100, #ccfbf1)',
-    200: 'var(--color-accent-200, #99f6e4)',
-    300: 'var(--color-accent-300, #5eead4)',
-    400: 'var(--color-accent-400, #2dd4bf)',
-    500: 'var(--color-accent-500, #14b8a6)', // Default accent
-    600: 'var(--color-accent-600, #0d9488)',
-    700: 'var(--color-accent-700, #0f766e)',
-    800: 'var(--color-accent-800, #115e59)',
-    900: 'var(--color-accent-900, #134e4a)',
-    950: 'var(--color-accent-950, #042f2e)',
+    50: '#f0fdfa', // Very light teal
+    100: '#ccfbf1', // Light teal
+    200: '#99f6e4', // Medium light teal
+    300: '#5eead4', // Medium teal
+    400: '#2dd4bf', // Medium dark teal
+    500: '#14b8a6', // Main accent
+    600: '#0d9488', // Darker accent
+    700: '#0f766e', // Even darker
+    800: '#115e59', // Very dark
+    900: '#134e4a', // Darkest
+    950: '#042f2e', // Almost black
   },
   
   // Network-specific colors (fixed for brand recognition)
@@ -67,19 +85,19 @@ export const colors = {
     },
   },
   
-  // Neutrals
+  // Neutrals - updated for better contrast with primary
   gray: {
-    50: '#f9fafb',
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    300: '#d1d5db',
-    400: '#9ca3af',
-    500: '#6b7280',
-    600: '#4b5563',
-    700: '#374151',
-    800: '#1f2937',
-    900: '#111827',
-    950: '#030712',
+    50: '#f8fafc', // Very light gray
+    100: '#f1f5f9', // Light gray
+    200: '#e2e8f0', // Medium light gray
+    300: '#cbd5e1', // Medium gray
+    400: '#94a3b8', // Medium dark gray
+    500: '#64748b', // Main gray
+    600: '#475569', // Darker gray
+    700: '#334155', // Even darker
+    800: '#1e293b', // Very dark
+    900: '#0f172a', // Darkest
+    950: '#020617', // Almost black
   },
   
   // System colors (fixed)

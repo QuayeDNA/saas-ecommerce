@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth, useWallet } from "../hooks";
+import { useOrder } from "../contexts/OrderContext";
 import { useSiteStatus } from "../contexts/site-status-context";
 import { settingsService } from "../services/settings.service";
 import { useToast } from "../design-system/components/toast";
@@ -15,12 +16,15 @@ interface HeaderProps {
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { authState, logout } = useAuth();
   const { walletBalance, refreshWallet, isLoading, connectionStatus } = useWallet();
+  const { getAgentAnalytics } = useOrder();
   const { siteStatus, refreshSiteStatus } = useSiteStatus();
   const { addToast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showSiteMessage, setShowSiteMessage] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
   const [isTogglingSite, setIsTogglingSite] = useState(false);
+  const [totalSpent, setTotalSpent] = useState(0);
+  const [spendingLoading, setSpendingLoading] = useState(false);
 
   // Get connection status indicator
   const getConnectionStatusIndicator = () => {
@@ -57,6 +61,41 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     if (hour < 18) return { text: "Good afternoon", emoji: "☀️" };
     return { text: "Good evening", emoji: "🌙" };
   };
+
+  // Format amount
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency',
+      currency: 'GHS'
+    }).format(amount);
+  };
+
+  // Fetch user spending analytics
+  const fetchUserSpending = useCallback(async () => {
+    if (authState.user?.userType !== 'agent') return;
+    
+    setSpendingLoading(true);
+    try {
+      const { totalRevenue } = await getAgentAnalytics('30d');
+      setTotalSpent(totalRevenue);
+    } catch (error) {
+      console.error('Failed to fetch user spending:', error);
+      setTotalSpent(0);
+    } finally {
+      setSpendingLoading(false);
+    }
+  }, [authState.user?.userType, getAgentAnalytics]);
+
+  // Fetch spending data on mount and when user changes
+  useEffect(() => {
+    if (authState.isAuthenticated && authState.user?.userType === 'agent') {
+      fetchUserSpending();
+      
+      // Set up periodic refresh every 30 seconds to stay in sync
+      const interval = setInterval(fetchUserSpending, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [authState.isAuthenticated, authState.user, fetchUserSpending]);
 
   // Handle site toggle for super admins
   const handleSiteToggle = async () => {
@@ -129,7 +168,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     authState.user?.userType === "admin";
 
   return (
-    <header className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200">
+    <header className="sticky top-0 z-10 bg-[#142850] shadow-sm border-b border-[#0f1f3a] rounded-b-xl">
       <div className="px-2 sm:px-6 lg:px-8 py-4 sm:py-5">
         {/* Main Header Row */}
         <div className="flex items-center justify-between gap-4">
@@ -140,7 +179,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
               variant="ghost"
               size="sm"
               onClick={onMenuClick}
-              className="md:hidden flex-shrink-0"
+              className="md:hidden flex-shrink-0 text-white hover:bg-[#1e3a5f]"
               aria-label="Open sidebar menu"
             >
               <FaBars className="w-5 h-5" />
@@ -169,10 +208,10 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                         </span>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 truncate">
+                        <div className="text-sm sm:text-base lg:text-lg font-semibold text-white truncate">
                           {getGreeting().text}, {authState.user?.fullName.split(" ")[0]}
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-500 truncate">
+                        <div className="text-xs sm:text-sm text-gray-200 truncate">
                           Welcome back! 👋
                         </div>
                       </div>
@@ -231,7 +270,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="p-1.5"
+                className="p-1.5 text-white hover:bg-[#1e3a5f]"
                 aria-label="User menu"
               >
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-medium shadow-sm text-sm">
@@ -320,49 +359,65 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         {/* Wallet Section - Only for agents */}
         {isAgent && (
           <div className="mt-2">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-1 rounded-lg shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-400 bg-opacity-30 rounded-full">
-                    <FaWallet className="w-5 h-5 text-green-100" />
+            <button 
+              className="bg-white/10 backdrop-blur-sm border border-white/20 text-white p-2 sm:p-3 rounded-lg shadow-sm cursor-pointer hover:bg-white/15 transition-all duration-200 active:scale-95 appearance-none w-full"
+              onClick={() => {
+                refreshWallet();
+                fetchUserSpending();
+              }}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  refreshWallet();
+                  fetchUserSpending();
+                }
+              }}
+              aria-label="Refresh wallet balance and spending data"
+            >
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1">
+                  <div className="p-1.5 sm:p-2 bg-white/20 rounded-full flex-shrink-0">
+                    <FaWallet className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-green-100">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                      <span className="text-xs sm:text-sm font-medium text-white/80">
                         Wallet Balance
                       </span>
-                      <div className="flex items-center gap-1">
+                      <div className="hidden sm:flex items-center gap-1">
                         {getConnectionStatusIndicator()}
-                        <span className="text-xs text-green-200">
+                        <span className="text-xs text-white/60">
                           {getConnectionStatusText()}
                         </span>
                       </div>
                     </div>
-                    <div className="text-lg sm:text-xl font-bold">
-                      GH¢{walletBalance.toFixed(2)}
+                    <div className="text-base sm:text-lg lg:text-xl font-bold text-white">
+                      {formatAmount(walletBalance)}
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    refreshWallet();
-                  }}
-                  disabled={isLoading}
-                  className="rounded-full opacity-70 hover:opacity-100 hover:bg-green-700 transition-opacity flex-shrink-0 text-white p-2"
-                  aria-label="Refresh wallet balance"
-                  title="Refresh balance"
-                >
-                  <FaSync
-                    className={`w-4 h-4 ${
-                      isLoading ? "animate-spin" : ""
-                    }`}
-                  />
-                </Button>
+                
+                {/* Vertical divider - hidden on very small screens */}
+                <div className="hidden sm:block w-px h-8 sm:h-12 bg-white/30 mx-4 sm:mx-6 flex-shrink-0"></div>
+                
+                {/* Total Spent Section */}
+                <div className="flex items-center gap-2 sm:gap-3 flex-1">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs sm:text-sm font-medium text-white/80 mb-1">
+                      Total Spent
+                    </div>
+                    <div className="text-base sm:text-lg lg:text-xl font-bold text-white">
+                      {spendingLoading || isLoading ? (
+                        <div className="animate-pulse bg-white/20 h-4 sm:h-6 w-16 sm:w-20 rounded"></div>
+                      ) : (
+                        formatAmount(totalSpent)
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </button>
           </div>
         )}
       </div>

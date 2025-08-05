@@ -281,6 +281,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [addToast]);
 
+
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);

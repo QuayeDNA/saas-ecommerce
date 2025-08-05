@@ -86,15 +86,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Helper function to get theme-based color classes
     const getThemeColorClasses = () => {
-      // Map theme colors to tailwind classes
+      // Map theme colors to tailwind classes with new primary color #142850
       switch (primaryColor) {
         case 'blue':
           return {
-            solid: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm',
-            outline: 'bg-transparent border border-blue-500 text-blue-700 hover:bg-blue-50 active:bg-blue-100',
-            ghost: 'bg-transparent text-blue-700 hover:bg-blue-50 active:bg-blue-100',
-            link: 'bg-transparent text-blue-600 hover:text-blue-700 hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-blue-500'
+            solid: 'bg-[#142850] text-white hover:bg-[#1e3a5f] active:bg-[#0f1f3a] shadow-sm',
+            outline: 'bg-transparent border border-[#142850] text-[#142850] hover:bg-[#f0f4f8] active:bg-[#d9e2ec]',
+            ghost: 'bg-transparent text-[#142850] hover:bg-[#f0f4f8] active:bg-[#d9e2ec]',
+            link: 'bg-transparent text-[#142850] hover:text-[#1e3a5f] hover:underline p-0 h-auto',
+            focusRing: 'focus:ring-[#142850]'
           };
         case 'purple':
           return {
@@ -168,11 +168,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           };
         case 'info':
           return {
-            solid: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm',
-            outline: 'bg-transparent border border-blue-500 text-blue-700 hover:bg-blue-50 active:bg-blue-100',
-            ghost: 'bg-transparent text-blue-700 hover:bg-blue-50 active:bg-blue-100',
-            link: 'bg-transparent text-blue-600 hover:text-blue-700 hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-blue-500'
+            solid: 'bg-[#0ea5e9] text-white hover:bg-[#0284c7] active:bg-[#0369a1] shadow-sm',
+            outline: 'bg-transparent border border-[#0ea5e9] text-[#0ea5e9] hover:bg-[#f0f9ff] active:bg-[#e0f2fe]',
+            ghost: 'bg-transparent text-[#0ea5e9] hover:bg-[#f0f9ff] active:bg-[#e0f2fe]',
+            link: 'bg-transparent text-[#0ea5e9] hover:text-[#0284c7] hover:underline p-0 h-auto',
+            focusRing: 'focus:ring-[#0ea5e9]'
           };
         case 'default':
         default:
@@ -205,9 +205,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           return 'bg-gray-600 text-white hover:bg-gray-700 active:bg-gray-800 shadow-sm';
           
         case 'accent':
-          // Use a contrasting color to the primary theme color
-          // This could be improved to have more intelligent contrast selection
-          return 'bg-indigo-500 text-white hover:bg-indigo-600 active:bg-indigo-700 shadow-sm';
+          // Use the secondary blue color as accent
+          return 'bg-[#0ea5e9] text-white hover:bg-[#0284c7] active:bg-[#0369a1] shadow-sm';
           
         case 'outline':
           return colors.outline;

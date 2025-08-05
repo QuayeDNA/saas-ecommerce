@@ -1,20 +1,20 @@
 /* Theme.css - Base theme definitions using CSS variables */
 
 :root {
-  /* Primary colors */
-  --color-primary-50: #eef2ff;
-  --color-primary-100: #e0e7ff;
-  --color-primary-200: #c7d2fe;
-  --color-primary-300: #a5b4fc;
-  --color-primary-400: #818cf8;
-  --color-primary-500: #6366f1;
-  --color-primary-600: #4f46e5;
-  --color-primary-700: #4338ca;
-  --color-primary-800: #3730a3;
-  --color-primary-900: #312e81;
-  --color-primary-950: #1e1b4b;
+  /* Primary colors - based on #142850 */
+  --color-primary-50: #f0f4f8;
+  --color-primary-100: #d9e2ec;
+  --color-primary-200: #bcccdc;
+  --color-primary-300: #9fb3c8;
+  --color-primary-400: #829ab1;
+  --color-primary-500: #142850; /* Main primary color */
+  --color-primary-600: #0f1f3a;
+  --color-primary-700: #0a1628;
+  --color-primary-800: #061016;
+  --color-primary-900: #030a0c;
+  --color-primary-950: #020608;
 
-  /* Secondary colors */
+  /* Secondary colors - complementary blue */
   --color-secondary-50: #f0f9ff;
   --color-secondary-100: #e0f2fe;
   --color-secondary-200: #bae6fd;
@@ -27,7 +27,7 @@
   --color-secondary-900: #0c4a6e;
   --color-secondary-950: #082f49;
 
-  /* Accent colors */
+  /* Accent colors - teal/green for success states */
   --color-accent-50: #f0fdfa;
   --color-accent-100: #ccfbf1;
   --color-accent-200: #99f6e4;
@@ -79,11 +79,42 @@
   --transition-fast: 100ms ease-in-out;
 }
 
+/* Site Status Card Animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.7s ease-out;
+}
+
+.animate-slide-in-from-bottom {
+  animation: slide-in-from-bottom 0.7s ease-out;
+}
+
 /* Theme class for user-selected primary color */
 .theme-blue {
-  --color-primary-500: #2563eb;
-  --color-primary-600: #1d4ed8;
-  --color-primary-700: #1e40af;
+  --color-primary-500: #142850; /* Updated to new primary */
+  --color-primary-600: #0f1f3a;
+  --color-primary-700: #0a1628;
 }
 
 .theme-purple {

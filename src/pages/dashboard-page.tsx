@@ -1,14 +1,35 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/use-auth';
 import { useWallet } from '../hooks/use-wallet';
 import { useOrder } from '../contexts/OrderContext';
 import { useProvider } from '../hooks/use-provider';
+import { useSiteStatus } from '../contexts/site-status-context';
 import { Card, CardHeader, CardBody, Badge, Spinner } from '../design-system';
-import { FaPhone, FaChartLine, FaWallet, FaShoppingCart, FaWifi, FaSync } from 'react-icons/fa';
+import { FaPhone, FaChartLine, FaWallet, FaShoppingCart, FaWifi, FaSync, FaStar, FaTimes } from 'react-icons/fa';
 import type { WalletTransaction } from '../types/wallet';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
+
+// Add CSS keyframes for fade-in animation
+const fadeInKeyframes = `
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
+
+// Inject the CSS
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = fadeInKeyframes;
+  document.head.appendChild(style);
+}
 
 // Register Chart.js components including Filler and Bar plugins
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement);
@@ -46,10 +67,10 @@ const quickActionPackages = [
 ];
 
 export const DashboardPage = () => {
-  const { authState } = useAuth();
-  const { walletBalance, getTransactionHistory, connectionStatus, refreshWallet } = useWallet();
+  const { walletBalance, getTransactionHistory, connectionStatus } = useWallet();
   const { getAgentAnalytics } = useOrder();
   const { providers, loading: providersLoading } = useProvider();
+  const { siteStatus } = useSiteStatus();
   
   // State for modals and data
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
@@ -61,8 +82,36 @@ export const DashboardPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
+  const [showSiteMessage, setShowSiteMessage] = useState(true);
 
   const navigate = useNavigate();
+
+  // Auto-hide site message after 1 minute
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSiteMessage(false);
+    }, 60000); // 1 minute
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Get site message
+  const getSiteMessage = () => {
+    if (!siteStatus) return "";
+    return siteStatus.isSiteOpen
+      ? "Hi! We are currently open for business! 🎉"
+      : "Sorry, store is currently closed for business 😔";
+  };
+
+  // Get site status color
+  const getSiteStatusColor = () => {
+    return siteStatus?.isSiteOpen ? 'text-green-600' : 'text-red-600';
+  };
+
+  // Get site status background
+  const getSiteStatusBg = () => {
+    return siteStatus?.isSiteOpen ? 'bg-green-50' : 'bg-red-50';
+  };
 
   // Get connection status indicator
   const getConnectionStatusIndicator = () => {
@@ -310,36 +359,42 @@ export const DashboardPage = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Welcome section - Mobile-first design */}
-      <Card className="md:hidden dashboard-welcome">
-        <CardBody className="text-center">
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">
-            Welcome, {authState.user?.fullName.split(' ')[0]}
-          </h1>
-          <p className="text-gray-600 text-sm mb-4">
-            Manage your telecom services and view your transaction history here.
-          </p>
-          <div className="bg-green-50 p-3 rounded-lg flex justify-between items-center wallet-balance">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Wallet Balance</span>
-              <div className="flex items-center gap-1">
-                {getConnectionStatusIndicator()}
-                <span className="text-xs text-gray-500">{getConnectionStatusText()}</span>
+      {/* Site Status Message - Glassmorphic design */}
+      {showSiteMessage && siteStatus && (
+        <div 
+          className="transform transition-all duration-1000 ease-in-out"
+          style={{
+            animation: 'fadeIn 0.5s ease-in-out',
+            opacity: showSiteMessage ? 1 : 0,
+            transform: showSiteMessage ? 'translateY(0)' : 'translateY(-20px)'
+          }}
+        >
+          <Card className="backdrop-blur-md bg-gray-200/50 border border-white/30 shadow-xl">
+            <CardBody className="text-center">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className={`p-3 rounded-full ${getSiteStatusBg()} ${getSiteStatusColor()}`}>
+                  <FaStar className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm sm:text-base font-medium text-gray-700">
+                    {getSiteMessage()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowSiteMessage(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white/20 rounded-full transition-all duration-200"
+                  aria-label="Close message"
+                >
+                  <FaTimes className="w-4 h-4" />
+                </button>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-green-700">{formatAmount(walletBalance)}</span>
-              <button
-                onClick={refreshWallet}
-                className="p-1 hover:bg-green-100 rounded transition-colors"
-                title="Refresh wallet"
-              >
-                <FaSync className="w-3 h-3 text-green-600" />
-              </button>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+              <div className="text-xs text-gray-500">
+                This message will automatically disappear in 1 minute
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      )}
       
       {/* Quick Actions */}
       <div className="quick-actions">

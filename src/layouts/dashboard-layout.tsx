@@ -139,7 +139,7 @@ export const DashboardLayout = () => {
         <Header onMenuClick={toggleSidebar} />
         
         {/* Content */}
-        <main className={`flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 ${isImpersonating ? 'min-h-screen' : ''}`}>
+        <main className={`flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-[#F5F6FA] ${isImpersonating ? 'min-h-screen' : ''}`}>
           <Outlet />
         </main>
       </div>

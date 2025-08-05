@@ -283,8 +283,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               onClick={() => toggleExpanded(item.path)}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-md text-sm transition-all duration-200 ${
                 hasActiveChildItem
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-[#0ea5e9] text-white shadow-md'
+                  : 'text-gray-300 hover:bg-[#1e3a5f] hover:text-white'
               } ${level > 0 ? 'ml-4' : ''}`}
             >
               <div className="flex items-center">
@@ -309,8 +309,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             to={item.path}
             className={`flex items-center px-3 py-3 rounded-md text-sm transition-all duration-200 ${
               isActive
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                ? 'bg-[#0ea5e9] text-white shadow-md'
+                : 'text-gray-300 hover:bg-[#1e3a5f] hover:text-white'
             } ${level > 0 ? 'ml-6' : ''}`}
             onClick={() => onClose()}
           >
@@ -335,25 +335,25 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     <>
       {/* Sidebar - slide in on mobile, fixed on desktop */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-900 text-white transform transition-all duration-300 ease-in-out flex flex-col ${
+        className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#142850] text-white transform transition-all duration-300 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}
       >
         {/* Logo and close button */}
-        <div className="flex items-center justify-between px-4 py-5 bg-gray-800 shadow-md">
+        <div className="flex items-center justify-between px-4 py-5 bg-[#0f1f3a] shadow-md">
           <div className="flex items-center min-w-0 flex-1">
-            <div className="w-8 h-8 mr-3 bg-blue-600 rounded-md flex items-center justify-center shadow-sm flex-shrink-0">
+            <div className="w-8 h-8 mr-3 bg-[#0ea5e9] rounded-md flex items-center justify-center shadow-sm flex-shrink-0">
               <span className="text-lg font-bold text-white">
                 {getBusinessName().charAt(0).toUpperCase()}
               </span>
             </div>
-            <div className="text-lg sm:text-xl font-bold truncate">
+            <div className="text-lg sm:text-xl font-bold truncate text-white">
               {getBusinessName()}
             </div>
           </div>
           <button 
             aria-label="Close sidebar"
-            className="text-gray-300 hover:text-white md:hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md p-1 flex-shrink-0"
+            className="text-gray-300 hover:text-white md:hidden focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] focus:ring-opacity-50 rounded-md p-1 flex-shrink-0"
             onClick={onClose}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -375,15 +375,15 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {/* User info section */}
         <div className="mt-auto">
           {/* User profile */}
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-4 border-t border-[#1e3a5f]">
             <div className="flex items-center space-x-3 mb-3">
               <div className="flex-shrink-0 relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md">
                   {authState.user?.fullName.charAt(0)}{authState.user?.fullName.split(' ')[1]?.charAt(0) ?? ''}
                 </div>
               </div>
               <div className="overflow-hidden min-w-0 flex-1">
-                <div className="text-sm font-medium truncate">{authState.user?.fullName}</div>
+                <div className="text-sm font-medium truncate text-white">{authState.user?.fullName}</div>
                 <div className="flex items-center">
                   <span className={`w-2 h-2 ${authState.isAuthenticated ? 'bg-green-500' : 'bg-gray-400'} rounded-full mr-1 flex-shrink-0`}></span>
                   <p className="text-xs text-gray-300 truncate capitalize">{authState.user?.userType ?? 'User'}</p>
@@ -405,7 +405,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           </div>
           
           {/* App version */}
-          <div className="p-3 border-t border-gray-700 text-center">
+          <div className="p-3 border-t border-[#1e3a5f] text-center">
             <div className="text-xs text-gray-400 truncate">{getAppName()}</div>
             <div className="text-xs text-gray-300 font-semibold">v1.0.0</div>
           </div>
