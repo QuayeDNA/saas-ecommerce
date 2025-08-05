@@ -12,6 +12,58 @@ import { Line } from 'react-chartjs-2';
 // Register Chart.js components including Filler plugin
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
+// Define the 4 specific packages with their provider info
+const quickActionPackages = [
+  {
+    name: 'MTN',
+    code: 'MTN',
+    providerCode: 'MTN',
+    providerName: 'MTN Ghana',
+    color: 'bg-yellow-500',
+    bgColor: 'bg-yellow-50',
+    logo: {
+      url: 'https://cdn.worldvectorlogo.com/logos/mtn-new-logo.svg',
+      alt: 'MTN Ghana Logo'
+    }
+  },
+  {
+    name: 'TELECEL',
+    code: 'TELECEL',
+    providerCode: 'TELECEL',
+    providerName: 'Telecel Ghana',
+    color: 'bg-red-500',
+    bgColor: 'bg-red-50',
+    logo: {
+      url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTl4R7lA1tlSlrBzf9OrDXIswYytfI7TfvC0w&s',
+      alt: 'Telecel Ghana Logo'
+    }
+  },
+  {
+    name: 'AT BIG TIME',
+    code: 'AT-BIG-TIME',
+    providerCode: 'AT',
+    providerName: 'AirtelTigo',
+    color: 'bg-blue-500',
+    bgColor: 'bg-blue-50',
+    logo: {
+      url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7RsFXQJyy3UcW8ruKIzW1nUmMckhJsQXSDw&s',
+      alt: 'AirtelTigo Logo'
+    }
+  },
+  {
+    name: 'AT iShare Premium',
+    code: 'AT-ISHARE-PREMIUM',
+    providerCode: 'AT',
+    providerName: 'AirtelTigo',
+    color: 'bg-purple-600',
+    bgColor: 'bg-purple-50',
+    logo: {
+      url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7RsFXQJyy3UcW8ruKIzW1nUmMckhJsQXSDw&s',
+      alt: 'AirtelTigo Logo'
+    }
+  }
+];
+
 export const DashboardPage = () => {
   const { authState } = useAuth();
   const { walletBalance, getTransactionHistory } = useWallet();
@@ -26,40 +78,37 @@ export const DashboardPage = () => {
     successRate: 0
   });
   const [loading, setLoading] = useState(true);
+  const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
 
   const navigate = useNavigate();
 
-  // Network quick links with updated provider codes
-  const networks: { name: string; code: string; color: string; bgColor: string; icon: React.ReactNode }[] = [
-    { 
-      name: 'MTN', 
-      code: 'MTN', 
-      color: 'bg-yellow-500', 
-      bgColor: 'bg-yellow-50',
-      icon: <FaPhone className="w-5 h-5" />
-    },
-    { 
-      name: 'TELECEL', 
-      code: 'TELECEL', 
-      color: 'bg-red-500', 
-      bgColor: 'bg-red-50',
-      icon: <FaPhone className="w-5 h-5" />
-    },
-    { 
-      name: 'AT BIG TIME', 
-      code: 'AT-BIG-TIME', 
-      color: 'bg-blue-500', 
-      bgColor: 'bg-blue-50',
-      icon: <FaPhone className="w-5 h-5" />
-    },
-    { 
-      name: 'AT iShare Premium', 
-      code: 'AT-ISHARE-PREMIUM', 
-      color: 'bg-purple-600', 
-      bgColor: 'bg-purple-50',
-      icon: <FaPhone className="w-5 h-5" />
-    },
-  ];
+  // Handle quick link click
+  const handleQuickLinkClick = (packageCode: string) => {
+    navigate(`./packages/${packageCode.toLowerCase()}`);
+  };
+
+  // Format transaction amount
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency',
+      currency: 'GHS'
+    }).format(amount);
+  };
+
+  // Format date
+  const formatDate = (dateStr: string | Date) => {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(date);
+  };
+
+  // Get transaction status color
+  const getTransactionStatusColor = (type: string) => {
+    return type === 'credit' ? 'success' : 'error';
+  };
 
   // Load dashboard data
   useEffect(() => {
@@ -104,34 +153,6 @@ export const DashboardPage = () => {
 
     loadDashboardData();
   }, [getTransactionHistory, getAgentAnalytics]);
-
-  // Handle quick link click
-  const handleQuickLinkClick = (providerCode: string) => {
-    navigate(`./packages/${providerCode.toLowerCase()}`);
-  };
-
-  // Format transaction amount
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS'
-    }).format(amount);
-  };
-
-  // Format date
-  const formatDate = (dateStr: string | Date) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }).format(date);
-  };
-
-  // Get transaction status color
-  const getTransactionStatusColor = (type: string) => {
-    return type === 'credit' ? 'success' : 'error';
-  };
 
   // Prepare chart data from transactions
   const prepareChartData = (transactions: WalletTransaction[]) => {
@@ -230,23 +251,48 @@ export const DashboardPage = () => {
       <div className="quick-actions">
         <h2 className="text-lg font-medium text-gray-800 mb-3 px-2 sm:px-0">Quick Actions</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {networks.map((network) => (
-            <Card 
-              key={network.code} 
-              variant="interactive" 
-              size="sm"
-              className="cursor-pointer"
-              onClick={() => handleQuickLinkClick(network.code)}
-            >
-              <CardBody className="text-center">
-                <div className={`${network.color} text-white p-2 rounded-full mx-auto mb-2 w-10 h-10 flex items-center justify-center`}>
-                  {network.icon}
-                </div>
-                <div className="font-semibold text-sm">{network.name}</div>
-                <div className="text-xs text-gray-600 mt-1">Order airtime or data</div>
-              </CardBody>
-            </Card>
-          ))}
+          {loading ? (
+            <div className="col-span-full text-center py-8">
+              <Spinner />
+              <p className="text-gray-500 text-sm mt-2">Loading providers...</p>
+            </div>
+          ) : quickActionPackages.length === 0 ? (
+            <div className="col-span-full text-center py-8 text-gray-500">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">No providers found</h3>
+              <p className="text-sm text-gray-500">
+                Please add providers in the settings to see quick links.
+              </p>
+            </div>
+          ) : (
+            quickActionPackages.map((packageItem) => (
+              <Card 
+                key={packageItem.code} 
+                variant="interactive" 
+                size="sm"
+                className="cursor-pointer"
+                onClick={() => handleQuickLinkClick(packageItem.code)}
+              >
+                <CardBody className="text-center">
+                  <div className={`${packageItem.color} text-white rounded-full mx-auto mb-2 w-12 h-12 flex items-center justify-center overflow-hidden`}>
+                    {packageItem.logo?.url && !failedLogos.has(packageItem.code) ? (
+                      <img 
+                        src={packageItem.logo.url} 
+                        alt={packageItem.logo.alt || packageItem.name}
+                        className="w-12 h-12 object-cover rounded-full"
+                        onError={() => {
+                          setFailedLogos(prev => new Set(prev).add(packageItem.code));
+                        }}
+                      />
+                    ) : (
+                      <FaPhone className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div className="font-semibold text-sm">{packageItem.name}</div>
+                  <div className="text-xs text-gray-600 mt-1">Order data</div>
+                </CardBody>
+              </Card>
+            ))
+          )}
         </div>
       </div>
       
