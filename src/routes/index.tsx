@@ -138,15 +138,6 @@ const AtISharePremiumPackagesPage = lazy(() =>
 );
 
 // =============================================================================
-// LAZY LOADED COMPONENTS - ADMIN SPECIFIC PAGES
-// =============================================================================
-const AdminWalletPage = lazy(() =>
-  import("../pages/admin-wallet-page").then((module) => ({
-    default: module.AdminWalletPage,
-  }))
-);
-
-// =============================================================================
 // ROUTE CONFIGURATIONS
 // =============================================================================
 
@@ -443,14 +434,6 @@ const adminRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "wallet",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminWalletPage />
               </Suspense>
             ),
           },

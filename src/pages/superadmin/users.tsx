@@ -69,7 +69,7 @@ export default function SuperAdminUsersPage() {
         search: search.trim() || undefined
       });
       setUsers(data);
-    } catch (err) {
+    } catch {
       setError('Failed to fetch users');
       // Error fetching users
     } finally {
@@ -106,7 +106,7 @@ export default function SuperAdminUsersPage() {
     try {
       await userService.updateAgentStatus(id, 'active');
       await fetchUsers();
-    } catch (err) {
+    } catch {
       setError('Failed to approve user');
       // Error approving user
     } finally {
@@ -119,7 +119,7 @@ export default function SuperAdminUsersPage() {
     try {
       await userService.updateAgentStatus(id, 'rejected');
       await fetchUsers();
-    } catch (err) {
+    } catch {
       setError('Failed to reject user');
       // Error rejecting user
     } finally {

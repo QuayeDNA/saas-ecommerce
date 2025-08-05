@@ -55,7 +55,7 @@ export const StorefrontAnalytics: React.FC<StorefrontAnalyticsProps> = ({
     setLoading(true);
     try {
       await fetchAnalytics(timeframe);
-    } catch (error) {
+    } catch {
       // Failed to fetch analytics
     } finally {
       setLoading(false);

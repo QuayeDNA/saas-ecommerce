@@ -156,7 +156,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     
     // Agents can only cancel their own draft orders
     if (order.status === 'draft' && currentUserId) {
-      const createdById = typeof order.createdBy === 'string' ? order.createdBy : (order.createdBy as any)?._id;
+      const createdById = typeof order.createdBy === 'string' ? order.createdBy : (order.createdBy as { _id: string })?._id;
       if (createdById === currentUserId) {
         return true;
       }

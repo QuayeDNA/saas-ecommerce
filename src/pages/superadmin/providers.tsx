@@ -118,7 +118,7 @@ export default function SuperAdminProvidersPage() {
           } else {
             await updateProvider(id, { isActive: action === 'activate' });
           }
-        } catch (error) {
+        } catch {
           // Failed to perform action on provider
         }
       }

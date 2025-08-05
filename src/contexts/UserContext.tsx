@@ -23,7 +23,7 @@ interface UserContextValue {
   submitAfaRegistration: (
     data: AfaRegistrationData
   ) => Promise<AfaRegistration>;
-  getAfaRegistration: () => Promise<AfaRegistrationResponse>;
+  getAfaRegistration: () => Promise<AfaRegistrationResponse | null>;
 
   // User management
   getUsers: (params?: {
@@ -140,11 +140,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   );
 
   const getAfaRegistration =
-    useCallback(async (): Promise<AfaRegistration | null> => {
+    useCallback(async (): Promise<AfaRegistrationResponse | null> => {
       setIsLoading(true);
       setError(null);
       try {
-        return await userService.getAfaRegistration();
+        const response = await userService.getAfaRegistration();
+        return response;
       } catch (error) {
         handleError(error, "get AFA registration");
         throw error;
@@ -257,7 +258,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     [addToast, handleError]
   );
 
-  const value: UserContextValue = useMemo(
+  const value = useMemo(
     () => ({
       updateProfile,
       changePassword,
@@ -290,5 +291,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     ]
   );
 
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
-};
+  return (
+    <UserContext.Provider value={value}>
+      {children}
+    </UserContext.Provider>
+  );
+}
