@@ -25,7 +25,6 @@ class WebSocketService {
       
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
-        console.log('WebSocket connected successfully');
         // Stop polling if WebSocket is working
         this.stopPolling();
       };
@@ -35,24 +34,21 @@ class WebSocketService {
           const data = JSON.parse(event.data);
           this.handleMessage(data);
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
+          // Failed to parse WebSocket message
         }
       };
 
       this.ws.onclose = () => {
-        console.log('WebSocket connection closed, starting polling fallback');
         this.handleReconnect(userId);
         // Start polling when WebSocket fails
         this.startPolling(userId);
       };
 
-      this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+      this.ws.onerror = () => {
         // Start polling when WebSocket fails
         this.startPolling(userId);
       };
     } catch (error) {
-      console.error('Failed to create WebSocket connection:', error);
       // Start polling when WebSocket fails
       this.startPolling(userId);
     }
@@ -62,7 +58,6 @@ class WebSocketService {
     if (this._isPolling) return;
     
     this._isPolling = true;
-    console.log('Starting polling fallback for wallet updates');
     
     this.pollingInterval = setInterval(async () => {
       try {
@@ -93,7 +88,7 @@ class WebSocketService {
           }
         }
       } catch (error) {
-        console.error('Polling error:', error);
+        // Polling error
       }
     }, this.pollingDelay);
   }
@@ -104,7 +99,6 @@ class WebSocketService {
       this.pollingInterval = null;
     }
     this._isPolling = false;
-    console.log('Stopped polling fallback');
   }
 
   private getAuthToken(): string {
@@ -125,7 +119,6 @@ class WebSocketService {
         this.connect(userId);
       }, this.reconnectDelay * this.reconnectAttempts);
     } else {
-      console.error('Max reconnection attempts reached, using polling fallback');
       // Ensure polling is started when WebSocket fails completely
       this.startPolling(userId);
     }
@@ -152,7 +145,8 @@ class WebSocketService {
         this.emit('transaction_update', data.data);
         break;
       default:
-        console.log('Unknown WebSocket message type:', data.type);
+        // Unknown WebSocket message type
+        break;
     }
   }
 
@@ -190,7 +184,7 @@ class WebSocketService {
         try {
           callback(data);
         } catch (error) {
-          console.error('Error in WebSocket callback:', error);
+          // Error in WebSocket callback
         }
       });
     }

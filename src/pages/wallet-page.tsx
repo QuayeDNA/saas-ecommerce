@@ -33,8 +33,8 @@ export const WalletPage = () => {
         setTransactions(result.transactions);
         setTotalPages(result.pagination.pages);
       }
-    } catch (err) {
-      console.error('Failed to load transactions:', err);
+    } catch {
+      // Failed to load transactions
     } finally {
       setIsLoadingTransactions(false);
     }
@@ -143,15 +143,15 @@ export const WalletPage = () => {
       
       // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(null), 5000);
-    } catch (err) {
-      console.error('Failed to submit top-up request:', err);
+    } catch {
+      // Failed to submit top-up request
     } finally {
       setIsSubmittingRequest(false);
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="max-w-6xl mx-auto sm:p-4 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">

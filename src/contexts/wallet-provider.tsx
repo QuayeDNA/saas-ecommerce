@@ -45,11 +45,9 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
     try {
       const data = await walletService.getWalletInfo();
       setWalletInfo(data);
-      console.log('Wallet refreshed successfully:', data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch wallet information';
       setError(errorMessage);
-      console.error('Failed to refresh wallet:', err);
     } finally {
       setIsLoading(false);
     }
@@ -63,8 +61,6 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
       const currentUserId = getUserId();
       
       if (walletUpdate.type === 'wallet_update' && walletUpdate.userId === currentUserId) {
-        console.log('Received wallet update via WebSocket/polling:', walletUpdate);
-        
         // Update wallet balance in real-time
         setWalletInfo(prev => {
           const updatedWallet = prev ? {
@@ -105,8 +101,6 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
     const userId = getUserId();
     
     if (authState.isAuthenticated && userId) {
-      console.log('Initializing wallet connection for user:', userId);
-      
       // Initial wallet load
       refreshWallet();
       
@@ -118,12 +112,10 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
       
       // Cleanup WebSocket listeners on unmount
       return () => {
-        console.log('Cleaning up wallet connection');
         websocketService.off('wallet_update', handleWalletUpdate);
       };
     } else if (!authState.isAuthenticated) {
       // Disconnect WebSocket when user logs out
-      console.log('User logged out, disconnecting wallet');
       websocketService.disconnect();
       // Clear wallet data
       setWalletInfo(null);
