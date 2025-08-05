@@ -14,20 +14,20 @@ type ProviderColorMap = {
  */
 export const providerColors: ProviderColorMap = {
   MTN: {
-    primary: '#FFC107', // MTN Yellow (official brand color)
+    primary: '#ffc403', // MTN Yellow (official brand color)
     secondary: '#1A2526', // MTN Dark Gray
     background: '#FFF8E1', // Subtle yellow-tinted background
     text: '#FFFFFF' // White for high contrast on primary color
   },
   TELECEL: {
-    primary: 'rgb(178 8 1)', // Telecel Red (official brand color)
+    primary: '#f8020f', // Telecel Red (official brand color)
     secondary: '#37474F', // Telecel Slate Gray
     background: '#FFEBEE', // Subtle red-tinted background
     text: '#FFFFFF'
   },
   AT: {
-    primary: '#0071CE', // AirtelTigo Blue (official brand color)
-    secondary: '#D32F2F', // AirtelTigo Red
+    primary: '#223d76', // AirtelTigo Blue (official brand color)
+    secondary: '#e8262c', // AirtelTigo Red
     background: '#E3F2FD', // Subtle blue-tinted background
     text: '#FFFFFF'
   },

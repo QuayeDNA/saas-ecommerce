@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { packageService } from "../../services/package.service";
 import { bundleService } from "../../services/bundle.service";
+import { providerService } from "../../services/provider.service";
 import { getProviderColors } from "../../utils/provider-colors";
 import { SingleOrderModal } from "../orders/SingleOrderModal";
 import { BulkOrderModal } from "../orders/BulkOrderModal";
 import { SearchAndFilter } from "../common/SearchAndFilter";
-import { FaBox } from "react-icons/fa";
+import { FaBox, FaBuilding } from "react-icons/fa";
 import {
   Card,
   CardBody,
@@ -16,7 +17,7 @@ import {
   Container,
   Section,
 } from "../../design-system";
-import type { Package, Bundle } from "../../types/package";
+import type { Package, Bundle, Provider } from "../../types/package";
 
 export interface ProviderPackageDisplayProps {
   provider: string; // provider code (e.g., 'MTN')
@@ -34,6 +35,8 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
   // State
   const [packages, setPackages] = useState<Package[]>([]);
   const [bundles, setBundles] = useState<Record<string, Bundle[]>>({}); // key: packageId
+  const [providerData, setProviderData] = useState<Provider | null>(null);
+  const [providerLogoFailed, setProviderLogoFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,8 +55,23 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     setError(null);
     setPackages([]);
     setBundles({});
+    setProviderData(null);
+    setProviderLogoFailed(false);
+    
     const fetch = async () => {
       try {
+        // Fetch provider data first
+        try {
+          const providerResponse = await providerService.getProviders();
+          const providerInfo = providerResponse.providers.find(p => p.code === provider);
+          if (providerInfo) {
+            setProviderData(providerInfo);
+          }
+        } catch (providerError) {
+          // Provider fetch failed, continue with packages
+          console.warn('Failed to fetch provider data:', providerError);
+        }
+
         let pkgList: Package[] = [];
         if (packageId) {
           // Fetch a single package by id
@@ -209,18 +227,27 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg border-2 shadow-sm"
+                className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg border-2 shadow-sm overflow-hidden"
                 style={{
                   backgroundColor: providerColors.primary,
                   color: providerColors.text,
                   borderColor: providerColors.secondary,
                 }}
               >
-                {provider.slice(0, 2).toUpperCase()}
+                {providerData?.logo?.url && !providerLogoFailed ? (
+                  <img
+                    src={providerData.logo.url}
+                    alt={providerData.logo.alt || `${provider} Logo`}
+                    className="w-full h-full object-cover"
+                    onError={() => setProviderLogoFailed(true)}
+                  />
+                ) : (
+                  <FaBuilding className="w-6 h-6" />
+                )}
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {provider} Data Packages
+                  {providerData?.name || provider} Data Packages
                 </h2>
                 <p className="text-gray-600">Browse and order data bundles</p>
               </div>

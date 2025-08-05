@@ -365,7 +365,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="px-6 py-2 mb-1">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Menu</p>
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Menu</p>
           </div>
           <ul className="space-y-1 px-3">
             {navItems.map((item) => renderNavItem(item))}
@@ -386,7 +386,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 <div className="text-sm font-medium truncate">{authState.user?.fullName}</div>
                 <div className="flex items-center">
                   <span className={`w-2 h-2 ${authState.isAuthenticated ? 'bg-green-500' : 'bg-gray-400'} rounded-full mr-1 flex-shrink-0`}></span>
-                  <p className="text-xs text-gray-400 truncate capitalize">{authState.user?.userType ?? 'User'}</p>
+                  <p className="text-xs text-gray-300 truncate capitalize">{authState.user?.userType ?? 'User'}</p>
                 </div>
               </div>
             </div>
@@ -406,8 +406,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           
           {/* App version */}
           <div className="p-3 border-t border-gray-700 text-center">
-            <div className="text-xs text-gray-500 truncate">{getAppName()}</div>
-            <div className="text-xs text-gray-600 font-semibold">v1.0.0</div>
+            <div className="text-xs text-gray-400 truncate">{getAppName()}</div>
+            <div className="text-xs text-gray-300 font-semibold">v1.0.0</div>
           </div>
         </div>
       </aside>

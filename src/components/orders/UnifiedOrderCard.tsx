@@ -1,8 +1,6 @@
 // src/components/orders/UnifiedOrderCard.tsx
 import React, { useState } from 'react';
 import { 
-  FaChevronDown,
-  FaChevronUp,
   FaWifi,
   FaChevronRight,
   FaCheckCircle,
@@ -10,6 +8,10 @@ import {
   FaSpinner,
   FaExclamationCircle,
   FaTimes,
+  FaUser,
+  FaPhone,
+  FaDatabase,
+  FaMoneyBillWave,
 } from 'react-icons/fa';
 import { Button } from '../../design-system';
 import type { Order } from '../../types/order';
@@ -33,7 +35,6 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   onSelect,
   isSelected = false
 }) => {
-  const [expanded, setExpanded] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
   // Click outside handler to close dropdown
@@ -65,7 +66,6 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
     { value: 'confirmed', label: 'Confirmed', color: 'bg-purple-100 text-purple-800' },
     { value: 'processing', label: 'Processing', color: 'bg-blue-100 text-blue-800' },
-
     { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
     { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800' }
   ];
@@ -77,7 +77,6 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
       case 'failed': return 'bg-red-100 text-red-800';
       case 'cancelled': return 'bg-gray-100 text-gray-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-  
       case 'confirmed': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -178,9 +177,9 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
       isSelected ? 'ring-2 ring-blue-500' : ''
     }`}>
-      <div className="p-4">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
+      <div className="p-4 sm:p-6">
+        {/* Header Row */}
+        <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               {isAdmin && onSelect && (
@@ -191,79 +190,108 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
               )}
-              <h3 className="text-sm font-semibold text-gray-900 truncate">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                 {order.orderNumber}
               </h3>
             </div>
-            <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
-          </div>
-        </div>
-
-        {/* Order Details */}
-        <div className="space-y-2 mb-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FaWifi className="text-gray-400" />
-            <span className="font-medium">Network:</span>
-            <span>{getOrderProvider(order)}</span>
+            <p className="text-xs sm:text-sm text-gray-500">{formatDate(order.createdAt)}</p>
           </div>
           
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">Recipient:</span> {getOrderRecipient(order)}
-          </div>
-          
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">Volume:</span> {getOrderVolume(order)}
-          </div>
-
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">Total:</span> {formatCurrency(order.total)}
-          </div>
-        </div>
-
-        {/* Status Section */}
-        <div className="mb-3">
-          <div className="relative">
-            {isAdmin ? (
-              // Admin can change status
-              <button
-                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)} hover:bg-opacity-80 transition-colors w-full justify-between status-dropdown`}
-              >
-                <div className="flex items-center gap-1">
+          {/* Status Badge */}
+          <div className="flex-shrink-0 ml-3">
+            <div className="relative">
+              {isAdmin ? (
+                // Admin can change status
+                <button
+                  onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)} hover:bg-opacity-80 transition-colors status-dropdown`}
+                >
+                  <div className="flex items-center gap-1">
+                    {getStatusIcon(order.status)}
+                    <span className="inline">{order.status.replace('_', ' ')}</span>
+                  </div>
+                  <FaChevronRight className="text-xs" />
+                </button>
+              ) : (
+                // Agent can only view status
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
                   {getStatusIcon(order.status)}
-                  {order.status.replace('_', ' ')}
+                  <span className="inline">{order.status.replace('_', ' ')}</span>
                 </div>
-                <FaChevronRight className="text-xs" />
-              </button>
-            ) : (
-              // Agent can only view status
-              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
-                {getStatusIcon(order.status)}
-                {order.status.replace('_', ' ')}
-              </div>
-            )}
-            
-            {isAdmin && statusDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 status-dropdown" style={{ top: '100%', left: '0' }}>
-                <div className="py-1 flex flex-col">
-                  {statusOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => handleStatusChange(option.value)}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${option.value === order.status ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+              )}
+              
+              {isAdmin && statusDropdownOpen && (
+                <div className="absolute z-10 mt-1 right-0 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown min-w-32">
+                  <div className="py-1 flex flex-col">
+                    {statusOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleStatusChange(option.value)}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${option.value === order.status ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Order Details Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          {/* Network */}
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <FaWifi className="text-gray-400 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="font-medium text-gray-900">Network</div>
+              <div className="truncate">{getOrderProvider(order)}</div>
+            </div>
+          </div>
+          
+          {/* Recipient */}
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <FaPhone className="text-gray-400 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="font-medium text-gray-900">Recipient</div>
+              <div className="truncate">{getOrderRecipient(order)}</div>
+            </div>
+          </div>
+          
+          {/* Volume */}
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <FaDatabase className="text-gray-400 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="font-medium text-gray-900">Volume</div>
+              <div className="truncate">{getOrderVolume(order)}</div>
+            </div>
+          </div>
+          
+          {/* Total */}
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <FaMoneyBillWave className="text-gray-400 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="font-medium text-gray-900">Total</div>
+              <div className="truncate">{formatCurrency(order.total)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Type and Items Count */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <FaUser className="text-gray-400" />
+            <span className="font-medium">Type:</span>
+            <span className="capitalize">{order.orderType}</span>
+            <span className="text-gray-400">•</span>
+            <span>{order.items?.length || 0} item(s)</span>
           </div>
         </div>
 
         {/* Cancel Order Action */}
         {canUserCancelOrder(order) && (
-          <div className="flex gap-2 mb-3">
+          <div className="flex justify-end">
             <Button
               size="xs"
               variant="outline"
@@ -273,35 +301,6 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
               <FaTimes className="mr-1" />
               {order.status === 'draft' ? 'Delete Draft' : 'Cancel'}
             </Button>
-          </div>
-        )}
-
-        {/* Expandable Items Section */}
-        {order.items && order.items.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-900 transition-colors mb-2"
-            >
-              {expanded ? <FaChevronUp /> : <FaChevronDown />}
-              Show {order.items.length} item(s)
-            </button>
-            {expanded && (
-              <div className="space-y-2">
-                {order.items.map((item) => (
-                  <div key={item._id} className="bg-gray-50 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-medium text-gray-900">{item.packageDetails?.name || 'Bundle'}</span>
-                      <span className="text-xs text-gray-500">{item.customerPhone}</span>
-                      <span className="text-xs text-gray-500">{item.bundleSize?.value}{item.bundleSize?.unit}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(item.processingStatus)}`}>{item.processingStatus}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </div>

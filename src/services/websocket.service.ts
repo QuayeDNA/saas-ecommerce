@@ -18,10 +18,22 @@ class WebSocketService {
     }
 
     this.currentUserId = userId;
-    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:5050'}?userId=${userId}`;
+    
+    // Check if we're in production (Vercel) or if WebSocket URL is not available
+    const isProduction = import.meta.env.PROD || window.location.hostname !== 'localhost';
+    const wsUrl = import.meta.env.VITE_API_URL;
+    
+    // If we're in production and no WebSocket URL is configured, skip WebSocket and use polling only
+    if (isProduction && !wsUrl) {
+      this.startPolling(userId);
+      return;
+    }
+    
+    // Use WebSocket URL or fallback to localhost for development
+    const finalWsUrl = `${wsUrl || 'ws://localhost:5050'}?userId=${userId}`;
     
     try {
-      this.ws = new WebSocket(wsUrl);
+      this.ws = new WebSocket(finalWsUrl);
       
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
@@ -33,7 +45,7 @@ class WebSocketService {
         try {
           const data = JSON.parse(event.data);
           this.handleMessage(data);
-        } catch (error) {
+        } catch {
           // Failed to parse WebSocket message
         }
       };
@@ -48,7 +60,7 @@ class WebSocketService {
         // Start polling when WebSocket fails
         this.startPolling(userId);
       };
-    } catch (error) {
+    } catch {
       // Start polling when WebSocket fails
       this.startPolling(userId);
     }
@@ -62,7 +74,8 @@ class WebSocketService {
     this.pollingInterval = setInterval(async () => {
       try {
         // Poll for wallet updates
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050'}/api/wallet/info`, {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+        const response = await fetch(`${apiUrl}/api/wallet/info`, {
           headers: {
             'Authorization': `Bearer ${this.getAuthToken()}`,
             'Content-Type': 'application/json'
@@ -87,7 +100,7 @@ class WebSocketService {
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Polling error
       }
     }, this.pollingDelay);
@@ -183,7 +196,7 @@ class WebSocketService {
       callbacks.forEach(callback => {
         try {
           callback(data);
-        } catch (error) {
+        } catch {
           // Error in WebSocket callback
         }
       });
