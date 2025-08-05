@@ -5,13 +5,13 @@ import { useWallet } from '../hooks/use-wallet';
 import { useOrder } from '../contexts/OrderContext';
 import { useProvider } from '../hooks/use-provider';
 import { Card, CardHeader, CardBody, Badge, Spinner } from '../design-system';
-import { FaPhone, FaChartLine, FaWallet } from 'react-icons/fa';
+import { FaPhone, FaChartLine, FaWallet, FaShoppingCart } from 'react-icons/fa';
 import type { WalletTransaction } from '../types/wallet';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement } from 'chart.js';
+import { Line, Bar } from 'react-chartjs-2';
 
-// Register Chart.js components including Filler plugin
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+// Register Chart.js components including Filler and Bar plugins
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement);
 
 // Define the 4 specific packages that should be displayed
 const quickActionPackages = [
@@ -153,8 +153,8 @@ export const DashboardPage = () => {
     loadDashboardData();
   }, [getTransactionHistory, getAgentAnalytics]);
 
-  // Prepare chart data from transactions
-  const prepareChartData = (transactions: WalletTransaction[]) => {
+  // Prepare transaction chart data - Daily transaction amounts
+  const prepareTransactionChartData = (transactions: WalletTransaction[]) => {
     if (transactions.length === 0) {
       return {
         labels: ['No data'],
@@ -198,9 +198,35 @@ export const DashboardPage = () => {
     };
   };
 
-  const chartData = prepareChartData(recentTransactions);
+  // Prepare order analytics chart data - Order completion trends
+  const prepareOrderAnalyticsChartData = () => {
+    const labels = ['Total Orders', 'Completed', 'Pending'];
+    const data = [orderStats.totalOrders, orderStats.completedOrders, orderStats.totalOrders - orderStats.completedOrders];
+    
+    return {
+      labels,
+      datasets: [{
+        label: 'Orders',
+        data,
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',   // Blue for total
+          'rgba(34, 197, 94, 0.8)',    // Green for completed
+          'rgba(251, 191, 36, 0.8)'    // Yellow for pending
+        ],
+        borderColor: [
+          'rgb(59, 130, 246)',
+          'rgb(34, 197, 94)',
+          'rgb(251, 191, 36)'
+        ],
+        borderWidth: 1
+      }]
+    };
+  };
 
-  const chartOptions = {
+  const transactionChartData = prepareTransactionChartData(recentTransactions);
+  const orderAnalyticsChartData = prepareOrderAnalyticsChartData();
+
+  const transactionChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -223,6 +249,32 @@ export const DashboardPage = () => {
             const value = typeof tickValue === 'string' ? parseFloat(tickValue) : tickValue;
             return `₵${value}`;
           }
+        }
+      }
+    }
+  };
+
+  const orderAnalyticsChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        callbacks: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          label: function(context: any) {
+            return `${context.label}: ${context.parsed.y} orders`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1
         }
       }
     }
@@ -258,7 +310,7 @@ export const DashboardPage = () => {
           ) : providersLoading ? (
             <div className="col-span-full text-center py-8">
               <Spinner />
-              <p className="text-gray-500 text-sm mt-2">Loading provider data...</p>
+              <p className="text-sm text-gray-500 mt-2">Loading provider data...</p>
             </div>
           ) : getPackagesWithLogos().length === 0 ? (
             <div className="col-span-full text-center py-8 text-gray-500">
@@ -331,12 +383,42 @@ export const DashboardPage = () => {
         </div>
       </div>
       
+      {/* Order Analytics Chart */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-800">Order Analytics (Last 30 Days)</h3>
+            <Link to="./orders" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+              View Orders
+            </Link>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {loading ? (
+            <div className="flex justify-center items-center h-40 sm:h-48">
+              <Spinner />
+            </div>
+          ) : orderStats.totalOrders === 0 ? (
+            <div className="bg-gray-50 h-40 sm:h-48 flex items-center justify-center rounded">
+              <div className="text-center">
+                <FaShoppingCart className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                <p className="text-gray-400 text-sm">No order data available</p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-40 sm:h-48">
+              <Bar data={orderAnalyticsChartData} options={orderAnalyticsChartOptions} />
+            </div>
+          )}
+        </CardBody>
+      </Card>
+      
       {/* Transaction Chart */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-800">Last 30 Days Transactions</h3>
-            <Link to="/wallet" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+            <h3 className="text-lg font-medium text-gray-800">Recent Transaction Trends</h3>
+            <Link to="./wallet" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
               View Details
             </Link>
           </div>
@@ -355,7 +437,7 @@ export const DashboardPage = () => {
             </div>
           ) : (
             <div className="h-40 sm:h-48">
-              <Line data={chartData} options={chartOptions} />
+              <Line data={transactionChartData} options={transactionChartOptions} />
             </div>
           )}
         </CardBody>
