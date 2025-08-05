@@ -382,16 +382,18 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 >
                   Table
                 </button>
-                <button
-                  onClick={() => setViewMode('excel')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    viewMode === 'excel'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Excel
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setViewMode('excel')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                      viewMode === 'excel'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Excel
+                  </button>
+                )}
               </div>
             </div>
           </div>
