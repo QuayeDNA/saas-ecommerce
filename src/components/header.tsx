@@ -106,7 +106,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         {/* Main Header Row */}
         <div className="flex items-center justify-between gap-4">
           {/* Left Section: Menu + Greeting */}
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+          <div className="flex items-center gap-0 sm:gap-4 min-w-0 flex-1">
             {/* Mobile Menu Button */}
             <Button
               variant="ghost"
@@ -135,7 +135,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 ) : showGreeting ? (
                   <div className="transform transition-all duration-500 ease-in-out animate-slide-in-from-bottom">
                     <div className="flex items-center gap-3">
-                      <div className="bg-blue-50 text-blue-600 p-1.5 rounded-md flex-shrink-0">
+                      <div className="flex-shrink-0">
                         <span className="text-lg sm:text-xl">
                           {getGreeting().emoji}
                         </span>
