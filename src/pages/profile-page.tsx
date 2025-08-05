@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth, useUser } from '../hooks';
+import { useAuth, useUser, useWallet } from '../hooks';
 import { Card, CardBody, CardHeader, Button, Badge, Alert } from '../design-system';
-import { FaEdit, FaKey, FaUser, FaEnvelope, FaPhone, FaCalendar, FaWallet, FaStore, FaBriefcase } from 'react-icons/fa';
+import { FaEdit, FaKey, FaUser, FaEnvelope, FaPhone, FaCalendar, FaWallet, FaStore, FaBriefcase, FaWifi, FaSync } from 'react-icons/fa';
 import type { User } from '../types';
 
 export const ProfilePage: React.FC = () => {
   const { authState, logout } = useAuth();
   const { getProfile } = useUser();
+  const { walletBalance, connectionStatus, refreshWallet } = useWallet();
   const [profileData, setProfileData] = useState<User | null>(authState.user);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,8 +40,42 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
+  const getConnectionStatusIndicator = () => {
+    switch (connectionStatus) {
+      case 'websocket':
+        return <FaWifi className="w-4 h-4 text-green-500" />;
+      case 'polling':
+        return <FaSync className="w-4 h-4 text-yellow-500 animate-spin" />;
+      case 'disconnected':
+        return <FaWifi className="w-4 h-4 text-red-500" />;
+      default:
+        return <FaWifi className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'websocket':
+        return 'Live';
+      case 'polling':
+        return 'Syncing';
+      case 'disconnected':
+        return 'Offline';
+      default:
+        return 'Unknown';
+    }
+  };
+
   const handleLogout = () => {
     logout();
+  };
+
+  const handleRefreshWallet = async () => {
+    try {
+      await refreshWallet();
+    } catch (err) {
+      console.error('Failed to refresh wallet:', err);
+    }
   };
 
   if (isLoading) {
@@ -160,9 +195,25 @@ export const ProfilePage: React.FC = () => {
                         <FaWallet className="text-green-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Wallet Balance</p>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-sm font-medium text-gray-500">Wallet Balance</p>
+                          <div className="flex items-center gap-2">
+                            {getConnectionStatusIndicator()}
+                            <span className="text-xs text-gray-500">{getConnectionStatusText()}</span>
+                            <button
+                              onClick={handleRefreshWallet}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              title="Refresh wallet"
+                            >
+                              <FaSync className="w-3 h-3 text-gray-500 hover:text-gray-700" />
+                            </button>
+                          </div>
+                        </div>
                         <p className="text-2xl font-bold text-green-600">
-                          GH¢{profileData.walletBalance?.toFixed(2) || '0.00'}
+                          GH¢{walletBalance?.toFixed(2) || '0.00'}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Real-time balance from live connection
                         </p>
                       </div>
                     </div>
