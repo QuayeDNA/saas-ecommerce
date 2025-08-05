@@ -71,15 +71,39 @@ export const WalletPage = () => {
     }).format(amount);
   };
 
-  // Get transaction type icon and color
-  const getTransactionIcon = (type: string) => {
+  // Get transaction type styling
+  const getTransactionTypeStyles = (type: string) => {
     switch (type) {
       case 'credit':
-        return <FaArrowUp className="text-green-500" />;
+        return {
+          icon: <FaArrowUp className="text-green-600" />,
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          textColor: 'text-green-800',
+          amountColor: 'text-green-600',
+          badgeBg: 'bg-green-100',
+          badgeText: 'text-green-800'
+        };
       case 'debit':
-        return <FaArrowDown className="text-red-500" />;
+        return {
+          icon: <FaArrowDown className="text-red-600" />,
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          textColor: 'text-red-800',
+          amountColor: 'text-red-600',
+          badgeBg: 'bg-red-100',
+          badgeText: 'text-red-800'
+        };
       default:
-        return <FaWallet className="text-gray-500" />;
+        return {
+          icon: <FaWallet className="text-gray-600" />,
+          bgColor: 'bg-gray-50',
+          borderColor: 'border-gray-200',
+          textColor: 'text-gray-800',
+          amountColor: 'text-gray-600',
+          badgeBg: 'bg-gray-100',
+          badgeText: 'text-gray-800'
+        };
     }
   };
 
@@ -98,10 +122,13 @@ export const WalletPage = () => {
     };
 
     return (
-      <div className="flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-2 text-xs sm:text-sm">
         <FaWifi className={statusColors[connectionStatus]} />
-        <span className={statusColors[connectionStatus]}>
+        <span className={`${statusColors[connectionStatus]} hidden sm:inline`}>
           {statusText[connectionStatus]}
+        </span>
+        <span className={`${statusColors[connectionStatus]} sm:hidden`}>
+          {connectionStatus === 'websocket' ? 'Live' : connectionStatus === 'polling' ? 'Polling' : 'Offline'}
         </span>
       </div>
     );
@@ -124,23 +151,24 @@ export const WalletPage = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Wallet</h1>
-            <p className="text-gray-600">Manage your wallet balance and view transaction history</p>
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Wallet</h1>
+            <p className="text-sm sm:text-base text-gray-600">Manage your wallet balance and view transaction history</p>
           </div>
-          <div className="flex items-center gap-4 flex-col">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             {getConnectionStatusIndicator()}
             <button
               onClick={() => refreshWallet()}
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto justify-center"
             >
               <FaSync className={isLoading ? 'animate-spin' : ''} />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden">Sync</span>
             </button>
           </div>
         </div>
@@ -161,34 +189,35 @@ export const WalletPage = () => {
       )}
 
       {/* Wallet Balance Card */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Current Balance</h2>
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Current Balance</h2>
           <button
             onClick={() => setShowTopUpModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm sm:text-base w-full sm:w-auto justify-center"
           >
             <FaPlus />
-            Request Top-up
+            <span className="hidden sm:inline">Request Top-up</span>
+            <span className="sm:hidden">Top-up</span>
           </button>
         </div>
         
-        <div className="text-4xl font-bold text-gray-900 mb-2">
+        <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
           {formatCurrency(walletBalance)}
         </div>
         
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           Available for transactions and purchases
         </p>
       </div>
 
       {/* Transaction History */}
       <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Transaction History</h2>
+        <div className="p-4 sm:p-6 border-b border-gray-200">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Transaction History</h2>
         </div>
         
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {isLoadingTransactions ? (
             <div className="flex items-center justify-center py-8">
               <FaSync className="animate-spin text-blue-600 text-xl" />
@@ -200,39 +229,45 @@ export const WalletPage = () => {
               <p>No transactions found</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction._id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full">
-                      {getTransactionIcon(transaction.type)}
+            <div className="space-y-3 sm:space-y-4">
+              {transactions.map((transaction) => {
+                const styles = getTransactionTypeStyles(transaction.type);
+                return (
+                  <div
+                    key={transaction._id}
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors ${styles.borderColor}`}
+                  >
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full ${styles.bgColor} flex-shrink-0`}>
+                        {styles.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${styles.badgeBg} ${styles.badgeText}`}>
+                            {transaction.type === 'credit' ? 'Credit' : transaction.type === 'debit' ? 'Debit' : 'Transaction'}
+                          </span>
+                        </div>
+                        <p className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                          {transaction.description}
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          {formatDate(transaction.createdAt)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {transaction.description}
+                    
+                    <div className="flex flex-col items-end gap-1 mt-3 sm:mt-0 sm:ml-4">
+                      <p className={`font-semibold text-sm sm:text-base ${styles.amountColor}`}>
+                        {transaction.type === 'credit' ? '+' : '-'}
+                        {formatCurrency(transaction.amount)}
                       </p>
-                      <p className="text-sm text-gray-500">
-                        {formatDate(transaction.createdAt)}
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        Balance: {formatCurrency(transaction.balanceAfter)}
                       </p>
                     </div>
                   </div>
-                  
-                  <div className="text-right">
-                    <p className={`font-semibold ${
-                      transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'credit' ? '+' : '-'}
-                      {formatCurrency(transaction.amount)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Balance: {formatCurrency(transaction.balanceAfter)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           
@@ -243,19 +278,19 @@ export const WalletPage = () => {
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50"
+                  className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 text-sm"
                 >
                   Previous
                 </button>
                 
-                <span className="px-3 py-2 text-gray-600">
+                <span className="px-3 py-2 text-gray-600 text-sm">
                   Page {currentPage} of {totalPages}
                 </span>
                 
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50"
+                  className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 text-sm"
                 >
                   Next
                 </button>
