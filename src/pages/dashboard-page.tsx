@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/use-auth';
 import { useWallet } from '../hooks/use-wallet';
 import { useOrder } from '../contexts/OrderContext';
+import { useProvider } from '../hooks/use-provider';
 import { Card, CardHeader, CardBody, Badge, Spinner } from '../design-system';
 import { FaPhone, FaChartLine, FaWallet } from 'react-icons/fa';
 import type { WalletTransaction } from '../types/wallet';
@@ -12,55 +13,35 @@ import { Line } from 'react-chartjs-2';
 // Register Chart.js components including Filler plugin
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
-// Define the 4 specific packages with their provider info
+// Define the 4 specific packages that should be displayed
 const quickActionPackages = [
   {
     name: 'MTN',
     code: 'MTN',
     providerCode: 'MTN',
-    providerName: 'MTN Ghana',
     color: 'bg-yellow-500',
     bgColor: 'bg-yellow-50',
-    logo: {
-      url: 'https://cdn.worldvectorlogo.com/logos/mtn-new-logo.svg',
-      alt: 'MTN Ghana Logo'
-    }
   },
   {
     name: 'TELECEL',
     code: 'TELECEL',
     providerCode: 'TELECEL',
-    providerName: 'Telecel Ghana',
     color: 'bg-red-500',
     bgColor: 'bg-red-50',
-    logo: {
-      url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTl4R7lA1tlSlrBzf9OrDXIswYytfI7TfvC0w&s',
-      alt: 'Telecel Ghana Logo'
-    }
   },
   {
     name: 'AT BIG TIME',
     code: 'AT-BIG-TIME',
     providerCode: 'AT',
-    providerName: 'AirtelTigo',
     color: 'bg-blue-500',
     bgColor: 'bg-blue-50',
-    logo: {
-      url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7RsFXQJyy3UcW8ruKIzW1nUmMckhJsQXSDw&s',
-      alt: 'AirtelTigo Logo'
-    }
   },
   {
     name: 'AT iShare Premium',
     code: 'AT-ISHARE-PREMIUM',
     providerCode: 'AT',
-    providerName: 'AirtelTigo',
     color: 'bg-purple-600',
     bgColor: 'bg-purple-50',
-    logo: {
-      url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7RsFXQJyy3UcW8ruKIzW1nUmMckhJsQXSDw&s',
-      alt: 'AirtelTigo Logo'
-    }
   }
 ];
 
@@ -68,6 +49,7 @@ export const DashboardPage = () => {
   const { authState } = useAuth();
   const { walletBalance, getTransactionHistory } = useWallet();
   const { getAgentAnalytics } = useOrder();
+  const { providers, loading: providersLoading } = useProvider();
   
   // State for modals and data
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
@@ -85,6 +67,23 @@ export const DashboardPage = () => {
   // Handle quick link click
   const handleQuickLinkClick = (packageCode: string) => {
     navigate(`./packages/${packageCode.toLowerCase()}`);
+  };
+
+  // Get provider logo by provider code
+  const getProviderLogo = (providerCode: string) => {
+    const provider = providers.find(p => p.code === providerCode);
+    return provider?.logo;
+  };
+
+  // Get package with provider logo
+  const getPackagesWithLogos = () => {
+    return quickActionPackages.map(packageItem => {
+      const providerLogo = getProviderLogo(packageItem.providerCode);
+      return {
+        ...packageItem,
+        logo: providerLogo
+      };
+    });
   };
 
   // Format transaction amount
@@ -256,7 +255,12 @@ export const DashboardPage = () => {
               <Spinner />
               <p className="text-gray-500 text-sm mt-2">Loading providers...</p>
             </div>
-          ) : quickActionPackages.length === 0 ? (
+          ) : providersLoading ? (
+            <div className="col-span-full text-center py-8">
+              <Spinner />
+              <p className="text-gray-500 text-sm mt-2">Loading provider data...</p>
+            </div>
+          ) : getPackagesWithLogos().length === 0 ? (
             <div className="col-span-full text-center py-8 text-gray-500">
               <h3 className="text-sm font-medium text-gray-900 mb-2">No providers found</h3>
               <p className="text-sm text-gray-500">
@@ -264,7 +268,7 @@ export const DashboardPage = () => {
               </p>
             </div>
           ) : (
-            quickActionPackages.map((packageItem) => (
+            getPackagesWithLogos().map((packageItem) => (
               <Card 
                 key={packageItem.code} 
                 variant="interactive" 
