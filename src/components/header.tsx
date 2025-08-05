@@ -5,7 +5,7 @@ import { settingsService } from "../services/settings.service";
 import { useToast } from "../design-system/components/toast";
 import { Button } from "../design-system";
 import { Link } from "react-router-dom";
-import { FaPowerOff, FaCheck, FaBars, FaUser, FaSignOutAlt, FaWallet, FaSync, FaStar } from "react-icons/fa";
+import { FaPowerOff, FaCheck, FaBars, FaUser, FaSignOutAlt, FaWallet, FaSync, FaStar, FaWifi } from "react-icons/fa";
 import { NotificationDropdown } from "./notifications/NotificationDropdown";
 
 interface HeaderProps {
@@ -14,13 +14,41 @@ interface HeaderProps {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { authState, logout } = useAuth();
-  const { walletBalance, refreshWallet, isLoading } = useWallet();
+  const { walletBalance, refreshWallet, isLoading, connectionStatus } = useWallet();
   const { siteStatus, refreshSiteStatus } = useSiteStatus();
   const { addToast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showSiteMessage, setShowSiteMessage] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
-  const [isTogglingSite, setIsTogglingSite] = useState(false);  
+  const [isTogglingSite, setIsTogglingSite] = useState(false);
+
+  // Get connection status indicator
+  const getConnectionStatusIndicator = () => {
+    switch (connectionStatus) {
+      case 'websocket':
+        return <FaWifi className="w-3 h-3 text-green-400" />;
+      case 'polling':
+        return <FaSync className="w-3 h-3 text-yellow-400 animate-spin" />;
+      case 'disconnected':
+        return <FaWifi className="w-3 h-3 text-red-400" />;
+      default:
+        return <FaWifi className="w-3 h-3 text-gray-400" />;
+    }
+  };
+
+  // Get connection status text
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'websocket':
+        return 'Live';
+      case 'polling':
+        return 'Syncing';
+      case 'disconnected':
+        return 'Offline';
+      default:
+        return 'Unknown';
+    }
+  };
 
   // Get greeting based on time of day with emoji
   const getGreeting = () => {
@@ -299,8 +327,16 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     <FaWallet className="w-5 h-5 text-green-100" />
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-green-100 mb-1">
-                      Wallet Balance
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium text-green-100">
+                        Wallet Balance
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {getConnectionStatusIndicator()}
+                        <span className="text-xs text-green-200">
+                          {getConnectionStatusText()}
+                        </span>
+                      </div>
                     </div>
                     <div className="text-lg sm:text-xl font-bold">
                       GH¢{walletBalance.toFixed(2)}

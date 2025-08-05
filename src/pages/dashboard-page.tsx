@@ -5,7 +5,7 @@ import { useWallet } from '../hooks/use-wallet';
 import { useOrder } from '../contexts/OrderContext';
 import { useProvider } from '../hooks/use-provider';
 import { Card, CardHeader, CardBody, Badge, Spinner } from '../design-system';
-import { FaPhone, FaChartLine, FaWallet, FaShoppingCart } from 'react-icons/fa';
+import { FaPhone, FaChartLine, FaWallet, FaShoppingCart, FaWifi, FaSync } from 'react-icons/fa';
 import type { WalletTransaction } from '../types/wallet';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
@@ -47,7 +47,7 @@ const quickActionPackages = [
 
 export const DashboardPage = () => {
   const { authState } = useAuth();
-  const { walletBalance, getTransactionHistory } = useWallet();
+  const { walletBalance, getTransactionHistory, connectionStatus, refreshWallet } = useWallet();
   const { getAgentAnalytics } = useOrder();
   const { providers, loading: providersLoading } = useProvider();
   
@@ -63,6 +63,34 @@ export const DashboardPage = () => {
   const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
 
   const navigate = useNavigate();
+
+  // Get connection status indicator
+  const getConnectionStatusIndicator = () => {
+    switch (connectionStatus) {
+      case 'websocket':
+        return <FaWifi className="w-3 h-3 text-green-500" />;
+      case 'polling':
+        return <FaSync className="w-3 h-3 text-yellow-500 animate-spin" />;
+      case 'disconnected':
+        return <FaWifi className="w-3 h-3 text-red-500" />;
+      default:
+        return <FaWifi className="w-3 h-3 text-gray-500" />;
+    }
+  };
+
+  // Get connection status text
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'websocket':
+        return 'Live';
+      case 'polling':
+        return 'Syncing';
+      case 'disconnected':
+        return 'Offline';
+      default:
+        return 'Unknown';
+    }
+  };
 
   // Handle quick link click
   const handleQuickLinkClick = (packageCode: string) => {
@@ -292,8 +320,23 @@ export const DashboardPage = () => {
             Manage your telecom services and view your transaction history here.
           </p>
           <div className="bg-green-50 p-3 rounded-lg flex justify-between items-center wallet-balance">
-            <span className="text-sm text-gray-600">Wallet Balance</span>
-            <span className="font-bold text-green-700">{formatAmount(walletBalance)}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Wallet Balance</span>
+              <div className="flex items-center gap-1">
+                {getConnectionStatusIndicator()}
+                <span className="text-xs text-gray-500">{getConnectionStatusText()}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-green-700">{formatAmount(walletBalance)}</span>
+              <button
+                onClick={refreshWallet}
+                className="p-1 hover:bg-green-100 rounded transition-colors"
+                title="Refresh wallet"
+              >
+                <FaSync className="w-3 h-3 text-green-600" />
+              </button>
+            </div>
           </div>
         </CardBody>
       </Card>
@@ -376,7 +419,13 @@ export const DashboardPage = () => {
           </Card>
           <Card size="sm">
             <CardBody className="text-center">
-              <div className="text-gray-500 text-xs mb-1">Wallet Balance</div>
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <div className="text-gray-500 text-xs">Wallet Balance</div>
+                <div className="flex items-center gap-1">
+                  {getConnectionStatusIndicator()}
+                  <span className="text-xs text-gray-400">{getConnectionStatusText()}</span>
+                </div>
+              </div>
               <div className="text-xl font-bold text-green-700">{formatAmount(walletBalance)}</div>
             </CardBody>
           </Card>

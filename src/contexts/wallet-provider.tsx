@@ -78,7 +78,7 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
     }
   }, [getUserId]);
 
-  // Monitor connection status
+  // Monitor connection status and ensure WebSocket is connected
   useEffect(() => {
     const checkConnectionStatus = () => {
       if (websocketService.isConnected()) {
@@ -110,9 +110,17 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
       // Listen for wallet updates
       websocketService.on('wallet_update', handleWalletUpdate);
       
-      // Cleanup WebSocket listeners on unmount
+      // Set up periodic refresh as fallback (every 30 seconds)
+      const fallbackInterval = setInterval(() => {
+        if (connectionStatus === 'disconnected') {
+          refreshWallet();
+        }
+      }, 30000);
+      
+      // Cleanup WebSocket listeners and interval on unmount
       return () => {
         websocketService.off('wallet_update', handleWalletUpdate);
+        clearInterval(fallbackInterval);
       };
     } else if (!authState.isAuthenticated) {
       // Disconnect WebSocket when user logs out
@@ -121,7 +129,19 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
       setWalletInfo(null);
       setConnectionStatus('disconnected');
     }
-  }, [authState.isAuthenticated, authState.user, refreshWallet, handleWalletUpdate, getUserId]);
+  }, [authState.isAuthenticated, authState.user, refreshWallet, handleWalletUpdate, getUserId, connectionStatus]);
+
+  // Auto-refresh wallet when connection status changes to ensure consistency
+  useEffect(() => {
+    if (authState.isAuthenticated && connectionStatus === 'websocket') {
+      // When WebSocket connects, refresh wallet to ensure we have latest data
+      const timer = setTimeout(() => {
+        refreshWallet();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [connectionStatus, authState.isAuthenticated, refreshWallet]);
 
   const value = useMemo(() => ({
     walletBalance: walletInfo?.balance ?? 0,
