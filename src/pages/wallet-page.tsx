@@ -132,7 +132,7 @@ export const WalletPage = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Wallet</h1>
             <p className="text-gray-600">Manage your wallet balance and view transaction history</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-col">
             {getConnectionStatusIndicator()}
             <button
               onClick={() => refreshWallet()}
