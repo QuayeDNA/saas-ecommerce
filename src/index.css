@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "react-data-grid/lib/styles.css";
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;600;700&display=swap');
 
@@ -58,4 +59,48 @@ a, button, input, select, textarea {
 
 .animate-slide-in-from-bottom {
   animation: slide-in-from-bottom 0.5s ease-out;
+}
+
+/* Excel View Custom Styles */
+.rdg-light {
+  --rdg-color: #374151;
+  --rdg-summary-border-color: #d1d5db;
+  --rdg-border-color: #e5e7eb;
+  --rdg-summary-background-color: #f9fafb;
+  --rdg-background-color: #ffffff;
+  --rdg-header-background-color: #f3f4f6;
+  --rdg-row-hover-background-color: #f9fafb;
+  --rdg-row-selected-background-color: #dbeafe;
+  --rdg-row-selected-hover-background-color: #bfdbfe;
+  --rdg-checkbox-color: #3b82f6;
+  --rdg-checkbox-focus-color: #1d4ed8;
+  --rdg-checkbox-disabled-color: #9ca3af;
+  --rdg-selection-color: #3b82f6;
+  --rdg-font-size: 14px;
+}
+
+/* Excel-like header styling */
+.rdg-light .rdg-header-row {
+  background-color: #f3f4f6 !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+  border-bottom: 2px solid #d1d5db !important;
+}
+
+/* Excel-like cell styling */
+.rdg-light .rdg-cell {
+  border-right: 1px solid #e5e7eb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  padding: 8px 12px !important;
+}
+
+/* Excel-like row hover */
+.rdg-light .rdg-row:hover {
+  background-color: #f9fafb !important;
+}
+
+/* Excel-like focus styling */
+.rdg-light .rdg-cell:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: -2px !important;
 }

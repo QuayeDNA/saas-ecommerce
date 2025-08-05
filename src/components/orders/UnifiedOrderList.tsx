@@ -7,6 +7,7 @@ import { FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaS
 import type { Order, OrderFilters } from '../../types/order';
 import { UnifiedOrderCard } from './UnifiedOrderCard';
 import { UnifiedOrderTable } from './UnifiedOrderTable';
+import { UnifiedOrderExcel } from './UnifiedOrderExcel';
 import { DraftOrdersHandler } from './DraftOrdersHandler';
 import { SearchAndFilter } from '../common/SearchAndFilter';
 
@@ -41,7 +42,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [viewMode, setViewMode] = useState<'cards' | 'table' | 'excel'>('cards');
   const [showDraftHandler, setShowDraftHandler] = useState(false);
   const [showBulkConfirmDialog, setShowBulkConfirmDialog] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<'cancel' | 'process' | 'complete' | null>(null);
@@ -381,6 +382,16 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 >
                   Table
                 </button>
+                <button
+                  onClick={() => setViewMode('excel')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    viewMode === 'excel'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Excel
+                </button>
               </div>
             </div>
           </div>
@@ -473,7 +484,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             />
           ))}
         </div>
-      ) : (
+      ) : viewMode === 'table' ? (
         <UnifiedOrderTable
           orders={orders}
           isAdmin={isAdmin}
@@ -483,6 +494,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           onSelect={handleSelectOrder}
           selectedOrders={selectedOrders}
           onSelectAll={handleSelectAll}
+          loading={loading}
+        />
+      ) : (
+        <UnifiedOrderExcel 
+          orders={orders}
           loading={loading}
         />
       )}
