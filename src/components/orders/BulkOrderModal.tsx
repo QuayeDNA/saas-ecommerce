@@ -772,7 +772,6 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 siteStatus?.isSiteOpen === false
               }
               className="flex-1"
-              leftIcon={<FaCheckCircle className="flex-shrink-0" />}
               style={{
                 backgroundColor: providerColors.primary,
                 color: providerColors.text,
@@ -780,16 +779,17 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             >
               {loading ? (
                 <>
-                  <Spinner size="sm" />
+                  <Spinner size="sm" className="mr-2" />
                   Processing...
                 </>
               ) : siteStatus?.isSiteOpen === false ? (
                 <>
-                  <FaTimes className="flex-shrink-0" />
+                  <FaTimes className="flex-shrink-0 mr-2" />
                   Site Under Maintenance
                 </>
               ) : (
                 <>
+                  <FaCheckCircle className="flex-shrink-0 mr-2" />
                   Confirm Bulk Order
                 </>
               )}

@@ -122,7 +122,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
         
         <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-[10000]">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+          <div className="bg-gradient-to-r from-[#142850] to-[#0f1f3a] px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <FaMoneyBillWave className="h-6 w-6 text-white" />
@@ -144,11 +144,11 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
                 {Array.from({ length: totalSteps }).map((_, index) => (
-                  <div key={index} className="flex items-center">
+                  <div key={index} className="flex items-center flex-1">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                       index + 1 <= currentStep 
-                        ? 'bg-white text-blue-600' 
-                        : 'bg-blue-200 text-blue-400'
+                        ? 'bg-white text-[#142850]' 
+                        : 'bg-white/20 text-white'
                     }`}>
                       {index + 1 < currentStep ? (
                         <FaCheck className="w-4 h-4" />
@@ -157,14 +157,14 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                       )}
                     </div>
                     {index < totalSteps - 1 && (
-                      <div className={`w-12 h-1 mx-2 ${
-                        index + 1 < currentStep ? 'bg-white' : 'bg-blue-200'
+                      <div className={`flex-1 h-1 mx-2 ${
+                        index + 1 < currentStep ? 'bg-white' : 'bg-white/20'
                       }`} />
                     )}
                   </div>
                 ))}
               </div>
-              <div className="text-xs text-blue-100 text-center">
+              <div className="text-xs text-white text-center">
                 Step {currentStep} of {totalSteps}
               </div>
             </div>
@@ -200,7 +200,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                   <textarea
                     id="description"
                     rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#142850] focus:border-[#142850] sm:text-sm"
                     placeholder="Reason for top-up request..."
                     value={stepData.description}
                     onChange={(e) => updateStepData('description', e.target.value)}
@@ -209,7 +209,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                 
                 <Alert status="info" className="mt-4">
                   <div className="flex items-start">
-                    <FaCheck className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <FaCheck className="h-4 w-4 mt-0.5 flex-shrink-0 text-[#142850]" />
                     <div className="ml-3">
                       <p className="text-sm">
                         Your top-up request will be reviewed by an administrator. You'll be notified once it's processed.
@@ -237,17 +237,17 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                     onClick={() => updateStepData('contactMethod', 'whatsapp')}
                     className={`w-full p-4 border-2 rounded-lg transition-all duration-200 flex items-center space-x-3 ${
                       stepData.contactMethod === 'whatsapp'
-                        ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
+                        ? 'border-[#142850] bg-[#142850]/10 text-[#142850]'
+                        : 'border-gray-300 hover:border-[#142850] hover:bg-[#142850]/5'
                     }`}
                   >
-                    <FaWhatsapp className={`w-6 h-6 ${stepData.contactMethod === 'whatsapp' ? 'text-green-600' : 'text-gray-400'}`} />
+                    <FaWhatsapp className={`w-6 h-6 ${stepData.contactMethod === 'whatsapp' ? 'text-[#142850]' : 'text-gray-400'}`} />
                     <div className="text-left">
                       <div className="font-medium">WhatsApp Message</div>
                       <div className="text-sm opacity-75">Send a pre-filled message to admin</div>
                     </div>
                     {stepData.contactMethod === 'whatsapp' && (
-                      <FaCheck className="w-5 h-5 text-green-600 ml-auto" />
+                      <FaCheck className="w-5 h-5 text-[#142850] ml-auto" />
                     )}
                   </button>
                 </div>
@@ -285,7 +285,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                 
                 <Alert status="info">
                   <div className="flex items-start">
-                    <FaCheck className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <FaCheck className="h-4 w-4 mt-0.5 flex-shrink-0 text-[#142850]" />
                     <div className="ml-3">
                       <p className="text-sm">
                         Your request will be submitted and you can contact the admin using your selected method.
@@ -306,7 +306,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                 disabled={isSubmitting}
                 className="flex items-center"
               >
-                <FaArrowLeft className="w-4 h-4 ml-2" />
+                <FaArrowLeft className="w-4 h-4 mr-2" />
                 <span>Back</span>
               </Button>
             )}
@@ -318,7 +318,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                 className="flex items-center space-x-2 ml-auto"
               >
                 <span>Next</span>
-                <FaArrowRight className="w-4 h-4" />
+                <FaArrowRight className="w-4 h-4 ml-2" />
               </Button>
             )}
             
@@ -343,7 +343,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                     </>
                   ) : (
                     <>
-                      <FaCheck className="w-4 h-4" />
+                      <FaCheck className="w-4 h-4 mr-2" />
                       <span>Submit Request</span>
                     </>
                   )}
