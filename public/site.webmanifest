@@ -23,8 +23,8 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#3B82F6",
-  "background_color": "#3B82F6",
+  "theme_color": "#142850",
+  "background_color": "#142850",
   "display": "standalone",
   "start_url": "/",
   "description": "A mobile-first SaaS platform for telecommunication services in Ghana",
