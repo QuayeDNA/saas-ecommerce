@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth, useWallet } from "../hooks";
 import { useOrder } from "../contexts/OrderContext";
 import { useSiteStatus } from "../contexts/site-status-context";
@@ -71,7 +71,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   };
 
   // Fetch user spending analytics
-  const fetchUserSpending = useCallback(async () => {
+  const fetchUserSpending = async () => {
     if (authState.user?.userType !== 'agent') return;
     
     setSpendingLoading(true);
@@ -84,18 +84,14 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     } finally {
       setSpendingLoading(false);
     }
-  }, [authState.user?.userType, getAgentAnalytics]);
+  };
 
-  // Fetch spending data on mount and when user changes
+  // Fetch spending data on mount
   useEffect(() => {
     if (authState.isAuthenticated && authState.user?.userType === 'agent') {
       fetchUserSpending();
-      
-      // Set up periodic refresh every 30 seconds to stay in sync
-      const interval = setInterval(fetchUserSpending, 30000);
-      return () => clearInterval(interval);
     }
-  }, [authState.isAuthenticated, authState.user, fetchUserSpending]);
+  }, [authState.isAuthenticated, authState.user]);
 
   // Handle site toggle for super admins
   const handleSiteToggle = async () => {
@@ -392,7 +388,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                         </span>
                       </div>
                     </div>
-                    <div className="text-base sm:text-lg lg:text-xl font-bold text-white">
+                    <div className="text-base sm:text-lg lg:text-xl font-bold text-white text-left">
                       {formatAmount(walletBalance)}
                     </div>
                   </div>
