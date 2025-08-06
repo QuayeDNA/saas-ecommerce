@@ -635,83 +635,100 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             </Card>
 
             {/* Valid Orders */}
-            <Card noPadding>
-              <CardHeader className="bg-[#142850] border-[#0f1f3a] p-3 rounded-lg m-0">
-                <h3 className="font-medium text-white">
-                  Valid Orders ({validOrders.length})
-                </h3>
-              </CardHeader>
-              <CardBody className="p-4">
-                <div className="space-y-3 max-h-40 overflow-y-auto">
-                  {validOrders.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-green-50 rounded-lg"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {item.customerPhone}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          {item.dataVolume} GB
-                        </div>
+            <div className="mb-4">
+              <h3 className="font-medium text-green-600 mb-2 text-base sm:text-lg">
+                Valid Orders ({validOrders.length})
+              </h3>
+              
+              <Card noPadding>
+                {validOrders.length > 0 ? (
+                  <>
+                    <CardHeader className="bg-[#142850] text-white p-3 sm:p-4">
+                      <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                        <div className="font-medium">Recipient</div>
+                        <div className="font-medium">Data (GB)</div>
+                        <div className="font-medium text-right">Price</div>
                       </div>
-                      <div className="text-right ml-2">
-                        {item.bundle && (
-                          <div
-                            className="text-sm font-medium"
-                            style={{ color: providerColors.primary }}
-                          >
-                            {item.bundle.currency} {item.bundle.price}
+                    </CardHeader>
+                    <CardBody className="p-0">
+                      <div className="divide-y divide-gray-100">
+                        {validOrders.map((item, index) => (
+                          <div key={index} className="p-3 sm:p-4 hover:bg-gray-50">
+                            <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                              <div className="font-medium truncate">
+                                {item.customerPhone}
+                              </div>
+                              <div className="text-gray-600">
+                                {item.dataVolume}
+                              </div>
+                              <div className="text-right font-medium">
+                                {item.bundle && (
+                                  <span style={{ color: providerColors.primary }}>
+                                    {item.bundle.currency} {item.bundle.price}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        )}
+                        ))}
                       </div>
+                    </CardBody>
+                  </>
+                ) : (
+                  <CardBody className="p-6 text-center">
+                    <div className="text-gray-500 text-sm sm:text-base">
+                      No valid orders found
                     </div>
-                  ))}
-                </div>
-              </CardBody>
-            </Card>
+                  </CardBody>
+                )}
+              </Card>
+            </div>
 
             {/* Invalid Orders */}
             {invalidOrders.length > 0 && (
-              <Card noPadding>
-                <CardHeader className="bg-[#142850] border-[#0f1f3a] p-3 rounded-lg m-0">
-                  <h3 className="font-medium text-white">
-                    Invalid Orders ({invalidOrders.length})
-                  </h3>
-                </CardHeader>
-                <CardBody className="p-4">
-                  <div className="space-y-3 max-h-40 overflow-y-auto">
-                    {invalidOrders.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-red-50 rounded-lg"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">
-                            {item.customerPhone}
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            {item.dataVolume} GB
+              <div className="mb-4">
+                <h3 className="font-medium text-red-600 mb-2 text-base sm:text-lg">
+                  Invalid Orders ({invalidOrders.length})
+                </h3>
+                
+                <Card noPadding>
+                  <CardHeader className="bg-[#142850] text-white p-3 sm:p-4">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                      <div className="font-medium">Recipient</div>
+                      <div className="font-medium">Data (GB)</div>
+                      <div className="font-medium">Error</div>
+                    </div>
+                  </CardHeader>
+                  <CardBody className="p-0">
+                    <div className="divide-y divide-gray-100">
+                      {invalidOrders.map((item, index) => (
+                        <div key={index} className="p-3 sm:p-4 hover:bg-gray-50">
+                          <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                            <div className="font-medium truncate">
+                              {item.customerPhone}
+                            </div>
+                            <div className="text-gray-600">
+                              {item.dataVolume}
+                            </div>
+                            <div className="text-red-600">
+                              {item.phoneError && (
+                                <div className="truncate" title={item.phoneError}>
+                                  {item.phoneError}
+                                </div>
+                              )}
+                              {item.dataError && (
+                                <div className="truncate" title={item.dataError}>
+                                  {item.dataError}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right ml-2">
-                          {item.phoneError && (
-                            <div className="text-xs text-red-600 truncate max-w-32">
-                              {item.phoneError}
-                            </div>
-                          )}
-                          {item.dataError && (
-                            <div className="text-xs text-red-600 truncate max-w-32">
-                              {item.dataError}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardBody>
-              </Card>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
             )}
 
             {/* Total */}
@@ -755,6 +772,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 siteStatus?.isSiteOpen === false
               }
               className="flex-1"
+              leftIcon={<FaCheckCircle className="flex-shrink-0" />}
               style={{
                 backgroundColor: providerColors.primary,
                 color: providerColors.text,
@@ -772,7 +790,6 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 </>
               ) : (
                 <>
-                  <FaCheckCircle className="flex-shrink-0" />
                   Confirm Bulk Order
                 </>
               )}
