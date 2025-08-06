@@ -173,33 +173,21 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       title: 'Total Orders',
       value: stats.total,
       icon: <FaChartBar />,
-      iconBgColor: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-      valueColor: 'text-gray-900',
     },
     {
       title: 'Total Revenue',
       value: formatCurrency(stats.totalRevenue),
       icon: <FaMoneyBillWave />,
-      iconBgColor: 'bg-green-100',
-      iconColor: 'text-green-600',
-      valueColor: 'text-green-600',
     },
     {
       title: 'Completed Orders',
       value: stats.completed,
       icon: <FaCheck />,
-      iconBgColor: 'bg-green-100',
-      iconColor: 'text-green-600',
-      valueColor: 'text-green-600',
     },
     {
       title: 'Pending Orders',
       value: stats.pending,
       icon: <FaClock />,
-      iconBgColor: 'bg-yellow-100',
-      iconColor: 'text-yellow-600',
-      valueColor: 'text-yellow-600',
     },
   ];
 

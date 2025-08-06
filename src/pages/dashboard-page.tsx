@@ -369,7 +369,7 @@ export const DashboardPage = () => {
             transform: showSiteMessage ? 'translateY(0)' : 'translateY(-20px)'
           }}
         >
-          <Card className="backdrop-blur-md bg-gray-200/50 border border-white/30 shadow-xl">
+          <Card className="backdrop-blur-md border border-white/30 shadow-xl p-4">
             <CardBody className="text-center">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <div className={`p-3 rounded-full ${getSiteStatusBg()} ${getSiteStatusColor()}`}>
@@ -454,34 +454,34 @@ export const DashboardPage = () => {
       <div className="account-overview">
         <h2 className="text-lg font-medium text-gray-800 mb-3 px-2 sm:px-0">Account Overview</h2>
         <div className="grid grid-cols-2 gap-3">
-          <Card size="sm">
+          <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
-              <div className="text-gray-500 text-xs mb-1">Total Orders</div>
-              <div className="text-xl font-bold">{orderStats.totalOrders}</div>
+              <div className="text-gray-300 text-xs mb-1">Total Orders</div>
+              <div className="text-xl font-bold text-white">{orderStats.totalOrders}</div>
             </CardBody>
           </Card>
-          <Card size="sm">
+          <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
-              <div className="text-gray-500 text-xs mb-1">Amount Spent</div>
-              <div className="text-xl font-bold">{formatAmount(orderStats.totalRevenue)}</div>
+              <div className="text-gray-300 text-xs mb-1">Amount Spent</div>
+              <div className="text-xl font-bold text-white">{formatAmount(orderStats.totalRevenue)}</div>
             </CardBody>
           </Card>
-          <Card size="sm">
+          <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
-              <div className="text-gray-500 text-xs mb-1">Success Rate</div>
-              <div className="text-xl font-bold">{orderStats.successRate}%</div>
+              <div className="text-gray-300 text-xs mb-1">Success Rate</div>
+              <div className="text-xl font-bold text-white">{orderStats.successRate}%</div>
             </CardBody>
           </Card>
-          <Card size="sm">
+          <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <div className="text-gray-500 text-xs">Wallet Balance</div>
-                <div className="flex items-center gap-1">
+                <div className="text-gray-300 text-xs">Wallet Balance</div>
+                <div className="items-center gap-1 hidden sm:flex">
                   {getConnectionStatusIndicator()}
                   <span className="text-xs text-gray-400">{getConnectionStatusText()}</span>
                 </div>
               </div>
-              <div className="text-xl font-bold text-green-700">{formatAmount(walletBalance)}</div>
+              <div className="text-xl font-bold text-green-400">{formatAmount(walletBalance)}</div>
             </CardBody>
           </Card>
         </div>

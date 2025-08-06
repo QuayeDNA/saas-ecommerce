@@ -1,33 +1,35 @@
 // src/components/orders/BulkOrderModal.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  FaTimes, 
-  FaWifi, 
-  FaClock, 
-  FaCheckCircle, 
-  FaFileUpload, 
+import {
+  FaTimes,
+  FaWifi,
+  FaClock,
+  FaCheckCircle,
+  FaFileUpload,
   FaDownload,
   FaPlus,
   FaBox,
   FaExclamationCircle,
   FaDatabase,
+  FaMoneyBillWave,
 } from "react-icons/fa";
 import { useOrder } from "../../contexts/OrderContext";
 import { useSiteStatus } from "../../contexts/site-status-context";
 import { bundleService } from "../../services/bundle.service";
 import { getProviderColors } from "../../utils/provider-colors";
-import { 
-  Dialog, 
-  DialogHeader, 
-  DialogBody, 
+import {
+  Dialog,
+  DialogHeader,
+  DialogBody,
   DialogFooter,
-  Button, 
-  Card, 
-  CardBody, 
-  Badge, 
-  Alert, 
-  Spinner
+  Button,
+  Card,
+  CardBody,
+  Badge,
+  Alert,
+  Spinner,
+  CardHeader,
 } from "../../design-system";
 import type { Bundle } from "../../types/package";
 
@@ -100,7 +102,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const validatePhone = (phone: string): string | null => {
     // Remove any non-digit characters except +
     const cleanPhone = phone.replace(/[^\d+]/g, "");
-    
+
     // Convert to local format if it starts with +233
     let localPhone = cleanPhone;
     if (cleanPhone.startsWith("+233")) {
@@ -150,7 +152,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
           dataVolume: 0,
           dataUnit: "GB",
           bundle: undefined,
-          dataError: "Do not include GB or MB, just enter the number (e.g. 10)"
+          dataError: "Do not include GB or MB, just enter the number (e.g. 10)",
         });
         continue;
       }
@@ -234,13 +236,15 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const handleConfirmOrder = async () => {
     try {
       setError(null);
-      
+
       // Check if site is closed
       if (siteStatus?.isSiteOpen === false) {
-        setError(`Site is currently under maintenance: ${siteStatus.customMessage}`);
+        setError(
+          `Site is currently under maintenance: ${siteStatus.customMessage}`
+        );
         return;
       }
-      
+
       const items = validOrders.map(
         (item) => `${item.customerPhone},${item.dataVolume}GB`
       );
@@ -252,13 +256,16 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     } catch (err) {
       if (err instanceof Error) {
         const errorMessage = err.message;
-        
+
         // Check if site is closed
-        if (errorMessage.includes('maintenance') || errorMessage.includes('Site is currently under maintenance')) {
+        if (
+          errorMessage.includes("maintenance") ||
+          errorMessage.includes("Site is currently under maintenance")
+        ) {
           setError(errorMessage);
           return;
         }
-        
+
         setError(errorMessage || "Failed to create bulk order");
       } else {
         setError("Failed to create bulk order");
@@ -362,15 +369,17 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                           <span className="truncate">
                             {bundle.dataVolume} {bundle.dataUnit}
                           </span>
-                          <span className="text-gray-500 hidden sm:inline">•</span>
+                          <span className="text-gray-500 hidden sm:inline">
+                            •
+                          </span>
                           <FaClock className="text-green-500 flex-shrink-0" />
                           <span className="truncate">
-                            {bundle.validityUnit === 'unlimited'
-                              ? 'Unlimited'
+                            {bundle.validityUnit === "unlimited"
+                              ? "Unlimited"
                               : `${bundle.validity} ${bundle.validityUnit}`}
                           </span>
                         </div>
-                        <div 
+                        <div
                           className="font-bold text-sm flex-shrink-0 ml-2"
                           style={{ color: providerColors.primary }}
                         >
@@ -393,22 +402,32 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     variant={importMethod === "file" ? "primary" : "secondary"}
                     onClick={() => setImportMethod("file")}
                     className="flex-1"
-                    style={importMethod === "file" ? {
-                      backgroundColor: providerColors.primary,
-                      color: providerColors.text
-                    } : {}}
+                    style={
+                      importMethod === "file"
+                        ? {
+                            backgroundColor: providerColors.primary,
+                            color: providerColors.text,
+                          }
+                        : {}
+                    }
                   >
                     <FaFileUpload className="flex-shrink-0" />
                     <span className="truncate">Import CSV/Excel</span>
                   </Button>
                   <Button
-                    variant={importMethod === "manual" ? "primary" : "secondary"}
+                    variant={
+                      importMethod === "manual" ? "primary" : "secondary"
+                    }
                     onClick={() => setImportMethod("manual")}
                     className="flex-1"
-                    style={importMethod === "manual" ? {
-                      backgroundColor: providerColors.primary,
-                      color: providerColors.text
-                    } : {}}
+                    style={
+                      importMethod === "manual"
+                        ? {
+                            backgroundColor: providerColors.primary,
+                            color: providerColors.text,
+                          }
+                        : {}
+                    }
                   >
                     <FaPlus className="flex-shrink-0" />
                     <span className="truncate">Manual Entry</span>
@@ -440,7 +459,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     className="w-full p-2 border border-gray-300 rounded-lg text-sm"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    Supported formats: CSV, Excel. Format: PhoneNumber DataVolume
+                    Supported formats: CSV, Excel. Format: PhoneNumber
+                    DataVolume
                   </p>
                 </CardBody>
               </Card>
@@ -466,8 +486,12 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                       className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-2">
-                      Format: PhoneNumber DataVolume (e.g., 0241234567 5). All values are in GB.<br/>
-                      <span className="text-red-500 font-semibold">Do not type GB or MB, just the number.</span>
+                      Format: PhoneNumber DataVolume (e.g., 0241234567 5). All
+                      values are in GB.
+                      <br />
+                      <span className="text-red-500 font-semibold">
+                        Do not type GB or MB, just the number.
+                      </span>
                     </p>
                   </div>
                 </CardBody>
@@ -484,11 +508,15 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             {/* Continue Button */}
             <Button
               onClick={handleContinue}
-              disabled={orderItems.length === 0 || loading || (siteStatus?.isSiteOpen === false)}
+              disabled={
+                orderItems.length === 0 ||
+                loading ||
+                siteStatus?.isSiteOpen === false
+              }
               className="w-full"
-              style={{ 
-                backgroundColor: providerColors.primary, 
-                color: providerColors.text 
+              style={{
+                backgroundColor: providerColors.primary,
+                color: providerColors.text,
               }}
             >
               {loading ? (
@@ -496,8 +524,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                   <Spinner size="sm" />
                   Processing...
                 </>
-              ) : (siteStatus?.isSiteOpen === false) ? (
-                'Site Under Maintenance'
+              ) : siteStatus?.isSiteOpen === false ? (
+                "Site Under Maintenance"
               ) : (
                 `Continue (${orderItems.length} items)`
               )}
@@ -507,60 +535,99 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
           // Order Summary
           <div className="space-y-4">
             {/* Package Summary Mini Card */}
-            <Card>
-              <CardBody>
-                <div
-                  className="rounded-lg flex items-center gap-4 p-4 mb-4"
-                  style={{
-                    backgroundColor: providerColors.background,
-                    border: `1.5px solid ${providerColors.primary}`,
-                  }}
-                >
-                  <div
-                    className="flex items-center justify-center w-14 h-14 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: providerColors.primary }}
-                  >
-                    <FaWifi
-                      className="text-2xl"
-                      style={{ color: providerColors.text }}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
-                      <span
-                        className="text-lg font-bold truncate"
-                        style={{ color: providerColors.primary }}
+            <Card
+              noPadding
+              className="rounded-lg mb-4"
+              style={{
+                backgroundColor: providerColors.background,
+                border: `1.5px solid ${providerColors.primary}`,
+              }}
+            >
+              <CardBody className="p-4">
+                <div>
+                  {/* Header Row */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: providerColors.primary }}
                       >
-                        {providerName}
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        <Badge colorScheme="success" size="sm">
-                          <FaCheckCircle className="flex-shrink-0" />
-                          {validOrders.length} Valid
-                        </Badge>
-                        <Badge colorScheme="error" size="sm">
-                          <FaExclamationCircle className="flex-shrink-0" />
-                          {invalidOrders.length} Invalid
-                        </Badge>
+                        <FaWifi
+                          className="text-lg sm:text-2xl"
+                          style={{ color: providerColors.text }}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <h3
+                          className="text-lg sm:text-xl font-bold truncate"
+                          style={{ color: providerColors.primary }}
+                        >
+                          {providerName}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                          Package Summary
+                        </p>
                       </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1 text-gray-700">
-                        <FaDatabase className="text-blue-500 flex-shrink-0" />
-                        <span className="font-semibold">{totalGB} GB</span>
-                        <span className="hidden sm:inline">Total</span>
-                      </span>
-                      <span className="flex items-center gap-1 text-gray-700">
-                        <FaBox className="text-yellow-500 flex-shrink-0" />
-                        <span className="font-semibold">{orderItems.length}</span>
-                        <span className="hidden sm:inline">Orders</span>
-                      </span>
-                      <span className="flex items-center gap-1 text-gray-700">
-                        <span className="font-semibold">
-                          {getCurrencySymbol(currency)}{totalPrice.toFixed(2)}
+
+                    {/* Status Badges */}
+                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                      <Badge
+                        colorScheme="success"
+                        size="sm"
+                        className="whitespace-nowrap"
+                      >
+                        <FaCheckCircle className="flex-shrink-0" />
+                        <span className="ml-1">{validOrders.length} Valid</span>
+                      </Badge>
+                      <Badge
+                        colorScheme="error"
+                        size="sm"
+                        className="whitespace-nowrap"
+                      >
+                        <FaExclamationCircle className="text-red-500 flex-shrink-0" />
+                        <span className="ml-1">
+                          {invalidOrders.length} Invalid
                         </span>
-                        <span className="hidden sm:inline">Total</span>
-                      </span>
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div className="flex items-center gap-2 p-2 sm:p-3 bg-white/50 rounded-lg">
+                      <FaDatabase className="text-blue-500 flex-shrink-0 text-sm sm:text-base" />
+                      <div className="min-w-0">
+                        <div className="text-xs text-gray-600">Total Data</div>
+                        <div className="font-semibold text-sm sm:text-base">
+                          {totalGB} GB
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-2 sm:p-3 bg-white/50 rounded-lg">
+                      <FaBox className="text-yellow-500 flex-shrink-0 text-sm sm:text-base" />
+                      <div className="min-w-0">
+                        <div className="text-xs text-gray-600">
+                          Total Orders
+                        </div>
+                        <div className="font-semibold text-sm sm:text-base">
+                          {orderItems.length}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-2 sm:p-3 bg-white/50 rounded-lg">
+                      <FaMoneyBillWave className="text-green-500 flex-shrink-0 text-sm sm:text-base" />
+                      <div className="min-w-0">
+                        <div className="text-xs text-gray-600">
+                          Total Amount
+                        </div>
+                        <div className="font-semibold text-sm sm:text-base">
+                          {getCurrencySymbol(currency)}
+                          {totalPrice.toFixed(2)}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -568,11 +635,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             </Card>
 
             {/* Valid Orders */}
-            <Card>
-              <CardBody>
-                <h3 className="font-medium text-green-800 mb-3">
+            <Card noPadding>
+              <CardHeader className="bg-[#142850] border-[#0f1f3a] p-3 rounded-lg m-0">
+                <h3 className="font-medium text-white">
                   Valid Orders ({validOrders.length})
                 </h3>
+              </CardHeader>
+              <CardBody className="p-4">
                 <div className="space-y-3 max-h-40 overflow-y-auto">
                   {validOrders.map((item, index) => (
                     <div
@@ -580,14 +649,16 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                       className="flex items-center justify-between p-3 bg-green-50 rounded-lg"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">{item.customerPhone}</div>
+                        <div className="font-medium text-sm truncate">
+                          {item.customerPhone}
+                        </div>
                         <div className="text-xs text-gray-600">
                           {item.dataVolume} GB
                         </div>
                       </div>
                       <div className="text-right ml-2">
                         {item.bundle && (
-                          <div 
+                          <div
                             className="text-sm font-medium"
                             style={{ color: providerColors.primary }}
                           >
@@ -603,11 +674,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
             {/* Invalid Orders */}
             {invalidOrders.length > 0 && (
-              <Card>
-                <CardBody>
-                  <h3 className="font-medium text-red-800 mb-3">
+              <Card noPadding>
+                <CardHeader className="bg-[#142850] border-[#0f1f3a] p-3 rounded-lg m-0">
+                  <h3 className="font-medium text-white">
                     Invalid Orders ({invalidOrders.length})
                   </h3>
+                </CardHeader>
+                <CardBody className="p-4">
                   <div className="space-y-3 max-h-40 overflow-y-auto">
                     {invalidOrders.map((item, index) => (
                       <div
@@ -645,9 +718,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             <div className="border-t pt-4">
               <div className="flex justify-between items-center text-lg font-bold">
                 <span>Total Amount:</span>
-                <span 
-                  style={{ color: providerColors.primary }}
-                >
+                <span style={{ color: providerColors.primary }}>
                   GHS{" "}
                   {validOrders
                     .reduce(
@@ -673,20 +744,20 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       {showSummary && (
         <DialogFooter>
           <div className="flex flex-col sm:flex-row gap-2 w-full">
-            <Button
-              variant="secondary"
-              onClick={handleBack}
-              className="flex-1"
-            >
+            <Button variant="secondary" onClick={handleBack} className="flex-1">
               Back
             </Button>
             <Button
               onClick={handleConfirmOrder}
-              disabled={loading || validOrders.length === 0 || (siteStatus?.isSiteOpen === false)}
+              disabled={
+                loading ||
+                validOrders.length === 0 ||
+                siteStatus?.isSiteOpen === false
+              }
               className="flex-1"
-              style={{ 
-                backgroundColor: providerColors.primary, 
-                color: providerColors.text 
+              style={{
+                backgroundColor: providerColors.primary,
+                color: providerColors.text,
               }}
             >
               {loading ? (
@@ -694,7 +765,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                   <Spinner size="sm" />
                   Processing...
                 </>
-              ) : (siteStatus?.isSiteOpen === false) ? (
+              ) : siteStatus?.isSiteOpen === false ? (
                 <>
                   <FaTimes className="flex-shrink-0" />
                   Site Under Maintenance
@@ -711,4 +782,4 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       )}
     </Dialog>
   );
-}; 
+};

@@ -39,15 +39,15 @@ const quickLinks = [
 
 // Skeleton loading components
 const MetricCardSkeleton = () => (
-  <Card className="animate-pulse">
-    <CardBody>
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-          <div className="h-8 bg-gray-200 rounded w-16 mb-1"></div>
-          <div className="h-3 bg-gray-200 rounded w-20"></div>
+  <Card className="animate-pulse bg-[#142850] border-[#0f1f3a]">
+    <CardBody className="p-4 sm:p-5 lg:p-6">
+      <div className="flex items-center justify-between gap-3 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+          <div className="h-8 bg-gray-300 rounded w-16 mb-1"></div>
+          <div className="h-3 bg-gray-300 rounded w-20"></div>
         </div>
-        <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+        <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
       </div>
     </CardBody>
   </Card>
@@ -301,7 +301,7 @@ export default function SuperAdminDashboard() {
       </Card>
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
         {loadingStats ? (
           <>
             <MetricCardSkeleton />
@@ -312,72 +312,72 @@ export default function SuperAdminDashboard() {
         ) : stats ? (
           <>
             {/* Total Users */}
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Users</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.users.total.toLocaleString()}</p>
-                    <p className="text-xs text-green-600 mt-1">
+            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+              <CardBody className="p-4 sm:p-5 lg:p-6">
+                <div className="flex items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Users</p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{stats.users.total.toLocaleString()}</p>
+                    <p className="text-xs text-green-400 mt-1 sm:mt-2">
                       +{stats.users.newThisWeek} this week
                     </p>
                   </div>
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <FaUsers className="text-blue-600 text-lg sm:text-xl" />
+                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaUsers className="text-white text-sm sm:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
             </Card>
 
             {/* Total Revenue */}
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{formatCurrency(stats.revenue.total)}</p>
-                    <p className="text-xs text-green-600 mt-1">
+            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+              <CardBody className="p-4 sm:p-5 lg:p-6">
+                <div className="flex items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Revenue</p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{formatCurrency(stats.revenue.total)}</p>
+                    <p className="text-xs text-green-400 mt-1 sm:mt-2">
                       +{formatCurrency(stats.revenue.thisWeek)} this week
                     </p>
                   </div>
-                  <div className="p-3 bg-green-100 rounded-full">
-                    <FaMoneyBillWave className="text-green-600 text-lg sm:text-xl" />
+                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaMoneyBillWave className="text-white text-sm sm:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
             </Card>
 
             {/* Total Orders */}
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.orders.total.toLocaleString()}</p>
-                    <p className="text-xs text-blue-600 mt-1">
+            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+              <CardBody className="p-4 sm:p-5 lg:p-6">
+                <div className="flex items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Orders</p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{stats.orders.total.toLocaleString()}</p>
+                    <p className="text-xs text-blue-400 mt-1 sm:mt-2">
                       {stats.orders.successRate}% success rate
                     </p>
                   </div>
-                  <div className="p-3 bg-yellow-100 rounded-full">
-                    <FaClipboardList className="text-yellow-600 text-lg sm:text-xl" />
+                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaClipboardList className="text-white text-sm sm:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
             </Card>
 
             {/* Active Agents */}
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Active Agents</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.users.activeAgents}</p>
-                    <p className="text-xs text-purple-600 mt-1">
+            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+              <CardBody className="p-4 sm:p-5 lg:p-6">
+                <div className="flex items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Active Agents</p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{stats.users.activeAgents}</p>
+                    <p className="text-xs text-purple-400 mt-1 sm:mt-2">
                       {stats.rates.agentActivation}% activation rate
                     </p>
                   </div>
-                  <div className="p-3 bg-purple-100 rounded-full">
-                    <FaCheckCircle className="text-purple-600 text-lg sm:text-xl" />
+                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaCheckCircle className="text-white text-sm sm:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>

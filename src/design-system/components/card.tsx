@@ -17,6 +17,7 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   withFooter?: boolean;
   header?: ReactNode;
   footer?: ReactNode;
+  noPadding?: boolean; // New prop to disable default padding
 }
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
@@ -30,6 +31,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       withFooter = false,
       header,
       footer,
+      noPadding = false,
       ...props
     },
     ref
@@ -43,19 +45,28 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     
     // Variant styles
     const variantClasses = {
-      elevated: 'bg-white shadow-md rounded-lg border border-gray-100',
-      outlined: 'bg-white border border-gray-200 rounded-lg',
-      flat: 'bg-white rounded-lg',
-      interactive: 'bg-white shadow-sm hover:shadow-md rounded-lg border border-gray-100 transition-shadow duration-200',
+      elevated: 'shadow-md rounded-lg border border-gray-100',
+      outlined: 'border border-gray-200 rounded-lg',
+      flat: 'rounded-lg',
+      interactive: 'shadow-sm hover:shadow-md rounded-lg border border-gray-100 transition-shadow duration-200',
     };
+    
+    // Check if a custom background is provided
+    const hasCustomBackground = className.includes('bg-');
+    
+    // Check if custom padding is provided (p-* classes)
+    const hasCustomPadding = className.includes('p-');
     
     // Combine all classes
     const cardClasses = [
+      // Only add default background if no custom background is provided
+      !hasCustomBackground ? 'bg-white' : '',
       variantClasses[variant],
-      sizeClasses[size],
+      // Only add default padding if explicitly not disabled and no custom padding is provided
+      !noPadding && !hasCustomPadding ? sizeClasses[size] : '',
       'overflow-hidden',
       className,
-    ].join(' ');
+    ].filter(Boolean).join(' ');
 
     // Header and footer styles without padding (handled by parent)
     const headerClasses = [

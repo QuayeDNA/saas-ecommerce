@@ -3,6 +3,7 @@ import { useAuth, useWallet } from "../hooks";
 import { useOrder } from "../contexts/OrderContext";
 import { useSiteStatus } from "../contexts/site-status-context";
 import { settingsService } from "../services/settings.service";
+import { websocketService } from "../services/websocket.service";
 import { useToast } from "../design-system/components/toast";
 import { Button } from "../design-system";
 import { Link } from "react-router-dom";
@@ -23,7 +24,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const [showSiteMessage, setShowSiteMessage] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
   const [isTogglingSite, setIsTogglingSite] = useState(false);
-  const [totalSpent, setTotalSpent] = useState(0);
+  const [orderStats, setOrderStats] = useState({
+    totalOrders: 0,
+    completedOrders: 0,
+    totalRevenue: 0,
+    successRate: 0
+  });
   const [spendingLoading, setSpendingLoading] = useState(false);
 
   // Get connection status indicator
@@ -70,28 +76,64 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     }).format(amount);
   };
 
-  // Fetch user spending analytics
+  // Fetch user spending analytics - using exact same method as dashboard
   const fetchUserSpending = async () => {
     if (authState.user?.userType !== 'agent') return;
     
     setSpendingLoading(true);
     try {
-      const { totalRevenue } = await getAgentAnalytics('30d');
-      setTotalSpent(totalRevenue);
+      const analytics = await getAgentAnalytics('30d');
+      if (analytics) {
+        setOrderStats({
+          totalOrders: analytics.totalOrders || 0,
+          completedOrders: analytics.completedOrders || 0,
+          totalRevenue: analytics.totalRevenue || 0,
+          successRate: analytics.successRate || 0
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch user spending:', error);
-      setTotalSpent(0);
+      setOrderStats({
+        totalOrders: 0,
+        completedOrders: 0,
+        totalRevenue: 0,
+        successRate: 0
+      });
     } finally {
       setSpendingLoading(false);
     }
   };
 
-  // Fetch spending data on mount
+  // Fetch spending data on mount and set up real-time updates
   useEffect(() => {
     if (authState.isAuthenticated && authState.user?.userType === 'agent') {
       fetchUserSpending();
+      
+      // Set up real-time updates every 30 seconds
+      const interval = setInterval(() => {
+        fetchUserSpending();
+      }, 30000); // 30 seconds
+
+      // Listen for order updates via websocket
+      const handleOrderUpdate = () => {
+        fetchUserSpending();
+      };
+
+      // Listen for transaction updates via websocket
+      const handleTransactionUpdate = () => {
+        fetchUserSpending();
+      };
+
+      websocketService.on('order_update', handleOrderUpdate);
+      websocketService.on('transaction_update', handleTransactionUpdate);
+
+      return () => {
+        clearInterval(interval);
+        websocketService.off('order_update', handleOrderUpdate);
+        websocketService.off('transaction_update', handleTransactionUpdate);
+      };
     }
-  }, [authState.isAuthenticated, authState.user]);
+  }, [authState.isAuthenticated, authState.user, getAgentAnalytics]);
 
   // Handle site toggle for super admins
   const handleSiteToggle = async () => {
@@ -407,7 +449,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       {spendingLoading || isLoading ? (
                         <div className="animate-pulse bg-white/20 h-4 sm:h-6 w-16 sm:w-20 rounded"></div>
                       ) : (
-                        formatAmount(totalSpent)
+                        formatAmount(orderStats.totalRevenue)
                       )}
                     </div>
                   </div>
