@@ -174,14 +174,14 @@ export default function SuperAdminProvidersPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center sm:flex-row flex-col gap-4">
           <div>
             <h1 className="text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
               Provider Management
             </h1>
             <p className="text-gray-600">Manage telecom service providers and their configurations</p>
           </div>
-          <Button onClick={handleCreateNew} leftIcon={<FaPlus />}>
+          <Button onClick={handleCreateNew} leftIcon={<FaPlus />} className="w-full sm:w-auto">
             Add Provider
           </Button>
         </div>
