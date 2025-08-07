@@ -10,11 +10,11 @@ import superadminRoutes from "./superadmin-routes";
 // =============================================================================
 // LAZY LOADED COMPONENTS - PUBLIC PAGES
 // =============================================================================
-const LandingPage = lazy(() =>
-  import("../pages/landing-page").then((module) => ({
-    default: module.LandingPage,
-  }))
-);
+// const LandingPage = lazy(() =>
+//   import("../pages/landing-page").then((module) => ({
+//     default: module.LandingPage,
+//   }))
+// );
 const LoginPage = lazy(() =>
   import("../pages/login-page").then((module) => ({
     default: module.LoginPage,
@@ -147,7 +147,7 @@ const publicRoutes: RouteObject[] = [
     path: "/",
     element: (
       <Suspense fallback={<PageLoader />}>
-        <LandingPage />
+         <LoginPage />
       </Suspense>
     ),
   },
