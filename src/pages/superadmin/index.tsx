@@ -337,7 +337,7 @@ export default function SuperAdminDashboard() {
                     <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Revenue</p>
                     <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{formatCurrency(stats.revenue.total)}</p>
                     <p className="text-xs text-green-400 mt-1 sm:mt-2">
-                      +{formatCurrency(stats.revenue.thisWeek)} this week
+                      +{formatCurrency(stats.revenue.thisMonth)} this week
                     </p>
                   </div>
                   <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">

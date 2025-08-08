@@ -121,7 +121,7 @@ export const DashboardLayout = () => {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && isMobile && (
         <button 
-          className="fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ease-in-out md:hidden border-0"
+          className="fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ease-in-out lg:hidden border-0"
           onClick={() => setSidebarOpen(false)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') setSidebarOpen(false);
