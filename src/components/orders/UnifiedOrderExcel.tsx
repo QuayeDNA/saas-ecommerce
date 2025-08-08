@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { DataGrid } from 'react-data-grid';
 import type { Order } from '../../types/order';
 import { Badge } from '../../design-system';
-import { FaFileExcel, FaDownload } from 'react-icons/fa';
+import { FaFileExcel, FaDownload, FaCopy } from 'react-icons/fa';
 
 interface UnifiedOrderExcelProps {
   orders: Order[];
@@ -216,6 +216,44 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
     document.body.removeChild(link);
   };
 
+  const handleCopyPendingOrders = async () => {
+    // Filter pending orders
+    const pendingOrders = orders.filter(order => order.status === 'pending');
+    
+    if (pendingOrders.length === 0) {
+      alert('No pending orders found to copy.');
+      return;
+    }
+
+    // Format data as "number datavolume"
+    const formattedData = pendingOrders.map(order => {
+      const firstItem = order.items[0];
+      const contactNumber = order.customerInfo?.phone || 
+                          firstItem?.customerPhone || 
+                          'N/A';
+      
+      // Extract just the number from dataVolume (remove "GB" or any text)
+      const dataVolumeRaw = firstItem?.packageDetails?.dataVolume || '0';
+      const dataVolumeNumber = dataVolumeRaw.toString().replace(/[^\d.]/g, '');
+      
+      return `${contactNumber} ${dataVolumeNumber}`;
+    }).join('\n');
+
+    try {
+      await navigator.clipboard.writeText(formattedData);
+      alert(`Copied ${pendingOrders.length} pending orders to clipboard!`);
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = formattedData;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert(`Copied ${pendingOrders.length} pending orders to clipboard!`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -238,14 +276,24 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
             {sortedRows.length} orders • Newest first
           </span>
         </div>
-        <button
-          onClick={handleExport}
-          className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base w-full sm:w-auto"
-        >
-          <FaDownload className="text-xs sm:text-sm" />
-          <span className="hidden sm:inline">Export CSV</span>
-          <span className="sm:hidden">Export</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleCopyPendingOrders}
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base w-full sm:w-auto"
+          >
+            <FaCopy className="text-xs sm:text-sm" />
+            <span className="hidden sm:inline">Copy Pending Orders</span>
+            <span className="sm:hidden">Copy Pending</span>
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base w-full sm:w-auto"
+          >
+            <FaDownload className="text-xs sm:text-sm" />
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">Export</span>
+          </button>
+        </div>
       </div>
 
       {/* Excel Grid */}

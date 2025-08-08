@@ -28,6 +28,14 @@ export interface SearchAndFilterProps {
   };
   onFilterChange: (filterKey: string, value: string) => void;
   
+  // Date Range
+  dateRange?: {
+    startDate: string;
+    endDate: string;
+  };
+  onDateRangeChange?: (startDate: string, endDate: string) => void;
+  showDateRange?: boolean;
+  
   // Actions
   onSearch: (e: React.FormEvent) => void;
   onClearFilters: () => void;
@@ -51,6 +59,9 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   searchPlaceholder = "Search...",
   filters,
   onFilterChange,
+  dateRange,
+  onDateRangeChange,
+  showDateRange = false,
   onSearch,
   onClearFilters,
   showSearchButton = true,
@@ -62,7 +73,8 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
 }) => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  const hasActiveFilters = Object.values(filters).some(filter => filter.value !== '');
+  const hasActiveFilters = Object.values(filters).some(filter => filter.value !== '') ||
+    (showDateRange && dateRange && (dateRange.startDate || dateRange.endDate));
   const hasSearchTerm = searchTerm.trim() !== '';
 
   const handleClearAll = () => {
@@ -70,7 +82,26 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     Object.keys(filters).forEach(filterKey => {
       onFilterChange(filterKey, '');
     });
+    if (showDateRange && onDateRangeChange) {
+      onDateRangeChange('', '');
+    }
     onClearFilters();
+  };
+
+  const handleDateChange = (field: 'startDate' | 'endDate', value: string) => {
+    if (onDateRangeChange && dateRange) {
+      const newStartDate = field === 'startDate' ? value : dateRange.startDate;
+      const newEndDate = field === 'endDate' ? value : dateRange.endDate;
+      onDateRangeChange(newStartDate, newEndDate);
+      
+      // Auto-search when both dates are set or when clearing dates
+      if ((newStartDate && newEndDate) || (!newStartDate && !newEndDate)) {
+        setTimeout(() => {
+          const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+          onSearch(fakeEvent);
+        }, 100);
+      }
+    }
   };
 
   return (
@@ -132,7 +163,7 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         </div>
 
         {/* Filters Section */}
-        {Object.keys(filters).length > 0 && (
+        {(Object.keys(filters).length > 0 || showDateRange) && (
           <div className={`mt-4 pt-4 border-t border-gray-200 ${showMobileFilters ? 'block' : 'hidden'} sm:block`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {Object.entries(filters).map(([filterKey, filter]) => (
@@ -153,6 +184,30 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                   />
                 </div>
               ))}
+              
+              {/* Date Range Picker */}
+              {showDateRange && (
+                <>
+                  <div>
+                    <Input
+                      type="date"
+                      label="Start Date"
+                      value={dateRange?.startDate || ''}
+                      onChange={(e) => handleDateChange('startDate', e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      type="date"
+                      label="End Date"
+                      value={dateRange?.endDate || ''}
+                      onChange={(e) => handleDateChange('endDate', e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -190,6 +245,19 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 }
                 return null;
               })}
+
+              {/* Date Range Active Filter */}
+              {showDateRange && dateRange && (dateRange.startDate || dateRange.endDate) && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                  Date: {dateRange.startDate || 'Start'} - {dateRange.endDate || 'End'}
+                  <button
+                    onClick={() => onDateRangeChange?.('', '')}
+                    className="ml-2 text-green-600 hover:text-green-800"
+                  >
+                    <FaTimes className="text-xs" />
+                  </button>
+                </span>
+              )}
             </div>
           </div>
         )}

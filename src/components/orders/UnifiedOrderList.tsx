@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOrder } from '../../hooks/use-order';
 import { useAuth } from '../../hooks/use-auth';
-import { Button, Input, Card, CardHeader, CardBody, Pagination, Badge, Spinner, StatsGrid, Dialog, DialogHeader, DialogBody, DialogFooter } from '../../design-system';
+import { Button, Card, CardBody, Pagination, Badge, Spinner, StatsGrid, Dialog, DialogHeader, DialogBody, DialogFooter } from '../../design-system';
 import { FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaSync, FaExclamationTriangle } from 'react-icons/fa';
 import type { Order, OrderFilters } from '../../types/order';
 import { UnifiedOrderCard } from './UnifiedOrderCard';
@@ -228,6 +228,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         setOrderTypeFilter(value);
       }
     },
+    dateRange,
+    onDateRangeChange: (startDate: string, endDate: string) => {
+      setDateRange({ startDate, endDate });
+    },
+    showDateRange: true,
     onSearch: handleSearch,
     onClearFilters: handleClearFilters,
     isLoading: loading,
@@ -315,33 +320,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
       {/* Search and Filters */}
       <SearchAndFilter {...searchAndFilterConfig} />
-
-      {/* Date Range Filters */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-lg font-semibold">Date Range</h3>
-        </CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Input
-                label="Start Date"
-                type="date"
-                value={dateRange.startDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Input
-                label="End Date"
-                type="date"
-                value={dateRange.endDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-              />
-            </div>
-          </div>
-        </CardBody>
-      </Card>
 
       {/* View Mode Toggle */}
       <Card>

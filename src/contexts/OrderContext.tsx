@@ -10,6 +10,37 @@ import type{
 } from '../types/order';
 import { orderService } from '../services/order.service';
 import { useToast } from '../design-system';
+import { useAuth } from '../hooks/use-auth';
+
+// Helper function to update daily spending
+const updateDailySpending = (amount: number, userId?: string) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const storageKey = `dailySpending_${userId || 'anonymous'}`;
+    const storedData = localStorage.getItem(storageKey);
+    
+    let currentAmount = 0;
+    if (storedData) {
+      const { date, amount: storedAmount } = JSON.parse(storedData);
+      if (date === today) {
+        currentAmount = storedAmount;
+      }
+    }
+    
+    const newAmount = currentAmount + amount;
+    localStorage.setItem(storageKey, JSON.stringify({ 
+      date: today, 
+      amount: newAmount 
+    }));
+    
+    // Dispatch a custom event to notify the hook
+    window.dispatchEvent(new CustomEvent('dailySpendingUpdated', { 
+      detail: { amount: newAmount, userId } 
+    }));
+  } catch (error) {
+    console.error('Failed to update daily spending:', error);
+  }
+};
 
 interface OrderContextType {
   orders: Order[];
@@ -77,6 +108,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [analytics, setAnalytics] = useState<OrderAnalytics | null>(null);
   
   const { addToast } = useToast();
+  const { authState } = useAuth();
 
   // Initialize the provider
   useEffect(() => {
@@ -119,6 +151,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return; // Don't throw error, just return
       }
       
+      // Update daily spending if order was successfully created with valid total
+      if (order.total && order.total > 0) {
+        const userId = authState.user?.id || authState.user?._id;
+        updateDailySpending(order.total, userId);
+      }
+      
       addToast('Single order created successfully', 'success');
       await fetchOrders(filters);
     } catch (err: unknown) {
@@ -129,7 +167,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } finally {
       setLoading(false);
     }
-  }, [addToast, fetchOrders, filters]);
+  }, [addToast, fetchOrders, filters, authState.user]);
 
   const createBulkOrder = useCallback(async (orderData: CreateBulkOrderData) => {
     setLoading(true);
@@ -137,6 +175,20 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     try {
       const summary = await orderService.createBulkOrder(orderData);
+      
+      // Fetch the actual order to get the total amount for daily spending
+      if (summary.orderId) {
+        try {
+          const orderDetails = await orderService.getOrder(summary.orderId);
+          if (orderDetails.total && orderDetails.status !== 'draft') {
+            const userId = authState.user?.id || authState.user?._id;
+            updateDailySpending(orderDetails.total, userId);
+          }
+        } catch {
+          // Silently handle error - order was created successfully even if we can't update daily spending
+        }
+      }
+      
       addToast('Bulk order created successfully', 'success');
       await fetchOrders(filters);
       return summary;
@@ -148,7 +200,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } finally {
       setLoading(false);
     }
-  }, [addToast, fetchOrders, filters]);
+  }, [addToast, fetchOrders, filters, authState.user]);
 
   const processOrderItem = useCallback(async (orderId: string, itemId: string) => {
     try {

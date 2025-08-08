@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useWallet } from '../hooks/use-wallet';
+import { useWallet, useDailySpending } from '../hooks';
 import { useOrder } from '../contexts/OrderContext';
 import { useProvider } from '../hooks/use-provider';
 import { useSiteStatus } from '../contexts/site-status-context';
@@ -71,6 +71,7 @@ export const DashboardPage = () => {
   const { getAgentAnalytics } = useOrder();
   const { providers, loading: providersLoading } = useProvider();
   const { siteStatus } = useSiteStatus();
+  const { dailySpending, isLoading: dailySpendingLoading } = useDailySpending();
   
   // State for modals and data
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
@@ -462,8 +463,14 @@ export const DashboardPage = () => {
           </Card>
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
-              <div className="text-gray-300 text-xs mb-1">Amount Spent</div>
-              <div className="text-xl font-bold text-white">{formatAmount(orderStats.totalRevenue)}</div>
+              <div className="text-gray-300 text-xs mb-1">Today's Spending</div>
+              <div className="text-xl font-bold text-white">
+                {dailySpendingLoading ? (
+                  <div className="animate-pulse bg-white/20 h-6 w-20 rounded mx-auto"></div>
+                ) : (
+                  formatAmount(dailySpending)
+                )}
+              </div>
             </CardBody>
           </Card>
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">

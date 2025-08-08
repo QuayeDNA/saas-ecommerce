@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { useAuth, useWallet } from "../hooks";
-import { useOrder } from "../contexts/OrderContext";
+import { useAuth, useWallet, useDailySpending } from "../hooks";
 import { useSiteStatus } from "../contexts/site-status-context";
 import { settingsService } from "../services/settings.service";
-import { websocketService } from "../services/websocket.service";
 import { useToast } from "../design-system/components/toast";
 import { Button } from "../design-system";
 import { Link } from "react-router-dom";
@@ -17,20 +15,13 @@ interface HeaderProps {
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { authState, logout } = useAuth();
   const { walletBalance, refreshWallet, isLoading, connectionStatus } = useWallet();
-  const { getAgentAnalytics } = useOrder();
+  const { dailySpending, isLoading: dailySpendingLoading } = useDailySpending();
   const { siteStatus, refreshSiteStatus } = useSiteStatus();
   const { addToast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showSiteMessage, setShowSiteMessage] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
   const [isTogglingSite, setIsTogglingSite] = useState(false);
-  const [orderStats, setOrderStats] = useState({
-    totalOrders: 0,
-    completedOrders: 0,
-    totalRevenue: 0,
-    successRate: 0
-  });
-  const [spendingLoading, setSpendingLoading] = useState(false);
 
   // Get connection status indicator
   const getConnectionStatusIndicator = () => {
@@ -75,65 +66,6 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       currency: 'GHS'
     }).format(amount);
   };
-
-  // Fetch user spending analytics - using exact same method as dashboard
-  const fetchUserSpending = async () => {
-    if (authState.user?.userType !== 'agent') return;
-    
-    setSpendingLoading(true);
-    try {
-      const analytics = await getAgentAnalytics('30d');
-      if (analytics) {
-        setOrderStats({
-          totalOrders: analytics.totalOrders || 0,
-          completedOrders: analytics.completedOrders || 0,
-          totalRevenue: analytics.totalRevenue || 0,
-          successRate: analytics.successRate || 0
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch user spending:', error);
-      setOrderStats({
-        totalOrders: 0,
-        completedOrders: 0,
-        totalRevenue: 0,
-        successRate: 0
-      });
-    } finally {
-      setSpendingLoading(false);
-    }
-  };
-
-  // Fetch spending data on mount and set up real-time updates
-  useEffect(() => {
-    if (authState.isAuthenticated && authState.user?.userType === 'agent') {
-      fetchUserSpending();
-      
-      // Set up real-time updates every 30 seconds
-      const interval = setInterval(() => {
-        fetchUserSpending();
-      }, 30000); // 30 seconds
-
-      // Listen for order updates via websocket
-      const handleOrderUpdate = () => {
-        fetchUserSpending();
-      };
-
-      // Listen for transaction updates via websocket
-      const handleTransactionUpdate = () => {
-        fetchUserSpending();
-      };
-
-      websocketService.on('order_update', handleOrderUpdate);
-      websocketService.on('transaction_update', handleTransactionUpdate);
-
-      return () => {
-        clearInterval(interval);
-        websocketService.off('order_update', handleOrderUpdate);
-        websocketService.off('transaction_update', handleTransactionUpdate);
-      };
-    }
-  }, [authState.isAuthenticated, authState.user, getAgentAnalytics]);
 
   // Handle site toggle for super admins
   const handleSiteToggle = async () => {
@@ -401,14 +333,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
               className="bg-white/10 backdrop-blur-sm border border-white/20 text-white p-2 sm:p-3 rounded-lg shadow-sm cursor-pointer hover:bg-white/15 transition-all duration-200 active:scale-95 appearance-none w-full"
               onClick={() => {
                 refreshWallet();
-                fetchUserSpending();
               }}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   refreshWallet();
-                  fetchUserSpending();
                 }
               }}
               aria-label="Refresh wallet balance and spending data"
@@ -439,17 +369,17 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 {/* Vertical divider - hidden on very small screens */}
                 <div className="hidden sm:block w-px h-8 sm:h-12 bg-white/30 mx-4 sm:mx-6 flex-shrink-0"></div>
                 
-                {/* Total Spent Section */}
+                {/* Daily Spending Section */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-1">
                   <div className="min-w-0 flex-1">
                     <div className="text-xs sm:text-sm font-medium text-white/80 mb-1">
-                      Total Spent
+                      Today's Spending
                     </div>
                     <div className="text-base sm:text-lg lg:text-xl font-bold text-white">
-                      {spendingLoading || isLoading ? (
+                      {dailySpendingLoading || isLoading ? (
                         <div className="animate-pulse bg-white/20 h-4 sm:h-6 w-16 sm:w-20 rounded"></div>
                       ) : (
-                        formatAmount(orderStats.totalRevenue)
+                        formatAmount(dailySpending)
                       )}
                     </div>
                   </div>

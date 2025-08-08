@@ -198,7 +198,7 @@ export const AfaRegistrationPage: React.FC = () => {
                            />
                            <span className="text-sm font-medium">Agent (GH¢3)</span>
                          </label>
-                         <label className="flex items-center gap-2 cursor-pointer">
+                         {/* <label className="flex items-center gap-2 cursor-pointer">
                            <input
                              type="radio"
                              name="userType"
@@ -209,7 +209,7 @@ export const AfaRegistrationPage: React.FC = () => {
                              disabled={isLoading}
                            />
                            <span className="text-sm font-medium">Subscriber (GH¢5.5)</span>
-                         </label>
+                         </label> */}
                        </div>
                      </div>
                     
