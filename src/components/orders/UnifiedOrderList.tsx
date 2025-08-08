@@ -29,11 +29,13 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     error,
     pagination,
     filters,
+    monthlyRevenue,
     fetchOrders,
     updateOrderStatus,
     cancelOrder,
     setFilters,
-    bulkProcessOrders
+    bulkProcessOrders,
+    fetchMonthlyRevenue
   } = useOrder();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +51,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   useEffect(() => {
     fetchOrders();
-  }, [fetchOrders]);
+    fetchMonthlyRevenue();
+  }, [fetchOrders, fetchMonthlyRevenue]);
 
   // Calculate statistics
   const stats = {
@@ -180,6 +183,12 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       icon: <FaMoneyBillWave />,
     },
     {
+      title: 'Monthly Earnings',
+      value: monthlyRevenue ? formatCurrency(monthlyRevenue.monthlyRevenue) : formatCurrency(0),
+      icon: <FaMoneyBillWave />,
+      subtitle: monthlyRevenue ? `${monthlyRevenue.month} (${monthlyRevenue.orderCount} orders)` : 'This month',
+    },
+    {
       title: 'Completed Orders',
       value: stats.completed,
       icon: <FaCheck />,
@@ -286,7 +295,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       </Card>
 
       {/* Statistics Cards */}
-      <StatsGrid stats={statsCards} columns={2} gap="lg" />
+      <StatsGrid stats={statsCards} columns={3} gap="lg" />
 
       {/* Draft Orders Alert - Only for Agents */}
       {isAgent && stats.draft > 0 && (

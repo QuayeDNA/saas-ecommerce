@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './use-auth';
+import { orderService } from '../services/order.service';
 
 export const useDailySpending = () => {
   const [dailySpending, setDailySpending] = useState(0);
@@ -47,6 +48,27 @@ export const useDailySpending = () => {
     }
   }, [getStorageKey]);
 
+  // Add method to sync daily spending with completed orders from backend
+  const syncDailySpendingWithOrders = useCallback(async () => {
+    try {
+      const userId = authState.user?.id || authState.user?._id;
+      if (!userId) return;
+
+      // Get daily spending from backend (today's completed orders)
+      const data = await orderService.getDailySpending();
+      const backendSpending = data.dailySpending || 0;
+      
+      // Update local storage and state with backend data
+      const today = getTodayKey();
+      const storageKey = getStorageKey();
+      const newData = { date: today, amount: backendSpending };
+      localStorage.setItem(storageKey, JSON.stringify(newData));
+      setDailySpending(backendSpending);
+    } catch (error) {
+      console.error('Error syncing daily spending with orders:', error);
+    }
+  }, [authState.user, getStorageKey]);
+
   const updateDailySpending = (newOrderAmount: number) => {
     const today = getTodayKey();
     const storageKey = getStorageKey();
@@ -64,6 +86,8 @@ export const useDailySpending = () => {
 
   useEffect(() => {
     loadDailySpending();
+    // Also sync with backend to get accurate data from completed orders
+    syncDailySpendingWithOrders();
 
     // Listen for external updates to daily spending
     const handleDailySpendingUpdate = (event: Event) => {
@@ -91,13 +115,14 @@ export const useDailySpending = () => {
     return () => {
       window.removeEventListener('dailySpendingUpdated', handleDailySpendingUpdate);
     };
-  }, [loadDailySpending, authState.user, getStorageKey]);
+  }, [loadDailySpending, syncDailySpendingWithOrders, authState.user, getStorageKey]);
 
   return { 
     dailySpending, 
     updateDailySpending, 
     resetDailySpending,
     loadDailySpending,
+    syncDailySpendingWithOrders,
     isLoading
   };
 };

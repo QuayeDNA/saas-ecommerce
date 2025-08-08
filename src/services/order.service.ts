@@ -120,6 +120,26 @@ class OrderService {
     return response.data.analytics;
   }
 
+  // Get monthly revenue for current user
+  async getMonthlyRevenue(): Promise<{
+    monthlyRevenue: number;
+    orderCount: number;
+    month: string;
+  }> {
+    const response = await apiClient.get('/api/orders/analytics/monthly-revenue');
+    return response.data.data;
+  }
+
+  // Get daily spending for current user
+  async getDailySpending(): Promise<{
+    dailySpending: number;
+    orderCount: number;
+    date: string;
+  }> {
+    const response = await apiClient.get('/api/orders/analytics/daily-spending');
+    return response.data.data;
+  }
+
   // Get recent orders by user ID
   async getOrdersByUserId(userId: string, limit = 5): Promise<Order[]> {
     const response = await apiClient.get('/api/orders', { params: { createdBy: userId, limit, sort: '-createdAt' } });

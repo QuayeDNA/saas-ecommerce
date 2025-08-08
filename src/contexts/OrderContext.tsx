@@ -54,6 +54,11 @@ interface OrderContextType {
   };
   filters: OrderFilters;
   analytics: OrderAnalytics | null;
+  monthlyRevenue: {
+    monthlyRevenue: number;
+    orderCount: number;
+    month: string;
+  } | null;
   
   // Actions
   fetchOrders: (filters?: OrderFilters, pagination?: Partial<OrderPagination>) => Promise<void>;
@@ -75,6 +80,7 @@ interface OrderContextType {
     walletBalance: number;
     timeframe: string;
   }>;
+  fetchMonthlyRevenue: () => Promise<void>;
   setFilters: (filters: OrderFilters) => void;
   clearError: () => void;
   isInitialized: boolean;
@@ -106,6 +112,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [filters, setFilters] = useState<OrderFilters>({});
   const [analytics, setAnalytics] = useState<OrderAnalytics | null>(null);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<{
+    monthlyRevenue: number;
+    orderCount: number;
+    month: string;
+  } | null>(null);
   
   const { addToast } = useToast();
   const { authState } = useAuth();
@@ -333,7 +344,18 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [addToast]);
 
-
+  const fetchMonthlyRevenue = useCallback(async () => {
+    try {
+      const data = await orderService.getMonthlyRevenue();
+      setMonthlyRevenue(data);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to fetch monthly revenue');
+      } else {
+        setError('Failed to fetch monthly revenue');
+      }
+    }
+  }, []);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -346,6 +368,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     pagination,
     filters,
     analytics,
+    monthlyRevenue,
     fetchOrders,
     createSingleOrder,
     // @ts-expect-error: createBulkOrder returns a value, but context type expects void. 
@@ -360,6 +383,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     fetchAnalytics,
     getAnalytics,
     getAgentAnalytics,
+    fetchMonthlyRevenue,
     setFilters,
     clearError,
     isInitialized,
@@ -370,6 +394,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     pagination,
     filters,
     analytics,
+    monthlyRevenue,
     fetchOrders,
     createSingleOrder,
     createBulkOrder,
@@ -382,6 +407,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     fetchAnalytics,
     getAnalytics,
     getAgentAnalytics,
+    fetchMonthlyRevenue,
     setFilters,
     clearError,
     isInitialized,
@@ -408,6 +434,7 @@ export const useOrder = () => {
       pagination: { total: 0, page: 1, pages: 0, limit: 20 },
       filters: {},
       analytics: null,
+      monthlyRevenue: null,
       fetchOrders: async () => {},
       createSingleOrder: async () => {},
       createBulkOrder: async () => {},
@@ -434,6 +461,7 @@ export const useOrder = () => {
         walletBalance: 0,
         timeframe: '30d'
       }),
+      fetchMonthlyRevenue: async () => {},
       setFilters: () => {},
       clearError: () => {},
       isInitialized: false
