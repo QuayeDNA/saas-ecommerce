@@ -377,7 +377,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     </div>
                     <div className="text-base sm:text-lg lg:text-xl font-bold text-white">
                       {dailySpendingLoading || isLoading ? (
-                        <div className="animate-pulse bg-white/20 h-4 sm:h-6 w-16 sm:w-20 rounded"></div>
+                       <span> </span>
                       ) : (
                         formatAmount(dailySpending)
                       )}

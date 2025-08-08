@@ -7,122 +7,59 @@ export const useDailySpending = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { authState } = useAuth();
 
-  const getTodayKey = () => {
-    return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  };
-
-  const getStorageKey = useCallback(() => {
-    const userId = authState.user?.id || authState.user?._id || 'anonymous';
-    return `dailySpending_${userId}`;
-  }, [authState.user]);
-
+  // Fetch daily spending from backend
   const loadDailySpending = useCallback(async () => {
     setIsLoading(true);
     try {
-      const today = getTodayKey();
-      const storageKey = getStorageKey();
-      const storedData = localStorage.getItem(storageKey);
-      
-      if (storedData) {
-        const { date, amount } = JSON.parse(storedData);
-        
-        // If it's a new day, reset to 0
-        if (date !== today) {
-          setDailySpending(0);
-          localStorage.setItem(storageKey, JSON.stringify({ date: today, amount: 0 }));
-          setIsLoading(false);
-          return;
-        }
-        
-        setDailySpending(amount);
-      } else {
-        // First time - start with 0 for today
+      const userId = authState.user?.id || authState.user?._id;
+      if (!userId) {
         setDailySpending(0);
-        localStorage.setItem(storageKey, JSON.stringify({ date: today, amount: 0 }));
+        setIsLoading(false);
+        return;
       }
+
+      const data = await orderService.getDailySpending();
+      setDailySpending(data.dailySpending || 0);
     } catch (error) {
       console.error('Error loading daily spending:', error);
       setDailySpending(0);
     } finally {
       setIsLoading(false);
     }
-  }, [getStorageKey]);
+  }, [authState.user]);
 
-  // Add method to sync daily spending with completed orders from backend
-  const syncDailySpendingWithOrders = useCallback(async () => {
-    try {
-      const userId = authState.user?.id || authState.user?._id;
-      if (!userId) return;
-
-      // Get daily spending from backend (today's completed orders)
-      const data = await orderService.getDailySpending();
-      const backendSpending = data.dailySpending || 0;
-      
-      // Update local storage and state with backend data
-      const today = getTodayKey();
-      const storageKey = getStorageKey();
-      const newData = { date: today, amount: backendSpending };
-      localStorage.setItem(storageKey, JSON.stringify(newData));
-      setDailySpending(backendSpending);
-    } catch (error) {
-      console.error('Error syncing daily spending with orders:', error);
-    }
-  }, [authState.user, getStorageKey]);
-
-  const updateDailySpending = (newOrderAmount: number) => {
-    const today = getTodayKey();
-    const storageKey = getStorageKey();
-    const newTotal = dailySpending + newOrderAmount;
-    setDailySpending(newTotal);
-    localStorage.setItem(storageKey, JSON.stringify({ date: today, amount: newTotal }));
-  };
-
-  const resetDailySpending = () => {
-    const today = getTodayKey();
-    const storageKey = getStorageKey();
-    setDailySpending(0);
-    localStorage.setItem(storageKey, JSON.stringify({ date: today, amount: 0 }));
-  };
+  // Refresh daily spending (can be called manually)
+  const refreshDailySpending = useCallback(async () => {
+    await loadDailySpending();
+  }, [loadDailySpending]);
 
   useEffect(() => {
     loadDailySpending();
-    // Also sync with backend to get accurate data from completed orders
-    syncDailySpendingWithOrders();
 
-    // Listen for external updates to daily spending
-    const handleDailySpendingUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const currentUserId = authState.user?.id || authState.user?._id;
-      const eventUserId = customEvent.detail?.userId;
-      
-      // Only update if the event is for the current user or no user specified
-      if (!eventUserId || eventUserId === currentUserId) {
-        const today = getTodayKey();
-        const storageKey = getStorageKey();
-        const storedData = localStorage.getItem(storageKey);
-        
-        if (storedData) {
-          const { date, amount } = JSON.parse(storedData);
-          if (date === today) {
-            setDailySpending(amount);
-          }
-        }
-      }
+    // Listen for order updates to refresh daily spending
+    const handleOrderUpdate = () => {
+      // Refresh after a short delay to ensure backend is updated
+      setTimeout(() => {
+        loadDailySpending();
+      }, 1000);
     };
 
-    window.addEventListener('dailySpendingUpdated', handleDailySpendingUpdate);
+    // Listen for various order events that might affect daily spending
+    window.addEventListener('orderCompleted', handleOrderUpdate);
+    window.addEventListener('orderCreated', handleOrderUpdate);
+    window.addEventListener('dailySpendingUpdated', handleOrderUpdate);
     
     return () => {
-      window.removeEventListener('dailySpendingUpdated', handleDailySpendingUpdate);
+      window.removeEventListener('orderCompleted', handleOrderUpdate);
+      window.removeEventListener('orderCreated', handleOrderUpdate);
+      window.removeEventListener('dailySpendingUpdated', handleOrderUpdate);
     };
-  }, [loadDailySpending, syncDailySpendingWithOrders, authState.user, getStorageKey]);
+  }, [loadDailySpending]);
 
   return { 
     dailySpending, 
-    updateDailySpending, 
-    resetDailySpending,
+    refreshDailySpending,
     loadDailySpending,
-    syncDailySpendingWithOrders,
     isLoading
   };
 };

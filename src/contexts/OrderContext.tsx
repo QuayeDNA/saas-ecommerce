@@ -12,33 +12,15 @@ import { orderService } from '../services/order.service';
 import { useToast } from '../design-system';
 import { useAuth } from '../hooks/use-auth';
 
-// Helper function to update daily spending
-const updateDailySpending = (amount: number, userId?: string) => {
+// Helper function to trigger daily spending refresh from backend
+const triggerDailySpendingRefresh = (userId?: string) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const storageKey = `dailySpending_${userId || 'anonymous'}`;
-    const storedData = localStorage.getItem(storageKey);
-    
-    let currentAmount = 0;
-    if (storedData) {
-      const { date, amount: storedAmount } = JSON.parse(storedData);
-      if (date === today) {
-        currentAmount = storedAmount;
-      }
-    }
-    
-    const newAmount = currentAmount + amount;
-    localStorage.setItem(storageKey, JSON.stringify({ 
-      date: today, 
-      amount: newAmount 
-    }));
-    
-    // Dispatch a custom event to notify the hook
+    // Dispatch a custom event to notify the hook to refresh from backend
     window.dispatchEvent(new CustomEvent('dailySpendingUpdated', { 
-      detail: { amount: newAmount, userId } 
+      detail: { userId } 
     }));
   } catch (error) {
-    console.error('Failed to update daily spending:', error);
+    console.error('Failed to trigger daily spending refresh:', error);
   }
 };
 
@@ -165,7 +147,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Update daily spending if order was successfully created with valid total
       if (order.total && order.total > 0) {
         const userId = authState.user?.id || authState.user?._id;
-        updateDailySpending(order.total, userId);
+        triggerDailySpendingRefresh(userId);
       }
       
       addToast('Single order created successfully', 'success');
@@ -193,7 +175,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const orderDetails = await orderService.getOrder(summary.orderId);
           if (orderDetails.total && orderDetails.status !== 'draft') {
             const userId = authState.user?.id || authState.user?._id;
-            updateDailySpending(orderDetails.total, userId);
+            triggerDailySpendingRefresh(userId);
           }
         } catch {
           // Silently handle error - order was created successfully even if we can't update daily spending
