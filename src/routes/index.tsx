@@ -15,6 +15,12 @@ import superadminRoutes from "./superadmin-routes";
 //     default: module.LandingPage,
 //   }))
 // );
+
+const LogoPage = lazy(() =>
+  import("../components/common/BryteLinksLogoShowcase").then((module) => ({
+    default: module.BryteLinksLogoShowcase,
+  }))
+);
 const LoginPage = lazy(() =>
   import("../pages/login-page").then((module) => ({
     default: module.LoginPage,
@@ -220,6 +226,14 @@ const publicRoutes: RouteObject[] = [
     element: (
       <Suspense fallback={<PageLoader />}>
         <PrivacyPolicyPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/logo",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <LogoPage />
       </Suspense>
     ),
   },
