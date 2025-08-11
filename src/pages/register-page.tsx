@@ -32,6 +32,7 @@ import {
 import { Button, Card, CardHeader, CardBody, Input, Alert, Container } from '../design-system';
 import { useAuth } from '../hooks';
 import type { RegisterAgentData } from '../services/auth.service';
+import { BryteLinksSvgLogoCompact, BryteLinksSvgLogo } from '../components/common/BryteLinksSvgLogo';
 
 export const RegisterPage = () => {
   const { registerAgent } = useAuth();
@@ -118,10 +119,7 @@ export const RegisterPage = () => {
             
             {/* Logo */}
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <FaPhoneAlt className="text-white text-sm" />
-              </div>
-              <span className="font-bold text-gray-900 hidden sm:block">TelecomSaaS</span>
+             <BryteLinksSvgLogoCompact width={140} height={40} />
             </div>
           </div>
         </Container>
@@ -131,9 +129,9 @@ export const RegisterPage = () => {
       <main className="flex-grow flex items-center justify-center px-4 sm:px-6 py-8">
         <Card className="w-full max-w-2xl shadow-xl border-0" variant="elevated" size="lg">
           <CardHeader className="text-center pb-6">
-            <div className="mx-auto bg-gradient-to-br from-blue-100 to-indigo-100 p-4 rounded-2xl w-20 h-20 flex items-center justify-center mb-6">
-              <FaStore className="text-blue-600 text-2xl" />
-            </div>
+            <div className="flex justify-center items-center">
+            <BryteLinksSvgLogo width={120} height={140} />
+          </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Agent Registration
             </h1>

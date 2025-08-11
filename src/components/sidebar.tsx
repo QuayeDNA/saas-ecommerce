@@ -22,6 +22,7 @@ import {
   Check
 } from 'lucide-react';
 import { useState } from 'react';
+import { BryteLinksSvgIcon } from './common/BryteLinksSvgLogo';
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -206,19 +207,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     setExpandedItems(newExpanded);
   };
 
-  // Get business name from user context
-  const getBusinessName = () => {
-    if (authState.user?.businessName) {
-      return authState.user.businessName;
-    }
-    // Fallback to user's full name if no business name
-    if (authState.user?.fullName) {
-      return authState.user.fullName;
-    }
-    // Final fallback
-    return 'SaaS Telecom';
-  };
-
   // Get app name for version display
   const getAppName = () => {
     if (authState.user?.businessName) {
@@ -342,13 +330,9 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {/* Logo and close button */}
         <div className="flex items-center justify-between px-4 py-5 bg-[#0f1f3a] shadow-md">
           <div className="flex items-center min-w-0 flex-1">
-            <div className="w-8 h-8 mr-3 bg-[#0ea5e9] rounded-md flex items-center justify-center shadow-sm flex-shrink-0">
-              <span className="text-lg font-bold text-white">
-                {getBusinessName().charAt(0).toUpperCase()}
-              </span>
-            </div>
+            <BryteLinksSvgIcon className="w-10 h-10 mr-1 flex-shrink-0" />
             <div className="text-lg sm:text-xl font-bold truncate text-white">
-              {getBusinessName()}
+              BryteLinks
             </div>
           </div>
           <button 

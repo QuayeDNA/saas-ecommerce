@@ -17,9 +17,10 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaLock, FaEye, FaEyeSlash, FaArrowLeft, FaPhoneAlt, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaArrowLeft, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
 import { Button, Card, CardHeader, CardBody, Input, Alert, Container } from '../design-system';
 import { useAuth } from '../hooks';
+import { BryteLinksSvgLogoCompact, BryteLinksSvgLogo } from '../components/common/BryteLinksSvgLogo';
 
 export const LoginPage = () => {
   const { authState, login, clearErrors } = useAuth();
@@ -88,10 +89,7 @@ export const LoginPage = () => {
             
             {/* Logo */}
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <FaPhoneAlt className="text-white text-sm" />
-              </div>
-              <span className="font-bold text-gray-900 hidden sm:block">TelecomSaaS</span>
+              <BryteLinksSvgLogoCompact width={140} height={40} />
             </div>
           </div>
         </Container>
@@ -102,9 +100,9 @@ export const LoginPage = () => {
         <div className="w-full max-w-lg">
           <Card className="shadow-xl border-0" variant="elevated">
             <CardHeader className="text-center mb-6">
-              <div className="mx-auto bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl w-20 h-20 flex items-center justify-center mb-6">
-                <FaLock className="text-blue-600 text-2xl" />
-              </div>
+            <div className="flex justify-center items-center">
+            <BryteLinksSvgLogo width={120} height={140} />
+          </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
               <p className="text-gray-600">
                 Don't have an account?{' '}

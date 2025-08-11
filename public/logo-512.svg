@@ -1,0 +1,31 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#142850" />
+      <stop offset="50%" stopColor="#1e3a5f" />
+      <stop offset="100%" stopColor="#0f1b2e" />
+    </linearGradient>
+    <linearGradient id="iconAccentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0ea5e9" />
+      <stop offset="100%" stopColor="#0284c7" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" floodColor="#142850" floodOpacity="0.15"/>
+    </filter>
+  </defs>
+  
+  <rect width="512" height="512" rx="128" fill="url(#iconGradient)" filter="url(#shadow)" />
+  
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="none" stroke="url(#iconAccentGradient)" stroke-width="4" opacity="0.4" />
+  
+  <!-- Icon B -->
+  <path d="M144 160 L144 352 L240 352 C264 352 280 335 280 312 C280 297.6 273.6 284.8 262.4 277.6 C273.6 270.4 280 257.6 280 243.2 C280 220.5 264 203.5 240 203.5 L144 203.5 Z M179.2 232 L227.2 232 C236.8 232 243.2 238.4 243.2 246.4 C243.2 254.4 236.8 260.8 227.2 260.8 L179.2 260.8 Z M179.2 288 L240 288 C249.6 288 256 294.4 256 302.4 C256 310.4 249.6 316.8 240 316.8 L179.2 316.8 Z" fill="#ffffff" />
+  
+  <!-- Icon L -->
+  <path d="M304 160 L304 312 L384 312 L384 352 L268.8 352 L268.8 160 Z" fill="#ffffff" />
+  
+  <!-- Accent dots -->
+  <circle cx="400" cy="144" r="12.8" fill="url(#iconAccentGradient)" opacity="0.7" />
+  <circle cx="112" cy="368" r="9.6" fill="url(#iconAccentGradient)" opacity="0.5" />
+  <circle cx="400" cy="368" r="6.4" fill="url(#iconAccentGradient)" opacity="0.6" />
+</svg>

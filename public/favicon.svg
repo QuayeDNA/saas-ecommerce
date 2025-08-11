@@ -1,0 +1,26 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#142850" />
+      <stop offset="50%" stopColor="#1e3a5f" />
+      <stop offset="100%" stopColor="#0f1b2e" />
+    </linearGradient>
+    <linearGradient id="iconAccentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0ea5e9" />
+      <stop offset="100%" stopColor="#0284c7" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="32" height="32" rx="8" fill="url(#iconGradient)" />
+  
+  <rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="url(#iconAccentGradient)" stroke-width="0.3" opacity="0.4" />
+  
+  <!-- Icon B -->
+  <path d="M9 10 L9 22 L15 22 C16.5 22 17.5 20.8 17.5 19.5 C17.5 18.6 17.1 17.8 16.4 17.4 C17.1 17 17.5 16.2 17.5 15.3 C17.5 14 16.5 12.8 15 12.8 L9 12.8 Z M11.2 14.5 L14.2 14.5 C14.8 14.5 15.2 14.9 15.2 15.4 C15.2 15.9 14.8 16.3 14.2 16.3 L11.2 16.3 Z M11.2 18 L15 18 C15.6 18 16 18.4 16 18.9 C16 19.4 15.6 19.8 15 19.8 L11.2 19.8 Z" fill="#ffffff" />
+  
+  <!-- Icon L -->
+  <path d="M19 10 L19 19.5 L24 19.5 L24 22 L16.8 22 L16.8 10 Z" fill="#ffffff" />
+  
+  <!-- Minimal accent dot -->
+  <circle cx="25" cy="9" r="0.8" fill="url(#iconAccentGradient)" opacity="0.7" />
+</svg>
