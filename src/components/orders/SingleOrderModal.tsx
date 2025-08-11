@@ -6,6 +6,7 @@ import { FaTimes, FaPhone, FaWifi, FaClock, FaCheckCircle } from 'react-icons/fa
 import { useOrder } from '../../contexts/OrderContext';
 import { useSiteStatus } from '../../contexts/site-status-context';
 import { getProviderColors } from '../../utils/provider-colors';
+import { DuplicateOrderWarningModal } from './DuplicateOrderWarningModal';
 import { 
   Dialog, 
   DialogHeader, 
@@ -19,7 +20,7 @@ import {
   Input
 } from '../../design-system';
 import type { Bundle } from '../../types/package';
-import type { CreateSingleOrderData } from '../../types/order';
+import type { CreateSingleOrderData, DuplicateCheckResult } from '../../types/order';
 
 /**
  * SingleOrderModal expects a Bundle object that is fetched using the new ProviderPackageDisplay logic.
@@ -58,6 +59,9 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
     totalPrice: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState<DuplicateCheckResult | null>(null);
+  const [pendingOrderData, setPendingOrderData] = useState<CreateSingleOrderData | null>(null);
 
   // Get provider colors for branding
   const providerColors = getProviderColors(bundle.provider?.toString() || 'MTN');
@@ -182,7 +186,28 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       onClose();
       navigate('/agent/dashboard/orders');
 
-    } catch (err) {
+    } catch (err: any) {
+      // Check if this is a duplicate order error
+      if (err && err.code === 'DUPLICATE_ORDER_DETECTED') {
+        const orderData: CreateSingleOrderData = {
+          packageGroupId: typeof bundle.packageId === 'object' && bundle.packageId !== null && '_id' in bundle.packageId
+            ? (bundle.packageId as { _id: string })._id
+            : bundle.packageId,
+          packageItemId: bundle._id || '',
+          customerPhone: customerPhone.replace(/^\+?233/, '0'),
+          bundleSize: {
+            value: bundle.dataVolume,
+            unit: bundle.dataUnit as 'MB' | 'GB'
+          },
+          quantity: 1
+        };
+        
+        setPendingOrderData(orderData);
+        setDuplicateInfo(err.duplicateInfo);
+        setShowDuplicateWarning(true);
+        return;
+      }
+      
       if (err instanceof Error) {
         const errorMessage = err.message;
         
@@ -209,6 +234,39 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   const handleBack = () => {
     setShowSummary(false);
     setOrderSummary(null);
+  };
+
+  // Handle duplicate order warning actions
+  const handleDuplicateProceed = async () => {
+    if (pendingOrderData) {
+      try {
+        setShowDuplicateWarning(false);
+        
+        // Add forceOverride flag and retry order creation
+        const orderDataWithOverride = { ...pendingOrderData, forceOverride: true };
+        await createSingleOrder(orderDataWithOverride);
+        
+        // Order created successfully
+        onSuccess();
+        onClose();
+        navigate('/agent/dashboard/orders');
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to create order after override');
+        } else {
+          setError('Failed to create order after override');
+        }
+      } finally {
+        setPendingOrderData(null);
+        setDuplicateInfo(null);
+      }
+    }
+  };
+
+  const handleDuplicateCancel = () => {
+    setShowDuplicateWarning(false);
+    setPendingOrderData(null);
+    setDuplicateInfo(null);
   };
 
   if (!isOpen) return null;
@@ -416,6 +474,18 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
             </Button>
           </div>
         </DialogFooter>
+      )}
+
+      {/* Duplicate Order Warning Modal */}
+      {duplicateInfo && (
+        <DuplicateOrderWarningModal
+          isOpen={showDuplicateWarning}
+          onClose={handleDuplicateCancel}
+          onProceed={handleDuplicateProceed}
+          onCancel={handleDuplicateCancel}
+          duplicateInfo={duplicateInfo}
+          orderType="single"
+        />
       )}
     </Dialog>
   );

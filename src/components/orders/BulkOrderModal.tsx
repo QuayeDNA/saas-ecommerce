@@ -18,6 +18,7 @@ import { useOrder } from "../../contexts/OrderContext";
 import { useSiteStatus } from "../../contexts/site-status-context";
 import { bundleService } from "../../services/bundle.service";
 import { getProviderColors } from "../../utils/provider-colors";
+import { DuplicateOrderWarningModal } from "./DuplicateOrderWarningModal";
 import {
   Dialog,
   DialogHeader,
@@ -32,6 +33,7 @@ import {
   CardHeader,
 } from "../../design-system";
 import type { Bundle } from "../../types/package";
+import type { DuplicateCheckResult } from "../../types/order";
 
 interface BulkOrderModalProps {
   isOpen: boolean;
@@ -68,6 +70,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const [showSummary, setShowSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [importMethod, setImportMethod] = useState<"file" | "manual">("manual");
+  const [duplicateCheckResult, setDuplicateCheckResult] = useState<DuplicateCheckResult | null>(null);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
 
   // Get provider colors for branding
   const providerColors = getProviderColors(provider);
@@ -80,6 +84,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       setShowSummary(false);
       setError(null);
       setImportMethod("manual");
+      setDuplicateCheckResult(null);
+      setShowDuplicateWarning(false);
     }
   }, [isOpen]);
 
@@ -233,7 +239,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   };
 
   // Handle confirm order (only send valid orders)
-  const handleConfirmOrder = async () => {
+  const handleConfirmOrder = async (forceOverride = false) => {
     try {
       setError(null);
 
@@ -248,12 +254,19 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       const items = validOrders.map(
         (item) => `${item.customerPhone},${item.dataVolume}GB`
       );
-      const orderData = { items, packageId };
+      const orderData = { items, packageId, forceOverride };
       await createBulkOrder(orderData);
       onSuccess();
       onClose();
       navigate("/agent/dashboard/orders");
-    } catch (err) {
+    } catch (err: unknown) {
+      // Check if this is a duplicate order error
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'DUPLICATE_ORDER_DETECTED' && 'duplicateInfo' in err) {
+        setDuplicateCheckResult(err.duplicateInfo as DuplicateCheckResult);
+        setShowDuplicateWarning(true);
+        return;
+      }
+
       if (err instanceof Error) {
         const errorMessage = err.message;
 
@@ -271,6 +284,18 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
         setError("Failed to create bulk order");
       }
     }
+  };
+
+  // Handle duplicate warning modal actions
+  const handleDuplicateProceed = () => {
+    setShowDuplicateWarning(false);
+    setDuplicateCheckResult(null);
+    handleConfirmOrder(true); // Force override duplicates
+  };
+
+  const handleDuplicateCancel = () => {
+    setShowDuplicateWarning(false);
+    setDuplicateCheckResult(null);
   };
 
   // Handle back to form
@@ -765,7 +790,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               Back
             </Button>
             <Button
-              onClick={handleConfirmOrder}
+              onClick={() => handleConfirmOrder()}
               disabled={
                 loading ||
                 validOrders.length === 0 ||
@@ -796,6 +821,18 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             </Button>
           </div>
         </DialogFooter>
+      )}
+
+      {/* Duplicate Order Warning Modal */}
+      {duplicateCheckResult && (
+        <DuplicateOrderWarningModal
+          isOpen={showDuplicateWarning}
+          onClose={handleDuplicateCancel}
+          onProceed={handleDuplicateProceed}
+          onCancel={handleDuplicateCancel}
+          duplicateInfo={duplicateCheckResult}
+          orderType="bulk"
+        />
       )}
     </Dialog>
   );

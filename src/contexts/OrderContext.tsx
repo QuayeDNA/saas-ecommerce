@@ -44,8 +44,8 @@ interface OrderContextType {
   
   // Actions
   fetchOrders: (filters?: OrderFilters, pagination?: Partial<OrderPagination>) => Promise<void>;
-  createSingleOrder: (orderData: CreateSingleOrderData) => Promise<void>;
-  createBulkOrder: (orderData: CreateBulkOrderData) => Promise<void>;
+  createSingleOrder: (orderData: CreateSingleOrderData & { forceOverride?: boolean }) => Promise<void>;
+  createBulkOrder: (orderData: CreateBulkOrderData & { forceOverride?: boolean }) => Promise<void>;
   processOrderItem: (orderId: string, itemId: string) => Promise<void>;
   processBulkOrder: (orderId: string) => Promise<void>;
   bulkProcessOrders: (orderIds: string[], action: 'processing' | 'completed') => Promise<void>;
@@ -128,7 +128,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [addToast]);
 
-  const createSingleOrder = useCallback(async (orderData: CreateSingleOrderData) => {
+  const createSingleOrder = useCallback(async (orderData: CreateSingleOrderData & { forceOverride?: boolean }) => {
     setLoading(true);
     setError(null);
     
@@ -153,6 +153,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addToast('Single order created successfully', 'success');
       await fetchOrders(filters);
     } catch (err: unknown) {
+      // Check if this is a duplicate order error
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'DUPLICATE_ORDER_DETECTED') {
+        // Re-throw with duplicate info for UI handling
+        throw err;
+      }
+      
       const message = extractErrorMessage(err, 'Failed to create order');
       setError(message);
       addToast(message, 'error');
@@ -162,7 +168,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [addToast, fetchOrders, filters, authState.user]);
 
-  const createBulkOrder = useCallback(async (orderData: CreateBulkOrderData) => {
+  const createBulkOrder = useCallback(async (orderData: CreateBulkOrderData & { forceOverride?: boolean }) => {
     setLoading(true);
     setError(null);
     
@@ -186,6 +192,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       await fetchOrders(filters);
       return summary;
     } catch (err: unknown) {
+      // Check if this is a duplicate order error
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'DUPLICATE_ORDER_DETECTED') {
+        // Re-throw with duplicate info for UI handling
+        throw err;
+      }
+      
       const message = extractErrorMessage(err, 'Failed to create bulk order');
       setError(message);
       addToast(message, 'error');

@@ -1,4 +1,49 @@
 // src/types/order.types.ts
+
+// Duplicate order detection types
+export interface DuplicateOrder {
+  orderNumber: string;
+  orderId: string;
+  createdAt: string;
+  status: string;
+  paymentStatus: string;
+}
+
+export interface DuplicateItem {
+  customerPhone: string;
+  dataVolume: string;
+  lastOrderNumber: string;
+  lastOrderTime: string;
+  minutesAgo: number;
+  rawItem: string;
+}
+
+export interface DuplicateCheckResult {
+  isDuplicate: boolean;
+  canProceed: boolean;
+  message: string;
+  duplicateOrders?: DuplicateOrder[];
+  duplicateItems?: DuplicateItem[];
+  safeItems?: string[];
+  details?: {
+    customerPhone?: string;
+    bundleName?: string;
+    lastOrderTime?: string;
+    lastOrderNumber?: string;
+    minutesAgo?: number;
+    totalSimilarOrders?: number;
+    totalItems?: number;
+    duplicateCount?: number;
+    safeCount?: number;
+    timeWindow?: number;
+  };
+}
+
+export interface DuplicateOrderError extends Error {
+  code: 'DUPLICATE_ORDER_DETECTED';
+  duplicateInfo: DuplicateCheckResult;
+}
+
 export interface OrderItem {
   _id?: string;
   packageGroup: string;

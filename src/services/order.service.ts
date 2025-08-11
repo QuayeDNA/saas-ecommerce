@@ -1,4 +1,5 @@
 // src/services/order.service.ts
+import axios from 'axios';
 import { apiClient } from '../utils/api-client';
 import type {
   Order,
@@ -7,14 +8,37 @@ import type {
   OrderPagination,
   OrderAnalytics,
   CreateSingleOrderData,
-  CreateBulkOrderData
+  CreateBulkOrderData,
+  DuplicateCheckResult
 } from '../types/order';
+
+interface DuplicateError extends Error {
+  code: 'DUPLICATE_ORDER_DETECTED';
+  duplicateInfo: DuplicateCheckResult;
+}
 
 class OrderService {
   // Create single order
   async createSingleOrder(orderData: CreateSingleOrderData): Promise<Order> {
-    const response = await apiClient.post('/api/orders/single', orderData);
-    return response.data.order;
+    try {
+      const response = await apiClient.post('/api/orders/single', orderData);
+      return response.data.order;
+    } catch (error: unknown) {
+      // Check if this is a duplicate order error from the backend
+      if (axios.isAxiosError(error) && error.response?.status === 400) {
+        const responseData = error.response.data;
+        if (responseData?.code === 'DUPLICATE_ORDER_DETECTED') {
+          // Create a custom error with the proper structure
+          const duplicateError = new Error(responseData.message);
+          (duplicateError as DuplicateError).code = 'DUPLICATE_ORDER_DETECTED';
+          (duplicateError as DuplicateError).duplicateInfo = responseData.duplicateInfo;
+          throw duplicateError;
+        }
+      }
+      
+      // Re-throw the original error if it's not a duplicate error
+      throw error;
+    }
   }
 
   // Create bulk order
@@ -24,13 +48,30 @@ class OrderService {
     totalItems: number;
     items: Array<{ customerPhone: string; bundleSize?: { value: number; unit: string }; status: string }>;
   }> {
-    const response = await apiClient.post('/api/orders/bulk', orderData);
-    return {
-      orderId: response.data.orderId,
-      orderNumber: response.data.orderNumber,
-      totalItems: response.data.totalItems,
-      items: response.data.items
-    };
+    try {
+      const response = await apiClient.post('/api/orders/bulk', orderData);
+      return {
+        orderId: response.data.orderId,
+        orderNumber: response.data.orderNumber,
+        totalItems: response.data.totalItems,
+        items: response.data.items
+      };
+    } catch (error: unknown) {
+      // Check if this is a duplicate order error from the backend
+      if (axios.isAxiosError(error) && error.response?.status === 400) {
+        const responseData = error.response.data;
+        if (responseData?.code === 'DUPLICATE_ORDER_DETECTED') {
+          // Create a custom error with the proper structure
+          const duplicateError = new Error(responseData.message);
+          (duplicateError as DuplicateError).code = 'DUPLICATE_ORDER_DETECTED';
+          (duplicateError as DuplicateError).duplicateInfo = responseData.duplicateInfo;
+          throw duplicateError;
+        }
+      }
+      
+      // Re-throw the original error if it's not a duplicate error
+      throw error;
+    }
   }
 
   // Get orders with filtering and pagination
