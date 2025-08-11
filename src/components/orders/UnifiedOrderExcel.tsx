@@ -1,9 +1,10 @@
 // src/components/orders/UnifiedOrderExcel.tsx
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { DataGrid } from 'react-data-grid';
 import type { Order } from '../../types/order';
-import { Badge } from '../../design-system';
-import { FaFileExcel, FaDownload, FaCopy } from 'react-icons/fa';
+import { Badge, Dialog, Alert } from '../../design-system';
+import { FaFileExcel, FaDownload, FaCopy, FaSpinner, FaCheck, FaTimes } from 'react-icons/fa';
+import { useOrder } from '../../contexts/OrderContext';
 
 interface UnifiedOrderExcelProps {
   orders: Order[];
@@ -139,6 +140,33 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
   orders,
   loading = false,
 }) => {
+  const { bulkProcessOrders } = useOrder();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingOrdersToProcess, setPendingOrdersToProcess] = useState<Order[]>([]);
+  const [autoMarkAsProcessing, setAutoMarkAsProcessing] = useState(() => {
+    // Get saved preference from localStorage
+    return localStorage.getItem('autoMarkPendingAsProcessing') === 'true';
+  });
+  
+  // Alert states
+  const [alertState, setAlertState] = useState<{
+    show: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    message: string;
+  }>({
+    show: false,
+    type: 'info',
+    message: ''
+  });
+
+  const showAlert = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
+    setAlertState({ show: true, type, message });
+    // Auto-hide alert after 5 seconds
+    setTimeout(() => {
+      setAlertState(prev => ({ ...prev, show: false }));
+    }, 5000);
+  };
   // Transform orders to Excel format
   const excelRows = useMemo(() => {
     return orders.map((order) => {
@@ -221,7 +249,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
     const pendingOrders = orders.filter(order => order.status === 'pending');
     
     if (pendingOrders.length === 0) {
-      alert('No pending orders found to copy.');
+      showAlert('warning', 'No pending orders found to copy.');
       return;
     }
 
@@ -241,7 +269,16 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
 
     try {
       await navigator.clipboard.writeText(formattedData);
-      alert(`Copied ${pendingOrders.length} pending orders to clipboard!`);
+      
+      // Check user preference for auto-marking as processing
+      if (autoMarkAsProcessing) {
+        await markPendingOrdersAsProcessing(pendingOrders);
+      } else {
+        // Show confirmation dialog
+        setPendingOrdersToProcess(pendingOrders);
+        setShowConfirmDialog(true);
+      }
+      
     } catch {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
@@ -250,8 +287,55 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      alert(`Copied ${pendingOrders.length} pending orders to clipboard!`);
+      
+      // Check user preference for auto-marking as processing
+      if (autoMarkAsProcessing) {
+        await markPendingOrdersAsProcessing(pendingOrders);
+      } else {
+        // Show confirmation dialog
+        setPendingOrdersToProcess(pendingOrders);
+        setShowConfirmDialog(true);
+      }
     }
+  };
+
+  const markPendingOrdersAsProcessing = async (pendingOrders: Order[]) => {
+    setIsProcessing(true);
+    try {
+      const orderIds = pendingOrders.map(order => order._id || '').filter(Boolean);
+      
+      if (orderIds.length === 0) {
+        showAlert('error', 'No valid order IDs found.');
+        return;
+      }
+
+      // Use bulk processing for efficiency
+      await bulkProcessOrders(orderIds, 'processing');
+      
+      showAlert('success', `Successfully copied ${pendingOrders.length} pending orders to clipboard and marked them as processing!`);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      showAlert('error', `Copied ${pendingOrders.length} orders to clipboard, but failed to update their status. Please update manually.`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleConfirmStatusUpdate = async (updateStatus: boolean, rememberChoice: boolean = false) => {
+    setShowConfirmDialog(false);
+    
+    if (rememberChoice) {
+      localStorage.setItem('autoMarkPendingAsProcessing', updateStatus.toString());
+      setAutoMarkAsProcessing(updateStatus);
+    }
+    
+    if (updateStatus) {
+      await markPendingOrdersAsProcessing(pendingOrdersToProcess);
+    } else {
+      showAlert('success', `Copied ${pendingOrdersToProcess.length} pending orders to clipboard!`);
+    }
+    
+    setPendingOrdersToProcess([]);
   };
 
   if (loading) {
@@ -279,11 +363,26 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
         <div className="flex gap-2">
           <button
             onClick={handleCopyPendingOrders}
-            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base w-full sm:w-auto"
+            disabled={isProcessing}
+            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base w-full sm:w-auto ${
+              isProcessing 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            } text-white`}
           >
-            <FaCopy className="text-xs sm:text-sm" />
-            <span className="hidden sm:inline">Copy Pending Orders</span>
-            <span className="sm:hidden">Copy Pending</span>
+            {isProcessing ? (
+              <>
+                <FaSpinner className="text-xs sm:text-sm animate-spin" />
+                <span className="hidden sm:inline">Processing...</span>
+                <span className="sm:hidden">Processing</span>
+              </>
+            ) : (
+              <>
+                <FaCopy className="text-xs sm:text-sm" />
+                <span className="hidden sm:inline">Copy Pending Orders</span>
+                <span className="sm:hidden">Copy Pending</span>
+              </>
+            )}
           </button>
           <button
             onClick={handleExport}
@@ -334,6 +433,80 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
           <span>Click column headers to sort</span>
         </div>
       </div>
+
+      {/* Alert Component */}
+      {alertState.show && (
+        <div className="fixed top-4 right-4 z-50 max-w-md">
+          <Alert
+            status={alertState.type}
+            isClosable
+            onClose={() => setAlertState(prev => ({ ...prev, show: false }))}
+            className="shadow-lg"
+          >
+            {alertState.message}
+          </Alert>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        size="md"
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <FaCopy className="text-blue-600 text-lg" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Mark Orders as Processing?</h3>
+              <p className="text-sm text-gray-600">
+                {pendingOrdersToProcess.length} pending orders have been copied to clipboard.
+              </p>
+            </div>
+          </div>
+          
+          <p className="text-gray-700 mb-6">
+            Would you like to automatically mark these orders as "Processing" since you've copied them? 
+            This helps track that they're being worked on.
+          </p>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleConfirmStatusUpdate(true)}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <FaCheck className="text-sm" />
+                Yes, Mark as Processing
+              </button>
+              <button
+                onClick={() => handleConfirmStatusUpdate(false)}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                <FaTimes className="text-sm" />
+                No, Keep as Pending
+              </button>
+            </div>
+            
+            <div className="pt-3 border-t border-gray-200">
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      handleConfirmStatusUpdate(true, true);
+                    }
+                  }}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                Always mark as processing automatically (save preference)
+              </label>
+            </div>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }; 
