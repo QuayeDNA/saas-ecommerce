@@ -117,15 +117,15 @@ export const LoginPage = () => {
       {/* Main content */}
       <div className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-lg">
-          <Card className="shadow-xl border-0" variant="elevated">
-            <CardHeader className="text-center mb-6 p-0">
+          <Card className="shadow-xl border-0" variant="elevated" noPadding>
+            <CardHeader className="text-center mb-6 pb-4 bg-slate-900 w-full">
               <div className="flex justify-center items-center">
                 <BryteLinksSvgLogo width={120} height={140} />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-100 mb-2">
                 Welcome back
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-300">
                 Don't have an account?{" "}
                 <Link
                   to="/register"
@@ -136,7 +136,7 @@ export const LoginPage = () => {
               </p>
             </CardHeader>
 
-            <CardBody className="pt-0">
+            <CardBody className="p-4">
               <form className="space-y-6" onSubmit={handleSubmit}>
                 {/* Error Alert */}
                 {(localError || authState.error) && (
