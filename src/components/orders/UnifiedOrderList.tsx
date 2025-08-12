@@ -54,6 +54,23 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     fetchMonthlyRevenue();
   }, [fetchOrders, fetchMonthlyRevenue]);
 
+  // Auto-switch to cards view on mobile/tablet screens
+  useEffect(() => {
+    const handleResize = () => {
+      const isDesktop = window.innerWidth >= 1024; // lg breakpoint
+      if (!isDesktop && viewMode === 'table') {
+        setViewMode('cards');
+      }
+    };
+
+    // Check on initial load
+    handleResize();
+
+    // Listen for resize events
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
+
   // Calculate statistics
   const stats = {
     total: orders.length,
@@ -347,9 +364,10 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 >
                   Cards
                 </button>
+                {/* Table view only visible on desktop (lg and above) */}
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  className={`hidden lg:block px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                     viewMode === 'table'
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
@@ -462,17 +480,19 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           ))}
         </div>
       ) : viewMode === 'table' ? (
-        <UnifiedOrderTable
-          orders={orders}
-          isAdmin={isAdmin}
-          currentUserId={authState.user?._id}
-          onUpdateStatus={handleStatusUpdate}
-          onCancel={handleCancelOrder}
-          onSelect={handleSelectOrder}
-          selectedOrders={selectedOrders}
-          onSelectAll={handleSelectAll}
-          loading={loading}
-        />
+        <div className="hidden lg:block">
+          <UnifiedOrderTable
+            orders={orders}
+            isAdmin={isAdmin}
+            currentUserId={authState.user?._id}
+            onUpdateStatus={handleStatusUpdate}
+            onCancel={handleCancelOrder}
+            onSelect={handleSelectOrder}
+            selectedOrders={selectedOrders}
+            onSelectAll={handleSelectAll}
+            loading={loading}
+          />
+        </div>
       ) : (
         <UnifiedOrderExcel 
           orders={orders}
