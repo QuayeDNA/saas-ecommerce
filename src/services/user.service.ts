@@ -12,6 +12,7 @@ export interface User {
   status: string;
   businessName?: string;
   businessCategory?: 'electronics' | 'fashion' | 'food' | 'services' | 'other';
+  agentCode?: string;
   createdAt?: string;
   isActive?: boolean;
   subscriptionPlan?: 'basic' | 'premium' | 'enterprise';

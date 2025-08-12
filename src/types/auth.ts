@@ -16,6 +16,7 @@ export interface User {
   businessCategory?: 'electronics' | 'fashion' | 'food' | 'services' | 'other';
   subscriptionPlan?: 'basic' | 'premium' | 'enterprise';
   subscriptionStatus?: 'active' | 'inactive' | 'suspended';
+  agentCode?: string;
   // Multi-tenant fields
   tenantId?: string;
   // AFA Registration

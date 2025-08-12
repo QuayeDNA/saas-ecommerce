@@ -366,16 +366,21 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                   {authState.user?.fullName.charAt(0)}{authState.user?.fullName.split(' ')[1]?.charAt(0) ?? ''}
                 </div>
               </div>
-              <div className="overflow-hidden min-w-0 flex-1">
-                <div className="text-sm font-medium truncate text-white">{authState.user?.fullName}</div>
-                <div className="flex items-center">
-                  <span className={`w-2 h-2 ${authState.isAuthenticated ? 'bg-green-500' : 'bg-gray-400'} rounded-full mr-1 flex-shrink-0`}></span>
-                  <p className="text-xs text-gray-300 truncate capitalize">{authState.user?.userType ?? 'User'}</p>
-                </div>
+            <div className="overflow-hidden min-w-0 flex-1">
+              <div className="text-sm font-medium truncate text-white">{authState.user?.fullName}</div>
+              <div className="flex items-center">
+                <span className={`w-2 h-2 ${authState.isAuthenticated ? 'bg-green-500' : 'bg-gray-400'} rounded-full mr-1 flex-shrink-0`}></span>
+                <p className="text-xs text-gray-300 truncate capitalize">{authState.user?.userType ?? 'User'}</p>
+                {authState.user?.userType === 'agent' && authState.user?.agentCode && (
+                  <div className="ml-2 text-md font-mono font-bold text-white tracking-wide">
+                    {authState.user?.agentCode}
+                  </div>
+                )}
               </div>
             </div>
-            
-            {/* Logout button */}
+          </div>
+                 
+          {/* Logout button */}
             <button 
               onClick={() => {
                 logout();
