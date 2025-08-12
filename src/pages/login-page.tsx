@@ -2,7 +2,7 @@
 
 /**
  * Modern Login Page with Enhanced UX
- * 
+ *
  * Features:
  * - Mobile-first responsive design with modern aesthetics
  * - Clear visual hierarchy and user-friendly layout
@@ -15,12 +15,29 @@
  * - Consistent design system integration
  */
 
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash, FaArrowLeft, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
-import { Button, Card, CardHeader, CardBody, Input, Alert, Container } from '../design-system';
-import { useAuth } from '../hooks';
-import { BryteLinksSvgLogoCompact, BryteLinksSvgLogo } from '../components/common/BryteLinksSvgLogo';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaArrowLeft,
+  FaExclamationTriangle,
+  FaSpinner,
+} from "react-icons/fa";
+import {
+  Button,
+  Card,
+  CardHeader,
+  CardBody,
+  Input,
+  Alert,
+  Container,
+} from "../design-system";
+import { useAuth } from "../hooks";
+import {
+  BryteLinksSvgLogoCompact,
+  BryteLinksSvgLogo,
+} from "../components/common/BryteLinksSvgLogo";
 
 export const LoginPage = () => {
   const { authState, login, clearErrors } = useAuth();
@@ -28,7 +45,7 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Redirect if already authenticated
   useEffect(() => {
     if (authState.isAuthenticated && authState.dashboardUrl) {
@@ -41,27 +58,29 @@ export const LoginPage = () => {
     clearErrors();
     setLocalError(null);
   }, [clearErrors]);
-  
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLocalError(null);
     clearErrors();
     setIsSubmitting(true);
-    
+
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const rememberMe = formData.get('remember_me') === 'on';
-    
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const rememberMe = formData.get("remember_me") === "on";
+
     try {
       await login(email, password, rememberMe);
     } catch (error) {
-      let message = 'Login failed';
+      let message = "Login failed";
       if (error instanceof Error) {
-        if (error.message.includes('pending approval')) {
-          message = 'Your account is pending approval by a super admin. You will be notified by email once approved.';
-        } else if (error.message.includes('rejected')) {
-          message = 'Your account has been rejected. Please contact support for more information.';
+        if (error.message.includes("pending approval")) {
+          message =
+            "Your account is pending approval by a super admin. You will be notified by email once approved.";
+        } else if (error.message.includes("rejected")) {
+          message =
+            "Your account has been rejected. Please contact support for more information.";
         } else {
           message = error.message;
         }
@@ -71,22 +90,22 @@ export const LoginPage = () => {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-indigo-100">
       {/* Header with back to home */}
       <header className="p-4 sm:p-6">
         <Container>
           <div className="flex items-center justify-between">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
             >
               <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
               <span className="hidden sm:inline">Back to Home</span>
               <span className="sm:hidden">Back</span>
             </Link>
-            
+
             {/* Logo */}
             <div className="flex items-center space-x-2">
               <BryteLinksSvgLogoCompact width={140} height={40} />
@@ -99,28 +118,30 @@ export const LoginPage = () => {
       <div className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-lg">
           <Card className="shadow-xl border-0" variant="elevated">
-            <CardHeader className="text-center mb-6">
-            <div className="flex justify-center items-center">
-            <BryteLinksSvgLogo width={120} height={140} />
-          </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
+            <CardHeader className="text-center mb-6 p-0">
+              <div className="flex justify-center items-center">
+                <BryteLinksSvgLogo width={120} height={140} />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Welcome back
+              </h1>
               <p className="text-gray-600">
-                Don't have an account?{' '}
-                <Link 
-                  to="/register" 
+                Don't have an account?{" "}
+                <Link
+                  to="/register"
                   className="font-semibold text-blue-600 hover:text-blue-500 transition-colors"
                 >
                   Sign up for free
                 </Link>
               </p>
             </CardHeader>
-            
+
             <CardBody className="pt-0">
               <form className="space-y-6" onSubmit={handleSubmit}>
                 {/* Error Alert */}
                 {(localError || authState.error) && (
-                  <Alert 
-                    status="error" 
+                  <Alert
+                    status="error"
                     variant="left-accent"
                     className="flex items-start"
                   >
@@ -138,7 +159,10 @@ export const LoginPage = () => {
 
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Email address
                   </label>
                   <Input
@@ -155,14 +179,17 @@ export const LoginPage = () => {
 
                 {/* Password Field */}
                 <div className="space-y-2">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Password
                   </label>
                   <div className="relative">
                     <Input
                       id="password"
                       name="password"
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       required
                       placeholder="Enter your password"
@@ -175,7 +202,11 @@ export const LoginPage = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isSubmitting || authState.isLoading}
                     >
-                      {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                      {showPassword ? (
+                        <FaEyeSlash size={18} />
+                      ) : (
+                        <FaEye size={18} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -211,12 +242,14 @@ export const LoginPage = () => {
                   fullWidth
                   disabled={isSubmitting || authState.isLoading}
                   leftIcon={
-                    (isSubmitting || authState.isLoading) ? (
+                    isSubmitting || authState.isLoading ? (
                       <FaSpinner className="animate-spin" />
                     ) : undefined
                   }
                 >
-                  {isSubmitting || authState.isLoading ? 'Signing in...' : 'Sign in'}
+                  {isSubmitting || authState.isLoading
+                    ? "Signing in..."
+                    : "Sign in"}
                 </Button>
 
                 {/* Additional Help */}
@@ -225,17 +258,17 @@ export const LoginPage = () => {
                     Need help? Contact our support team
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
-                    <a 
-                      href="https://wa.me/+233548983019" 
-                      target="_blank" 
+                    <a
+                      href="https://wa.me/+233548983019"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-green-600 hover:text-green-500 transition-colors"
                     >
                       📞 +233 54 898 3019
                     </a>
-                    <a 
-                      href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t" 
-                      target="_blank" 
+                    <a
+                      href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-green-600 hover:text-green-500 transition-colors"
                     >
