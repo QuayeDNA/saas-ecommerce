@@ -1,5 +1,6 @@
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import SuperAdminLayout from "../layouts/superadmin-layout";
+import { PageLoader } from "../components/page-loader";
 
 const SuperAdminDashboard = lazy(() => import("../pages/superadmin/index"));
 // Placeholder lazy imports for other pages
@@ -16,15 +17,78 @@ const superadminRoutes = {
   path: "/superadmin",
   element: <SuperAdminLayout />,
   children: [
-    { index: true, element: <SuperAdminDashboard /> },
-    { path: "users", element: <UsersPage /> },
-    { path: "users/:id", element: <UserDetailsPage /> },
-    { path: "packages", element: <PackagesPage /> },
-    { path: "providers", element: <ProvidersPage /> },
-    { path: "orders", element: <OrdersPage /> },
-    { path: "wallet", element: <WalletPage /> },
-    { path: "settings", element: <SettingsPage /> },
-    { path: "packages/:packageId/bundles", element: <BundleManagementPage /> },
+    { 
+      index: true, 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <SuperAdminDashboard />
+        </Suspense>
+      )
+    },
+    { 
+      path: "users", 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <UsersPage />
+        </Suspense>
+      )
+    },
+    { 
+      path: "users/:id", 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <UserDetailsPage />
+        </Suspense>
+      )
+    },
+    { 
+      path: "packages", 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <PackagesPage />
+        </Suspense>
+      )
+    },
+    { 
+      path: "providers", 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <ProvidersPage />
+        </Suspense>
+      )
+    },
+    { 
+      path: "orders", 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <OrdersPage />
+        </Suspense>
+      )
+    },
+    { 
+      path: "wallet", 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <WalletPage />
+        </Suspense>
+      )
+    },
+    { 
+      path: "settings", 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <SettingsPage />
+        </Suspense>
+      )
+    },
+    { 
+      path: "packages/:packageId/bundles", 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <BundleManagementPage />
+        </Suspense>
+      )
+    },
   ],
 };
 

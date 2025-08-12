@@ -376,7 +376,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                       {providerName} Package
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      Available bundles in this package
+                      Available active bundles in this package ({availableBundles.length} available)
                     </p>
                   </div>
                 </div>

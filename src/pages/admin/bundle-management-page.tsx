@@ -476,6 +476,20 @@ export const BundleManagementPage: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Inactive</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-600">{stats.inactive}</p>
+              </div>
+              <div className="p-2 sm:p-3 bg-red-100 rounded-full">
+                <FaTimesCircle className="text-red-600 text-lg sm:text-xl" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Total Value</p>
                 <p className="text-lg sm:text-2xl font-bold text-purple-600">{formatCurrency(stats.totalValue)}</p>
               </div>

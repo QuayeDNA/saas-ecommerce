@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/sidebar';
 import { Header } from '../components/header';
+import { NavigationLoader } from '../components/navigation-loader';
 import GuidedTour from '../components/guided-tour';
 import type { TourStep } from '../components/guided-tour';
 import { useAuth } from '../hooks';
@@ -140,7 +141,9 @@ export const DashboardLayout = () => {
         
         {/* Content */}
         <main className={`flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-[#F5F6FA] ${isImpersonating ? 'min-h-screen' : ''}`}>
-          <Outlet />
+          <NavigationLoader delay={150}>
+            <Outlet />
+          </NavigationLoader>
         </main>
       </div>
       

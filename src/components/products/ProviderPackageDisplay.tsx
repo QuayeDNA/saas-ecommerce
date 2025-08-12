@@ -43,6 +43,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>(
     category || "all"
   );
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showBulkOrderModal, setShowBulkOrderModal] = useState(false);
@@ -134,41 +135,52 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     searchTerm,
     onSearchChange: setSearchTerm,
     searchPlaceholder: "Search bundles...",
-    filters:
-      !category && !packageId && categories.length > 1
-        ? {
-            category: {
-              label: "Category",
-              value: selectedCategory,
-              options: categories.map((cat) => ({
-                value: cat ?? "",
-                label:
-                  cat === "all"
-                    ? "All Categories"
-                    : typeof cat === "string"
-                    ? cat.charAt(0).toUpperCase() + cat.slice(1)
-                    : "",
-              })),
-            },
-          }
-        : ({} as Record<
-            string,
-            {
-              value: string;
-              options: { value: string; label: string }[];
-              label: string;
-              placeholder?: string;
-            }
-          >),
+    filters: {
+      ...((!category && !packageId && categories.length > 1) ? {
+        category: {
+          label: "Category",
+          value: selectedCategory,
+          options: categories.map((cat) => ({
+            value: cat ?? "",
+            label:
+              cat === "all"
+                ? "All Categories"
+                : typeof cat === "string"
+                ? cat.charAt(0).toUpperCase() + cat.slice(1)
+                : "",
+          })),
+        },
+      } : {}),
+      status: {
+        label: "Status",
+        value: selectedStatus,
+        options: [
+          { value: "all", label: "All Status" },
+          { value: "active", label: "Active" },
+          { value: "inactive", label: "Inactive" },
+        ],
+      },
+    } as Record<
+      string,
+      {
+        value: string;
+        options: { value: string; label: string }[];
+        label: string;
+        placeholder?: string;
+      }
+    >,
     onFilterChange: (filterKey: string, value: string) => {
       if (filterKey === "category") {
         setSelectedCategory(value);
+      } else if (filterKey === "status") {
+        setSelectedStatus(value);
       }
     },
     onSearch: () => {},
     onClearFilters: () => {
       setSearchTerm("");
       setSelectedCategory(category || "all");
+      setSelectedStatus("all");
     },
     isLoading: loading,
   };
@@ -292,20 +304,25 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {(bundles[pkg._id!] || [])
                       .filter(
-                        (bundle) =>
-                          searchTerm === "" ||
-                          bundle.name
-                            .toLowerCase()
-                            .includes(searchTerm.toLowerCase()) ||
-                          (bundle.description?.toLowerCase() ?? "").includes(
-                            searchTerm.toLowerCase()
-                          )
+                        (bundle) => {
+                          // Search filter
+                          const matchesSearch = searchTerm === "" ||
+                            bundle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (bundle.description?.toLowerCase() ?? "").includes(searchTerm.toLowerCase());
+                          
+                          // Status filter
+                          const matchesStatus = selectedStatus === "all" ||
+                            (selectedStatus === "active" && bundle.isActive) ||
+                            (selectedStatus === "inactive" && !bundle.isActive);
+                          
+                          return matchesSearch && matchesStatus;
+                        }
                       )
 
                       .map((bundle) => (
                         <Card
                           key={bundle._id}
-                          className="hover:shadow-md transition"
+                          className={`hover:shadow-md transition ${!bundle.isActive ? 'opacity-75' : ''}`}
                         >
                           <CardBody>
                             <div className="flex flex-col gap-3">
@@ -313,6 +330,11 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                                 <span className="font-bold text-base text-gray-900">
                                   {bundle.name}
                                 </span>
+                                {!bundle.isActive && (
+                                  <Badge colorScheme="error" size="sm">
+                                    Inactive
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex gap-2 text-sm">
                                 <Badge
@@ -343,16 +365,19 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                               </div>
                               <Button
                                 className="font-semibold"
+                                disabled={!bundle.isActive}
                                 style={{
-                                  backgroundColor: providerColors.primary,
-                                  color: providerColors.text,
+                                  backgroundColor: bundle.isActive ? providerColors.primary : '#9CA3AF',
+                                  color: bundle.isActive ? providerColors.text : '#FFFFFF',
                                 }}
                                 onClick={() => {
-                                  setSelectedBundle(bundle);
-                                  setShowOrderModal(true);
+                                  if (bundle.isActive) {
+                                    setSelectedBundle(bundle);
+                                    setShowOrderModal(true);
+                                  }
                                 }}
                               >
-                                Order Now
+                                {bundle.isActive ? 'Order Now' : 'Out of Stock'}
                               </Button>
                             </div>
                           </CardBody>
