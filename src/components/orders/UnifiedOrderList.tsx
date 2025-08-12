@@ -1,10 +1,12 @@
 // src/components/orders/UnifiedOrderList.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useOrder } from '../../hooks/use-order';
 import { useAuth } from '../../hooks/use-auth';
+import { providerService } from '../../services/provider.service';
 import { Button, Card, CardBody, Pagination, Badge, Spinner, StatsGrid, Dialog, DialogHeader, DialogBody, DialogFooter } from '../../design-system';
 import { FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaSync, FaExclamationTriangle } from 'react-icons/fa';
 import type { Order, OrderFilters } from '../../types/order';
+import type { Provider } from '../../types/package';
 import { UnifiedOrderCard } from './UnifiedOrderCard';
 import { UnifiedOrderTable } from './UnifiedOrderTable';
 import { UnifiedOrderExcel } from './UnifiedOrderExcel';
@@ -42,18 +44,54 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
+  const [providerFilter, setProviderFilter] = useState<string>('');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'cards' | 'table' | 'excel'>('cards');
   const [showDraftHandler, setShowDraftHandler] = useState(false);
   const [showBulkConfirmDialog, setShowBulkConfirmDialog] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<'cancel' | 'process' | 'complete' | null>(null);
+  
+  // Provider data
+  const [providers, setProviders] = useState<Provider[]>([]);
+
+  // Fetch providers for super admin filter
+  const fetchProviders = useCallback(async () => {
+    try {
+      const response = await providerService.getProviders({ isActive: true });
+      setProviders(response.providers);
+    } catch (error) {
+      console.error('Failed to fetch providers:', error);
+    }
+  }, []);
 
   useEffect(() => {
     fetchOrders();
     fetchMonthlyRevenue();
-  }, [fetchOrders, fetchMonthlyRevenue]);
+    // Fetch providers for filter
+    if (isAdmin) {
+      fetchProviders();
+    }
+  }, [fetchOrders, fetchMonthlyRevenue, isAdmin, fetchProviders]);
 
+  // Auto-search effect for instant filtering
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const newFilters: OrderFilters = {
+        search: searchTerm,
+        status: statusFilter || undefined,
+        orderType: orderTypeFilter || undefined,
+        paymentStatus: paymentStatusFilter || undefined,
+        provider: providerFilter || undefined,
+        startDate: dateRange.startDate || undefined,
+        endDate: dateRange.endDate || undefined,
+      };
+      setFilters(newFilters);
+      fetchOrders(newFilters);
+    }, 300); // Debounce for 300ms
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, statusFilter, orderTypeFilter, paymentStatusFilter, providerFilter, dateRange, setFilters, fetchOrders]);
   // Auto-switch to cards view on mobile/tablet screens
   useEffect(() => {
     const handleResize = () => {
@@ -91,16 +129,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const newFilters: OrderFilters = {
-      search: searchTerm,
-      status: statusFilter || undefined,
-      orderType: orderTypeFilter || undefined,
-      paymentStatus: paymentStatusFilter || undefined,
-      startDate: dateRange.startDate || undefined,
-      endDate: dateRange.endDate || undefined,
-    };
-    setFilters(newFilters);
-    fetchOrders(newFilters);
+    // Instant search is handled by useEffect, this just prevents form submission
   };
 
   const handleClearFilters = () => {
@@ -108,6 +137,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     setStatusFilter('');
     setOrderTypeFilter('');
     setPaymentStatusFilter('');
+    setProviderFilter('');
     setDateRange({ startDate: '', endDate: '' });
     setFilters({});
     fetchOrders();
@@ -246,12 +276,25 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         label: 'Order Type',
         placeholder: 'All Types',
       },
+      ...(isAdmin && providers.length > 0 ? {
+        provider: {
+          value: providerFilter,
+          options: providers.map(provider => ({
+            value: provider.code,
+            label: provider.name
+          })),
+          label: 'Network Provider',
+          placeholder: 'All Providers',
+        }
+      } : {}),
     },
     onFilterChange: (filterKey: string, value: string) => {
       if (filterKey === 'status') {
         setStatusFilter(value);
       } else if (filterKey === 'orderType') {
         setOrderTypeFilter(value);
+      } else if (filterKey === 'provider') {
+        setProviderFilter(value);
       }
     },
     dateRange,

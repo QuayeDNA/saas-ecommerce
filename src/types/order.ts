@@ -116,6 +116,7 @@ export interface OrderFilters {
   startDate?: string;
   endDate?: string;
   search?: string;
+  provider?: string;
 }
 
 export interface OrderPagination {
