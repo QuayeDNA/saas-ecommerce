@@ -138,8 +138,17 @@ class AuthService {
     let errors: { message: string }[] | undefined;
     
     if (axios.isAxiosError(err)) {
-      message = err.response?.data?.message ?? err.message ?? message;
-      errors = err.response?.data?.errors;
+      const response = err.response;
+      
+      // Handle 429 (Rate Limiting) errors with user-friendly messages
+      if (response?.status === 429) {
+        const retryAfter = response.data?.retryAfter || 'a few minutes';
+        message = `Too many login attempts. Please try again in ${retryAfter}.`;
+      } else {
+        message = response?.data?.error || response?.data?.message || err.message || message;
+      }
+      
+      errors = response?.data?.errors;
     } else if (err instanceof Error) {
       message = err.message;
     }

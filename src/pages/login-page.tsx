@@ -81,6 +81,10 @@ export const LoginPage = () => {
         } else if (error.message.includes("rejected")) {
           message =
             "Your account has been rejected. Please contact support for more information.";
+        } else if (error.message.includes("Too many login attempts")) {
+          message = error.message; // Use the specific rate limiting message
+        } else if (error.message.includes("429") || error.message.includes("Too Many Requests")) {
+          message = "Too many login attempts. Please wait a few minutes before trying again.";
         } else {
           message = error.message;
         }
@@ -148,11 +152,16 @@ export const LoginPage = () => {
                     <FaExclamationTriangle className="mt-0.5 mr-3 flex-shrink-0 text-red-500" />
                     <div>
                       <div className="font-medium text-red-800">
-                        Login Failed
+                        {(localError ?? authState.error)?.includes("Too many") ? "Rate Limited" : "Login Failed"}
                       </div>
                       <div className="text-red-700 text-sm mt-1">
                         {localError ?? authState.error}
                       </div>
+                      {(localError ?? authState.error)?.includes("Too many") && (
+                        <div className="text-red-600 text-xs mt-2 font-medium">
+                          💡 Tip: Wait a moment before retrying to avoid further delays
+                        </div>
+                      )}
                     </div>
                   </Alert>
                 )}
