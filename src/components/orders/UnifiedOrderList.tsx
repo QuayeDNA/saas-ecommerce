@@ -276,13 +276,18 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         label: 'Order Type',
         placeholder: 'All Types',
       },
-      ...(isAdmin && providers.length > 0 ? {
+      ...(isAdmin ? {
         provider: {
           value: providerFilter,
-          options: providers.map(provider => ({
-            value: provider.code,
-            label: provider.name
-          })),
+          options: [
+            // Include AFA as a static option since it appears in orders but isn't a traditional provider
+            { value: 'AFA', label: 'AFA' },
+            // Include all network providers from the provider service
+            ...providers.map(provider => ({
+              value: provider.code,
+              label: provider.name
+            }))
+          ],
           label: 'Network Provider',
           placeholder: 'All Providers',
         }
