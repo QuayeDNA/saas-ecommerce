@@ -7,6 +7,7 @@ import { Button } from "../design-system";
 import { Link } from "react-router-dom";
 import { FaPowerOff, FaCheck, FaBars, FaUser, FaSignOutAlt, FaWallet, FaSync, FaStar, FaWifi } from "react-icons/fa";
 import { NotificationDropdown } from "./notifications/NotificationDropdown";
+import { ImpersonationService } from "../utils/impersonation";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -137,8 +138,11 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     authState.user?.userType === "super_admin" ||
     authState.user?.userType === "admin";
 
+  // Check if impersonating to adjust header position
+  const isImpersonating = ImpersonationService.isImpersonating();
+
   return (
-    <header className="sticky top-0 z-10 bg-[#142850] shadow-sm border-b border-[#0f1f3a] rounded-b-xl">
+    <header className={`sticky z-10 bg-[#142850] shadow-sm border-b border-[#0f1f3a] rounded-b-xl ${isImpersonating ? 'top-0' : 'top-0'}`}>
       <div className="px-2 sm:px-6 lg:px-8 py-4 sm:py-5">
         {/* Main Header Row */}
         <div className="flex items-center justify-between gap-4">
