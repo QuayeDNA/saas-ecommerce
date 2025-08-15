@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { FaSearch, FaFilter, FaEye, FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaDownload, FaUsers, FaWallet, FaPlus, FaMinus } from "react-icons/fa";
 import { useWallet } from "../../hooks/use-wallet";
 import { useToast } from "../../design-system/components/toast";
@@ -13,6 +13,7 @@ import type { WalletTransaction, WalletAnalytics } from "../../types/wallet";
 import { walletService } from "../../services/wallet-service";
 import { websocketService } from "../../services/websocket.service";
 import { apiClient } from "../../utils/api-client";
+import { Card, CardHeader } from "@/design-system";
 
 interface User {
   _id: string;
@@ -135,6 +136,7 @@ export default function SuperAdminWalletPage() {
   
   // State for users
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -143,6 +145,7 @@ export default function SuperAdminWalletPage() {
   
   // State for filters and search
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [userTypeFilter, setUserTypeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   
@@ -171,6 +174,72 @@ export default function SuperAdminWalletPage() {
     }
   }, []);
 
+  // Filter users based on search term and filters
+  const filterUsers = useCallback((usersList: User[], search: string, userType: string, status: string) => {
+    return usersList.filter(user => {
+      // Search matching - check name, email, and ID
+      const searchLower = search.toLowerCase().trim();
+      const matchesSearch = !searchLower || 
+        user.fullName.toLowerCase().includes(searchLower) ||
+        user.email.toLowerCase().includes(searchLower) ||
+        user._id.toLowerCase().includes(searchLower);
+      
+      // Filter matching
+      const matchesUserType = !userType || user.userType.toLowerCase() === userType.toLowerCase();
+      const matchesStatus = !status || user.status.toLowerCase() === status.toLowerCase();
+      
+      return matchesSearch && matchesUserType && matchesStatus;
+    });
+  }, []);
+
+  // Update filtered users when users or filters change
+  useEffect(() => {
+    const filtered = filterUsers(users, debouncedSearchTerm, userTypeFilter, statusFilter);
+    setFilteredUsers(filtered);
+  }, [users, debouncedSearchTerm, userTypeFilter, statusFilter, filterUsers]);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Clear filters function
+  const handleClearFilters = useCallback(() => {
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
+    setUserTypeFilter('');
+    setStatusFilter('');
+    addToast('Filters cleared', 'info', 2000);
+  }, [addToast]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Escape key to clear filters
+      if (event.key === 'Escape' && (debouncedSearchTerm || userTypeFilter || statusFilter)) {
+        handleClearFilters();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [debouncedSearchTerm, userTypeFilter, statusFilter, handleClearFilters]);
+
+  // Memoized search statistics
+  const searchStats = useMemo(() => {
+    const hasFilters = debouncedSearchTerm || userTypeFilter || statusFilter;
+    return {
+      total: users.length,
+      filtered: filteredUsers.length,
+      hasFilters,
+      percentage: users.length > 0 ? Math.round((filteredUsers.length / users.length) * 100) : 0
+    };
+  }, [users.length, filteredUsers.length, debouncedSearchTerm, userTypeFilter, statusFilter]);
+
   useEffect(() => {
     fetchUsers();
     fetchAnalytics();
@@ -192,7 +261,9 @@ export default function SuperAdminWalletPage() {
       const response = await apiClient.get('/api/users/with-wallet', {
         params: {
           userType: 'agent',
-          includeWallet: 'true'
+          includeWallet: 'true',
+          page: 1,
+          limit: 100
         }
       });
       if (response.data.success) {
@@ -273,13 +344,27 @@ export default function SuperAdminWalletPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement search logic
-  };
-
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setUserTypeFilter('');
-    setStatusFilter('');
+    // Filtering is now handled automatically by the useEffect hook
+    // This function provides immediate feedback when user hits search button
+    const activeFilters = [
+      debouncedSearchTerm && 'search term',
+      userTypeFilter && 'user type',
+      statusFilter && 'status'
+    ].filter(Boolean);
+    
+    if (activeFilters.length > 0) {
+      addToast(
+        `Found ${searchStats.filtered} user${searchStats.filtered !== 1 ? 's' : ''} matching ${activeFilters.join(', ')} (${searchStats.percentage}%)`,
+        'info',
+        3000
+      );
+    } else {
+      addToast(
+        `Showing all ${searchStats.filtered} users`,
+        'info',
+        2000
+      );
+    }
   };
 
   const openTransactionModal = (user: User, mode: 'credit' | 'debit') => {
@@ -325,14 +410,14 @@ export default function SuperAdminWalletPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center">
-          <div>
+      <Card variant="outlined">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <CardHeader className="text-center">
             <h1 className="text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
               Wallet Management
             </h1>
             <p className="text-gray-600">Manage agent wallets and transactions</p>
-          </div>
+          </CardHeader>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => fetchUsers()}>
               <FaDownload className="mr-2" />
@@ -344,11 +429,11 @@ export default function SuperAdminWalletPage() {
             </Button>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Analytics Cards */}
       {analytics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -476,8 +561,11 @@ export default function SuperAdminWalletPage() {
                 label="Search users"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name or email..."
+                placeholder="Search by name, email, or ID... (Press Enter to search, Esc to clear)"
                 leftIcon={<FaSearch className="text-gray-400" />}
+                rightIcon={searchTerm !== debouncedSearchTerm ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                ) : undefined}
               />
             </div>
             <div>
@@ -519,6 +607,29 @@ export default function SuperAdminWalletPage() {
         </Form>
       </div>
 
+      {/* Results Summary */}
+      {!loading && (
+        <div className="flex justify-between items-center bg-gray-50 px-6 py-3 border-b">
+          <div className="text-sm text-gray-700">
+            Showing {searchStats.filtered} of {searchStats.total} users
+            {searchStats.hasFilters && (
+              <span className="ml-2 text-blue-600">
+                ({searchStats.percentage}% filtered)
+              </span>
+            )}
+          </div>
+          {searchStats.hasFilters && (
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={handleClearFilters}
+            >
+              Clear all filters
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
@@ -552,14 +663,14 @@ export default function SuperAdminWalletPage() {
                     </div>
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                    No users found.
+                    {users.length === 0 ? 'No users found.' : 'No users match your search criteria.'}
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                filteredUsers.map((user) => (
                   <tr key={user._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div>
