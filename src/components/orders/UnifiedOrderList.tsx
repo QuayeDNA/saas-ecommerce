@@ -393,13 +393,14 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       {/* View Mode Toggle */}
       <Card>
         <CardBody>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-700">View Mode:</span>
-              <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* View Mode Section */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <span className="text-sm font-medium text-gray-700 flex-shrink-0">View Mode:</span>
+              <div className="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
                 <button
                   onClick={() => setViewMode('cards')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${
                     viewMode === 'cards'
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
@@ -421,7 +422,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 {isAdmin && (
                   <button
                     onClick={() => setViewMode('excel')}
-                    className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${
                       viewMode === 'excel'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
@@ -432,6 +433,34 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Select All Button - Only show in cards view and for admin/agent */}
+            {viewMode === 'cards' && (isAdmin || isAgent) && orders.length > 0 && (
+              <div className="flex items-center justify-between gap-3 w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  className="flex items-center gap-2 flex-1 sm:flex-none justify-center"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedOrders.length === orders.length && orders.length > 0}
+                    onChange={() => {}} // Handled by button click
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    readOnly
+                  />
+                  <span className="text-xs sm:text-sm">
+                    {selectedOrders.length === orders.length ? 'Deselect All' : 'Select All'}
+                  </span>
+                </Button>
+                {selectedOrders.length > 0 && (
+                  <span className="text-xs sm:text-sm text-gray-600 flex-shrink-0">
+                    {selectedOrders.length} selected
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </CardBody>
       </Card>
