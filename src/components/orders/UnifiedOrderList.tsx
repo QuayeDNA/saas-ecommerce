@@ -111,7 +111,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   // Calculate statistics
   const stats = {
-    total: orders.length,
+    total: pagination.total || orders.length, // Use pagination total for actual count, fallback to orders.length
     pending: orders.filter((o: Order) => o.status === 'pending').length,
     confirmed: orders.filter((o: Order) => o.status === 'confirmed').length,
     processing: orders.filter((o: Order) => o.status === 'processing').length,
@@ -230,7 +230,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       icon: <FaMoneyBillWave />,
     },
     {
-      title: 'Monthly Earnings',
+      title: 'Monthly Orders',
       value: monthlyRevenue ? formatCurrency(monthlyRevenue.monthlyRevenue) : formatCurrency(0),
       icon: <FaMoneyBillWave />,
       subtitle: monthlyRevenue ? `${monthlyRevenue.month} (${monthlyRevenue.orderCount} orders)` : 'This month',
@@ -439,8 +439,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               </div>
             </div>
 
-            {/* Select All Button - Only show in cards view and for admin/agent */}
-            {viewMode === 'cards' && (isAdmin || isAgent) && orders.length > 0 && (
+            {/* Select All Button - Only show in cards view and for admin */}
+            {viewMode === 'cards' && (isAdmin) && orders.length > 0 && (
               <div className="flex items-center justify-between gap-3 w-full sm:w-auto">
                 <Button
                   variant="outline"
