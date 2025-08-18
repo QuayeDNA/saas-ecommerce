@@ -13,6 +13,7 @@ const PROVIDER_OPTIONS = [
   { value: 'MTN', label: 'MTN' },
   { value: 'TELECEL', label: 'TELECEL' },
   { value: 'AT', label: 'AT' },
+  { value: 'AFA', label: 'AFA' }
 ];
 
 const CATEGORY_OPTIONS = [

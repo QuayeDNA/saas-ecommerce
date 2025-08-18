@@ -6,7 +6,7 @@ import type { Provider } from '../../types/package';
 
 // Extended provider interface with tags for the form
 export interface ProviderFormData extends Omit<Partial<Provider>, 'code'> {
-  code?: 'MTN' | 'TELECEL' | 'AT' | '';
+  code?: string;
   tags?: string[];
 }
 
@@ -127,14 +127,21 @@ export const ProviderFormModal: React.FC<ProviderFormModalProps> = ({
                 type="text"
                 value={formData.code ?? ''}
                 onChange={(e) => {
-                  const value = e.target.value.toUpperCase();
-                  const allowedCodes = ['MTN', 'TELECEL', 'AT', ''] as const;
+                  // Allow typing freely, just uppercase
                   setFormData(prev => ({
                     ...prev,
-                    code: allowedCodes.includes(value as any) ? (value as ProviderFormData['code']) : ''
+                    code: e.target.value.toUpperCase()
                   }));
                 }}
-                placeholder="e.g., MTN, VODAFONE"
+                onBlur={(e) => {
+                  // Only restrict to allowed codes on blur
+                  const value = e.target.value.toUpperCase();
+                  const allowedCodes = ['MTN', 'TELECEL', 'AT', 'AFA', ''] as const;
+                  if (!allowedCodes.includes(value as any)) {
+                    setFormData(prev => ({ ...prev, code: '' }));
+                  }
+                }}
+                placeholder="e.g., MTN, TELECEL, AT, AFA"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />

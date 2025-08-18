@@ -37,6 +37,7 @@ const providerOptions = [
   { value: 'MTN', label: 'MTN', color: 'text-yellow-600 bg-yellow-100' },
   { value: 'TELECEL', label: 'Telecel', color: 'text-blue-600 bg-blue-100' },
   { value: 'AT', label: 'AirtelTigo', color: 'text-red-600 bg-red-100' },
+  { value: 'AFA', label: 'AFA', color: 'text-green-600 bg-green-100' }
 ];
 
 const statusOptions = [

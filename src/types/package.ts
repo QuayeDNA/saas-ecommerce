@@ -61,7 +61,7 @@ export interface Bundle {
 export interface Provider {
   _id: string;
   name: string;
-  code: 'MTN' | 'TELECEL' | 'AT';
+  code: 'MTN' | 'TELECEL' | 'AT' | 'AFA' | string;
   description?: string;
   logo?: {
     url: string;
