@@ -14,15 +14,7 @@ import { walletService } from "../../services/wallet-service";
 import { websocketService } from "../../services/websocket.service";
 import { apiClient } from "../../utils/api-client";
 import { Card, CardHeader } from "@/design-system";
-
-interface User {
-  _id: string;
-  fullName: string;
-  email: string;
-  userType: string;
-  walletBalance: number;
-  status: string;
-}
+import { type User } from "../../services/user.service"
 
 interface WalletTransactionModalProps {
   isOpen: boolean;
@@ -177,12 +169,13 @@ export default function SuperAdminWalletPage() {
   // Filter users based on search term and filters
   const filterUsers = useCallback((usersList: User[], search: string, userType: string, status: string) => {
     return usersList.filter(user => {
-      // Search matching - check name, email, and ID
+      // Search matching - check name, email, ID, and agent code
       const searchLower = search.toLowerCase().trim();
       const matchesSearch = !searchLower || 
         user.fullName.toLowerCase().includes(searchLower) ||
         user.email.toLowerCase().includes(searchLower) ||
-        user._id.toLowerCase().includes(searchLower);
+        user._id.toLowerCase().includes(searchLower) ||
+        (user.agentCode && user.agentCode.toLowerCase().includes(searchLower));
       
       // Filter matching
       const matchesUserType = !userType || user.userType.toLowerCase() === userType.toLowerCase();
@@ -561,7 +554,7 @@ export default function SuperAdminWalletPage() {
                 label="Search users"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name, email, or ID... (Press Enter to search, Esc to clear)"
+                placeholder="Search by name, email, ID, or agent code... (Press Enter to search, Esc to clear)"
                 leftIcon={<FaSearch className="text-gray-400" />}
                 rightIcon={searchTerm !== debouncedSearchTerm ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -639,6 +632,9 @@ export default function SuperAdminWalletPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   User
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-32 w-40">
+                  Agent Code
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Type
                 </th>
@@ -681,6 +677,9 @@ export default function SuperAdminWalletPage() {
                           {user.email}
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 min-w-32 w-40">
+                      <span className="text-sm text-gray-900">{user.agentCode}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">

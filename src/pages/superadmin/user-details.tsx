@@ -354,8 +354,8 @@ export default function SuperAdminUserDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 p-4 sm:p-6">
+    <div className="min-h-screen">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-3 sm:space-x-4">
@@ -365,7 +365,7 @@ export default function SuperAdminUserDetailsPage() {
               size="sm"
               className="flex items-center"
             >
-              <FaArrowLeft className="mr-2" />
+              <FaArrowLeft className="mr-0 sm:mr-2" />
               <span className="hidden sm:inline">Back</span>
             </Button>
             <div>
@@ -389,6 +389,9 @@ export default function SuperAdminUserDetailsPage() {
                     <div className="flex items-center gap-1">
                       {getUserTypeIcon(user.userType)}
                       <span>{getUserTypeLabel(user.userType)}</span>
+                      {user.agentCode && (
+                        <span className="text-xs text-gray-500">({user.agentCode})</span>
+                      )}
                     </div>
                     <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
                       {user.status}

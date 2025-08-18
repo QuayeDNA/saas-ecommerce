@@ -14,7 +14,8 @@ import {
   FaPhone,
   FaEnvelope,
   FaCalendar,
-  FaBuilding
+  FaBuilding,
+  FaIdCard
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../design-system/components/button";
@@ -171,7 +172,7 @@ export default function SuperAdminUsersPage() {
   };
 
   return (
-    <div className="space-y-4 p-4 sm:p-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -299,6 +300,10 @@ export default function SuperAdminUsersPage() {
                           <span className="flex items-center gap-1 truncate">
                             <FaPhone className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">{user.phone}</span>
+                          </span>
+                          <span className="flex items-center gap-1 truncate">
+                            <FaIdCard className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{user.agentCode}</span>
                           </span>
                         </div>
                       </div>
