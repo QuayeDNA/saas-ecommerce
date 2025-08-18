@@ -1,5 +1,5 @@
 // src/components/notifications/NotificationManagementModal.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { 
   Dialog, 
@@ -7,8 +7,6 @@ import {
   DialogBody, 
   DialogFooter,
   Button, 
-  Card, 
-  CardBody,
   Badge,
   Spinner,
   Alert
@@ -63,7 +61,7 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
   const navigate = useNavigate();
 
   // Load all notifications
-  const loadNotifications = async (page = 1, filterType = filter) => {
+  const loadNotifications = useCallback(async (page = 1, filterType = filter) => {
     setIsLoading(true);
     setError(null);
     
@@ -77,7 +75,7 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchAllNotifications, filter]);
 
   // Load notifications when modal opens or filter changes
   useEffect(() => {
@@ -186,160 +184,181 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
   };
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} size="xl">
+    <Dialog isOpen={isOpen} onClose={onClose} size="full" className="sm:max-w-4xl">
       <DialogHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900">All Notifications</h3>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between w-full">
+          <h3 className="text-lg font-semibold text-gray-900 truncate">
+            All Notifications
+          </h3>
+          <div className="flex items-center gap-1 ml-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClearRead}
               disabled={isLoading}
-              className="text-xs sm:text-sm px-2 sm:px-3"
+              className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700"
             >
-              <span className="hidden sm:inline">Clear Read</span>
-              <span className="sm:hidden">Read</span>
+              Clear Read
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClearAll}
               disabled={isLoading}
-              className="text-xs sm:text-sm text-red-600 hover:text-red-700 px-2 sm:px-3"
+              className="text-xs px-2 py-1 text-red-600 hover:text-red-700"
             >
-              <span className="hidden sm:inline">Clear All</span>
-              <span className="sm:hidden">All</span>
+              Clear All
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 p-2"
+              className="text-gray-400 hover:text-gray-600 p-1"
             >
-              <FaTimes size={18} />
+              <FaTimes className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </DialogHeader>
 
-      <DialogBody className="p-4 sm:p-6">
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <div className="flex items-center flex-shrink-0 gap-2">
-              <FaFilter className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Filter:</span>
-            </div>
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant={filter === 'all' ? 'primary' : 'secondary'}
-                onClick={() => handleFilterChange('all')}
-                className="text-xs sm:text-sm"
-              >
-                All
-              </Button>
-              <Button
-                size="sm"
-                variant={filter === 'unread' ? 'primary' : 'secondary'}
-                onClick={() => handleFilterChange('unread')}
-                className="text-xs sm:text-sm"
-              >
-                Unread
-              </Button>
-              <Button
-                size="sm"
-                variant={filter === 'read' ? 'primary' : 'secondary'}
-                onClick={() => handleFilterChange('read')}
-                className="text-xs sm:text-sm"
-              >
-                Read
-              </Button>
+      <DialogBody className="flex-1 overflow-hidden p-0">
+        <div className="h-full flex flex-col">
+          {/* Filters Section */}
+          <div className="pb-3 border-b">
+            <div className="flex flex-col gap-3">
+              {/* Filter Buttons */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FaFilter className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Filter:</span>
+                </div>
+                {selectedNotifications.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600">
+                      {selectedNotifications.length} selected
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={handleDeleteSelected}
+                      disabled={isLoading}
+                      className="text-xs px-2 py-1"
+                    >
+                      <FaTrash className="w-3 h-3 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={filter === 'all' ? 'primary' : 'secondary'}
+                  onClick={() => handleFilterChange('all')}
+                  className="text-sm flex-1 sm:flex-none"
+                >
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant={filter === 'unread' ? 'primary' : 'secondary'}
+                  onClick={() => handleFilterChange('unread')}
+                  className="text-sm flex-1 sm:flex-none"
+                >
+                  Unread
+                </Button>
+                <Button
+                  size="sm"
+                  variant={filter === 'read' ? 'primary' : 'secondary'}
+                  onClick={() => handleFilterChange('read')}
+                  className="text-sm flex-1 sm:flex-none"
+                >
+                  Read
+                </Button>
+              </div>
             </div>
           </div>
 
-          {selectedNotifications.length > 0 && (
-            <div className="flex items-center flex-shrink-0 gap-2">
-              <span className="text-xs sm:text-sm text-gray-600">
-                {selectedNotifications.length} selected
-              </span>
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={handleDeleteSelected}
-                disabled={isLoading}
-                className="text-xs sm:text-sm"
-              >
-                <FaTrash className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Delete Selected</span>
-                <span className="sm:hidden">Delete</span>
-              </Button>
+          {/* Error Alert */}
+          {error && (
+            <div className="px-4 py-2">
+              <Alert status="error" className="text-sm">
+                {error}
+              </Alert>
             </div>
           )}
-        </div>
 
-        {/* Error */}
-        {error && (
-          <Alert status="error" className="mb-4">
-            {error}
-          </Alert>
-        )}
-
-        {/* Notifications List */}
-        <div className="space-y-2 max-h-96 sm:max-h-80 overflow-y-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Spinner size="lg" />
-            </div>
-          ) : allNotifications.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FaBell className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm sm:text-base">No notifications found</p>
-            </div>
-          ) : (
-            <>
-              {/* Select All */}
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded">
-                <input
-                  type="checkbox"
-                  checked={selectedNotifications.length === allNotifications.length && allNotifications.length > 0}
-                  onChange={handleSelectAll}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-xs sm:text-sm text-gray-600">Select All</span>
+          {/* Notifications List */}
+          <div className="flex-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-3">
+                  <Spinner size="lg" />
+                  <p className="text-sm text-gray-500">Loading notifications...</p>
+                </div>
               </div>
+            ) : allNotifications.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <FaBell className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <h4 className="text-base font-medium text-gray-900 mb-1">No notifications found</h4>
+                  <p className="text-sm text-gray-500">You're all caught up!</p>
+                </div>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {/* Select All */}
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedNotifications.length === allNotifications.length && allNotifications.length > 0}
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 font-medium">
+                      Select All ({allNotifications.length})
+                    </span>
+                  </label>
+                </div>
 
-              {/* Notifications */}
-              {allNotifications.map((notification) => (
-                <Card variant="outlined" key={notification._id} className="hover:bg-gray-50">
-                  <CardBody className="p-3 sm:p-4">
-                    <div className="flex items-start gap-2 sm:gap-3">
+                {/* Notification Items */}
+                {allNotifications.map((notification) => (
+                  <div
+                    key={notification._id}
+                    className={`px-4 py-4 hover:bg-gray-50 transition-colors ${
+                      !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                    }`}
+                  >
+                    <div className="flex gap-3">
                       {/* Checkbox */}
-                      <input
-                        type="checkbox"
-                        checked={selectedNotifications.includes(notification._id)}
-                        onChange={() => handleNotificationSelect(notification._id)}
-                        className="mt-1 rounded border-gray-300 flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5"
-                      />
+                      <div className="flex-shrink-0 pt-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedNotifications.includes(notification._id)}
+                          onChange={() => handleNotificationSelect(notification._id)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </div>
 
                       {/* Icon */}
-                      <div className="flex-shrink-0 mt-1">
+                      <div className="flex-shrink-0 pt-1">
                         {getNotificationIcon(notification.type)}
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                        <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2 min-w-0">
-                            <p className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">
                               {notification.title}
-                            </p>
+                            </h4>
                             {notification.metadata?.navigationLink && (
-                              <FaExternalLinkAlt className="w-2 h-2 sm:w-3 sm:h-3 text-blue-500 flex-shrink-0" />
+                              <FaExternalLinkAlt className="w-3 h-3 text-blue-500 flex-shrink-0" />
                             )}
                             {!notification.read && (
-                              <Badge colorScheme="info" size="sm">
+                              <Badge colorScheme="info" size="sm" className="ml-2">
                                 New
                               </Badge>
                             )}
@@ -348,86 +367,104 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                             {formatTimeAgo(notification.createdAt)}
                           </span>
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">
+                        
+                        <p className="text-sm text-gray-600 mb-3 leading-relaxed">
                           {notification.message}
                         </p>
-                      </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleNotificationClick(notification)}
-                          title="View"
-                          className="p-2 sm:p-2 min-w-0"
-                        >
-                          <FaExternalLinkAlt className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => notification.read ? markAsUnread(notification._id) : markAsRead(notification._id)}
-                          title={notification.read ? 'Mark as unread' : 'Mark as read'}
-                          className="p-2 sm:p-2 min-w-0"
-                        >
-                          {notification.read ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deleteNotification(notification._id)}
-                          className="text-red-600 hover:text-red-700 p-2 sm:p-2 min-w-0"
-                          title="Delete"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </Button>
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleNotificationClick(notification)}
+                            className="text-xs px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <FaExternalLinkAlt className="w-3 h-3 mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => notification.read ? markAsUnread(notification._id) : markAsRead(notification._id)}
+                            className="text-xs px-3 py-1 text-gray-600 hover:text-gray-700 hover:bg-gray-100"
+                          >
+                            {notification.read ? (
+                              <>
+                                <FaEyeSlash className="w-3 h-3 mr-1" />
+                                Mark Unread
+                              </>
+                            ) : (
+                              <>
+                                <FaEye className="w-3 h-3 mr-1" />
+                                Mark Read
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteNotification(notification._id)}
+                            className="text-xs px-3 py-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <FaTrash className="w-3 h-3 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </CardBody>
-                </Card>
-              ))}
-            </>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {pagination && pagination.pages > 1 && (
+            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col gap-3">
+                <div className="text-xs text-gray-600 text-center">
+                  Showing {((currentPage - 1) * 20) + 1} to {Math.min(currentPage * 20, pagination.total)} of {pagination.total} notifications
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="text-sm px-3 py-1"
+                  >
+                    <FaChevronLeft className="w-3 h-3 mr-1" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-gray-600">
+                      Page {currentPage} of {pagination.pages}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === pagination.pages}
+                    className="text-sm px-3 py-1"
+                  >
+                    Next
+                    <FaChevronRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
-
-        {/* Pagination */}
-        {pagination && pagination.pages > 1 && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-gray-200">
-            <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
-              Showing {((currentPage - 1) * 20) + 1} to {Math.min(currentPage * 20, pagination.total)} of {pagination.total} notifications
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="text-xs sm:text-sm"
-              >
-                <FaChevronLeft className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Previous</span>
-              </Button>
-              <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-600">
-                {currentPage} / {pagination.pages}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === pagination.pages}
-                className="text-xs sm:text-sm"
-              >
-                <span className="hidden sm:inline">Next</span>
-                <FaChevronRight className="w-3 h-3 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
       </DialogBody>
 
-      <DialogFooter className="p-4 sm:p-6">
-        <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+      <DialogFooter className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+        <Button 
+          variant="outline" 
+          onClick={onClose} 
+          className="w-full text-sm py-2"
+        >
           Close
         </Button>
       </DialogFooter>

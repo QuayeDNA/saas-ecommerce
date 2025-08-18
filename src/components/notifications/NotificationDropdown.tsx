@@ -1,7 +1,7 @@
 // src/components/notifications/NotificationDropdown.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { FaBell, FaCheck, FaTimes, FaSpinner, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaBell, FaCheck, FaTimes, FaSpinner, FaExternalLinkAlt, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { Button, Badge } from '../../design-system';
 import { useNavigate } from 'react-router-dom';
 import { NotificationManagementModal } from './NotificationManagementModal';
@@ -10,6 +10,7 @@ export const NotificationDropdown: React.FC = () => {
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const [showManagementModal, setShowManagementModal] = useState(false);
+  const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
@@ -40,13 +41,6 @@ export const NotificationDropdown: React.FC = () => {
   }, [isOpen]);
 
   // Handle keyboard navigation within notifications
-  const handleKeyDown = (event: React.KeyboardEvent, notification: Notification) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleNotificationClick(notification);
-    }
-  };
-
   interface Notification {
     _id: string;
     metadata?: {
@@ -68,6 +62,18 @@ export const NotificationDropdown: React.FC = () => {
       navigate(notification.metadata.navigationLink);
       setIsOpen(false);
     }
+  };
+
+  const toggleNotificationExpansion = (notificationId: string) => {
+    setExpandedNotifications(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(notificationId)) {
+        newSet.delete(notificationId);
+      } else {
+        newSet.add(notificationId);
+      }
+      return newSet;
+    });
   };
 
   const handleMarkAllAsRead = async () => {
@@ -214,56 +220,81 @@ export const NotificationDropdown: React.FC = () => {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-100">
-                    {notifications.slice(0, 10).map((notification) => (
-                      <div
-                        key={notification._id}
-                        className={`
-                          p-4 cursor-pointer transition-all duration-200
-                          ${getNotificationBgColor(notification.type, notification.read)}
-                          ${!notification.read ? 'border-l-4 border-blue-500' : ''}
-                          hover:shadow-sm
-                        `}
-                        onClick={() => handleNotificationClick(notification)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => handleKeyDown(e, notification)}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className="flex-shrink-0 mt-0.5">
-                            {getNotificationIcon(notification.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center space-x-2">
-                                  <h4 className={`text-sm font-medium truncate ${
-                                    !notification.read ? 'text-gray-900' : 'text-gray-700'
-                                  }`}>
-                                    {notification.title}
-                                  </h4>
-                                  {notification.metadata?.navigationLink && (
-                                    <FaExternalLinkAlt className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                    {notifications.slice(0, 10).map((notification) => {
+                      const isExpanded = expandedNotifications.has(notification._id);
+                      const shouldTruncate = notification.message.length > 100;
+                      
+                      return (
+                        <div
+                          key={notification._id}
+                          className={`
+                            p-4 transition-all duration-200
+                            ${getNotificationBgColor(notification.type, notification.read)}
+                            ${!notification.read ? 'border-l-4 border-blue-500' : ''}
+                            hover:shadow-sm
+                          `}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 mt-0.5">
+                              {getNotificationIcon(notification.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2">
+                                    <button
+                                      className={`text-sm font-medium text-left ${
+                                        !notification.read ? 'text-gray-900' : 'text-gray-700'
+                                      } hover:text-blue-600 transition-colors`}
+                                      onClick={() => handleNotificationClick(notification)}
+                                    >
+                                      {notification.title}
+                                    </button>
+                                    {notification.metadata?.navigationLink && (
+                                      <FaExternalLinkAlt className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                                    )}
+                                  </div>
+                                  <div className="mt-1">
+                                    <p className={`text-sm ${
+                                      !notification.read ? 'text-gray-700' : 'text-gray-500'
+                                    }`}>
+                                      {isExpanded || !shouldTruncate 
+                                        ? notification.message 
+                                        : `${notification.message.substring(0, 100)}...`
+                                      }
+                                    </p>
+                                    {shouldTruncate && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleNotificationExpansion(notification._id);
+                                        }}
+                                        className="text-xs text-blue-600 hover:text-blue-700 mt-1 flex items-center space-x-1"
+                                      >
+                                        <span>{isExpanded ? 'Show less' : 'Show more'}</span>
+                                        {isExpanded ? (
+                                          <FaChevronUp className="w-3 h-3" />
+                                        ) : (
+                                          <FaChevronDown className="w-3 h-3" />
+                                        )}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-end ml-3">
+                                  <span className="text-xs text-gray-500 flex-shrink-0">
+                                    {formatTimeAgo(notification.createdAt)}
+                                  </span>
+                                  {!notification.read && (
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
                                   )}
                                 </div>
-                                <p className={`text-sm mt-1 line-clamp-2 ${
-                                  !notification.read ? 'text-gray-700' : 'text-gray-500'
-                                }`}>
-                                  {notification.message}
-                                </p>
-                              </div>
-                              <div className="flex flex-col items-end ml-3">
-                                <span className="text-xs text-gray-500 flex-shrink-0">
-                                  {formatTimeAgo(notification.createdAt)}
-                                </span>
-                                {!notification.read && (
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
-                                )}
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
