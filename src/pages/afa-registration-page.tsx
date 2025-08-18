@@ -3,6 +3,7 @@ import { useUser } from '../hooks';
 import { Button, Card, CardBody, Input, Alert, Badge, Container } from '../design-system';
 import { useNavigate } from 'react-router-dom';
 import type { AfaOrder } from '../services/user.service';
+import { providerService } from '../services/provider.service';
 
 export const AfaRegistrationPage: React.FC = () => {
   const { submitAfaRegistration, getAfaRegistration, isLoading } = useUser();
@@ -16,21 +17,33 @@ export const AfaRegistrationPage: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [afaOrders, setAfaOrders] = useState<AfaOrder[]>([]);
   const [showOrders, setShowOrders] = useState(false);
+  const [afaProviderActive, setAfaProviderActive] = useState(true);
+  const [checkingProvider, setCheckingProvider] = useState(true);
 
   useEffect(() => {
-    // Load AFA orders
-    const loadAfaOrders = async () => {
+    // Load AFA orders and check provider status
+    const loadData = async () => {
+      setCheckingProvider(true);
       try {
+        // Check AFA provider status
+        const providersResponse = await providerService.getProviders({ search: 'AFA' });
+        const afaProvider = providersResponse.providers.find(p => p.code === 'AFA');
+        setAfaProviderActive(afaProvider?.isActive ?? false);
+
+        // Load AFA orders
         const result = await getAfaRegistration();
         if (result?.afaOrders) {
           setAfaOrders(result.afaOrders);
         }
       } catch (err) {
-        console.error('Failed to load AFA orders:', err);
+        console.error('Failed to load data:', err);
+        setAfaProviderActive(false); // Default to inactive if we can't check
+      } finally {
+        setCheckingProvider(false);
       }
     };
 
-    loadAfaOrders();
+    loadData();
   }, [getAfaRegistration]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,7 +112,7 @@ export const AfaRegistrationPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <Container>
         {/* Header */}
         <div className="mb-6 sm:mb-8">
@@ -136,6 +149,12 @@ export const AfaRegistrationPage: React.FC = () => {
                   </Alert>
                 )}
 
+                {!afaProviderActive && !checkingProvider && (
+                  <Alert status="warning" className="mb-6">
+                    AFA registration service is currently unavailable. Please try again later.
+                  </Alert>
+                )}
+
                 {success && (
                   <Alert status="success" className="mb-6">
                     AFA registration order created successfully! Redirecting to orders page...
@@ -157,7 +176,7 @@ export const AfaRegistrationPage: React.FC = () => {
                         onChange={handleInputChange}
                         placeholder="Enter full name"
                         required
-                        disabled={isLoading}
+                        disabled={isLoading || checkingProvider || !afaProviderActive}
                         className="w-full"
                       />
                     </div>
@@ -175,7 +194,7 @@ export const AfaRegistrationPage: React.FC = () => {
                         onChange={handleInputChange}
                         placeholder="Enter phone number (e.g., 0241234567)"
                         required
-                        disabled={isLoading}
+                        disabled={isLoading || checkingProvider || !afaProviderActive}
                         className="w-full"
                       />
                     </div>
@@ -194,7 +213,7 @@ export const AfaRegistrationPage: React.FC = () => {
                              checked={formData.userType === 'agent'}
                              onChange={handleUserTypeChange}
                              className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                             disabled={isLoading}
+                             disabled={isLoading || checkingProvider || !afaProviderActive}
                            />
                            <span className="text-sm font-medium">Agent (GH¢3)</span>
                          </label>
@@ -218,10 +237,12 @@ export const AfaRegistrationPage: React.FC = () => {
                       <Button
                         type="submit"
                         className="w-full py-3 sm:py-4 text-base sm:text-lg font-medium"
-                        disabled={isLoading}
-                        isLoading={isLoading}
+                        disabled={isLoading || checkingProvider || !afaProviderActive}
+                        isLoading={isLoading || checkingProvider}
                       >
-                        {isLoading ? 'Creating Order...' : 'Create AFA Registration Order'}
+                        {checkingProvider ? 'Checking availability...' : 
+                         !afaProviderActive ? 'AFA Service Unavailable' :
+                         isLoading ? 'Creating Order...' : 'Create AFA Registration Order'}
                       </Button>
                     </div>
                   </div>
