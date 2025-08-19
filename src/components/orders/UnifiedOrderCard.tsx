@@ -3,10 +3,6 @@ import React, { useState } from 'react';
 import { 
   FaWifi,
   FaChevronRight,
-  FaCheckCircle,
-  FaClock,
-  FaSpinner,
-  FaExclamationCircle,
   FaTimes,
   FaUser,
   FaPhone,
@@ -72,24 +68,13 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      case 'cancelled': return 'bg-gray-100 text-gray-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <FaCheckCircle className="text-green-600" />;
-      case 'processing': return <FaSpinner className="text-blue-600 animate-spin" />;
-      case 'failed': return <FaExclamationCircle className="text-red-600" />;
-      case 'pending': return <FaClock className="text-yellow-600" />;
-      case 'confirmed': return <FaCheckCircle className="text-purple-600" />;
-      default: return <FaClock className="text-gray-600" />;
+      case 'completed': return 'bg-[#006400] text-gray-200';
+      case 'processing': return 'bg-[#00008B] text-gray-200';
+      case 'failed': return 'bg-[#8B0000] text-gray-200';
+      case 'cancelled': return 'bg-[#8B0000] text-gray-200';
+      case 'pending': return 'bg-[#B8860B] text-gray-200';
+      case 'confirmed': return 'bg-[#800080] text-gray-200';
+      default: return 'bg-[#696969] text-gray-200';
     }
   };
 
@@ -177,46 +162,43 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
       isSelected ? 'ring-2 ring-blue-500' : ''
     }`}>
-      <div className="p-4 sm:p-6">
-        {/* Header Row */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              {isAdmin && onSelect && (
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => onSelect(order._id!)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-              )}
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+      <div className="p-4">
+        {/* Header - Order Number, Date, and Status */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {isAdmin && onSelect && (
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onSelect(order._id!)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold text-gray-900">
                 {order.orderNumber}
               </h3>
+              <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
             </div>
-            <p className="text-xs sm:text-sm text-gray-500">{formatDate(order.createdAt)}</p>
           </div>
           
           {/* Status Badge */}
           <div className="flex-shrink-0 ml-3">
             <div className="relative">
               {isAdmin ? (
-                // Admin can change status
                 <button
                   onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)} hover:bg-opacity-80 transition-colors status-dropdown`}
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)} hover:bg-opacity-80 transition-colors status-dropdown`}
                 >
-                  <div className="flex items-center gap-1">
-                    {getStatusIcon(order.status)}
-                    <span className="inline">{order.status.replace('_', ' ')}</span>
-                  </div>
-                  <FaChevronRight className="text-xs" />
+                  <span>{order.status}</span>
+                  <FaChevronRight className="text-xs ml-1" />
                 </button>
               ) : (
-                // Agent can only view status
-                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
-                  {getStatusIcon(order.status)}
-                  <span className="inline">{order.status.replace('_', ' ')}</span>
+                <div 
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}
+                >
+                  {(order.status)}
+                  <span>{order.status}</span>
                 </div>
               )}
               
@@ -239,66 +221,54 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
           </div>
         </div>
 
-        {/* Order Details Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        {/* Order Details - Vertical List Format */}
+        <div className="space-y-2 mb-3">
           {/* Network */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FaWifi className="text-gray-400 flex-shrink-0" />
-            <div className="min-w-0">
-              <div className="font-medium text-gray-900">Network</div>
-              <div className="truncate">{getOrderProvider(order)}</div>
-            </div>
+          <div className="flex items-center gap-2 text-sm">
+            <FaWifi className="text-gray-400 w-4 h-4 flex-shrink-0" />
+            <span className="text-gray-700 font-medium min-w-0 w-16">Network:</span>
+            <span className="text-gray-900 truncate">{getOrderProvider(order)}</span>
           </div>
           
           {/* Recipient */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FaPhone className="text-gray-400 flex-shrink-0" />
-            <div className="min-w-0">
-              <div className="font-medium text-gray-900">Recipient</div>
-              <div className="truncate">{getOrderRecipient(order)}</div>
-            </div>
+          <div className="flex items-center gap-2 text-sm">
+            <FaPhone className="text-gray-400 w-4 h-4 flex-shrink-0" />
+            <span className="text-gray-700 font-medium min-w-0 w-16">Recipient:</span>
+            <span className="text-gray-900 truncate">{getOrderRecipient(order)}</span>
           </div>
           
           {/* Volume */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FaDatabase className="text-gray-400 flex-shrink-0" />
-            <div className="min-w-0">
-              <div className="font-medium text-gray-900">Volume</div>
-              <div className="truncate">{getOrderVolume(order)}</div>
-            </div>
+          <div className="flex items-center gap-2 text-sm">
+            <FaDatabase className="text-gray-400 w-4 h-4 flex-shrink-0" />
+            <span className="text-gray-700 font-medium min-w-0 w-16">Volume:</span>
+            <span className="text-gray-900">{getOrderVolume(order)}</span>
           </div>
           
           {/* Total */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FaMoneyBillWave className="text-gray-400 flex-shrink-0" />
-            <div className="min-w-0">
-              <div className="font-medium text-gray-900">Total</div>
-              <div className="truncate">{formatCurrency(order.total)}</div>
-            </div>
+          <div className="flex items-center gap-2 text-sm">
+            <FaMoneyBillWave className="text-gray-400 w-4 h-4 flex-shrink-0" />
+            <span className="text-gray-700 font-medium min-w-0 w-16">Total:</span>
+            <span className="text-gray-900 font-semibold">{formatCurrency(order.total)}</span>
+          </div>
+          
+          {/* Type */}
+          <div className="flex items-center gap-2 text-sm">
+            <FaUser className="text-gray-400 w-4 h-4 flex-shrink-0" />
+            <span className="text-gray-700 font-medium min-w-0 w-16">Type:</span>
+            <span className="text-gray-900 capitalize">{order.orderType} • {order.items?.length || 0} item(s)</span>
           </div>
         </div>
 
-        {/* Order Type and Items Count */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FaUser className="text-gray-400" />
-            <span className="font-medium">Type:</span>
-            <span className="capitalize">{order.orderType}</span>
-            <span className="text-gray-400">•</span>
-            <span>{order.items?.length || 0} item(s)</span>
-          </div>
-        </div>
-
-        {/* Cancel Order Action */}
+        {/* Cancel Action */}
         {canUserCancelOrder(order) && (
-          <div className="flex justify-end">
+          <div className="flex justify-start">
             <Button
-              size="xs"
+              size="sm"
               variant="outline"
               onClick={() => onCancel(order._id!)}
-              className="text-red-600 hover:text-red-700"
+              className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400 px-3 py-1 text-sm"
             >
-              <FaTimes className="mr-1" />
+              <FaTimes className="w-3 h-3 mr-1" />
               {order.status === 'draft' ? 'Delete Draft' : 'Cancel'}
             </Button>
           </div>
