@@ -8,7 +8,10 @@ export interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
   showInfo?: boolean;
+  showPerPageSelector?: boolean;
+  perPageOptions?: number[];
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'compact';
 }
@@ -19,7 +22,10 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalItems,
   itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
   showInfo = true,
+  showPerPageSelector = true,
+  perPageOptions = [20, 30, 50, 100],
   size = 'md',
   variant = 'default',
 }) => {
@@ -59,12 +65,32 @@ export const Pagination: React.FC<PaginationProps> = ({
   const visiblePages = getVisiblePages();
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      {showInfo && (
-        <div className="text-sm text-gray-700 text-center sm:text-left">
-          Showing {startItem} to {endItem} of {totalItems} results
+    <div className="flex flex-col gap-4">
+      {/* Mobile-first: Per page selector at the top */}
+      {showPerPageSelector && onItemsPerPageChange && (
+        <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-gray-700">
+          <span>Per page:</span>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+            className="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[70px]"
+          >
+            {perPageOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
       )}
+      
+      {/* Main pagination content */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {showInfo && (
+          <div className="text-sm text-gray-700 text-center sm:text-left">
+            Showing {startItem} to {endItem} of {totalItems} results
+          </div>
+        )}
       
       <div className="flex flex-wrap justify-center sm:justify-end gap-2">
         {/* Previous Button */}
@@ -89,7 +115,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         ) : (
           // Default variant - show page numbers
           visiblePages.map((page, index) => (
-            <React.Fragment key={index}>
+            <React.Fragment key={`page-${page}-${index}`}>
               {page === '...' ? (
                 <span className="px-3 py-2 text-sm text-gray-500">...</span>
               ) : (
@@ -116,6 +142,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         >
           <FaChevronRight className="w-3 h-3" />
         </Button>
+      </div>
       </div>
     </div>
   );

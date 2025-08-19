@@ -587,7 +587,10 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               totalItems={pagination.total}
               itemsPerPage={pagination.limit}
               onPageChange={(page) => fetchOrders(filters, { page })}
+              onItemsPerPageChange={(limit) => fetchOrders(filters, { page: 1, limit })}
               showInfo={true}
+              showPerPageSelector={true}
+              perPageOptions={[20, 30, 50, 100]}
               size="sm"
             />
           </CardBody>
