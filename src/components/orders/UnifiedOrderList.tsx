@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useOrder } from '../../hooks/use-order';
 import { orderService } from '../../services/order.service';
+import { userService } from '../../services/user.service';
+import type { DashboardStats } from '../../services/user.service';
 import { useAuth } from '../../hooks/use-auth';
 import { providerService } from '../../services/provider.service';
 import { Button, Card, CardBody, Pagination, Badge, Spinner, StatsGrid, Dialog, DialogHeader, DialogBody, DialogFooter } from '../../design-system';
@@ -50,6 +52,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     monthlyCommission?: number;
     statusCounts?: { completed: number; processing: number; pending: number; cancelled: number };
   } | null>(null);
+
+  // Super-admin dashboard stats (server authoritative)
+  const [adminStats, setAdminStats] = useState<DashboardStats | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -104,6 +109,22 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     }
   }, [fetchOrders, fetchMonthlyRevenue, isAdmin, fetchProviders, isAgent]);
 
+  // Fetch dashboard stats for super admin users (server-provided analytics)
+  useEffect(() => {
+    const isSuperAdmin = authState.user?.userType === 'super_admin' || userType === 'super_admin';
+    if (!isSuperAdmin) return;
+
+    (async () => {
+      try {
+        const stats = await userService.fetchDashboardStats();
+        setAdminStats(stats);
+      } catch (err) {
+        console.error('Failed to load dashboard stats for super admin:', err);
+        setAdminStats(null);
+      }
+    })();
+  }, [authState.user?.userType, userType]);
+
   // Auto-search effect for instant filtering
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -141,7 +162,24 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   // Calculate statistics
   // For admins we can still compute stats from orders in frontend; for agents, use backend-provided analytics
-  const stats = isAgent && agentAnalytics ? {
+  const isSuperAdmin = authState.user?.userType === 'super_admin' || userType === 'super_admin';
+
+  const stats = isSuperAdmin && adminStats ? {
+    total: adminStats.orders?.total ?? 0,
+    pending: adminStats.orders?.pending ?? 0,
+    confirmed: 0,
+    processing: adminStats.orders?.processing ?? 0,
+    completed: adminStats.orders?.completed ?? 0,
+    cancelled: adminStats.orders?.cancelled ?? 0,
+    failed: adminStats.orders?.failed ?? 0,
+    draft: adminStats.orders?.draft ?? 0,
+    single: 0,
+    bulk: 0,
+    totalRevenue: adminStats.revenue?.total ?? 0,
+    paid: 0,
+    pendingPayment: 0,
+    failedPayment: 0,
+  } : isAgent && agentAnalytics ? {
     total: agentAnalytics.totalOrders || 0,
     pending: agentAnalytics.statusCounts?.pending || 0,
     confirmed: 0,
@@ -303,6 +341,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       icon: <FaTimes />,
     }
   ] : [
+  // Default cards for non-agent / non-superadmin (computed from orders)
     {
       title: 'Total Orders',
       value: stats.total,
@@ -330,6 +369,57 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       icon: <FaClock />,
     },
   ];
+
+  // If super admin and adminStats are available, show server-provided admin cards (do not compute from orders)
+  const adminStatCards = isSuperAdmin && adminStats ? [
+    {
+      title: 'Total Orders',
+      value: adminStats.orders?.total ?? 0,
+      icon: <FaChartBar />,
+    },
+    {
+      title: "Today's Orders",
+      value: adminStats.orders?.today ?? 0,
+      icon: <FaChartBar />,
+    },
+    {
+      title: 'Monthly Orders',
+      value: adminStats.orders?.thisMonth ?? 0,
+      icon: <FaChartBar />,
+    },
+    {
+      title: 'Monthly Revenue',
+      value: formatCurrency(adminStats.revenue?.thisMonth ?? 0),
+      icon: <FaMoneyBillWave />,
+    },
+    {
+      title: 'Total Revenue',
+      value: formatCurrency(adminStats.revenue?.total ?? 0),
+      icon: <FaMoneyBillWave />,
+    },
+    {
+      title: 'Completed Orders',
+      value: adminStats.orders?.completed ?? 0,
+      icon: <FaCheck />,
+    },
+    {
+      title: 'Processing Orders',
+      value: adminStats.orders?.processing ?? 0,
+      icon: <FaClock />,
+    },
+    {
+      title: 'Pending Orders',
+      value: adminStats.orders?.pending ?? 0,
+      icon: <FaClock />,
+    },
+    {
+      title: 'Cancelled Orders',
+      value: adminStats.orders?.cancelled ?? 0,
+      icon: <FaTimes />,
+    },
+  ] : null;
+
+  const displayedStats = isSuperAdmin && adminStatCards ? adminStatCards : statsCards;
 
   // Define search and filter configuration
   const searchAndFilterConfig = {
@@ -443,8 +533,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         </CardBody>
       </Card>
 
-      {/* Statistics Cards */}
-      <StatsGrid stats={statsCards} columns={3} gap="lg" />
+  {/* Statistics Cards */}
+  <StatsGrid stats={displayedStats} columns={3} gap="lg" />
 
       {/* Draft Orders Alert - Only for Agents */}
       {isAgent && stats.draft > 0 && (

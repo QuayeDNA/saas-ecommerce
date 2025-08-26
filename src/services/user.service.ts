@@ -117,18 +117,23 @@ export interface DashboardStats {
     verificationRate: number;
   };
   orders: {
-    total: number;
-    completed: number;
-    pending: number;
-    failed: number;
-    thisWeek: number;
-    thisMonth: number;
-    successRate: number;
+  total: number;
+  completed: number;
+  pending: number;
+  processing?: number;
+  cancelled?: number;
+  draft?: number;
+  failed: number;
+  today?: number;
+  thisWeek: number;
+  thisMonth: number;
+  successRate: number;
   };
   revenue: {
     total: number;
-    thisWeek: number;
-    thisMonth: number;
+  today?: number;
+  thisWeek: number;
+  thisMonth: number;
   };
   providers: {
     total: number;
