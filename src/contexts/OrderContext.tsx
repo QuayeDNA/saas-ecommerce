@@ -81,16 +81,15 @@ interface OrderContextType {
   fetchAnalytics: (timeframe?: string) => Promise<void>;
   getAnalytics: (timeframe?: string) => Promise<OrderAnalytics>;
   getAgentAnalytics: (timeframe?: string) => Promise<{
-    totalOrders: number;
-    completedOrders: number;
-    totalRevenue: number;
-    successRate: number;
-    walletBalance: number;
-    timeframe: string;
-    overallTotalSales?: number;
-    monthlyRevenue?: number;
-    monthlyOrderCount?: number;
-    month?: string;
+  totalOrders: number;
+  completedOrders: number;
+  overallTotalSales: number;
+  successRate: number;
+  walletBalance: number;
+  timeframe: string;
+  monthlyRevenue?: number;
+  monthlyOrderCount?: number;
+  month?: string;
   }>;
   fetchMonthlyRevenue: () => Promise<void>;
   setFilters: (filters: OrderFilters) => void;
@@ -546,23 +545,22 @@ export const useOrder = () => {
       getAnalytics: async () => ({
         totalOrders: 0,
         completedOrders: 0,
-        totalRevenue: 0,
+        overallTotalSales: 0,
         completionRate: 0,
         averageOrderValue: 0,
         topProducts: [],
       }),
       getAgentAnalytics: async () => ({
-        totalOrders: 0,
-        completedOrders: 0,
-        totalRevenue: 0,
-        successRate: 0,
-        walletBalance: 0,
-        timeframe: "30d",
-        overallTotalSales: 0,
-        monthlyRevenue: 0,
-        monthlyOrderCount: 0,
-        month: "",
-        monthlyCommission: 0,
+  totalOrders: 0,
+  completedOrders: 0,
+  overallTotalSales: 0,
+  successRate: 0,
+  walletBalance: 0,
+  timeframe: '30d',
+  monthlyRevenue: 0,
+  monthlyOrderCount:0,
+  month: "",
+  monthlyCommission: 0
       }),
       fetchMonthlyRevenue: async () => {},
       setFilters: () => {},

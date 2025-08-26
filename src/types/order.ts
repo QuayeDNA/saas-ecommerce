@@ -141,11 +141,10 @@ export interface OrderAnalytics {
   totalOrders: number;
   completedOrders: number;
   pendingOrders: number;
-  totalRevenue: number;
+  overallTotalSales: number;
   bulkOrders: number;
   completionRate: number;
   timeframe: string;
-  overallTotalSales?: number;
   monthlyRevenue?: number;
   monthlyOrderCount?: number;
   month?: string;

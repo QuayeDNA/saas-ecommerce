@@ -1,6 +1,7 @@
 // src/components/orders/UnifiedOrderList.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useOrder } from '../../hooks/use-order';
+import { orderService } from '../../services/order.service';
 import { useAuth } from '../../hooks/use-auth';
 import { providerService } from '../../services/provider.service';
 import { Button, Card, CardBody, Pagination, Badge, Spinner, StatsGrid, Dialog, DialogHeader, DialogBody, DialogFooter } from '../../design-system';
@@ -40,6 +41,16 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     fetchMonthlyRevenue
   } = useOrder();
 
+  // Agent analytics state fetched from backend
+  const [agentAnalytics, setAgentAnalytics] = useState<{
+    totalOrders?: number;
+    overallTotalSales?: number;
+    monthlyRevenue?: number;
+    monthlyOrderCount?: number;
+    monthlyCommission?: number;
+    statusCounts?: { completed: number; processing: number; pending: number; cancelled: number };
+  } | null>(null);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>('');
@@ -68,11 +79,30 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   useEffect(() => {
     fetchOrders();
     fetchMonthlyRevenue();
+    // If current user is an agent, fetch analytics from backend for stats cards
+    if (isAgent) {
+      (async () => {
+        try {
+          const analytics = await orderService.getAgentAnalytics('30d');
+          setAgentAnalytics({
+            totalOrders: analytics.totalOrders,
+            overallTotalSales: analytics.overallTotalSales,
+            monthlyRevenue: analytics.monthlyRevenue,
+            monthlyOrderCount: analytics.monthlyOrderCount,
+            monthlyCommission: analytics.monthlyCommission,
+            statusCounts: analytics.statusCounts
+          });
+        } catch (err) {
+          console.error('Failed to load agent analytics:', err);
+          setAgentAnalytics(null);
+        }
+      })();
+    }
     // Fetch providers for filter
     if (isAdmin) {
       fetchProviders();
     }
-  }, [fetchOrders, fetchMonthlyRevenue, isAdmin, fetchProviders]);
+  }, [fetchOrders, fetchMonthlyRevenue, isAdmin, fetchProviders, isAgent]);
 
   // Auto-search effect for instant filtering
   useEffect(() => {
@@ -110,7 +140,23 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   }, [viewMode]);
 
   // Calculate statistics
-  const stats = {
+  // For admins we can still compute stats from orders in frontend; for agents, use backend-provided analytics
+  const stats = isAgent && agentAnalytics ? {
+    total: agentAnalytics.totalOrders || 0,
+    pending: agentAnalytics.statusCounts?.pending || 0,
+    confirmed: 0,
+    processing: agentAnalytics.statusCounts?.processing || 0,
+    completed: agentAnalytics.statusCounts?.completed || 0,
+    cancelled: agentAnalytics.statusCounts?.cancelled || 0,
+    failed: 0,
+    draft: 0,
+    single: 0,
+    bulk: 0,
+    totalRevenue: agentAnalytics.overallTotalSales || 0,
+    paid: 0,
+    pendingPayment: 0,
+    failedPayment: 0,
+  } : {
     total: pagination.total || orders.length, // Use pagination total for actual count, fallback to orders.length
     pending: orders.filter((o: Order) => o.status === 'pending').length,
     confirmed: orders.filter((o: Order) => o.status === 'confirmed').length,
@@ -218,14 +264,52 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   };
 
   // Define statistics cards data
-  const statsCards = [
+  // For agents use agentAnalytics to build stat cards; otherwise fall back to computed stats
+  const statsCards = isAgent && agentAnalytics ? [
+    {
+      title: 'Total Orders',
+      value: agentAnalytics.totalOrders || 0,
+      icon: <FaChartBar />,
+    },
+    {
+      title: 'Total Sales',
+      value: formatCurrency(agentAnalytics.overallTotalSales || 0),
+      icon: <FaMoneyBillWave />,
+    },
+    {
+      title: 'Monthly Sales',
+      value: agentAnalytics.monthlyRevenue ? formatCurrency(agentAnalytics.monthlyRevenue) : formatCurrency(0),
+      icon: <FaMoneyBillWave />,
+  subtitle: agentAnalytics.monthlyRevenue ? `Commission GHS${agentAnalytics.monthlyCommission?.toFixed(2) ?? '0.00'}` : ''
+    },
+    {
+      title: 'Completed Orders',
+      value: agentAnalytics.statusCounts?.completed || 0,
+      icon: <FaCheck />,
+    },
+    {
+      title: 'Processing Orders',
+      value: agentAnalytics.statusCounts?.processing || 0,
+      icon: <FaClock />,
+    },
+    {
+      title: 'Pending Orders',
+      value: agentAnalytics.statusCounts?.pending || 0,
+      icon: <FaClock />,
+    },
+    {
+      title: 'Cancelled Orders',
+      value: agentAnalytics.statusCounts?.cancelled || 0,
+      icon: <FaTimes />,
+    }
+  ] : [
     {
       title: 'Total Orders',
       value: stats.total,
       icon: <FaChartBar />,
     },
     {
-      title: 'Total Revenue',
+      title: 'Total Sales',
       value: formatCurrency(stats.totalRevenue),
       icon: <FaMoneyBillWave />,
     },

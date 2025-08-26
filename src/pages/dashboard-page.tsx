@@ -78,7 +78,7 @@ export const DashboardPage = () => {
   const [orderStats, setOrderStats] = useState({
     totalOrders: 0,
     completedOrders: 0,
-    totalRevenue: 0,
+  // totalRevenue removed - use overallTotalSales for completed-only overall sales
     overallTotalSales: 0,
     monthlyRevenue: 0,
     monthlyOrderCount: 0,
@@ -180,7 +180,6 @@ export const DashboardPage = () => {
           type AgentAnalytics = {
             totalOrders?: number;
             completedOrders?: number;
-            totalRevenue?: number;
             overallTotalSales?: number;
             monthlyRevenue?: number;
             monthlyOrderCount?: number;
@@ -194,7 +193,6 @@ export const DashboardPage = () => {
             setOrderStats({
               totalOrders: analytics.totalOrders || 0,
               completedOrders: analytics.completedOrders || 0,
-              totalRevenue: analytics.totalRevenue || 0,
               overallTotalSales: analytics.overallTotalSales || 0,
               monthlyRevenue: analytics.monthlyRevenue || 0,
               monthlyOrderCount: analytics.monthlyOrderCount || 0,
@@ -208,7 +206,6 @@ export const DashboardPage = () => {
           setOrderStats({
             totalOrders: 0,
             completedOrders: 0,
-            totalRevenue: 0,
             overallTotalSales: 0,
             monthlyRevenue: 0,
             monthlyOrderCount: 0,
@@ -401,7 +398,7 @@ export const DashboardPage = () => {
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
               <div className="text-gray-300 text-xs mb-1">Total Sales</div>
-              <div className="text-xl font-bold text-white">₵{orderStats.totalRevenue}</div>
+              <div className="text-xl font-bold text-white">₵{orderStats.overallTotalSales}</div>
             </CardBody>
           </Card>
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
