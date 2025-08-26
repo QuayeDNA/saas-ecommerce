@@ -4,6 +4,8 @@ import { orderService } from '../services/order.service';
 
 export const useDailySpending = () => {
   const [dailySpending, setDailySpending] = useState(0);
+  const [orderCount, setOrderCount] = useState(0);
+  const [date, setDate] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { authState } = useAuth();
 
@@ -18,8 +20,10 @@ export const useDailySpending = () => {
         return;
       }
 
-      const data = await orderService.getDailySpending();
-      setDailySpending(data.dailySpending || 0);
+  const data = await orderService.getDailySpending();
+  setDailySpending(data.dailySpending || 0);
+  setOrderCount(data.orderCount || 0);
+  setDate(data.date || null);
     } catch (error) {
       console.error('Error loading daily spending:', error);
       setDailySpending(0);
@@ -57,9 +61,11 @@ export const useDailySpending = () => {
   }, [loadDailySpending]);
 
   return { 
-    dailySpending, 
-    refreshDailySpending,
-    loadDailySpending,
-    isLoading
+  dailySpending,
+  orderCount,
+  date,
+  refreshDailySpending,
+  loadDailySpending,
+  isLoading
   };
 };

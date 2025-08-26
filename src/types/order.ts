@@ -145,6 +145,11 @@ export interface OrderAnalytics {
   bulkOrders: number;
   completionRate: number;
   timeframe: string;
+  overallTotalSales?: number;
+  monthlyRevenue?: number;
+  monthlyOrderCount?: number;
+  month?: string;
+  monthlyCommission?: number;
 }
 
 export interface CreateSingleOrderData {

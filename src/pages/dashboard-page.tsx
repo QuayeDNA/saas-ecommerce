@@ -5,10 +5,10 @@ import { useOrder } from '../contexts/OrderContext';
 import { useProvider } from '../hooks/use-provider';
 import { useSiteStatus } from '../contexts/site-status-context';
 import { Card, CardHeader, CardBody, Badge, Spinner } from '../design-system';
-import { FaPhone, FaChartLine, FaWallet, FaShoppingCart, FaWifi, FaSync, FaStar, FaTimes } from 'react-icons/fa';
+import { FaPhone, FaWallet, FaShoppingCart, FaStar, FaTimes } from 'react-icons/fa';
 import type { WalletTransaction } from '../types/wallet';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, BarElement } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 
 // Add CSS keyframes for fade-in animation
 const fadeInKeyframes = `
@@ -67,11 +67,11 @@ const quickActionPackages = [
 ];
 
 export const DashboardPage = () => {
-  const { walletBalance, getTransactionHistory, connectionStatus } = useWallet();
+  const { getTransactionHistory} = useWallet();
   const { getAgentAnalytics } = useOrder();
   const { providers, loading: providersLoading } = useProvider();
   const { siteStatus } = useSiteStatus();
-  const { dailySpending, isLoading: dailySpendingLoading } = useDailySpending();
+  const { dailySpending, orderCount, isLoading: dailySpendingLoading } = useDailySpending();
   
   // State for modals and data
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
@@ -79,7 +79,11 @@ export const DashboardPage = () => {
     totalOrders: 0,
     completedOrders: 0,
     totalRevenue: 0,
-    successRate: 0
+    overallTotalSales: 0,
+    monthlyRevenue: 0,
+    monthlyOrderCount: 0,
+  month: "",
+  monthlyCommission: 0
   });
   const [loading, setLoading] = useState(true);
   const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
@@ -112,34 +116,6 @@ export const DashboardPage = () => {
   // Get site status background
   const getSiteStatusBg = () => {
     return siteStatus?.isSiteOpen ? 'bg-green-50' : 'bg-red-50';
-  };
-
-  // Get connection status indicator
-  const getConnectionStatusIndicator = () => {
-    switch (connectionStatus) {
-      case 'websocket':
-        return <FaWifi className="w-3 h-3 text-green-500" />;
-      case 'polling':
-        return <FaSync className="w-3 h-3 text-yellow-500 animate-spin" />;
-      case 'disconnected':
-        return <FaWifi className="w-3 h-3 text-red-500" />;
-      default:
-        return <FaWifi className="w-3 h-3 text-gray-500" />;
-    }
-  };
-
-  // Get connection status text
-  const getConnectionStatusText = () => {
-    switch (connectionStatus) {
-      case 'websocket':
-        return 'Live';
-      case 'polling':
-        return 'Syncing';
-      case 'disconnected':
-        return 'Offline';
-      default:
-        return 'Unknown';
-    }
   };
 
   // Handle quick link click
@@ -201,13 +177,29 @@ export const DashboardPage = () => {
         
         // Load agent analytics
         try {
-          const analytics = await getAgentAnalytics('30d');
+          type AgentAnalytics = {
+            totalOrders?: number;
+            completedOrders?: number;
+            totalRevenue?: number;
+            overallTotalSales?: number;
+            monthlyRevenue?: number;
+            monthlyOrderCount?: number;
+            month?: string;
+            monthlyCommission?: number;
+          };
+
+          const analytics = (await getAgentAnalytics('30d')) as AgentAnalytics | null;
           if (analytics) {
+            const monthlyCommission = analytics.monthlyCommission ?? 0;
             setOrderStats({
               totalOrders: analytics.totalOrders || 0,
               completedOrders: analytics.completedOrders || 0,
               totalRevenue: analytics.totalRevenue || 0,
-              successRate: analytics.successRate || 0
+              overallTotalSales: analytics.overallTotalSales || 0,
+              monthlyRevenue: analytics.monthlyRevenue || 0,
+              monthlyOrderCount: analytics.monthlyOrderCount || 0,
+              month: analytics.month || "",
+              monthlyCommission
             });
           }
         } catch (analyticsError) {
@@ -217,7 +209,11 @@ export const DashboardPage = () => {
             totalOrders: 0,
             completedOrders: 0,
             totalRevenue: 0,
-            successRate: 0
+            overallTotalSales: 0,
+            monthlyRevenue: 0,
+            monthlyOrderCount: 0,
+            month: "",
+            monthlyCommission: 0
           });
         }
       } catch (error) {
@@ -230,51 +226,6 @@ export const DashboardPage = () => {
 
     loadDashboardData();
   }, [getTransactionHistory, getAgentAnalytics]);
-
-  // Prepare transaction chart data - Daily transaction amounts
-  const prepareTransactionChartData = (transactions: WalletTransaction[]) => {
-    if (transactions.length === 0) {
-      return {
-        labels: ['No data'],
-        datasets: [{
-          label: 'Transaction Amount',
-          data: [0],
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.1
-        }]
-      };
-    }
-
-    // Group transactions by date and sum amounts
-    const groupedData = transactions.reduce((acc, transaction) => {
-      const date = new Date(transaction.createdAt).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short'
-      });
-      
-      if (!acc[date]) {
-        acc[date] = 0;
-      }
-      acc[date] += transaction.amount;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const labels = Object.keys(groupedData);
-    const data = Object.values(groupedData);
-
-    return {
-      labels,
-      datasets: [{
-        label: 'Transaction Amount (GH₵)',
-        data,
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.1,
-        fill: true
-      }]
-    };
-  };
 
   // Prepare order analytics chart data - Order completion trends
   const prepareOrderAnalyticsChartData = () => {
@@ -301,36 +252,7 @@ export const DashboardPage = () => {
     };
   };
 
-  const transactionChartData = prepareTransactionChartData(recentTransactions);
   const orderAnalyticsChartData = prepareOrderAnalyticsChartData();
-
-  const transactionChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context: { parsed: { y: number } }) {
-            return `Amount: GH₵${context.parsed.y.toFixed(2)}`;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: function(tickValue: string | number) {
-            const value = typeof tickValue === 'string' ? parseFloat(tickValue) : tickValue;
-            return `₵${value}`;
-          }
-        }
-      }
-    }
-  };
 
   const orderAnalyticsChartOptions = {
     responsive: true,
@@ -463,32 +385,36 @@ export const DashboardPage = () => {
           </Card>
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
-              <div className="text-gray-300 text-xs mb-1">Today's Spending</div>
-              <div className="text-xl font-bold text-white">
+              <div className="text-gray-300 text-xs mb-1">Today's Orders</div>
+              <div className="text-3xl font-bold text-white">
                 {dailySpendingLoading ? (
-                  <div className="animate-pulse bg-white/20 h-6 w-20 rounded mx-auto"></div>
+                  <div className="animate-pulse bg-white/20 h-8 w-12 rounded mx-auto"></div>
                 ) : (
-                  formatAmount(dailySpending)
+                  (typeof orderCount === 'number' ? orderCount : orderStats.totalOrders)
                 )}
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                {dailySpendingLoading ? '' : `₵${dailySpending} spent today`}
               </div>
             </CardBody>
           </Card>
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
-              <div className="text-gray-300 text-xs mb-1">Success Rate</div>
-              <div className="text-xl font-bold text-white">{orderStats.successRate}%</div>
+              <div className="text-gray-300 text-xs mb-1">Total Sales</div>
+              <div className="text-xl font-bold text-white">₵{orderStats.totalRevenue}</div>
             </CardBody>
           </Card>
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <div className="text-gray-300 text-xs">Wallet Balance</div>
+                <div className="text-gray-300 text-xs">Monthly Sales</div>
                 <div className="items-center gap-1 hidden sm:flex">
-                  {getConnectionStatusIndicator()}
-                  <span className="text-xs text-gray-400">{getConnectionStatusText()}</span>
+                  <span className="text-white">{orderStats.month ? orderStats.month : ''}</span>
                 </div>
               </div>
-              <div className="text-xl font-bold text-green-400">{formatAmount(walletBalance)}</div>
+
+              <div className="text-xl font-bold text-white">{formatAmount(orderStats.monthlyRevenue)}</div>
+              <div className="text-xs text-gray-300 mt-2">Commission: {formatAmount(orderStats.monthlyCommission || 0)}</div>
             </CardBody>
           </Card>
         </div>
@@ -519,36 +445,6 @@ export const DashboardPage = () => {
           ) : (
             <div className="h-40 sm:h-48">
               <Bar data={orderAnalyticsChartData} options={orderAnalyticsChartOptions} />
-            </div>
-          )}
-        </CardBody>
-      </Card>
-      
-      {/* Transaction Chart */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-800">Recent Transaction Trends</h3>
-            <Link to="./wallet" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-              View Details
-            </Link>
-          </div>
-        </CardHeader>
-        <CardBody>
-          {loading ? (
-            <div className="flex justify-center items-center h-40 sm:h-48">
-              <Spinner />
-            </div>
-          ) : recentTransactions.length === 0 ? (
-            <div className="bg-gray-50 h-40 sm:h-48 flex items-center justify-center rounded">
-              <div className="text-center">
-                <FaChartLine className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-400 text-sm">No transaction data available</p>
-              </div>
-            </div>
-          ) : (
-            <div className="h-40 sm:h-48">
-              <Line data={transactionChartData} options={transactionChartOptions} />
             </div>
           )}
         </CardBody>

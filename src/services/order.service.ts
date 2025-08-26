@@ -156,6 +156,12 @@ class OrderService {
     successRate: number;
     walletBalance: number;
     timeframe: string;
+    // New fields added by backend: overall and monthly sales
+    overallTotalSales?: number;
+    monthlyRevenue?: number;
+    monthlyOrderCount?: number;
+  month?: string;
+  monthlyCommission?: number;
   }> {
     const response = await apiClient.get('/api/orders/analytics/agent', { params: { timeframe } });
     return response.data.analytics;
