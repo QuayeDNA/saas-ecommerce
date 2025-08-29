@@ -69,13 +69,13 @@ class SettingsService {
 
   // Commission Rates
   async getCommissionRates(): Promise<CommissionRates> {
-    const response = await apiClient.get('/api/settings/commission');
-    return response.data;
+    const response = await apiClient.get('/api/commissions/settings');
+    return response.data.data;
   }
 
   async updateCommissionRates(rates: CommissionRates): Promise<CommissionRates> {
-    const response = await apiClient.put('/api/settings/commission', rates);
-    return response.data;
+    const response = await apiClient.put('/api/commissions/settings', rates);
+    return response.data.data;
   }
 
   // API Settings

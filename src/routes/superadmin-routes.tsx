@@ -12,6 +12,7 @@ const WalletPage = lazy(() => import("../pages/superadmin/wallet"));
 const SettingsPage = lazy(() => import("../pages/superadmin/settings"));
 const PackagesPage = lazy(() => import("../pages/superadmin/packages"));
 const BundleManagementPage = lazy(() => import('../pages/admin/bundle-management-page').then(m => ({ default: m.BundleManagementPage })));
+const CommissionsPage = lazy(() => import("../pages/superadmin/commissions"));
 
 const superadminRoutes = {
   path: "/superadmin",
@@ -86,6 +87,14 @@ const superadminRoutes = {
       element: (
         <Suspense fallback={<PageLoader />}>
           <BundleManagementPage />
+        </Suspense>
+      )
+    },
+    { 
+      path: "commissions", 
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <CommissionsPage />
         </Suspense>
       )
     },

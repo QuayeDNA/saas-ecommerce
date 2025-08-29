@@ -12,7 +12,8 @@ import {
   FaCog,
   FaTachometerAlt,
   FaBuilding,
-  FaClipboardList
+  FaClipboardList,
+  FaMoneyBillWave
 } from 'react-icons/fa';
 import { 
   Home,
@@ -174,6 +175,11 @@ const getSuperAdminNavItems = (): NavItem[] => [
     label: 'Orders',
     path: '/superadmin/orders',
     icon: <FaClipboardList />,
+  },
+  {
+    label: 'Commissions',
+    path: '/superadmin/commissions',
+    icon: <FaMoneyBillWave />,
   },
   {
     label: 'Wallet',

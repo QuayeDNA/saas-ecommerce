@@ -81,15 +81,33 @@ interface OrderContextType {
   fetchAnalytics: (timeframe?: string) => Promise<void>;
   getAnalytics: (timeframe?: string) => Promise<OrderAnalytics>;
   getAgentAnalytics: (timeframe?: string) => Promise<{
-  totalOrders: number;
-  completedOrders: number;
-  overallTotalSales: number;
-  successRate: number;
-  walletBalance: number;
-  timeframe: string;
-  monthlyRevenue?: number;
-  monthlyOrderCount?: number;
-  month?: string;
+    orders: {
+      total: number;
+      completed: number;
+      pending: number;
+      processing: number;
+      failed: number;
+      cancelled: number;
+      successRate: number;
+    };
+    revenue: {
+      total: number;
+      orderCount: number;
+      averageOrderValue: number;
+    };
+    commissions: {
+      rate: number;
+      earned: number;
+      paid: number;
+      pending: number;
+      totalOrders: number;
+      totalRevenue: number;
+    };
+    wallet: {
+      balance: number;
+    };
+    timeframe: string;
+    generatedAt: string;
   }>;
   fetchMonthlyRevenue: () => Promise<void>;
   setFilters: (filters: OrderFilters) => void;

@@ -183,29 +183,38 @@ class OrderService {
 
   // Get agent analytics for dashboard
   async getAgentAnalytics(timeframe = '30d'): Promise<{
-    totalOrders: number;
-    completedOrders: number;
-    overallTotalSales: number;
-    successRate: number;
-    walletBalance: number;
-    timeframe: string;
-    // New fields added by backend: overall and monthly sales
-    monthlyRevenue?: number;
-    monthlyOrderCount?: number;
-    month?: string;
-    monthlyCommission?: number;
-    // counts by status for dashboard cards
-    statusCounts?: {
+    orders: {
+      total: number;
       completed: number;
-      processing: number;
       pending: number;
+      processing: number;
+      failed: number;
       cancelled: number;
+      successRate: number;
     };
+    revenue: {
+      total: number;
+      orderCount: number;
+      averageOrderValue: number;
+    };
+    commissions: {
+      rate: number;
+      earned: number;
+      paid: number;
+      pending: number;
+      totalOrders: number;
+      totalRevenue: number;
+    };
+    wallet: {
+      balance: number;
+    };
+    timeframe: string;
+    generatedAt: string;
   }> {
     const response = await apiClient.get("/api/orders/analytics/agent", {
       params: { timeframe },
     });
-    return response.data.analytics;
+    return response.data.data; // API returns { success: true, data: {...} }
   }
 
   // Get monthly revenue for current user
@@ -214,6 +223,7 @@ class OrderService {
     orderCount: number;
     month: string;
   }> {
+
     const response = await apiClient.get(
       "/api/orders/analytics/monthly-revenue"
     );
@@ -226,9 +236,9 @@ class OrderService {
     orderCount: number;
     date: string;
   }> {
-    const response = await apiClient.get(
-      "/api/orders/analytics/daily-spending"
-    );
+  // DEBUG: log the exact path we're about to request (helps find stale bundles)
+  console.debug('[orderService] getDailySpending -> requesting', '/api/orders/analytics/daily-spending');
+  const response = await apiClient.get('/api/orders/analytics/daily-spending');
     return response.data.data;
   }
 

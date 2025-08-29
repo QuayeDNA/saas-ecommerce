@@ -90,12 +90,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         try {
           const analytics = await orderService.getAgentAnalytics('30d');
           setAgentAnalytics({
-            totalOrders: analytics.totalOrders,
-            overallTotalSales: analytics.overallTotalSales,
-            monthlyRevenue: analytics.monthlyRevenue,
-            monthlyOrderCount: analytics.monthlyOrderCount,
-            monthlyCommission: analytics.monthlyCommission,
-            statusCounts: analytics.statusCounts
+            totalOrders: analytics.orders?.total || 0,
+            overallTotalSales: analytics.revenue?.total || 0,
+            monthlyRevenue: analytics.revenue?.total || 0, // Use total revenue as monthly for now
+            monthlyOrderCount: analytics.orders?.total || 0,
+            monthlyCommission: analytics.commissions?.earned || 0,
+            statusCounts: {
+              completed: analytics.orders?.completed || 0,
+              processing: analytics.orders?.processing || 0,
+              pending: analytics.orders?.pending || 0,
+              cancelled: analytics.orders?.cancelled || 0
+            }
           });
         } catch (err) {
           console.error('Failed to load agent analytics:', err);
@@ -301,72 +306,78 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     }).format(amount);
   };
 
-  // Define statistics cards data
+  // Define statistics cards data with responsive icon handling
   // For agents use agentAnalytics to build stat cards; otherwise fall back to computed stats
-  const statsCards = isAgent && agentAnalytics ? [
-    {
-      title: 'Total Orders',
-      value: agentAnalytics.totalOrders || 0,
-      icon: <FaChartBar />,
-    },
+  const statsCards = isAgent ? [
     {
       title: 'Total Sales',
-      value: formatCurrency(agentAnalytics.overallTotalSales || 0),
-      icon: <FaMoneyBillWave />,
+      value: formatCurrency(agentAnalytics?.overallTotalSales || 0),
+      icon: <FaMoneyBillWave className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Monthly Sales',
-      value: agentAnalytics.monthlyRevenue ? formatCurrency(agentAnalytics.monthlyRevenue) : formatCurrency(0),
-      icon: <FaMoneyBillWave />,
-  subtitle: agentAnalytics.monthlyRevenue ? `Commission GHS${agentAnalytics.monthlyCommission?.toFixed(2) ?? '0.00'}` : ''
+      value: agentAnalytics?.monthlyRevenue ? formatCurrency(agentAnalytics.monthlyRevenue) : formatCurrency(0),
+      icon: <FaMoneyBillWave className="hidden sm:block" />,
+      subtitle: agentAnalytics?.monthlyRevenue ? `Commission GHS${agentAnalytics.monthlyCommission?.toFixed(2) ?? '0.00'}` : '',
+      iconOnly: true,
     },
     {
       title: 'Completed Orders',
-      value: agentAnalytics.statusCounts?.completed || 0,
-      icon: <FaCheck />,
+      value: agentAnalytics?.statusCounts?.completed || 0,
+      icon: <FaCheck className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Processing Orders',
-      value: agentAnalytics.statusCounts?.processing || 0,
-      icon: <FaClock />,
+      value: agentAnalytics?.statusCounts?.processing || 0,
+      icon: <FaClock className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Pending Orders',
-      value: agentAnalytics.statusCounts?.pending || 0,
-      icon: <FaClock />,
+      value: agentAnalytics?.statusCounts?.pending || 0,
+      icon: <FaClock className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Cancelled Orders',
-      value: agentAnalytics.statusCounts?.cancelled || 0,
-      icon: <FaTimes />,
+      value: agentAnalytics?.statusCounts?.cancelled || 0,
+      icon: <FaTimes className="hidden sm:block" />,
+      iconOnly: true,
     }
   ] : [
   // Default cards for non-agent / non-superadmin (computed from orders)
     {
       title: 'Total Orders',
       value: stats.total,
-      icon: <FaChartBar />,
+      icon: <FaChartBar className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Total Sales',
       value: formatCurrency(stats.totalRevenue),
-      icon: <FaMoneyBillWave />,
+      icon: <FaMoneyBillWave className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Monthly Orders',
       value: monthlyRevenue ? formatCurrency(monthlyRevenue.monthlyRevenue) : formatCurrency(0),
-      icon: <FaMoneyBillWave />,
+      icon: <FaMoneyBillWave className="hidden sm:block" />,
       subtitle: monthlyRevenue ? `${monthlyRevenue.month} (${monthlyRevenue.orderCount} orders)` : 'This month',
+      iconOnly: true,
     },
     {
       title: 'Completed Orders',
       value: stats.completed,
-      icon: <FaCheck />,
+      icon: <FaCheck className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Pending Orders',
       value: stats.pending,
-      icon: <FaClock />,
+      icon: <FaClock className="hidden sm:block" />,
+      iconOnly: true,
     },
   ];
 
@@ -375,47 +386,51 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     {
       title: 'Total Orders',
       value: adminStats.orders?.total ?? 0,
-      icon: <FaChartBar />,
+      icon: <FaChartBar className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: "Today's Orders",
       value: adminStats.orders?.today ?? 0,
-      icon: <FaChartBar />,
+      icon: <FaChartBar className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
-      title: 'Monthly Orders',
-      value: adminStats.orders?.thisMonth ?? 0,
-      icon: <FaChartBar />,
-    },
-    {
-      title: 'Monthly Revenue',
-      value: formatCurrency(adminStats.revenue?.thisMonth ?? 0),
-      icon: <FaMoneyBillWave />,
-    },
-    {
-      title: 'Total Revenue',
+      title: 'Total Sales',
       value: formatCurrency(adminStats.revenue?.total ?? 0),
-      icon: <FaMoneyBillWave />,
+      icon: <FaMoneyBillWave className="hidden sm:block" />,
+      iconOnly: true,
+    },
+    {
+      title: 'Monthly Sales',
+      value: formatCurrency(adminStats.revenue?.thisMonth ?? 0),
+      icon: <FaMoneyBillWave className="hidden sm:block" />,
+      subtitle: 'Commission GHS5.00',
+      iconOnly: true,
     },
     {
       title: 'Completed Orders',
       value: adminStats.orders?.completed ?? 0,
-      icon: <FaCheck />,
+      icon: <FaCheck className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Processing Orders',
       value: adminStats.orders?.processing ?? 0,
-      icon: <FaClock />,
+      icon: <FaClock className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Pending Orders',
       value: adminStats.orders?.pending ?? 0,
-      icon: <FaClock />,
+      icon: <FaClock className="hidden sm:block" />,
+      iconOnly: true,
     },
     {
       title: 'Cancelled Orders',
       value: adminStats.orders?.cancelled ?? 0,
-      icon: <FaTimes />,
+      icon: <FaTimes className="hidden sm:block" />,
+      iconOnly: true,
     },
   ] : null;
 
@@ -534,7 +549,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       </Card>
 
   {/* Statistics Cards */}
-  <StatsGrid stats={displayedStats} columns={3} gap="lg" />
+  <StatsGrid  stats={displayedStats} columns={6} gap="xs" />
 
       {/* Draft Orders Alert - Only for Agents */}
       {isAgent && stats.draft > 0 && (

@@ -301,9 +301,11 @@ export default function SuperAdminDashboard() {
       </Card>
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         {loadingStats ? (
           <>
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
             <MetricCardSkeleton />
             <MetricCardSkeleton />
             <MetricCardSkeleton />
@@ -337,7 +339,7 @@ export default function SuperAdminDashboard() {
                     <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Revenue</p>
                     <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{formatCurrency(stats.revenue.total)}</p>
                     <p className="text-xs text-green-400 mt-1 sm:mt-2">
-                      +{formatCurrency(stats.revenue.thisMonth)} this week
+                      +{formatCurrency(stats.revenue.thisWeek)} this week
                     </p>
                   </div>
                   <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
@@ -373,11 +375,47 @@ export default function SuperAdminDashboard() {
                     <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Active Agents</p>
                     <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{stats.users.activeAgents}</p>
                     <p className="text-xs text-purple-400 mt-1 sm:mt-2">
-                      {stats.rates.agentActivation}% activation rate
+                      {stats?.rates?.agentActivation ?? 0}% activation rate
                     </p>
                   </div>
                   <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
                     <FaCheckCircle className="text-white text-sm sm:text-lg lg:text-xl" />
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Total Commissions */}
+            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+              <CardBody className="p-4 sm:p-5 lg:p-6">
+                <div className="flex items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Commissions</p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{formatCurrency(stats.commissions.totalPaid)}</p>
+                    <p className="text-xs text-yellow-400 mt-1 sm:mt-2">
+                      {stats.commissions.pendingCount} pending
+                    </p>
+                  </div>
+                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaMoneyBillWave className="text-white text-sm sm:text-lg lg:text-xl" />
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Active Providers */}
+            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+              <CardBody className="p-4 sm:p-5 lg:p-6">
+                <div className="flex items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Active Providers</p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{stats.providers.active}</p>
+                    <p className="text-xs text-indigo-400 mt-1 sm:mt-2">
+                      {stats.providers.newThisMonth} new this month
+                    </p>
+                  </div>
+                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaBuilding className="text-white text-sm sm:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
@@ -522,7 +560,7 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Verification Rate</span>
-                  <Badge colorScheme="success" size="sm">{stats.rates.userVerification}%</Badge>
+                  <Badge colorScheme="success" size="sm">{(stats?.rates?.userVerification ?? 0)}%</Badge>
                 </div>
               </div>
             </CardBody>
@@ -651,7 +689,7 @@ export default function SuperAdminDashboard() {
             </div>
           </CardBody>
         </Card>
-      ) : stats ? (
+      ) : stats?.recentActivity ? (
         <Card>
           <CardHeader>
             <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -665,21 +703,21 @@ export default function SuperAdminDashboard() {
               <div>
                 <h4 className="font-medium text-gray-700 mb-3">Recent Users</h4>
                 <div className="space-y-2">
-                  {stats.recentActivity.users.slice(0, 5).map((user) => (
+                  {stats.recentActivity.users?.slice(0, 5)?.map((user) => (
                     <div key={user._id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <div>
                         <p className="text-sm font-medium">{user.fullName}</p>
                         <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
-                      <Badge 
-                        variant="subtle" 
+                      <Badge
+                        variant="subtle"
                         colorScheme={getStatusColor(user.status)}
                         size="xs"
                       >
                         {user.userType}
                       </Badge>
                     </div>
-                  ))}
+                  )) || []}
                 </div>
               </div>
 
@@ -687,21 +725,21 @@ export default function SuperAdminDashboard() {
               <div>
                 <h4 className="font-medium text-gray-700 mb-3">Recent Orders</h4>
                 <div className="space-y-2">
-                  {stats.recentActivity.orders.slice(0, 5).map((order) => (
+                  {stats.recentActivity.orders?.slice(0, 5)?.map((order) => (
                     <div key={order._id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <div>
                         <p className="text-sm font-medium">{order.orderNumber}</p>
                         <p className="text-xs text-gray-500">{formatCurrency(order.totalAmount)}</p>
                       </div>
-                      <Badge 
-                        variant="subtle" 
+                      <Badge
+                        variant="subtle"
                         colorScheme={getStatusColor(order.status)}
                         size="xs"
                       >
                         {order.status}
                       </Badge>
                     </div>
-                  ))}
+                  )) || []}
                 </div>
               </div>
 
@@ -709,21 +747,21 @@ export default function SuperAdminDashboard() {
               <div>
                 <h4 className="font-medium text-gray-700 mb-3">Recent Transactions</h4>
                 <div className="space-y-2">
-                  {stats.recentActivity.transactions.slice(0, 5).map((transaction) => (
+                  {stats.recentActivity.transactions?.slice(0, 5)?.map((transaction) => (
                     <div key={transaction._id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <div>
-                        <p className="text-sm font-medium">{transaction.description}</p>
+                        <p className="text-sm font-medium">{transaction.description || transaction.type}</p>
                         <p className="text-xs text-gray-500">{formatCurrency(transaction.amount)}</p>
                       </div>
-                      <Badge 
-                        variant="subtle" 
+                      <Badge
+                        variant="subtle"
                         colorScheme={getStatusColor(transaction.type)}
                         size="xs"
                       >
                         {transaction.type}
                       </Badge>
                     </div>
-                  ))}
+                  )) || []}
                 </div>
               </div>
             </div>

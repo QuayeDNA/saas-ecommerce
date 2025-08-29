@@ -135,6 +135,12 @@ export interface DashboardStats {
   thisWeek: number;
   thisMonth: number;
   };
+  commissions: {
+    totalPaid: number;
+    totalRecords: number;
+    pendingCount: number;
+    pendingAmount: number;
+  };
   providers: {
     total: number;
     active: number;
@@ -227,12 +233,12 @@ export const userService = {
     return resp.data;
   },
   async fetchDashboardStats(): Promise<DashboardStats> {
-    const resp = await apiClient.get('/api/users/dashboard-stats');
-    return resp.data.stats;
+    const resp = await apiClient.get('/api/analytics/summary');
+    return resp.data.data;
   },
   async fetchChartData(): Promise<ChartData> {
-    const resp = await apiClient.get('/api/users/chart-data');
-    return resp.data.chartData;
+    const resp = await apiClient.get('/api/analytics/charts');
+    return resp.data.data;
   },
   // Additional methods for UserContext
   async updateProfile(data: UpdateProfileData): Promise<User> {
