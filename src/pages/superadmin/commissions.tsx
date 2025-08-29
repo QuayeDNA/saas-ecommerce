@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FaMoneyBillWave, FaUsers, FaCalculator, FaCreditCard, FaEye, FaClock, FaCheck } from 'react-icons/fa';
+import { FaMoneyBillWave, FaUsers, FaCalculator, FaCreditCard, FaEye, FaClock, FaCheck, FaPlay } from 'react-icons/fa';
 import { Card, CardBody, Button, Badge, Input, Table, Dialog, DialogHeader, DialogBody, DialogFooter, Spinner, useToast } from '../../design-system';
 import { SearchAndFilter } from '../../components/common/SearchAndFilter';
-import { commissionService, type CommissionRecord, type CommissionStatistics, type CommissionSettings } from '../../services/commission.service';
+import { commissionService, type CommissionRecord, type CommissionStatistics, type CommissionSettings, type MonthlyGenerationResult } from '../../services/commission.service';
 
 interface CommissionFilters {
   status?: 'pending' | 'paid' | 'cancelled';
@@ -30,6 +30,13 @@ export default function SuperAdminCommissionsPage() {
   const [paymentReference, setPaymentReference] = useState('');
   const [singlePaymentReference, setSinglePaymentReference] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+
+  // Commission Generation State
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+  const [generationMonth, setGenerationMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationResult, setGenerationResult] = useState<MonthlyGenerationResult | null>(null);
+  const [showGenerationResult, setShowGenerationResult] = useState(false);
 
   const toast = useToast();
 
@@ -130,9 +137,9 @@ export default function SuperAdminCommissionsPage() {
       startDate: filters.startDate || '',
       endDate: filters.endDate || ''
     },
-    onDateRangeChange: filters.startDate || filters.endDate ? (startDate: string, endDate: string) => {
+    onDateRangeChange: (startDate: string, endDate: string) => {
       setFilters({ ...filters, startDate, endDate });
-    } : undefined,
+    },
     showSearchButton: true,
     showClearButton: true,
     isLoading: loading
@@ -226,6 +233,31 @@ export default function SuperAdminCommissionsPage() {
     }
   };
 
+  // Commission Generation Methods
+  const handleGenerateCommissions = async () => {
+    setIsGenerating(true);
+    try {
+      const result = await commissionService.generateMonthlyCommissions({ targetMonth: generationMonth });
+
+      setGenerationResult(result);
+      setShowGenerateDialog(false);
+      setShowGenerationResult(true);
+
+      // Refresh the commission list
+      loadData();
+
+      toast.addToast(
+        `Commission generation completed: ${result.summary.created} created, ${result.summary.exists} existing`,
+        'success'
+      );
+    } catch (error) {
+      console.error('Failed to generate commissions:', error);
+      toast.addToast('Failed to generate commissions', 'error');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GH', {
       style: 'currency',
@@ -264,6 +296,14 @@ export default function SuperAdminCommissionsPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Commission Management</h1>
         <div className="flex gap-3">
+          <Button
+            variant="primary"
+            onClick={() => setShowGenerateDialog(true)}
+            className="flex items-center gap-2"
+          >
+            <FaPlay className="text-sm" />
+            Generate Commissions
+          </Button>
           <Button
             variant="outline"
             onClick={() => setShowSettingsDialog(true)}
@@ -328,10 +368,12 @@ export default function SuperAdminCommissionsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">This Month</p>
-                  <p className="text-2xl font-bold text-purple-600">{formatCurrency(statistics.thisMonth.totalPaid + statistics.thisMonth.totalPending)}</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {formatCurrency((statistics.thisMonth?.totalPaid || 0) + (statistics.thisMonth?.totalPending || 0))}
+                  </p>
                   <p className="text-xs text-gray-500">
-                    Paid: {formatCurrency(statistics.thisMonth.totalPaid)} | 
-                    Pending: {formatCurrency(statistics.thisMonth.totalPending)}
+                    Paid: {formatCurrency(statistics.thisMonth?.totalPaid || 0)} | 
+                    Pending: {formatCurrency(statistics.thisMonth?.totalPending || 0)}
                   </p>
                 </div>
                 <FaCalculator className="text-purple-500 text-2xl" />
@@ -773,6 +815,108 @@ export default function SuperAdminCommissionsPage() {
               Pay Commission
             </Button>
           )}
+        </DialogFooter>
+      </Dialog>
+
+      {/* Generate Commissions Dialog */}
+      <Dialog isOpen={showGenerateDialog} onClose={() => setShowGenerateDialog(false)}>
+        <DialogHeader>Generate Monthly Commissions</DialogHeader>
+        <DialogBody>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Month
+              </label>
+              <Input
+                type="month"
+                value={generationMonth}
+                onChange={(e) => setGenerationMonth(e.target.value)}
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Commissions will be generated for all agents who had completed orders in the selected month.
+              </p>
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowGenerateDialog(false)}
+            disabled={isGenerating}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleGenerateCommissions}
+            disabled={isGenerating}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isGenerating ? (
+              <>
+                <Spinner size="sm" className="mr-2" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <FaPlay className="text-sm mr-2" />
+                Generate Commissions
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* Generation Result Dialog */}
+      <Dialog isOpen={showGenerationResult} onClose={() => setShowGenerationResult(false)}>
+        <DialogHeader>Commission Generation Results</DialogHeader>
+        <DialogBody>
+          {generationResult && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{generationResult.summary.created}</div>
+                  <div className="text-sm text-blue-800">Created</div>
+                </div>
+                <div className="bg-yellow-50 p-3 rounded-lg">
+                  <div className="text-2xl font-bold text-yellow-600">{generationResult.summary.exists}</div>
+                  <div className="text-sm text-yellow-800">Already Exist</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-2xl font-bold text-gray-600">{generationResult.results.filter((r: { status: string }) => r.status === 'success' || r.status === 'created').length - generationResult.summary.created}</div>
+                  <div className="text-sm text-gray-800">No Commission</div>
+                </div>
+                <div className="bg-red-50 p-3 rounded-lg">
+                  <div className="text-2xl font-bold text-red-600">{generationResult.summary.errors}</div>
+                  <div className="text-sm text-red-800">Errors</div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-gray-900 mb-2">Processing Summary</h4>
+                <div className="text-sm text-gray-600">
+                  <p>Total agents processed: {generationResult.summary.total}</p>
+                  <p>Success rate: {generationResult.summary.total > 0 ? Math.round((generationResult.summary.created / generationResult.summary.total) * 100) : 0}%</p>
+                  {generationResult.results.every((r: { status: string }) => r.status === 'exists') && (
+                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-yellow-800 text-sm">
+                        <strong>Note:</strong> All commissions for this month have already been generated.
+                        The system prevents duplicate commission records for the same period.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            onClick={() => setShowGenerationResult(false)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Close
+          </Button>
         </DialogFooter>
       </Dialog>
 

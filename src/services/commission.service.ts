@@ -83,7 +83,7 @@ export interface PayMultipleCommissionsData {
 }
 
 export interface GenerateMonthlyCommissionsData {
-  month?: string;
+  targetMonth?: string;
 }
 
 export interface CommissionResponse<T> {
@@ -109,7 +109,7 @@ export interface MultiplePaymentResult {
 export interface MonthlyGenerationResult {
   results: Array<{
     agentId: string;
-    status: 'created' | 'exists' | 'error';
+    status: 'created' | 'exists' | 'error' | 'success';
     record?: CommissionRecord;
     error?: string;
   }>;
