@@ -192,7 +192,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     completed: agentAnalytics.statusCounts?.completed || 0,
     cancelled: agentAnalytics.statusCounts?.cancelled || 0,
     failed: 0,
-    draft: 0,
+    draft: orders.filter((o: Order) => o.status === 'draft').length, // Calculate from actual orders
     single: 0,
     bulk: 0,
     totalRevenue: agentAnalytics.overallTotalSales || 0,
@@ -861,6 +861,13 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </div>
         </DialogFooter>
       </Dialog>
+
+      {/* Draft Orders Handler Modal */}
+      <DraftOrdersHandler
+        isOpen={showDraftHandler}
+        onClose={() => setShowDraftHandler(false)}
+      />
+
     </div>
   );
 }; 
