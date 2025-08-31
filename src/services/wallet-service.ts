@@ -9,10 +9,16 @@ import type {
 // Use the consolidated apiClient for all wallet operations
 export const walletService = {
   /**
-   * Get wallet info and recent transactions
+   * Get wallet info and recent transactions (only for agents)
+   * @param userType User type to check if agent
    * @returns Wallet information with recent transactions
    */
-  getWalletInfo: async (): Promise<WalletInfo> => {
+  getWalletInfo: async (userType?: string): Promise<WalletInfo | null> => {
+    // Only fetch wallet data for agents
+    if (userType !== 'agent') {
+      return null;
+    }
+
     const response = await apiClient.get<{success: boolean; wallet: WalletInfo}>('/api/wallet/info');
     return response.data.wallet;
   },

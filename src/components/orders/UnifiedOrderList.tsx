@@ -1,5 +1,5 @@
 // src/components/orders/UnifiedOrderList.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useOrder } from '../../hooks/use-order';
 import { orderService } from '../../services/order.service';
 import { userService } from '../../services/user.service';
@@ -71,6 +71,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   // Provider data
   const [providers, setProviders] = useState<Provider[]>([]);
 
+  // Ref to track if component is mounted
+  const isMountedRef = useRef(true);
+
   // Fetch providers for super admin filter
   const fetchProviders = useCallback(async () => {
     try {
@@ -89,22 +92,24 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       (async () => {
         try {
           const analytics = await orderService.getAgentAnalytics('30d');
-          setAgentAnalytics({
-            totalOrders: analytics.orders?.total || 0,
-            overallTotalSales: analytics.revenue?.total || 0,
-            monthlyRevenue: analytics.revenue?.total || 0, // Use total revenue as monthly for now
-            monthlyOrderCount: analytics.orders?.total || 0,
-            monthlyCommission: analytics.commissions?.earned || 0,
-            statusCounts: {
-              completed: analytics.orders?.completed || 0,
-              processing: analytics.orders?.processing || 0,
-              pending: analytics.orders?.pending || 0,
-              cancelled: analytics.orders?.cancelled || 0
-            }
-          });
+          if (isMountedRef.current) {
+            setAgentAnalytics({
+              totalOrders: analytics.orders?.total || 0,
+              overallTotalSales: analytics.revenue?.total || 0,
+              monthlyRevenue: analytics.revenue?.total || 0, // Use total revenue as monthly for now
+              monthlyOrderCount: analytics.orders?.total || 0,
+              monthlyCommission: analytics.commissions?.earned || 0,
+              statusCounts: {
+                completed: analytics.orders?.completed || 0,
+                processing: analytics.orders?.processing || 0,
+                pending: analytics.orders?.pending || 0,
+                cancelled: analytics.orders?.cancelled || 0
+              }
+            });
+          }
         } catch (err) {
           console.error('Failed to load agent analytics:', err);
-          setAgentAnalytics(null);
+          if (isMountedRef.current) setAgentAnalytics(null);
         }
       })();
     }
@@ -112,6 +117,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     if (isAdmin) {
       fetchProviders();
     }
+
+    return () => { isMountedRef.current = false; };
   }, [fetchOrders, fetchMonthlyRevenue, isAdmin, fetchProviders, isAgent]);
 
   // Fetch dashboard stats for super admin users (server-provided analytics)
@@ -122,10 +129,10 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     (async () => {
       try {
         const stats = await userService.fetchDashboardStats();
-        setAdminStats(stats);
+        if (isMountedRef.current) setAdminStats(stats);
       } catch (err) {
         console.error('Failed to load dashboard stats for super admin:', err);
-        setAdminStats(null);
+        if (isMountedRef.current) setAdminStats(null);
       }
     })();
   }, [authState.user?.userType, userType]);
@@ -169,59 +176,61 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   // For admins we can still compute stats from orders in frontend; for agents, use backend-provided analytics
   const isSuperAdmin = authState.user?.userType === 'super_admin' || userType === 'super_admin';
 
-  const stats = isSuperAdmin && adminStats ? {
-    total: adminStats.orders?.total ?? 0,
-    pending: adminStats.orders?.pending ?? 0,
-    confirmed: 0,
-    processing: adminStats.orders?.processing ?? 0,
-    completed: adminStats.orders?.completed ?? 0,
-    cancelled: adminStats.orders?.cancelled ?? 0,
-    failed: adminStats.orders?.failed ?? 0,
-    draft: adminStats.orders?.draft ?? 0,
-    single: 0,
-    bulk: 0,
-    totalRevenue: adminStats.revenue?.total ?? 0,
-    paid: 0,
-    pendingPayment: 0,
-    failedPayment: 0,
-  } : isAgent && agentAnalytics ? {
-    total: agentAnalytics.totalOrders || 0,
-    pending: agentAnalytics.statusCounts?.pending || 0,
-    confirmed: 0,
-    processing: agentAnalytics.statusCounts?.processing || 0,
-    completed: agentAnalytics.statusCounts?.completed || 0,
-    cancelled: agentAnalytics.statusCounts?.cancelled || 0,
-    failed: 0,
-    draft: orders.filter((o: Order) => o.status === 'draft').length, // Calculate from actual orders
-    single: 0,
-    bulk: 0,
-    totalRevenue: agentAnalytics.overallTotalSales || 0,
-    paid: 0,
-    pendingPayment: 0,
-    failedPayment: 0,
-  } : {
-    total: pagination.total || orders.length, // Use pagination total for actual count, fallback to orders.length
-    pending: orders.filter((o: Order) => o.status === 'pending').length,
-    confirmed: orders.filter((o: Order) => o.status === 'confirmed').length,
-    processing: orders.filter((o: Order) => o.status === 'processing').length,
-    completed: orders.filter((o: Order) => o.status === 'completed').length,
-    cancelled: orders.filter((o: Order) => o.status === 'cancelled').length,
-    failed: orders.filter((o: Order) => o.status === 'failed').length,
-    draft: orders.filter((o: Order) => o.status === 'draft').length,
-    single: orders.filter((o: Order) => o.orderType === 'single').length,
-    bulk: orders.filter((o: Order) => o.orderType === 'bulk').length,
-    totalRevenue: orders.reduce((sum: number, order: Order) => sum + order.total, 0),
-    paid: orders.filter((o: Order) => o.paymentStatus === 'paid').length,
-    pendingPayment: orders.filter((o: Order) => o.paymentStatus === 'pending').length,
-    failedPayment: orders.filter((o: Order) => o.paymentStatus === 'failed').length,
-  };
+  const stats = useMemo(() => {
+    return isSuperAdmin && adminStats ? {
+      total: adminStats.orders?.total ?? 0,
+      pending: adminStats.orders?.pending ?? 0,
+      confirmed: 0,
+      processing: adminStats.orders?.processing ?? 0,
+      completed: adminStats.orders?.completed ?? 0,
+      cancelled: adminStats.orders?.cancelled ?? 0,
+      failed: adminStats.orders?.failed ?? 0,
+      draft: adminStats.orders?.draft ?? 0,
+      single: 0,
+      bulk: 0,
+      totalRevenue: adminStats.revenue?.total ?? 0,
+      paid: 0,
+      pendingPayment: 0,
+      failedPayment: 0,
+    } : isAgent && agentAnalytics ? {
+      total: agentAnalytics.totalOrders || 0,
+      pending: agentAnalytics.statusCounts?.pending || 0,
+      confirmed: 0,
+      processing: agentAnalytics.statusCounts?.processing || 0,
+      completed: agentAnalytics.statusCounts?.completed || 0,
+      cancelled: agentAnalytics.statusCounts?.cancelled || 0,
+      failed: 0,
+      draft: orders.filter((o: Order) => o.status === 'draft').length, // Calculate from actual orders
+      single: 0,
+      bulk: 0,
+      totalRevenue: agentAnalytics.overallTotalSales || 0,
+      paid: 0,
+      pendingPayment: 0,
+      failedPayment: 0,
+    } : {
+      total: pagination.total || orders.length, // Use pagination total for actual count, fallback to orders.length
+      pending: orders.filter((o: Order) => o.status === 'pending').length,
+      confirmed: orders.filter((o: Order) => o.status === 'confirmed').length,
+      processing: orders.filter((o: Order) => o.status === 'processing').length,
+      completed: orders.filter((o: Order) => o.status === 'completed').length,
+      cancelled: orders.filter((o: Order) => o.status === 'cancelled').length,
+      failed: orders.filter((o: Order) => o.status === 'failed').length,
+      draft: orders.filter((o: Order) => o.status === 'draft').length,
+      single: orders.filter((o: Order) => o.orderType === 'single').length,
+      bulk: orders.filter((o: Order) => o.orderType === 'bulk').length,
+      totalRevenue: orders.reduce((sum: number, order: Order) => sum + order.total, 0),
+      paid: orders.filter((o: Order) => o.paymentStatus === 'paid').length,
+      pendingPayment: orders.filter((o: Order) => o.paymentStatus === 'pending').length,
+      failedPayment: orders.filter((o: Order) => o.paymentStatus === 'failed').length,
+    };
+  }, [isSuperAdmin, adminStats, isAgent, agentAnalytics, orders, pagination.total]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Instant search is handled by useEffect, this just prevents form submission
   };
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setSearchTerm('');
     setStatusFilter('');
     setOrderTypeFilter('');
@@ -230,7 +239,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     setDateRange({ startDate: '', endDate: '' });
     setFilters({});
     fetchOrders();
-  };
+  }, [setFilters, fetchOrders]);
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
@@ -283,158 +292,164 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     setPendingBulkAction(null);
   };
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (selectedOrders.length === orders.length) {
       setSelectedOrders([]);
     } else {
       setSelectedOrders(orders.map((o: Order) => o._id || ''));
     }
-  };
+  }, [selectedOrders.length, orders]);
 
-  const handleSelectOrder = (orderId: string) => {
+  const handleSelectOrder = useCallback((orderId: string) => {
     setSelectedOrders(prev => 
       prev.includes(orderId) 
         ? prev.filter(id => id !== orderId)
         : [...prev, orderId]
     );
-  };
+  }, []);
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('en-GH', {
       style: 'currency',
       currency: 'GHS'
     }).format(amount);
-  };
+  }, []);
 
   // Define statistics cards data with responsive icon handling
   // For agents use agentAnalytics to build stat cards; otherwise fall back to computed stats
-  const statsCards = isAgent ? [
-    {
-      title: 'Total Sales',
-      value: formatCurrency(agentAnalytics?.overallTotalSales || 0),
-      icon: <FaMoneyBillWave className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Monthly Sales',
-      value: agentAnalytics?.monthlyRevenue ? formatCurrency(agentAnalytics.monthlyRevenue) : formatCurrency(0),
-      icon: <FaMoneyBillWave className="hidden sm:block" />,
-      subtitle: agentAnalytics?.monthlyRevenue ? `Commission GHS${agentAnalytics.monthlyCommission?.toFixed(2) ?? '0.00'}` : '',
-      iconOnly: true,
-    },
-    {
-      title: 'Completed Orders',
-      value: agentAnalytics?.statusCounts?.completed || 0,
-      icon: <FaCheck className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Processing Orders',
-      value: agentAnalytics?.statusCounts?.processing || 0,
-      icon: <FaClock className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Pending Orders',
-      value: agentAnalytics?.statusCounts?.pending || 0,
-      icon: <FaClock className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Cancelled Orders',
-      value: agentAnalytics?.statusCounts?.cancelled || 0,
-      icon: <FaTimes className="hidden sm:block" />,
-      iconOnly: true,
-    }
-  ] : [
-  // Default cards for non-agent / non-superadmin (computed from orders)
-    {
-      title: 'Total Orders',
-      value: stats.total,
-      icon: <FaChartBar className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Total Sales',
-      value: formatCurrency(stats.totalRevenue),
-      icon: <FaMoneyBillWave className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Monthly Orders',
-      value: monthlyRevenue ? formatCurrency(monthlyRevenue.monthlyRevenue) : formatCurrency(0),
-      icon: <FaMoneyBillWave className="hidden sm:block" />,
-      subtitle: monthlyRevenue ? `${monthlyRevenue.month} (${monthlyRevenue.orderCount} orders)` : 'This month',
-      iconOnly: true,
-    },
-    {
-      title: 'Completed Orders',
-      value: stats.completed,
-      icon: <FaCheck className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Pending Orders',
-      value: stats.pending,
-      icon: <FaClock className="hidden sm:block" />,
-      iconOnly: true,
-    },
-  ];
+  const statsCards = useMemo(() => {
+    return isAgent ? [
+      {
+        title: 'Total Sales',
+        value: formatCurrency(agentAnalytics?.overallTotalSales || 0),
+        icon: <FaMoneyBillWave className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Monthly Sales',
+        value: agentAnalytics?.monthlyRevenue ? formatCurrency(agentAnalytics.monthlyRevenue) : formatCurrency(0),
+        icon: <FaMoneyBillWave className="hidden sm:block" />,
+        subtitle: agentAnalytics?.monthlyRevenue ? `Commission GHS${agentAnalytics.monthlyCommission?.toFixed(2) ?? '0.00'}` : '',
+        iconOnly: true,
+      },
+      {
+        title: 'Completed Orders',
+        value: agentAnalytics?.statusCounts?.completed || 0,
+        icon: <FaCheck className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Processing Orders',
+        value: agentAnalytics?.statusCounts?.processing || 0,
+        icon: <FaClock className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Pending Orders',
+        value: agentAnalytics?.statusCounts?.pending || 0,
+        icon: <FaClock className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Cancelled Orders',
+        value: agentAnalytics?.statusCounts?.cancelled || 0,
+        icon: <FaTimes className="hidden sm:block" />,
+        iconOnly: true,
+      }
+    ] : [
+    // Default cards for non-agent / non-superadmin (computed from orders)
+      {
+        title: 'Total Orders',
+        value: stats.total,
+        icon: <FaChartBar className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Total Sales',
+        value: formatCurrency(stats.totalRevenue),
+        icon: <FaMoneyBillWave className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Monthly Orders',
+        value: monthlyRevenue ? formatCurrency(monthlyRevenue.monthlyRevenue) : formatCurrency(0),
+        icon: <FaMoneyBillWave className="hidden sm:block" />,
+        subtitle: monthlyRevenue ? `${monthlyRevenue.month} (${monthlyRevenue.orderCount} orders)` : 'This month',
+        iconOnly: true,
+      },
+      {
+        title: 'Completed Orders',
+        value: stats.completed,
+        icon: <FaCheck className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Pending Orders',
+        value: stats.pending,
+        icon: <FaClock className="hidden sm:block" />,
+        iconOnly: true,
+      },
+    ];
+  }, [isAgent, agentAnalytics, stats, monthlyRevenue, formatCurrency]);
 
   // If super admin and adminStats are available, show server-provided admin cards (do not compute from orders)
-  const adminStatCards = isSuperAdmin && adminStats ? [
-    {
-      title: 'Total Orders',
-      value: adminStats.orders?.total ?? 0,
-      icon: <FaChartBar className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: "Today's Orders",
-      value: adminStats.orders?.today ?? 0,
-      icon: <FaChartBar className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Total Sales',
-      value: formatCurrency(adminStats.revenue?.total ?? 0),
-      icon: <FaMoneyBillWave className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Monthly Sales',
-      value: formatCurrency(adminStats.revenue?.thisMonth ?? 0),
-      icon: <FaMoneyBillWave className="hidden sm:block" />,
-      subtitle: 'Commission GHS5.00',
-      iconOnly: true,
-    },
-    {
-      title: 'Completed Orders',
-      value: adminStats.orders?.completed ?? 0,
-      icon: <FaCheck className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Processing Orders',
-      value: adminStats.orders?.processing ?? 0,
-      icon: <FaClock className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Pending Orders',
-      value: adminStats.orders?.pending ?? 0,
-      icon: <FaClock className="hidden sm:block" />,
-      iconOnly: true,
-    },
-    {
-      title: 'Cancelled Orders',
-      value: adminStats.orders?.cancelled ?? 0,
-      icon: <FaTimes className="hidden sm:block" />,
-      iconOnly: true,
-    },
-  ] : null;
+  const adminStatCards = useMemo(() => {
+    return isSuperAdmin && adminStats ? [
+      {
+        title: 'Total Orders',
+        value: adminStats.orders?.total ?? 0,
+        icon: <FaChartBar className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: "Today's Orders",
+        value: adminStats.orders?.today ?? 0,
+        icon: <FaChartBar className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Total Sales',
+        value: formatCurrency(adminStats.revenue?.total ?? 0),
+        icon: <FaMoneyBillWave className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Monthly Sales',
+        value: formatCurrency(adminStats.revenue?.thisMonth ?? 0),
+        icon: <FaMoneyBillWave className="hidden sm:block" />,
+        subtitle: 'Commission GHS5.00',
+        iconOnly: true,
+      },
+      {
+        title: 'Completed Orders',
+        value: adminStats.orders?.completed ?? 0,
+        icon: <FaCheck className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Processing Orders',
+        value: adminStats.orders?.processing ?? 0,
+        icon: <FaClock className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Pending Orders',
+        value: adminStats.orders?.pending ?? 0,
+        icon: <FaClock className="hidden sm:block" />,
+        iconOnly: true,
+      },
+      {
+        title: 'Cancelled Orders',
+        value: adminStats.orders?.cancelled ?? 0,
+        icon: <FaTimes className="hidden sm:block" />,
+        iconOnly: true,
+      },
+    ] : null;
+  }, [isSuperAdmin, adminStats, formatCurrency]);
 
-  const displayedStats = isSuperAdmin && adminStatCards ? adminStatCards : statsCards;
+  const displayedStats = useMemo(() => {
+    return isSuperAdmin && adminStatCards ? adminStatCards : statsCards;
+  }, [isSuperAdmin, adminStatCards, statsCards]);
 
   // Define search and filter configuration
   const searchAndFilterConfig = {

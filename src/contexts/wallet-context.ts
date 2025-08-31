@@ -8,6 +8,7 @@ export interface WalletContextType {
   error: string | null;
   refreshWallet: () => Promise<void>;
   connectionStatus: 'websocket' | 'polling' | 'disconnected';
+  isAgent: boolean;
 }
 
 export const WalletContext = createContext<WalletContextType | undefined>(undefined);

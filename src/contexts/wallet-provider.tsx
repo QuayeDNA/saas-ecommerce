@@ -39,22 +39,35 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
       return;
     }
 
+    // Only fetch wallet for agents
+    if (authState.user?.userType !== 'agent') {
+      setWalletInfo(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     
     try {
-      const data = await walletService.getWalletInfo();
+      const data = await walletService.getWalletInfo(authState.user?.userType);
       setWalletInfo(data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch wallet information';
       setError(errorMessage);
+      setWalletInfo(null);
     } finally {
       setIsLoading(false);
     }
-  }, [authState.isAuthenticated, getUserId]);
+  }, [authState.isAuthenticated, authState.user?.userType, getUserId]);
 
   // WebSocket wallet update handler
   const handleWalletUpdate = useCallback((data: unknown) => {
+    // Only process wallet updates for agents
+    if (authState.user?.userType !== 'agent') {
+      return;
+    }
+
     // Type guard to ensure data is WalletUpdateEvent
     if (typeof data === 'object' && data !== null && 'type' in data && 'userId' in data) {
       const walletUpdate = data as WalletUpdateEvent;
@@ -76,7 +89,7 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
         });
       }
     }
-  }, [getUserId]);
+  }, [authState.user?.userType, getUserId]);
 
   // Monitor connection status and ensure WebSocket is connected
   useEffect(() => {
@@ -99,24 +112,24 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
   // Load wallet data on initial render and when auth state changes
   useEffect(() => {
     const userId = getUserId();
-    
-    if (authState.isAuthenticated && userId) {
+
+    if (authState.isAuthenticated && userId && authState.user?.userType === 'agent') {
       // Initial wallet load
       refreshWallet();
-      
+
       // Connect to WebSocket for real-time updates
       websocketService.connect(userId);
-      
+
       // Listen for wallet updates
       websocketService.on('wallet_update', handleWalletUpdate);
-      
+
       // Set up periodic refresh as fallback (every 30 seconds)
       const fallbackInterval = setInterval(() => {
         if (connectionStatus === 'disconnected') {
           refreshWallet();
         }
       }, 30000);
-      
+
       // Cleanup WebSocket listeners and interval on unmount
       return () => {
         websocketService.off('wallet_update', handleWalletUpdate);
@@ -129,19 +142,7 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
       setWalletInfo(null);
       setConnectionStatus('disconnected');
     }
-  }, [authState.isAuthenticated, authState.user, refreshWallet, handleWalletUpdate, getUserId, connectionStatus]);
-
-  // Auto-refresh wallet when connection status changes to ensure consistency
-  useEffect(() => {
-    if (authState.isAuthenticated && connectionStatus === 'websocket') {
-      // When WebSocket connects, refresh wallet to ensure we have latest data
-      const timer = setTimeout(() => {
-        refreshWallet();
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [connectionStatus, authState.isAuthenticated, refreshWallet]);
+  }, [authState.isAuthenticated, authState.user?.userType, authState.user, refreshWallet, handleWalletUpdate, getUserId, connectionStatus]);
 
   const value = useMemo(() => ({
     walletBalance: walletInfo?.balance ?? 0,
@@ -149,8 +150,9 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
     isLoading,
     error,
     refreshWallet,
-    connectionStatus
-  }), [walletInfo, isLoading, error, refreshWallet, connectionStatus]);
+    connectionStatus,
+    isAgent: authState.user?.userType === 'agent'
+  }), [walletInfo, isLoading, error, refreshWallet, connectionStatus, authState.user?.userType]);
 
   return (
     <WalletContext.Provider value={value}>
