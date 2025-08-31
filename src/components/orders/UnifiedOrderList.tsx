@@ -394,61 +394,74 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   // If super admin and adminStats are available, show server-provided admin cards (do not compute from orders)
   const adminStatCards = useMemo(() => {
-    return isSuperAdmin && adminStats ? [
+    if (!isSuperAdmin) return null;
+
+    // For super admin, always show 8 cards, using adminStats if available, otherwise defaults
+    const stats = adminStats || {
+      orders: { total: 0, today: 0, completed: 0, processing: 0, pending: 0, cancelled: 0 },
+      revenue: { total: 0, thisMonth: 0 }
+    };
+
+    return [
       {
         title: 'Total Orders',
-        value: adminStats.orders?.total ?? 0,
+        value: stats.orders?.total ?? 0,
         icon: <FaChartBar className="hidden sm:block" />,
         iconOnly: true,
       },
       {
         title: "Today's Orders",
-        value: adminStats.orders?.today ?? 0,
+        value: stats.orders?.today ?? 0,
         icon: <FaChartBar className="hidden sm:block" />,
         iconOnly: true,
       },
       {
         title: 'Total Sales',
-        value: formatCurrency(adminStats.revenue?.total ?? 0),
+        value: formatCurrency(stats.revenue?.total ?? 0),
         icon: <FaMoneyBillWave className="hidden sm:block" />,
         iconOnly: true,
       },
       {
         title: 'Monthly Sales',
-        value: formatCurrency(adminStats.revenue?.thisMonth ?? 0),
+        value: formatCurrency(stats.revenue?.thisMonth ?? 0),
         icon: <FaMoneyBillWave className="hidden sm:block" />,
         subtitle: 'Commission GHS5.00',
         iconOnly: true,
       },
       {
         title: 'Completed Orders',
-        value: adminStats.orders?.completed ?? 0,
+        value: stats.orders?.completed ?? 0,
         icon: <FaCheck className="hidden sm:block" />,
         iconOnly: true,
       },
       {
         title: 'Processing Orders',
-        value: adminStats.orders?.processing ?? 0,
+        value: stats.orders?.processing ?? 0,
         icon: <FaClock className="hidden sm:block" />,
         iconOnly: true,
       },
       {
         title: 'Pending Orders',
-        value: adminStats.orders?.pending ?? 0,
+        value: stats.orders?.pending ?? 0,
         icon: <FaClock className="hidden sm:block" />,
         iconOnly: true,
       },
       {
         title: 'Cancelled Orders',
-        value: adminStats.orders?.cancelled ?? 0,
+        value: stats.orders?.cancelled ?? 0,
         icon: <FaTimes className="hidden sm:block" />,
         iconOnly: true,
       },
-    ] : null;
+    ];
   }, [isSuperAdmin, adminStats, formatCurrency]);
 
   const displayedStats = useMemo(() => {
-    return isSuperAdmin && adminStatCards ? adminStatCards : statsCards;
+    // For super admin, show admin stats
+    if (isSuperAdmin) {
+      return adminStatCards;
+    }
+    // For agents, show agent stats
+    return statsCards;
   }, [isSuperAdmin, adminStatCards, statsCards]);
 
   // Define search and filter configuration
@@ -564,7 +577,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       </Card>
 
   {/* Statistics Cards */}
-  <StatsGrid  stats={displayedStats} columns={6} gap="xs" />
+  {displayedStats && (
+    <StatsGrid stats={displayedStats} columns={6} gap="xs" />
+  )}
 
       {/* Draft Orders Alert - Only for Agents */}
       {isAgent && stats.draft > 0 && (
