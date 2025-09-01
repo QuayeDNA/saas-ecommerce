@@ -61,7 +61,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             )}
           </div>
           {!iconOnly && (
-            <div className={`${classes.iconContainer} bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center`}>
+            <div className={`${classes.iconContainer} bg-white/20 rounded-full flex-shrink-0 hidden sm:flex items-center justify-center`}>
               <div className={`${classes.icon} text-white`}>
                 {icon}
               </div>

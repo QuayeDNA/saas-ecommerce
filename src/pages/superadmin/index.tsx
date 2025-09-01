@@ -339,7 +339,7 @@ export default function SuperAdminDashboard() {
                     <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Revenue</p>
                     <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{formatCurrency(stats.revenue.total)}</p>
                     <p className="text-xs text-green-400 mt-1 sm:mt-2">
-                      +{formatCurrency(stats.revenue.thisWeek)} this week
+                      +{formatCurrency(stats.revenue.total)} total
                     </p>
                   </div>
                   <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
@@ -544,19 +544,19 @@ export default function SuperAdminDashboard() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Total Agents</span>
-                  <span className="font-medium">{stats.users.agents}</span>
+                  <span className="font-medium">{stats.users.byType?.agents || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Total Customers</span>
-                  <span className="font-medium">{stats.users.customers}</span>
+                  <span className="font-medium">{stats.users.byType?.customers || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Verified Users</span>
                   <span className="font-medium">{stats.users.verified}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Pending Agents</span>
-                  <Badge colorScheme="warning" size="sm">{stats.users.pendingAgents}</Badge>
+                  <span className="text-sm text-gray-600">Active Agents</span>
+                  <Badge colorScheme="warning" size="sm">{stats.users.activeAgents}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Verification Rate</span>
@@ -589,8 +589,8 @@ export default function SuperAdminDashboard() {
                   <Badge colorScheme="error" size="sm">{stats.orders.failed}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">This Week</span>
-                  <span className="font-medium">{stats.orders.thisWeek}</span>
+                  <span className="text-sm text-gray-600">Total Orders</span>
+                  <span className="font-medium">{stats.orders.total}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Success Rate</span>
@@ -625,12 +625,12 @@ export default function SuperAdminDashboard() {
                   <span className="font-medium text-green-600">{formatCurrency(stats.revenue.total)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">This Week</span>
-                  <span className="font-medium">{formatCurrency(stats.revenue.thisWeek)}</span>
+                  <span className="text-sm text-gray-600">Total Revenue</span>
+                  <span className="font-medium">{formatCurrency(stats.revenue.total)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">This Month</span>
-                  <span className="font-medium">{formatCurrency(stats.revenue.thisMonth)}</span>
+                  <span className="text-sm text-gray-600">Avg Order Value</span>
+                  <span className="font-medium">{formatCurrency(stats.revenue.averageOrderValue)}</span>
                 </div>
               </div>
             </CardBody>
@@ -729,7 +729,7 @@ export default function SuperAdminDashboard() {
                     <div key={order._id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <div>
                         <p className="text-sm font-medium">{order.orderNumber}</p>
-                        <p className="text-xs text-gray-500">{formatCurrency(order.totalAmount)}</p>
+                        <p className="text-xs text-gray-500">{formatCurrency(order.total)}</p>
                       </div>
                       <Badge
                         variant="subtle"

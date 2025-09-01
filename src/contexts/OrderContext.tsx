@@ -15,6 +15,7 @@ import type {
   CreateBulkOrderData,
 } from "../types/order";
 import { orderService } from "../services/order.service";
+import { analyticsService } from "../services/analytics.service";
 import { useToast } from "../design-system";
 import { useAuth } from "../hooks/use-auth";
 
@@ -437,7 +438,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
   const getAgentAnalytics = useCallback(
     async (timeframe = "30d") => {
       try {
-        const analytics = await orderService.getAgentAnalytics(timeframe);
+        const analytics = await analyticsService.getAgentAnalytics(timeframe);
         return analytics;
       } catch (err: unknown) {
         if (err instanceof Error) {

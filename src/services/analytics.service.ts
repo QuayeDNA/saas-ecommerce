@@ -22,6 +22,22 @@ export interface AnalyticsData {
     failed: number;
     cancelled: number;
     successRate: number;
+    today: {
+      total: number;
+      completed: number;
+      pending: number;
+      processing: number;
+      failed: number;
+      cancelled: number;
+    };
+    thisMonth: {
+      total: number;
+      completed: number;
+      pending: number;
+      processing: number;
+      failed: number;
+      cancelled: number;
+    };
     byType: {
       bulk: number;
       single: number;
@@ -29,6 +45,8 @@ export interface AnalyticsData {
   };
   revenue: {
     total: number;
+    thisMonth: number;
+    today: number;
     orderCount: number;
     averageOrderValue: number;
   };
@@ -77,9 +95,18 @@ export interface AgentAnalyticsData {
     failed: number;
     cancelled: number;
     successRate: number;
+    todayCounts: {
+      total: number;
+      completed: number;
+      pending: number;
+      processing: number;
+      failed: number;
+      cancelled: number;
+    };
   };
   revenue: {
     total: number;
+    today: number;
     orderCount: number;
     averageOrderValue: number;
   };

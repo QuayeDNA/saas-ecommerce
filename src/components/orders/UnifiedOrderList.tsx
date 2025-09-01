@@ -8,6 +8,7 @@ import React, {
 import { useOrder } from "../../hooks/use-order";
 import { useAuth } from "../../hooks/use-auth";
 import { providerService } from "../../services/provider.service";
+import { analyticsService } from "../../services/analytics.service";
 import {
   Button,
   Card,
@@ -33,6 +34,7 @@ import type { Provider } from "../../types/package";
 import { UnifiedOrderCard } from "./UnifiedOrderCard";
 import { UnifiedOrderTable } from "./UnifiedOrderTable";
 import { UnifiedOrderExcel } from "./UnifiedOrderExcel";
+import { OrderAnalytics } from "./OrderAnalytics";
 import { SearchAndFilter } from "../common/SearchAndFilter";
 
 interface UnifiedOrderListProps {
@@ -75,6 +77,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     "cancel" | "process" | "complete" | null
   >(null);
 
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+
   // Provider data
   const [providers, setProviders] = useState<Provider[]>([]);
 
@@ -91,17 +98,90 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     }
   }, []);
 
+  // Fetch analytics data
+  const fetchAnalytics = useCallback(async () => {
+    if (!isAdmin && !isAgent) return;
+
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+
+    try {
+      if (isAdmin) {
+        // For super admin, use the dedicated analytics service
+        const analytics = await analyticsService.getSuperAdminAnalytics("30d");
+
+        const transformedData = {
+          totalOrders: analytics.orders.total || 0,
+          thisMonthOrders: analytics.orders.thisMonth?.total || 0,
+          totalRevenue: analytics.revenue.total || 0,
+          monthlyRevenue: analytics.revenue.thisMonth || 0,
+          todayCompletedOrders: analytics.orders.today?.completed || 0,
+          todayProcessingOrders: analytics.orders.today?.processing || 0,
+          todayPendingOrders: analytics.orders.today?.pending || 0,
+          todayCancelledOrders: analytics.orders.today?.cancelled || 0,
+          commission: {
+            totalPaid: analytics.commissions?.totalPaid || 0,
+            pendingAmount: analytics.commissions?.pendingAmount || 0,
+            pendingCount: analytics.commissions?.pendingCount || 0
+          },
+          statusCounts: {
+            processing: analytics.orders.processing || 0,
+            pending: analytics.orders.pending || 0,
+            cancelled: analytics.orders.cancelled || 0
+          }
+        };
+
+        setAnalyticsData(transformedData);
+      } else if (isAgent) {
+        // For agents, use the agent analytics service
+        const analytics = await analyticsService.getAgentAnalytics("30d");
+
+        // Transform to match our component's expected structure
+        const transformedData = {
+          orders: {
+            total: analytics.orders.total || 0,
+            completed: analytics.orders.completed || 0,
+            processing: analytics.orders.processing || 0,
+            pending: analytics.orders.pending || 0,
+            cancelled: analytics.orders.cancelled || 0,
+            today: {
+              completed: analytics.orders.todayCounts?.completed || 0,
+              processing: analytics.orders.todayCounts?.processing || 0,
+              pending: analytics.orders.todayCounts?.pending || 0,
+              cancelled: analytics.orders.todayCounts?.cancelled || 0
+            }
+          },
+          revenue: {
+            total: analytics.revenue.total || 0,
+            today: analytics.revenue.today || 0
+          }
+        };
+
+        setAnalyticsData(transformedData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch analytics:", error);
+      setAnalyticsError("Failed to load analytics data");
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [isAdmin, isAgent]);
+
   useEffect(() => {
     fetchOrders();
     // Fetch providers for filter
     if (isAdmin) {
       fetchProviders();
     }
+    // Fetch analytics for admin and agents
+    if (isAdmin || isAgent) {
+      fetchAnalytics();
+    }
 
     return () => {
       isMountedRef.current = false;
     };
-  }, [fetchOrders, isAdmin, fetchProviders]);
+  }, [fetchOrders, isAdmin, fetchProviders, isAgent, fetchAnalytics]);
 
   // Auto-search effect for instant filtering
   useEffect(() => {
@@ -356,6 +436,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </div>
         </CardBody>
       </Card>
+
+      {/* Analytics Section - Only show for admin and agents */}
+      {(isAdmin || isAgent) && (
+        <OrderAnalytics
+          analyticsData={analyticsData}
+          loading={analyticsLoading}
+          error={analyticsError}
+          isAdmin={isAdmin}
+          isAgent={isAgent}
+        />
+      )}
 
       {/* Search and Filters */}
       <SearchAndFilter {...searchAndFilterConfig} />

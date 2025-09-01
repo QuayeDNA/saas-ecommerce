@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useWallet, useDailySpending } from '../hooks';
+import { useWallet } from '../hooks';
 import { useOrder } from '../contexts/OrderContext';
 import { useProvider } from '../hooks/use-provider';
 import { useSiteStatus } from '../contexts/site-status-context';
@@ -71,7 +71,6 @@ export const DashboardPage = () => {
   const { getAgentAnalytics } = useOrder();
   const { providers, loading: providersLoading } = useProvider();
   const { siteStatus } = useSiteStatus();
-  const { dailySpending, orderCount, isLoading: dailySpendingLoading } = useDailySpending();
   
   // State for modals and data
   const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([]);
@@ -83,10 +82,19 @@ export const DashboardPage = () => {
       processing: 0,
       failed: 0,
       cancelled: 0,
-      successRate: 0
+      successRate: 0,
+      todayCounts: {
+        total: 0,
+        completed: 0,
+        pending: 0,
+        processing: 0,
+        failed: 0,
+        cancelled: 0
+      }
     },
     revenue: {
       total: 0,
+      today: 0,
       orderCount: 0,
       averageOrderValue: 0
     },
@@ -217,9 +225,19 @@ export const DashboardPage = () => {
             let totalOrders: number;
             let completedOrders: number;
             let overallTotalSales: number;
+            let todayRevenue: number;
             let successRate: number;
             let walletBalance: number;
             let monthlyCommission: number;
+            let paidCommission: number;
+            let todayOrderCounts: {
+              total: number;
+              completed: number;
+              pending: number;
+              processing: number;
+              failed: number;
+              cancelled: number;
+            };
             let chartLabels: string[] = [];
             let chartOrders: number[] = [];
             let chartRevenue: number[] = [];
@@ -227,25 +245,66 @@ export const DashboardPage = () => {
 
             if (hasNewStructure(analytics)) {
               // New structure
-              totalOrders = analytics.orders.total;
-              completedOrders = analytics.orders.completed;
-              overallTotalSales = analytics.revenue.total;
-              successRate = analytics.orders.successRate;
-              walletBalance = analytics.wallet.balance;
-              monthlyCommission = analytics.commissions.earned;
-              chartLabels = analytics.charts.labels;
-              chartOrders = analytics.charts.orders;
-              chartRevenue = analytics.charts.revenue;
-              chartCompletedOrders = analytics.charts.completedOrders;
+              const analyticsData = analytics as unknown as {
+                orders: {
+                  total: number;
+                  completed: number;
+                  successRate: number;
+                  todayCounts: {
+                    total: number;
+                    completed: number;
+                    pending: number;
+                    processing: number;
+                    failed: number;
+                    cancelled: number;
+                  };
+                };
+                revenue: {
+                  total: number;
+                  today: number;
+                  orderCount: number;
+                };
+                commissions: {
+                  earned: number;
+                  paid: number;
+                };
+                wallet: { balance: number; };
+                charts: {
+                  labels: string[];
+                  orders: number[];
+                  revenue: number[];
+                  completedOrders: number[];
+                };
+              };
+              totalOrders = analyticsData.orders.total;
+              completedOrders = analyticsData.orders.completed;
+              overallTotalSales = analyticsData.revenue.total;
+              todayRevenue = analyticsData.revenue.today || 0;
+              successRate = analyticsData.orders.successRate;
+              walletBalance = analyticsData.wallet.balance;
+              monthlyCommission = analyticsData.commissions.earned;
+              paidCommission = analyticsData.commissions.paid || 0;
+              todayOrderCounts = analyticsData.orders.todayCounts || {
+                total: 0, completed: 0, pending: 0, processing: 0, failed: 0, cancelled: 0
+              };
+              chartLabels = analyticsData.charts.labels;
+              chartOrders = analyticsData.charts.orders;
+              chartRevenue = analyticsData.charts.revenue;
+              chartCompletedOrders = analyticsData.charts.completedOrders;
             } else {
               // Old structure
               const oldAnalytics = analytics as Record<string, unknown>;
               totalOrders = (oldAnalytics.totalOrders as number) || 0;
               completedOrders = (oldAnalytics.completedOrders as number) || 0;
               overallTotalSales = (oldAnalytics.overallTotalSales as number) || 0;
+              todayRevenue = 0;
               successRate = (oldAnalytics.successRate as number) || 0;
               walletBalance = (oldAnalytics.walletBalance as number) || 0;
               monthlyCommission = (oldAnalytics.monthlyCommission as number) || 0;
+              paidCommission = 0;
+              todayOrderCounts = {
+                total: 0, completed: 0, pending: 0, processing: 0, failed: 0, cancelled: 0
+              };
             }
 
             setAnalyticsData({
@@ -256,17 +315,19 @@ export const DashboardPage = () => {
                 processing: 0,
                 failed: 0,
                 cancelled: 0,
-                successRate: successRate
+                successRate: successRate,
+                todayCounts: todayOrderCounts
               },
               revenue: {
                 total: overallTotalSales,
+                today: todayRevenue,
                 orderCount: totalOrders,
                 averageOrderValue: totalOrders > 0 ? overallTotalSales / totalOrders : 0
               },
               commissions: {
                 rate: 0,
                 earned: monthlyCommission,
-                paid: 0,
+                paid: paidCommission,
                 pending: 0,
                 totalOrders: totalOrders,
                 totalRevenue: overallTotalSales
@@ -284,8 +345,24 @@ export const DashboardPage = () => {
           } else {
             // Set default values if analytics fails
             setAnalyticsData({
-              orders: { total: 0, completed: 0, pending: 0, processing: 0, failed: 0, cancelled: 0, successRate: 0 },
-              revenue: { total: 0, orderCount: 0, averageOrderValue: 0 },
+              orders: { 
+                total: 0, 
+                completed: 0, 
+                pending: 0, 
+                processing: 0, 
+                failed: 0, 
+                cancelled: 0, 
+                successRate: 0,
+                todayCounts: {
+                  total: 0, completed: 0, pending: 0, processing: 0, failed: 0, cancelled: 0
+                }
+              },
+              revenue: { 
+                total: 0, 
+                today: 0,
+                orderCount: 0, 
+                averageOrderValue: 0 
+              },
               commissions: { rate: 0, earned: 0, paid: 0, pending: 0, totalOrders: 0, totalRevenue: 0 },
               wallet: { balance: 0 },
               charts: { labels: [], orders: [], revenue: [], completedOrders: [] }
@@ -295,8 +372,24 @@ export const DashboardPage = () => {
           console.error('Analytics error:', analyticsError);
           // Set default values if analytics fails
           setAnalyticsData({
-            orders: { total: 0, completed: 0, pending: 0, processing: 0, failed: 0, cancelled: 0, successRate: 0 },
-            revenue: { total: 0, orderCount: 0, averageOrderValue: 0 },
+            orders: { 
+              total: 0, 
+              completed: 0, 
+              pending: 0, 
+              processing: 0, 
+              failed: 0, 
+              cancelled: 0, 
+              successRate: 0,
+              todayCounts: {
+                total: 0, completed: 0, pending: 0, processing: 0, failed: 0, cancelled: 0
+              }
+            },
+            revenue: { 
+              total: 0, 
+              today: 0,
+              orderCount: 0, 
+              averageOrderValue: 0 
+            },
             commissions: { rate: 0, earned: 0, paid: 0, pending: 0, totalOrders: 0, totalRevenue: 0 },
             wallet: { balance: 0 },
             charts: { labels: [], orders: [], revenue: [], completedOrders: [] }
@@ -465,42 +558,30 @@ export const DashboardPage = () => {
         <div className="grid grid-cols-2 gap-3">
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
-              <div className="text-gray-300 text-xs mb-1">Total Orders</div>
-              <div className="text-xl font-bold text-white">{analyticsData.orders.total}</div>
+              <div className="text-gray-300 text-xs mb-1">Total Orders Today</div>
+              <div className="text-xl font-bold text-white">{analyticsData.orders.todayCounts.total}</div>
+              <div className="text-xs text-gray-400 mt-2">Total: {analyticsData.orders.total}</div>
             </CardBody>
           </Card>
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
-              <div className="text-gray-300 text-xs mb-1">Today's Orders</div>
-              <div className="text-3xl font-bold text-white">
-                {dailySpendingLoading ? (
-                  <div className="animate-pulse bg-white/20 h-8 w-12 rounded mx-auto"></div>
-                ) : (
-                  (typeof orderCount === 'number' ? orderCount : analyticsData.orders.total)
-                )}
-              </div>
-              <div className="text-xs text-gray-400 mt-2">
-                {dailySpendingLoading ? '' : `₵${dailySpending} spent today`}
-              </div>
+              <div className="text-gray-300 text-xs mb-1">Today's Spending</div>
+              <div className="text-3xl font-bold text-white">₵{analyticsData.revenue.today.toFixed(2)}</div>
             </CardBody>
           </Card>
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
-              <div className="text-gray-300 text-xs mb-1">Total Sales</div>
-              <div className="text-xl font-bold text-white">₵{analyticsData.revenue.total}</div>
+              <div className="text-gray-300 text-xs mb-1">Total Sales Today</div>
+              <div className="text-xl font-bold text-white">₵{analyticsData.revenue.today.toFixed(2)}</div>
             </CardBody>
           </Card>
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <div className="text-gray-300 text-xs">Monthly Sales</div>
-                <div className="items-center gap-1 hidden sm:flex">
-                  <span className="text-white">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
-                </div>
+                <div className="text-gray-300 text-xs">Total Commissions Earned</div>
               </div>
-
-              <div className="text-xl font-bold text-white">{formatAmount(analyticsData.revenue.total)}</div>
-              <div className="text-xs text-gray-300 mt-2">Commission: {formatAmount(analyticsData.commissions.earned)}</div>
+              <div className="text-xl font-bold text-white">₵{(analyticsData.commissions.earned + analyticsData.commissions.paid).toFixed(2)}</div>
+              <div className="text-xs text-gray-300 mt-2">Paid: ₵{analyticsData.commissions.paid.toFixed(2)}</div>
             </CardBody>
           </Card>
         </div>
