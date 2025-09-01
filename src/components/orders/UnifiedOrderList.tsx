@@ -1,20 +1,39 @@
 // src/components/orders/UnifiedOrderList.tsx
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useOrder } from '../../hooks/use-order';
-import { orderService } from '../../services/order.service';
-import { userService } from '../../services/user.service';
-import type { DashboardStats } from '../../services/user.service';
-import { useAuth } from '../../hooks/use-auth';
-import { providerService } from '../../services/provider.service';
-import { Button, Card, CardBody, Pagination, Badge, Spinner, StatsGrid, Dialog, DialogHeader, DialogBody, DialogFooter } from '../../design-system';
-import { FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaChartBar, FaDownload, FaSync, FaExclamationTriangle } from 'react-icons/fa';
-import type { Order, OrderFilters } from '../../types/order';
-import type { Provider } from '../../types/package';
-import { UnifiedOrderCard } from './UnifiedOrderCard';
-import { UnifiedOrderTable } from './UnifiedOrderTable';
-import { UnifiedOrderExcel } from './UnifiedOrderExcel';
-import { DraftOrdersHandler } from './DraftOrdersHandler';
-import { SearchAndFilter } from '../common/SearchAndFilter';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
+import { useOrder } from "../../hooks/use-order";
+import { useAuth } from "../../hooks/use-auth";
+import { providerService } from "../../services/provider.service";
+import {
+  Button,
+  Card,
+  CardBody,
+  Pagination,
+  Badge,
+  Spinner,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+} from "../../design-system";
+import {
+  FaCheck,
+  FaTimes,
+  FaClock,
+  FaChartBar,
+  FaDownload,
+  FaSync,
+} from "react-icons/fa";
+import type { Order, OrderFilters } from "../../types/order";
+import type { Provider } from "../../types/package";
+import { UnifiedOrderCard } from "./UnifiedOrderCard";
+import { UnifiedOrderTable } from "./UnifiedOrderTable";
+import { UnifiedOrderExcel } from "./UnifiedOrderExcel";
+import { SearchAndFilter } from "../common/SearchAndFilter";
 
 interface UnifiedOrderListProps {
   isAdmin: boolean;
@@ -34,40 +53,28 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     error,
     pagination,
     filters,
-    monthlyRevenue,
     fetchOrders,
     updateOrderStatus,
     cancelOrder,
     setFilters,
     bulkProcessOrders,
-    fetchMonthlyRevenue
   } = useOrder();
 
-  // Agent analytics state fetched from backend
-  const [agentAnalytics, setAgentAnalytics] = useState<{
-    totalOrders?: number;
-    overallTotalSales?: number;
-    monthlyRevenue?: number;
-    monthlyOrderCount?: number;
-    monthlyCommission?: number;
-    statusCounts?: { completed: number; processing: number; pending: number; cancelled: number };
-  } | null>(null);
-
-  // Super-admin dashboard stats (server authoritative)
-  const [adminStats, setAdminStats] = useState<DashboardStats | null>(null);
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [orderTypeFilter, setOrderTypeFilter] = useState<string>('');
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
-  const [providerFilter, setProviderFilter] = useState<string>('');
-  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [orderTypeFilter, setOrderTypeFilter] = useState<string>("");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("");
+  const [providerFilter, setProviderFilter] = useState<string>("");
+  const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'cards' | 'table' | 'excel'>('cards');
-  const [showDraftHandler, setShowDraftHandler] = useState(false);
+  const [viewMode, setViewMode] = useState<"cards" | "table" | "excel">(
+    "cards"
+  );
   const [showBulkConfirmDialog, setShowBulkConfirmDialog] = useState(false);
-  const [pendingBulkAction, setPendingBulkAction] = useState<'cancel' | 'process' | 'complete' | null>(null);
-  
+  const [pendingBulkAction, setPendingBulkAction] = useState<
+    "cancel" | "process" | "complete" | null
+  >(null);
+
   // Provider data
   const [providers, setProviders] = useState<Provider[]>([]);
 
@@ -80,62 +87,21 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       const response = await providerService.getProviders({ isActive: true });
       setProviders(response.providers);
     } catch (error) {
-      console.error('Failed to fetch providers:', error);
+      console.error("Failed to fetch providers:", error);
     }
   }, []);
 
   useEffect(() => {
     fetchOrders();
-    fetchMonthlyRevenue();
-    // If current user is an agent, fetch analytics from backend for stats cards
-    if (isAgent) {
-      (async () => {
-        try {
-          const analytics = await orderService.getAgentAnalytics('30d');
-          if (isMountedRef.current) {
-            setAgentAnalytics({
-              totalOrders: analytics.orders?.total || 0,
-              overallTotalSales: analytics.revenue?.total || 0,
-              monthlyRevenue: analytics.revenue?.total || 0, // Use total revenue as monthly for now
-              monthlyOrderCount: analytics.orders?.total || 0,
-              monthlyCommission: analytics.commissions?.earned || 0,
-              statusCounts: {
-                completed: analytics.orders?.completed || 0,
-                processing: analytics.orders?.processing || 0,
-                pending: analytics.orders?.pending || 0,
-                cancelled: analytics.orders?.cancelled || 0
-              }
-            });
-          }
-        } catch (err) {
-          console.error('Failed to load agent analytics:', err);
-          if (isMountedRef.current) setAgentAnalytics(null);
-        }
-      })();
-    }
     // Fetch providers for filter
     if (isAdmin) {
       fetchProviders();
     }
 
-    return () => { isMountedRef.current = false; };
-  }, [fetchOrders, fetchMonthlyRevenue, isAdmin, fetchProviders, isAgent]);
-
-  // Fetch dashboard stats for super admin users (server-provided analytics)
-  useEffect(() => {
-    const isSuperAdmin = authState.user?.userType === 'super_admin' || userType === 'super_admin';
-    if (!isSuperAdmin) return;
-
-    (async () => {
-      try {
-        const stats = await userService.fetchDashboardStats();
-        if (isMountedRef.current) setAdminStats(stats);
-      } catch (err) {
-        console.error('Failed to load dashboard stats for super admin:', err);
-        if (isMountedRef.current) setAdminStats(null);
-      }
-    })();
-  }, [authState.user?.userType, userType]);
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [fetchOrders, isAdmin, fetchProviders]);
 
   // Auto-search effect for instant filtering
   useEffect(() => {
@@ -154,13 +120,22 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     }, 300); // Debounce for 300ms
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, statusFilter, orderTypeFilter, paymentStatusFilter, providerFilter, dateRange, setFilters, fetchOrders]);
+  }, [
+    searchTerm,
+    statusFilter,
+    orderTypeFilter,
+    paymentStatusFilter,
+    providerFilter,
+    dateRange,
+    setFilters,
+    fetchOrders,
+  ]);
   // Auto-switch to cards view on mobile/tablet screens
   useEffect(() => {
     const handleResize = () => {
       const isDesktop = window.innerWidth >= 1024; // lg breakpoint
-      if (!isDesktop && viewMode === 'table') {
-        setViewMode('cards');
+      if (!isDesktop && viewMode === "table") {
+        setViewMode("cards");
       }
     };
 
@@ -168,62 +143,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     handleResize();
 
     // Listen for resize events
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [viewMode]);
-
-  // Calculate statistics
-  // For admins we can still compute stats from orders in frontend; for agents, use backend-provided analytics
-  const isSuperAdmin = authState.user?.userType === 'super_admin' || userType === 'super_admin';
-
-  const stats = useMemo(() => {
-    return isSuperAdmin && adminStats ? {
-      total: adminStats.orders?.total ?? 0,
-      pending: adminStats.orders?.pending ?? 0,
-      confirmed: 0,
-      processing: adminStats.orders?.processing ?? 0,
-      completed: adminStats.orders?.completed ?? 0,
-      cancelled: adminStats.orders?.cancelled ?? 0,
-      failed: adminStats.orders?.failed ?? 0,
-      draft: adminStats.orders?.draft ?? 0,
-      single: 0,
-      bulk: 0,
-      totalRevenue: adminStats.revenue?.total ?? 0,
-      paid: 0,
-      pendingPayment: 0,
-      failedPayment: 0,
-    } : isAgent && agentAnalytics ? {
-      total: agentAnalytics.totalOrders || 0,
-      pending: agentAnalytics.statusCounts?.pending || 0,
-      confirmed: 0,
-      processing: agentAnalytics.statusCounts?.processing || 0,
-      completed: agentAnalytics.statusCounts?.completed || 0,
-      cancelled: agentAnalytics.statusCounts?.cancelled || 0,
-      failed: 0,
-      draft: orders.filter((o: Order) => o.status === 'draft').length, // Calculate from actual orders
-      single: 0,
-      bulk: 0,
-      totalRevenue: agentAnalytics.overallTotalSales || 0,
-      paid: 0,
-      pendingPayment: 0,
-      failedPayment: 0,
-    } : {
-      total: pagination.total || orders.length, // Use pagination total for actual count, fallback to orders.length
-      pending: orders.filter((o: Order) => o.status === 'pending').length,
-      confirmed: orders.filter((o: Order) => o.status === 'confirmed').length,
-      processing: orders.filter((o: Order) => o.status === 'processing').length,
-      completed: orders.filter((o: Order) => o.status === 'completed').length,
-      cancelled: orders.filter((o: Order) => o.status === 'cancelled').length,
-      failed: orders.filter((o: Order) => o.status === 'failed').length,
-      draft: orders.filter((o: Order) => o.status === 'draft').length,
-      single: orders.filter((o: Order) => o.orderType === 'single').length,
-      bulk: orders.filter((o: Order) => o.orderType === 'bulk').length,
-      totalRevenue: orders.reduce((sum: number, order: Order) => sum + order.total, 0),
-      paid: orders.filter((o: Order) => o.paymentStatus === 'paid').length,
-      pendingPayment: orders.filter((o: Order) => o.paymentStatus === 'pending').length,
-      failedPayment: orders.filter((o: Order) => o.paymentStatus === 'failed').length,
-    };
-  }, [isSuperAdmin, adminStats, isAgent, agentAnalytics, orders, pagination.total]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,12 +153,12 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   };
 
   const handleClearFilters = useCallback(() => {
-    setSearchTerm('');
-    setStatusFilter('');
-    setOrderTypeFilter('');
-    setPaymentStatusFilter('');
-    setProviderFilter('');
-    setDateRange({ startDate: '', endDate: '' });
+    setSearchTerm("");
+    setStatusFilter("");
+    setOrderTypeFilter("");
+    setPaymentStatusFilter("");
+    setProviderFilter("");
+    setDateRange({ startDate: "", endDate: "" });
     setFilters({});
     fetchOrders();
   }, [setFilters, fetchOrders]);
@@ -250,16 +172,16 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    if (window.confirm('Are you sure you want to cancel this order?')) {
+    if (window.confirm("Are you sure you want to cancel this order?")) {
       try {
-        await cancelOrder(orderId, 'Cancelled by user');
-          } catch {
-      // Failed to cancel order
-    }
+        await cancelOrder(orderId, "Cancelled by user");
+      } catch {
+        // Failed to cancel order
+      }
     }
   };
 
-  const handleBulkAction = (action: 'cancel' | 'process' | 'complete') => {
+  const handleBulkAction = (action: "cancel" | "process" | "complete") => {
     if (selectedOrders.length === 0) return;
 
     setPendingBulkAction(action);
@@ -270,12 +192,13 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     if (!pendingBulkAction || selectedOrders.length === 0) return;
 
     try {
-      if (pendingBulkAction === 'cancel') {
+      if (pendingBulkAction === "cancel") {
         for (const orderId of selectedOrders) {
-          await cancelOrder(orderId, 'Bulk cancelled by admin');
+          await cancelOrder(orderId, "Bulk cancelled by admin");
         }
       } else {
-        const bulkAction = pendingBulkAction === 'process' ? 'processing' : 'completed';
+        const bulkAction =
+          pendingBulkAction === "process" ? "processing" : "completed";
         await bulkProcessOrders(selectedOrders, bulkAction);
       }
       setSelectedOrders([]);
@@ -296,212 +219,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     if (selectedOrders.length === orders.length) {
       setSelectedOrders([]);
     } else {
-      setSelectedOrders(orders.map((o: Order) => o._id || ''));
+      setSelectedOrders(orders.map((o: Order) => o._id || ""));
     }
   }, [selectedOrders.length, orders]);
 
   const handleSelectOrder = useCallback((orderId: string) => {
-    setSelectedOrders(prev => 
-      prev.includes(orderId) 
-        ? prev.filter(id => id !== orderId)
+    setSelectedOrders((prev) =>
+      prev.includes(orderId)
+        ? prev.filter((id) => id !== orderId)
         : [...prev, orderId]
     );
   }, []);
-
-  const formatCurrency = useCallback((amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS'
-    }).format(amount);
-  }, []);
-
-  // Define statistics cards data with responsive icon handling
-  // For agents use agentAnalytics to build stat cards; otherwise fall back to computed stats
-  const statsCards = useMemo(() => {
-    return isAgent ? [
-      {
-        title: 'Total Sales',
-        value: formatCurrency(agentAnalytics?.overallTotalSales || 0),
-        icon: <FaMoneyBillWave className="hidden sm:block" />,
-        iconOnly: true,
-      },
-      {
-        title: 'Monthly Sales',
-        value: agentAnalytics?.monthlyRevenue ? formatCurrency(agentAnalytics.monthlyRevenue) : formatCurrency(0),
-        icon: <FaMoneyBillWave className="hidden sm:block" />,
-        subtitle: agentAnalytics?.monthlyRevenue ? `Commission GHS${agentAnalytics.monthlyCommission?.toFixed(2) ?? '0.00'}` : '',
-        iconOnly: true,
-      },
-      {
-        title: 'Completed Orders',
-        value: agentAnalytics?.statusCounts?.completed || 0,
-        icon: <FaCheck className="hidden sm:block" />,
-        iconOnly: true,
-      },
-      {
-        title: 'Processing Orders',
-        value: agentAnalytics?.statusCounts?.processing || 0,
-        icon: <FaClock className="hidden sm:block" />,
-        iconOnly: true,
-      },
-      {
-        title: 'Pending Orders',
-        value: agentAnalytics?.statusCounts?.pending || 0,
-        icon: <FaClock className="hidden sm:block" />,
-        iconOnly: true,
-      },
-      {
-        title: 'Cancelled Orders',
-        value: agentAnalytics?.statusCounts?.cancelled || 0,
-        icon: <FaTimes className="hidden sm:block" />,
-        iconOnly: true,
-      }
-    ] : [
-    // Default cards for non-agent / non-superadmin (computed from orders)
-      {
-        title: 'Total Orders',
-        value: stats.total,
-        icon: <FaChartBar className="hidden sm:block" />,
-        iconOnly: true,
-      },
-      {
-        title: 'Total Sales',
-        value: formatCurrency(stats.totalRevenue),
-        icon: <FaMoneyBillWave className="hidden sm:block" />,
-        iconOnly: true,
-      },
-      {
-        title: 'Monthly Orders',
-        value: monthlyRevenue ? formatCurrency(monthlyRevenue.monthlyRevenue) : formatCurrency(0),
-        icon: <FaMoneyBillWave className="hidden sm:block" />,
-        subtitle: monthlyRevenue ? `${monthlyRevenue.month} (${monthlyRevenue.orderCount} orders)` : 'This month',
-        iconOnly: true,
-      },
-      {
-        title: 'Completed Orders',
-        value: stats.completed,
-        icon: <FaCheck className="hidden sm:block" />,
-        iconOnly: true,
-      },
-      {
-        title: 'Pending Orders',
-        value: stats.pending,
-        icon: <FaClock className="hidden sm:block" />,
-        iconOnly: true,
-      },
-    ];
-  }, [isAgent, agentAnalytics, stats, monthlyRevenue, formatCurrency]);
-
-  // If super admin and adminStats are available, show server-provided admin cards (do not compute from orders)
-  const adminStatCards = useMemo(() => {
-    if (!isSuperAdmin) return null;
-
-    // For super admin, always show 8 cards, using adminStats if available, otherwise defaults
-  const dashboardStats = adminStats || {
-    orders: {
-      total: stats.total,
-      today: {
-        total: 0,
-        completed: 0,
-        pending: 0,
-        processing: 0,
-        failed: 0,
-        cancelled: 0
-      },
-      thisMonth: {
-        total: 0,
-        completed: 0,
-        pending: 0,
-        processing: 0,
-        failed: 0,
-        cancelled: 0
-      },
-      completed: stats.completed,
-      processing: stats.processing,
-      pending: stats.pending,
-      cancelled: stats.cancelled,
-      failed: stats.failed,
-      byType: {
-        bulk: stats.bulk,
-        single: stats.single
-      },
-      successRate: 0
-    },
-    revenue: { total: stats.totalRevenue, thisMonth: 0, orderCount: 0, averageOrderValue: 0 },
-    commissions: { totalPaid: 0, totalRecords: 0, pendingCount: 0, pendingAmount: 0 },
-    users: { total: 0, newThisPeriod: 0, newThisWeek: 0, activeAgents: 0, verified: 0, unverified: 0, byType: { agents: 0, customers: 0, super_admins: 0 } },
-    wallet: { totalBalance: 0, transactions: { credits: { amount: 0, count: 0 }, debits: { amount: 0, count: 0 } } },
-    providers: { total: 0, active: 0, newThisMonth: 0 },
-    recentActivity: { users: [], orders: [], transactions: [] },
-    rates: { userVerification: 0, agentActivation: 0, orderSuccess: 0 },
-    timeframe: '30d',
-    generatedAt: new Date().toISOString()
-  };    return [
-      {
-        title: 'Total Orders',
-        value: dashboardStats.orders?.total ?? 0,
-        icon: <FaChartBar className="hidden sm:block" />,
-        subtitle: `${dashboardStats.orders?.thisMonth?.total ?? 0} this month`,
-        iconOnly: true,
-      },
-      {
-        title: "Today's Orders",
-        value: dashboardStats.orders?.today?.total ?? 0,
-        icon: <FaChartBar className="hidden sm:block" />,
-        iconOnly: true,
-      },
-      {
-        title: 'Total Sales',
-        value: formatCurrency(dashboardStats.revenue?.total ?? 0),
-        icon: <FaMoneyBillWave className="hidden sm:block" />,
-        iconOnly: true,
-      },
-      {
-        title: 'Monthly Sales',
-        value: formatCurrency(dashboardStats.revenue?.thisMonth ?? 0),
-        icon: <FaMoneyBillWave className="hidden sm:block" />,
-        subtitle: `Commission ${formatCurrency(dashboardStats.commissions?.totalPaid ?? 0)}`,
-        iconOnly: true,
-      },
-      {
-        title: 'Completed Orders',
-        value: dashboardStats.orders?.completed ?? 0,
-        icon: <FaCheck className="hidden sm:block" />,
-        subtitle: `${dashboardStats.orders?.today?.completed ?? 0} completed today`,
-        iconOnly: true,
-      },
-      {
-        title: 'Processing Orders',
-        value: dashboardStats.orders?.processing ?? 0,
-        icon: <FaClock className="hidden sm:block" />,
-        subtitle: `${dashboardStats.orders?.today?.processing ?? 0} processing today`,
-        iconOnly: true,
-      },
-      {
-        title: 'Pending Orders',
-        value: dashboardStats.orders?.pending ?? 0,
-        icon: <FaClock className="hidden sm:block" />,
-        subtitle: `${dashboardStats.orders?.today?.pending ?? 0} pending today`,
-        iconOnly: true,
-      },
-      {
-        title: 'Cancelled Orders',
-        value: dashboardStats.orders?.cancelled ?? 0,
-        icon: <FaTimes className="hidden sm:block" />,
-        subtitle: `${dashboardStats.orders?.today?.cancelled ?? 0} cancelled today`,
-        iconOnly: true,
-      },
-    ];
-  }, [isSuperAdmin, adminStats, formatCurrency, stats]);
-
-  const displayedStats = useMemo(() => {
-    // For super admin, show admin stats
-    if (isSuperAdmin) {
-      return adminStatCards;
-    }
-    // For agents, show agent stats
-    return statsCards;
-  }, [isSuperAdmin, adminStatCards, statsCards]);
 
   // Define search and filter configuration
   const searchAndFilterConfig = {
@@ -512,49 +240,51 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       status: {
         value: statusFilter,
         options: [
-          { value: 'pending', label: 'Pending' },
-          { value: 'confirmed', label: 'Confirmed' },
-          { value: 'processing', label: 'Processing' },
-          { value: 'completed', label: 'Completed' },
-          { value: 'cancelled', label: 'Cancelled' },
-          { value: 'failed', label: 'Failed' },
+          { value: "pending", label: "Pending" },
+          { value: "confirmed", label: "Confirmed" },
+          { value: "processing", label: "Processing" },
+          { value: "completed", label: "Completed" },
+          { value: "cancelled", label: "Cancelled" },
+          { value: "failed", label: "Failed" },
         ],
-        label: 'Status',
-        placeholder: 'All Status',
+        label: "Status",
+        placeholder: "All Status",
       },
       orderType: {
         value: orderTypeFilter,
         options: [
-          { value: 'single', label: 'Single' },
-          { value: 'bulk', label: 'Bulk' },
-          { value: 'regular', label: 'Regular' },
+          { value: "single", label: "Single" },
+          { value: "bulk", label: "Bulk" },
+          { value: "regular", label: "Regular" },
         ],
-        label: 'Order Type',
-        placeholder: 'All Types',
+        label: "Order Type",
+        placeholder: "All Types",
       },
-      ...(isAdmin ? {
-        provider: {
-          value: providerFilter,
-          options: [
-            // Include AFA as a static option since it appears in orders but isn't a traditional provider
-            { value: 'AFA', label: 'AFA' },
-            // Include all network providers from the provider service
-            ...providers.map(provider => ({
-            value: provider.code,
-            label: provider.name
-          })),
-          ],
-          label: 'Network Provider',
-          placeholder: 'All Providers',
-        }
-      } : {}),
+      ...(isAdmin
+        ? {
+            provider: {
+              value: providerFilter,
+              options: [
+                // Include AFA as a static option since it appears in orders but isn't a traditional provider
+                { value: "AFA", label: "AFA" },
+                // Include all network providers from the provider service
+                ...providers.map((provider) => ({
+                  value: provider.code,
+                  label: provider.name,
+                })),
+              ],
+              label: "Network Provider",
+              placeholder: "All Providers",
+            },
+          }
+        : {}),
     },
     onFilterChange: (filterKey: string, value: string) => {
-      if (filterKey === 'status') {
+      if (filterKey === "status") {
         setStatusFilter(value);
-      } else if (filterKey === 'orderType') {
+      } else if (filterKey === "orderType") {
         setOrderTypeFilter(value);
-      } else if (filterKey === 'provider') {
+      } else if (filterKey === "provider") {
         setProviderFilter(value);
       }
     },
@@ -588,12 +318,24 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-2 text-gray-900">
-                {isAdmin ? 'Order Management' : isAgent ? 'Agent Orders' : 'My Orders'}
+                {isAdmin
+                  ? "Order Management"
+                  : isAgent
+                  ? "Agent Orders"
+                  : "My Orders"}
               </h1>
               <p className="text-gray-600">
-                {isAdmin ? 'Monitor and manage all platform orders' : isAgent ? 'Manage your assigned orders' : 'Track your order history and status'}
+                {isAdmin
+                  ? "Monitor and manage all platform orders"
+                  : isAgent
+                  ? "Manage your assigned orders"
+                  : "Track your order history and status"}
                 {userType && (
-                  <Badge variant="subtle" colorScheme="default" className="ml-2">
+                  <Badge
+                    variant="subtle"
+                    colorScheme="default"
+                    className="ml-2"
+                  >
                     {userType}
                   </Badge>
                 )}
@@ -615,41 +357,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         </CardBody>
       </Card>
 
-  {/* Statistics Cards */}
-  {displayedStats && (
-    <StatsGrid stats={displayedStats} columns={6} gap="xs" />
-  )}
-
-      {/* Draft Orders Alert - Only for Agents */}
-      {isAgent && stats.draft > 0 && (
-        <Card>
-          <CardBody>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <FaExclamationTriangle className="text-yellow-500 mt-1 text-sm sm:text-xl" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-yellow-800 mb-2">
-                    Draft Orders Require Attention
-                  </h3>
-                  <p className="text-sm text-yellow-700 mb-3">
-                    You have {stats.draft} order(s) that were created as drafts due to insufficient wallet balance. 
-                    These orders need to be processed once you top up your wallet.
-                  </p>
-                  <Button
-                    onClick={() => setShowDraftHandler(true)}
-                    variant="primary"
-                    size="sm"
-                  >
-                    <FaExclamationTriangle className="mr-2" />
-                    Manage Draft Orders
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      )}
-
       {/* Search and Filters */}
       <SearchAndFilter {...searchAndFilterConfig} />
 
@@ -659,36 +366,38 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {/* View Mode Section */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <span className="text-sm font-medium text-gray-700 flex-shrink-0">View Mode:</span>
+              <span className="text-sm font-medium text-gray-700 flex-shrink-0">
+                View Mode:
+              </span>
               <div className="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
                 <button
-                  onClick={() => setViewMode('cards')}
+                  onClick={() => setViewMode("cards")}
                   className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${
-                    viewMode === 'cards'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                    viewMode === "cards"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
                   Cards
                 </button>
                 {/* Table view only visible on desktop (lg and above) */}
                 <button
-                  onClick={() => setViewMode('table')}
+                  onClick={() => setViewMode("table")}
                   className={`hidden lg:block px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    viewMode === 'table'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                    viewMode === "table"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
                   Table
                 </button>
                 {isAdmin && (
                   <button
-                    onClick={() => setViewMode('excel')}
+                    onClick={() => setViewMode("excel")}
                     className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${
-                      viewMode === 'excel'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
+                      viewMode === "excel"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
                     Excel
@@ -698,7 +407,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             </div>
 
             {/* Select All Button - Only show in cards view and for admin */}
-            {viewMode === 'cards' && (isAdmin) && orders.length > 0 && (
+            {viewMode === "cards" && isAdmin && orders.length > 0 && (
               <div className="flex items-center justify-between gap-3 w-full sm:w-auto">
                 <Button
                   variant="outline"
@@ -708,13 +417,18 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 >
                   <input
                     type="checkbox"
-                    checked={selectedOrders.length === orders.length && orders.length > 0}
+                    checked={
+                      selectedOrders.length === orders.length &&
+                      orders.length > 0
+                    }
                     onChange={() => {}} // Handled by button click
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     readOnly
                   />
                   <span className="text-xs sm:text-sm">
-                    {selectedOrders.length === orders.length ? 'Deselect All' : 'Select All'}
+                    {selectedOrders.length === orders.length
+                      ? "Deselect All"
+                      : "Select All"}
                   </span>
                 </Button>
                 {selectedOrders.length > 0 && (
@@ -741,7 +455,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleBulkAction('process')}
+                    onClick={() => handleBulkAction("process")}
                     className="flex-1 sm:flex-none"
                   >
                     <FaClock className="mr-1" />
@@ -751,7 +465,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleBulkAction('complete')}
+                    onClick={() => handleBulkAction("complete")}
                     className="flex-1 sm:flex-none"
                   >
                     <FaCheck className="mr-1" />
@@ -761,7 +475,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   <Button
                     size="sm"
                     variant="danger"
-                    onClick={() => handleBulkAction('cancel')}
+                    onClick={() => handleBulkAction("cancel")}
                     className="flex-1 sm:flex-none"
                   >
                     <FaTimes className="mr-1" />
@@ -792,14 +506,18 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FaChartBar className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No orders found
+              </h3>
               <p className="text-gray-600">
-                {isAdmin ? 'No orders match your current filters.' : 'You haven\'t placed any orders yet.'}
+                {isAdmin
+                  ? "No orders match your current filters."
+                  : "You haven't placed any orders yet."}
               </p>
             </div>
           </CardBody>
         </Card>
-      ) : viewMode === 'cards' ? (
+      ) : viewMode === "cards" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {orders.map((order) => (
             <UnifiedOrderCard
@@ -810,11 +528,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               onUpdateStatus={handleStatusUpdate}
               onCancel={handleCancelOrder}
               onSelect={handleSelectOrder}
-              isSelected={selectedOrders.includes(order._id || '')}
+              isSelected={selectedOrders.includes(order._id || "")}
             />
           ))}
         </div>
-      ) : viewMode === 'table' ? (
+      ) : viewMode === "table" ? (
         <div className="hidden lg:block">
           <UnifiedOrderTable
             orders={orders}
@@ -829,10 +547,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           />
         </div>
       ) : (
-        <UnifiedOrderExcel 
-          orders={orders}
-          loading={loading}
-        />
+        <UnifiedOrderExcel orders={orders} loading={loading} />
       )}
 
       {/* Pagination */}
@@ -845,7 +560,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               totalItems={pagination.total}
               itemsPerPage={pagination.limit}
               onPageChange={(page) => fetchOrders(filters, { page })}
-              onItemsPerPageChange={(limit) => fetchOrders(filters, { page: 1, limit })}
+              onItemsPerPageChange={(limit) =>
+                fetchOrders(filters, { page: 1, limit })
+              }
               showInfo={true}
               showPerPageSelector={true}
               perPageOptions={[20, 30, 50, 100]}
@@ -855,14 +572,12 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         </Card>
       )}
 
-      {/* Draft Orders Handler Modal */}
-      <DraftOrdersHandler
-        isOpen={showDraftHandler}
-        onClose={() => setShowDraftHandler(false)}
-      />
-
       {/* Bulk Action Confirmation Dialog */}
-      <Dialog isOpen={showBulkConfirmDialog} onClose={cancelBulkAction} size="md">
+      <Dialog
+        isOpen={showBulkConfirmDialog}
+        onClose={cancelBulkAction}
+        size="md"
+      >
         <DialogHeader>
           <h2 className="text-lg font-semibold text-gray-900">
             Confirm Bulk Action
@@ -871,31 +586,42 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         <DialogBody>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              {pendingBulkAction === 'cancel' && <FaTimes className="text-red-500 text-xl" />}
-              {pendingBulkAction === 'process' && <FaSync className="text-blue-500 text-xl" />}
-              {pendingBulkAction === 'complete' && <FaCheck className="text-green-500 text-xl" />}
+              {pendingBulkAction === "cancel" && (
+                <FaTimes className="text-red-500 text-xl" />
+              )}
+              {pendingBulkAction === "process" && (
+                <FaSync className="text-blue-500 text-xl" />
+              )}
+              {pendingBulkAction === "complete" && (
+                <FaCheck className="text-green-500 text-xl" />
+              )}
               <div>
                 <h3 className="font-medium text-gray-900">
-                  {pendingBulkAction === 'cancel' && 'Cancel Orders'}
-                  {pendingBulkAction === 'process' && 'Process Orders'}
-                  {pendingBulkAction === 'complete' && 'Complete Orders'}
+                  {pendingBulkAction === "cancel" && "Cancel Orders"}
+                  {pendingBulkAction === "process" && "Process Orders"}
+                  {pendingBulkAction === "complete" && "Complete Orders"}
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  {pendingBulkAction === 'cancel' && `Are you sure you want to cancel ${selectedOrders.length} selected order(s)?`}
-                  {pendingBulkAction === 'process' && `Are you sure you want to process ${selectedOrders.length} selected order(s)? This will update their status to processing.`}
-                  {pendingBulkAction === 'complete' && `Are you sure you want to mark ${selectedOrders.length} selected order(s) as completed?`}
+                  {pendingBulkAction === "cancel" &&
+                    `Are you sure you want to cancel ${selectedOrders.length} selected order(s)?`}
+                  {pendingBulkAction === "process" &&
+                    `Are you sure you want to process ${selectedOrders.length} selected order(s)? This will update their status to processing.`}
+                  {pendingBulkAction === "complete" &&
+                    `Are you sure you want to mark ${selectedOrders.length} selected order(s) as completed?`}
                 </p>
               </div>
             </div>
-            
+
             {/* Show selected orders info */}
             <div className="bg-gray-50 rounded-lg p-3">
-              <h4 className="font-medium text-sm text-gray-700 mb-2">Selected Orders:</h4>
+              <h4 className="font-medium text-sm text-gray-700 mb-2">
+                Selected Orders:
+              </h4>
               <div className="space-y-1">
                 {orders
-                  .filter(order => selectedOrders.includes(order._id || ''))
+                  .filter((order) => selectedOrders.includes(order._id || ""))
                   .slice(0, 3)
-                  .map(order => (
+                  .map((order) => (
                     <div key={order._id} className="text-sm text-gray-600">
                       {order.orderNumber} - {order.status}
                     </div>
@@ -921,22 +647,16 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             <Button
               onClick={confirmBulkAction}
               className="flex-1"
-              variant={pendingBulkAction === 'cancel' ? 'danger' : 'primary'}
+              variant={pendingBulkAction === "cancel" ? "danger" : "primary"}
             >
-              {pendingBulkAction === 'cancel' && 'Cancel Orders'}
-              {pendingBulkAction === 'process' && 'Process Orders'}
-              {pendingBulkAction === 'complete' && 'Complete Orders'}
+              {pendingBulkAction === "cancel" && "Cancel Orders"}
+              {pendingBulkAction === "process" && "Process Orders"}
+              {pendingBulkAction === "complete" && "Complete Orders"}
             </Button>
           </div>
         </DialogFooter>
       </Dialog>
 
-      {/* Draft Orders Handler Modal */}
-      <DraftOrdersHandler
-        isOpen={showDraftHandler}
-        onClose={() => setShowDraftHandler(false)}
-      />
-
     </div>
   );
-}; 
+};

@@ -183,38 +183,63 @@ class OrderService {
 
   // Get agent analytics for dashboard
   async getAgentAnalytics(timeframe = '30d'): Promise<{
-    orders: {
-      total: number;
-      completed: number;
-      pending: number;
-      processing: number;
-      failed: number;
-      cancelled: number;
-      successRate: number;
-    };
-    revenue: {
-      total: number;
-      orderCount: number;
-      averageOrderValue: number;
-    };
-    commissions: {
-      rate: number;
-      earned: number;
-      paid: number;
-      pending: number;
-      totalOrders: number;
-      totalRevenue: number;
-    };
-    wallet: {
-      balance: number;
-    };
+    totalOrders: number;
+    completedOrders: number;
+    totalRevenue: number;
+    successRate: number;
+    walletBalance: number;
     timeframe: string;
-    generatedAt: string;
+    overallTotalSales: number;
+    monthlyRevenue: number;
+    monthlyOrderCount: number;
+    month: string;
+    monthlyCommission: number;
+    statusCounts: {
+      completed: number;
+      processing: number;
+      pending: number;
+      cancelled: number;
+    };
+    todayCounts?: {
+      completed: number;
+      processing: number;
+      pending: number;
+      cancelled: number;
+    };
   }> {
     const response = await apiClient.get("/api/orders/analytics/agent", {
       params: { timeframe },
     });
-    return response.data.data; // API returns { success: true, data: {...} }
+
+    // Backend returns { success: true, data: { orders, revenue, commissions, wallet, charts, timeframe } }
+    const analytics = response.data.data;
+
+    // Transform backend structure to match frontend expectations
+    return {
+      totalOrders: analytics.orders?.total || 0,
+      completedOrders: analytics.orders?.completed || 0,
+      totalRevenue: analytics.revenue?.total || 0,
+      successRate: analytics.orders?.successRate || 0,
+      walletBalance: analytics.wallet?.balance || 0,
+      timeframe: analytics.timeframe || timeframe,
+      overallTotalSales: analytics.revenue?.total || 0,
+      monthlyRevenue: analytics.revenue?.total || 0,
+      monthlyOrderCount: analytics.orders?.total || 0,
+      month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+      monthlyCommission: analytics.commissions?.earned || 0,
+      statusCounts: {
+        completed: analytics.orders?.completed || 0,
+        processing: analytics.orders?.processing || 0,
+        pending: analytics.orders?.pending || 0,
+        cancelled: analytics.orders?.cancelled || 0,
+      },
+      todayCounts: {
+        completed: analytics.orders?.todayCounts?.completed || 0,
+        processing: analytics.orders?.todayCounts?.processing || 0,
+        pending: analytics.orders?.todayCounts?.pending || 0,
+        cancelled: analytics.orders?.todayCounts?.cancelled || 0,
+      },
+    };
   }
 
   // Get monthly revenue for current user
