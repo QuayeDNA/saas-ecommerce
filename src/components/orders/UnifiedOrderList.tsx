@@ -397,63 +397,102 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     if (!isSuperAdmin) return null;
 
     // For super admin, always show 8 cards, using adminStats if available, otherwise defaults
-    const stats = adminStats || {
-      orders: { total: 0, today: 0, completed: 0, processing: 0, pending: 0, cancelled: 0 },
-      revenue: { total: 0, thisMonth: 0 }
-    };
-
-    return [
+  const dashboardStats = adminStats || {
+    orders: {
+      total: stats.total,
+      today: {
+        total: 0,
+        completed: 0,
+        pending: 0,
+        processing: 0,
+        failed: 0,
+        cancelled: 0
+      },
+      thisMonth: {
+        total: 0,
+        completed: 0,
+        pending: 0,
+        processing: 0,
+        failed: 0,
+        cancelled: 0
+      },
+      completed: stats.completed,
+      processing: stats.processing,
+      pending: stats.pending,
+      cancelled: stats.cancelled,
+      failed: stats.failed,
+      byType: {
+        bulk: stats.bulk,
+        single: stats.single
+      },
+      successRate: 0
+    },
+    revenue: { total: stats.totalRevenue, thisMonth: 0, orderCount: 0, averageOrderValue: 0 },
+    commissions: { totalPaid: 0, totalRecords: 0, pendingCount: 0, pendingAmount: 0 },
+    users: { total: 0, newThisPeriod: 0, newThisWeek: 0, activeAgents: 0, verified: 0, unverified: 0, byType: { agents: 0, customers: 0, super_admins: 0 } },
+    wallet: { totalBalance: 0, transactions: { credits: { amount: 0, count: 0 }, debits: { amount: 0, count: 0 } } },
+    providers: { total: 0, active: 0, newThisMonth: 0 },
+    recentActivity: { users: [], orders: [], transactions: [] },
+    rates: { userVerification: 0, agentActivation: 0, orderSuccess: 0 },
+    timeframe: '30d',
+    generatedAt: new Date().toISOString()
+  };    return [
       {
         title: 'Total Orders',
-        value: stats.orders?.total ?? 0,
+        value: dashboardStats.orders?.total ?? 0,
         icon: <FaChartBar className="hidden sm:block" />,
+        subtitle: `${dashboardStats.orders?.thisMonth?.total ?? 0} this month`,
         iconOnly: true,
       },
       {
         title: "Today's Orders",
-        value: stats.orders?.today ?? 0,
+        value: dashboardStats.orders?.today?.total ?? 0,
         icon: <FaChartBar className="hidden sm:block" />,
         iconOnly: true,
       },
       {
         title: 'Total Sales',
-        value: formatCurrency(stats.revenue?.total ?? 0),
+        value: formatCurrency(dashboardStats.revenue?.total ?? 0),
         icon: <FaMoneyBillWave className="hidden sm:block" />,
         iconOnly: true,
       },
       {
         title: 'Monthly Sales',
-        value: formatCurrency(stats.revenue?.thisMonth ?? 0),
+        value: formatCurrency(dashboardStats.revenue?.thisMonth ?? 0),
         icon: <FaMoneyBillWave className="hidden sm:block" />,
-        subtitle: 'Commission GHS5.00',
+        subtitle: `Commission ${formatCurrency(dashboardStats.commissions?.totalPaid ?? 0)}`,
         iconOnly: true,
       },
       {
         title: 'Completed Orders',
-        value: stats.orders?.completed ?? 0,
+        value: dashboardStats.orders?.completed ?? 0,
         icon: <FaCheck className="hidden sm:block" />,
+        subtitle: `${dashboardStats.orders?.today?.completed ?? 0} completed today`,
         iconOnly: true,
       },
       {
         title: 'Processing Orders',
-        value: stats.orders?.processing ?? 0,
+        value: dashboardStats.orders?.processing ?? 0,
         icon: <FaClock className="hidden sm:block" />,
+        subtitle: `${dashboardStats.orders?.today?.processing ?? 0} processing today`,
         iconOnly: true,
       },
       {
         title: 'Pending Orders',
-        value: stats.orders?.pending ?? 0,
+        value: dashboardStats.orders?.pending ?? 0,
         icon: <FaClock className="hidden sm:block" />,
+        subtitle: `${dashboardStats.orders?.today?.pending ?? 0} pending today`,
         iconOnly: true,
       },
       {
         title: 'Cancelled Orders',
-        value: stats.orders?.cancelled ?? 0,
+        value: dashboardStats.orders?.cancelled ?? 0,
         icon: <FaTimes className="hidden sm:block" />,
+        subtitle: `${dashboardStats.orders?.today?.cancelled ?? 0} cancelled today`,
         iconOnly: true,
       },
     ];
-  }, [isSuperAdmin, adminStats, formatCurrency]);
+  }, [isSuperAdmin, adminStats, formatCurrency, stats]);
 
   const displayedStats = useMemo(() => {
     // For super admin, show admin stats

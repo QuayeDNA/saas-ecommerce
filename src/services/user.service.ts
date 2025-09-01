@@ -105,35 +105,70 @@ export interface UsersResponse {
 export interface DashboardStats {
   users: {
     total: number;
-    agents: number;
-    customers: number;
+    newThisPeriod: number;
+    newThisWeek: number;
+    activeAgents: number;
     verified: number;
     unverified: number;
-    activeAgents: number;
-    inactiveAgents: number;
-    pendingAgents: number;
-    newThisWeek: number;
-    newThisMonth: number;
-    verificationRate: number;
+    byType: {
+      agents: number;
+      customers: number;
+      super_admins: number;
+    };
   };
   orders: {
-  total: number;
-  completed: number;
-  pending: number;
-  processing?: number;
-  cancelled?: number;
-  draft?: number;
-  failed: number;
-  today?: number;
-  thisWeek: number;
-  thisMonth: number;
-  successRate: number;
+    total: number;
+    completed: number;
+    pending: number;
+    processing: number;
+    draft: number;
+    failed: number;
+    cancelled: number;
+    successRate: number;
+    today: {
+      total: number;
+      completed: number;
+      pending: number;
+      processing: number;
+      failed: number;
+      cancelled: number;
+    };
+    thisMonth: {
+      total: number;
+      completed: number;
+      pending: number;
+      processing: number;
+      failed: number;
+      cancelled: number;
+    };
+    byType: {
+      bulk: number;
+      single: number;
+    };
   };
   revenue: {
     total: number;
-  today?: number;
-  thisWeek: number;
-  thisMonth: number;
+    thisMonth: number;
+    orderCount: number;
+    averageOrderValue: number;
+  };
+  wallet: {
+    totalBalance: number;
+    transactions: {
+      credits: {
+        amount: number;
+        count: number;
+      };
+      debits: {
+        amount: number;
+        count: number;
+      };
+    };
+  };
+  providers: {
+    total: number;
+    active: number;
+    newThisMonth: number;
   };
   commissions: {
     totalPaid: number;
@@ -141,36 +176,25 @@ export interface DashboardStats {
     pendingCount: number;
     pendingAmount: number;
   };
-  providers: {
-    total: number;
-    active: number;
-    newThisMonth: number;
-  };
-  wallet: {
-    totalTransactions: number;
-    thisWeek: number;
-    totalBalance: number;
-  };
-  rates: {
-    userVerification: number;
-    orderSuccess: number;
-    agentActivation: number;
-  };
   recentActivity: {
     users: Array<{
       _id: string;
       fullName: string;
       email: string;
       userType: string;
-      createdAt: string;
+      subscriptionStatus: string;
       status: string;
+      createdAt: string;
     }>;
     orders: Array<{
       _id: string;
-      orderNumber: string;
-      totalAmount: number;
+      orderType: string;
+      total: number;
       status: string;
       createdAt: string;
+      orderNumber: string;
+      completionPercentage: number;
+      id: string;
     }>;
     transactions: Array<{
       _id: string;
@@ -180,22 +204,25 @@ export interface DashboardStats {
       createdAt: string;
     }>;
   };
-}
-
-export interface ChartData {
+  rates: {
+    userVerification: number;
+    agentActivation: number;
+    orderSuccess: number;
+  };
+  timeframe: string;
+  generatedAt: string;
+}export interface ChartData {
   labels: string[];
-  userRegistrations: number[];
   orders: number[];
   revenue: number[];
+  completedOrders: number[];
+  userRegistrations: number[];
   orderStatus: {
     completed: number;
     pending: number;
+    processing: number;
     failed: number;
-  };
-  userTypes: {
-    agents: number;
-    customers: number;
-    super_admins: number;
+    cancelled: number;
   };
 }
 
