@@ -106,6 +106,7 @@ export interface AgentAnalyticsData {
   };
   revenue: {
     total: number;
+    thisMonth: number;
     today: number;
     orderCount: number;
     averageOrderValue: number;

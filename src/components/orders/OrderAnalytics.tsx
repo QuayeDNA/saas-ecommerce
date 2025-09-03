@@ -192,7 +192,7 @@ const formatCurrency = (amount: number) => {
         },
         {
           title: "Monthly sales",
-          value: formatCurrency(analyticsData.revenue?.today || 0),
+          value: formatCurrency(analyticsData.revenue?.thisMonth || 0),
           subtitle: `Sales today: ${formatCurrency(analyticsData.revenue?.today || 0)}`,
           icon: <FaMoneyBillWave />,
           size: "md",
