@@ -19,6 +19,7 @@ interface AnalyticsData {
   thisMonthOrders?: number;
   totalRevenue?: number;
   monthlyRevenue?: number;
+  todayRevenue?: number;
   todayCompletedOrders?: number;
   statusCounts?: {
     processing?: number;
@@ -138,8 +139,9 @@ const formatCurrency = (amount: number) => {
           size: "md",
         },
         {
-          title: "Total Sales",
-          value: formatCurrency(analyticsData.totalRevenue || 0),
+          title: "Today's Sales",
+          value: formatCurrency(analyticsData.todayRevenue || 0),
+          subtitle: `Total Sales: ${formatCurrency(analyticsData.totalRevenue || 0)}`,
           icon: <FaMoneyBillWave />,
           size: "md",
         },

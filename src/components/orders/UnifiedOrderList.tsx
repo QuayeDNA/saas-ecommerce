@@ -116,6 +116,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           todayOrders: analytics.orders.today?.total || 0,
           thisMonthOrders: analytics.orders.thisMonth?.total || 0,
           totalRevenue: analytics.revenue.total || 0,
+          todayRevenue: analytics.revenue.today || 0,
           monthlyRevenue: analytics.revenue.thisMonth || 0,
           todayCompletedOrders: analytics.orders.today?.completed || 0,
           todayProcessingOrders: analytics.orders.today?.processing || 0,
