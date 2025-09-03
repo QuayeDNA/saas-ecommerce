@@ -78,6 +78,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   >(null);
 
   // Analytics state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
@@ -112,6 +113,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
         const transformedData = {
           totalOrders: analytics.orders.total || 0,
+          todayOrders: analytics.orders.today?.total || 0,
           thisMonthOrders: analytics.orders.thisMonth?.total || 0,
           totalRevenue: analytics.revenue.total || 0,
           monthlyRevenue: analytics.revenue.thisMonth || 0,

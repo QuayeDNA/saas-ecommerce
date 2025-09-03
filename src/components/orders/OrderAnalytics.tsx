@@ -15,6 +15,7 @@ import {
 interface AnalyticsData {
   // Super Admin fields
   totalOrders?: number;
+  todayOrders?: number;
   thisMonthOrders?: number;
   totalRevenue?: number;
   monthlyRevenue?: number;
@@ -46,6 +47,7 @@ interface AnalyticsData {
   revenue?: {
     total?: number;
     today?: number;
+    thisMonth?: number;
   };
 }
 
@@ -130,7 +132,7 @@ const formatCurrency = (amount: number) => {
         },
         {
           title: "Todays Orders",
-          value: formatNumber(analyticsData.thisMonthOrders || 0),
+          value: formatNumber(analyticsData.todayOrders || 0),
           subtitle: `Orders this month: ${formatNumber(analyticsData.thisMonthOrders || 0)}`,
           icon: <FaChartBar />,
           size: "md",
