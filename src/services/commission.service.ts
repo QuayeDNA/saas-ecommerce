@@ -22,7 +22,7 @@ export interface CommissionRecord {
   totalRevenue: number;
   commissionRate: number;
   amount: number;
-  status: 'pending' | 'paid' | 'cancelled';
+  status: 'pending' | 'paid' | 'rejected' | 'cancelled';
   paidAt?: string;
   paidBy?: {
     _id: string;
@@ -30,6 +30,13 @@ export interface CommissionRecord {
     email: string;
   };
   paymentReference?: string;
+  rejectedAt?: string;
+  rejectedBy?: {
+    _id: string;
+    fullName: string;
+    email: string;
+  };
+  rejectionReason?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -65,7 +72,7 @@ export interface CommissionStatistics {
 }
 
 export interface CommissionFilters {
-  status?: 'pending' | 'paid' | 'cancelled';
+  status?: 'pending' | 'paid' | 'rejected' | 'cancelled';
   period?: 'monthly' | 'weekly' | 'daily';
   startDate?: string;
   endDate?: string;
@@ -80,6 +87,15 @@ export interface PayCommissionData {
 export interface PayMultipleCommissionsData {
   commissionIds: string[];
   paymentReference?: string;
+}
+
+export interface RejectCommissionData {
+  rejectionReason?: string;
+}
+
+export interface RejectMultipleCommissionsData {
+  commissionIds: string[];
+  rejectionReason?: string;
 }
 
 export interface GenerateMonthlyCommissionsData {
@@ -228,6 +244,27 @@ class CommissionService {
    */
   async payMultipleCommissions(data: PayMultipleCommissionsData): Promise<MultiplePaymentResult> {
     const response = await apiClient.put('/api/commissions/pay-multiple', data);
+    return response.data.data;
+  }
+
+  /**
+   * Reject single commission (super admin only)
+   * @param commissionId - Commission record ID
+   * @param data - Rejection data
+   * @returns Promise<CommissionRecord>
+   */
+  async rejectCommission(commissionId: string, data: RejectCommissionData = {}): Promise<CommissionRecord> {
+    const response = await apiClient.put(`/api/commissions/${commissionId}/reject`, data);
+    return response.data.data;
+  }
+
+  /**
+   * Reject multiple commissions (super admin only)
+   * @param data - Multiple rejection data
+   * @returns Promise<MultiplePaymentResult>
+   */
+  async rejectMultipleCommissions(data: RejectMultipleCommissionsData): Promise<MultiplePaymentResult> {
+    const response = await apiClient.put('/api/commissions/reject-multiple', data);
     return response.data.data;
   }
 

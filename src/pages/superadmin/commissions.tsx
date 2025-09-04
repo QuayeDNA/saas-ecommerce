@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FaMoneyBillWave, FaUsers, FaCalculator, FaCreditCard, FaEye, FaClock, FaCheck, FaPlay } from 'react-icons/fa';
+import { FaMoneyBillWave, FaUsers, FaCalculator, FaCreditCard, FaEye, FaClock, FaCheck, FaPlay, FaTimes } from 'react-icons/fa';
 import { Card, CardBody, Button, Badge, Input, Table, Dialog, DialogHeader, DialogBody, DialogFooter, Spinner, useToast } from '../../design-system';
 import { SearchAndFilter } from '../../components/common/SearchAndFilter';
 import { commissionService, type CommissionRecord, type CommissionStatistics, type CommissionSettings, type MonthlyGenerationResult } from '../../services/commission.service';
 
 interface CommissionFilters {
-  status?: 'pending' | 'paid' | 'cancelled';
+  status?: 'pending' | 'paid' | 'rejected' | 'cancelled';
   period?: 'monthly' | 'weekly' | 'daily';
   agentId?: string;
   startDate?: string;
@@ -25,10 +25,14 @@ export default function SuperAdminCommissionsPage() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showPaySingleDialog, setShowPaySingleDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showRejectSingleDialog, setShowRejectSingleDialog] = useState(false);
   const [selectedCommission, setSelectedCommission] = useState<CommissionRecord | null>(null);
   const [viewingCommission, setViewingCommission] = useState<CommissionRecord | null>(null);
   const [paymentReference, setPaymentReference] = useState('');
   const [singlePaymentReference, setSinglePaymentReference] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [singleRejectionReason, setSingleRejectionReason] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
   // Commission Generation State
@@ -108,6 +112,7 @@ export default function SuperAdminCommissionsPage() {
         options: [
           { value: 'pending', label: 'Pending' },
           { value: 'paid', label: 'Paid' },
+          { value: 'rejected', label: 'Rejected' },
           { value: 'cancelled', label: 'Cancelled' }
         ],
         label: 'Status',
@@ -221,6 +226,70 @@ export default function SuperAdminCommissionsPage() {
     }
   };
 
+  // Rejection Handlers
+  const handleRejectSingleCommission = (commission: CommissionRecord) => {
+    setSelectedCommission(commission);
+    setShowRejectSingleDialog(true);
+  };
+
+  const handleConfirmSingleRejection = async () => {
+    if (!selectedCommission) return;
+
+    // Check if commission is already paid or rejected
+    if (selectedCommission.status === 'paid') {
+      toast.addToast('Cannot reject a paid commission', 'error');
+      return;
+    }
+
+    if (selectedCommission.status === 'rejected') {
+      toast.addToast('This commission has already been rejected', 'error');
+      return;
+    }
+
+    try {
+      await commissionService.rejectCommission(selectedCommission._id, {
+        rejectionReason: singleRejectionReason || undefined
+      });
+
+      toast.addToast(
+        `Successfully rejected commission of ${formatCurrency(selectedCommission.amount)} for ${selectedCommission.agentId.fullName}`,
+        'success'
+      );
+
+      setShowRejectSingleDialog(false);
+      setSelectedCommission(null);
+      setSingleRejectionReason('');
+      loadData();
+    } catch (error) {
+      console.error('Failed to reject commission:', error);
+      toast.addToast('Failed to reject commission', 'error');
+    }
+  };
+
+  const handleConfirmBulkRejection = async () => {
+    if (selectedCommissions.length === 0) return;
+
+    try {
+      await commissionService.rejectMultipleCommissions({
+        commissionIds: selectedCommissions,
+        rejectionReason: rejectionReason || undefined
+      });
+
+      toast.addToast(
+        `Successfully rejected ${selectedCommissions.length} commissions`,
+        'success'
+      );
+
+      setShowRejectDialog(false);
+      setSelectedCommissions([]);
+      setRejectionReason('');
+      loadData();
+    } catch (error) {
+      console.error('Failed to reject commissions:', error);
+      toast.addToast('Failed to reject commissions', 'error');
+    }
+  };
+
   const handleUpdateSettings = async (newSettings: CommissionSettings) => {
     try {
       await commissionService.updateCommissionSettings(newSettings);
@@ -269,6 +338,7 @@ export default function SuperAdminCommissionsPage() {
     switch (status) {
       case 'paid': return 'success';
       case 'pending': return 'warning';
+      case 'rejected': return 'error';
       case 'cancelled': return 'error';
       default: return 'default';
     }
@@ -279,7 +349,10 @@ export default function SuperAdminCommissionsPage() {
     const matchesSearch = commission.agentId.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       commission.agentId.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return matchesSearch;
+    // Status filter
+    const matchesStatus = !filters.status || commission.status === filters.status;
+
+    return matchesSearch && matchesStatus;
   });
 
   if (loading) {
@@ -298,28 +371,37 @@ export default function SuperAdminCommissionsPage() {
         <div className="flex gap-3">
           <Button
             variant="primary"
+            leftIcon={<FaPlay className="text-sm" />}
             onClick={() => setShowGenerateDialog(true)}
-            className="flex items-center gap-2"
+            className="flex items-center"
           >
-            <FaPlay className="text-sm" />
             Generate Commissions
           </Button>
           <Button
             variant="outline"
             onClick={() => setShowSettingsDialog(true)}
-            className="flex items-center gap-2"
+            className="flex items-center"
+            leftIcon={<FaCalculator className="text-sm" />}
           >
-            <FaCalculator className="text-sm" />
             Settings
           </Button>
           {selectedCommissions.length > 0 && (
-            <Button
-              onClick={() => setShowPayDialog(true)}
-              className="flex items-center gap-2"
-            >
-              <FaCreditCard className="text-sm" />
-              Pay Selected ({selectedCommissions.length})
-            </Button>
+            <>
+              <Button
+                leftIcon={<FaCreditCard className="text-sm" />}
+                onClick={() => setShowPayDialog(true)}
+                className="flex items-center gap-2"
+              >
+                Pay Selected ({selectedCommissions.length})
+              </Button>
+              <Button
+                onClick={() => setShowRejectDialog(true)}
+                className="flex items-center bg-red-600 hover:bg-red-700"
+                leftIcon={<FaTimes className="text-sm" />}
+              >
+                Reject Selected ({selectedCommissions.length})
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -415,9 +497,9 @@ export default function SuperAdminCommissionsPage() {
                     <Button
                       variant="outline"
                       onClick={handleClearFilters}
-                      className="flex items-center gap-2"
+                      className="flex items-center"
+                      leftIcon={<FaCalculator className="text-sm" />}
                     >
-                      <FaCalculator className="text-sm" />
                       Clear Filters
                     </Button>
                   )}
@@ -484,15 +566,26 @@ export default function SuperAdminCommissionsPage() {
                       View
                     </Button>
                     {commission.status === 'pending' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePaySingleCommission(commission)}
-                        className="text-green-600 hover:text-green-700"
-                      >
-                        <FaCheck className="text-sm mr-1" />
-                        Pay
-                      </Button>
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePaySingleCommission(commission)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <FaCheck className="text-sm mr-1" />
+                          Pay
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRejectSingleCommission(commission)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <FaTimes className="text-sm mr-1" />
+                          Reject
+                        </Button>
+                      </>
                     )}
                   </div>
                 </CardBody>
@@ -606,14 +699,24 @@ export default function SuperAdminCommissionsPage() {
                             <FaEye className="text-sm" />
                           </Button>
                           {commission.status === 'pending' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handlePaySingleCommission(commission)}
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              <FaCheck className="text-sm" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePaySingleCommission(commission)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <FaCheck className="text-sm" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectSingleCommission(commission)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <FaTimes className="text-sm" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -724,6 +827,107 @@ export default function SuperAdminCommissionsPage() {
         </DialogFooter>
       </Dialog>
 
+      {/* Reject Single Commission Dialog */}
+      <Dialog isOpen={showRejectSingleDialog} onClose={() => setShowRejectSingleDialog(false)}>
+        <DialogHeader>Reject Commission</DialogHeader>
+        <DialogBody>
+          <div className="space-y-4">
+            {selectedCommission && (
+              <>
+                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                  <h4 className="font-medium text-red-900 mb-2">Commission Details</h4>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">Agent:</span> {selectedCommission.agentId.fullName}</p>
+                    <p><span className="font-medium">Amount:</span> {formatCurrency(selectedCommission.amount)}</p>
+                    <p><span className="font-medium">Period:</span> {new Date(selectedCommission.periodStart).toLocaleDateString()} - {new Date(selectedCommission.periodEnd).toLocaleDateString()}</p>
+                    <p><span className="font-medium">Orders:</span> {selectedCommission.totalOrders}</p>
+                  </div>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <p className="text-yellow-800 text-sm">
+                    <strong>Warning:</strong> Rejecting this commission will prevent it from being paid and notify the agent. This action cannot be undone.
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="single-rejection-reason" className="block text-sm font-medium text-gray-700 mb-2">
+                    Rejection Reason (Required)
+                  </label>
+                  <textarea
+                    id="single-rejection-reason"
+                    value={singleRejectionReason}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSingleRejectionReason(e.target.value)}
+                    placeholder="Please provide a reason for rejecting this commission..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    required
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowRejectSingleDialog(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmSingleRejection}
+            className="bg-red-600 hover:bg-red-700"
+            disabled={!singleRejectionReason.trim()}
+          >
+            <FaTimes className="text-sm mr-2" />
+            Reject Commission
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* Reject Multiple Commissions Dialog */}
+      <Dialog isOpen={showRejectDialog} onClose={() => setShowRejectDialog(false)}>
+        <DialogHeader>Reject Selected Commissions</DialogHeader>
+        <DialogBody>
+          <div className="space-y-4">
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <h4 className="font-medium text-red-900 mb-2">Bulk Rejection</h4>
+              <p className="text-red-800 text-sm">
+                You are about to reject <strong>{selectedCommissions.length}</strong> commission(s). This action cannot be undone.
+              </p>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <p className="text-yellow-800 text-sm">
+                <strong>Warning:</strong> All selected commissions will be marked as rejected and the agents will be notified. Only pending commissions can be rejected.
+              </p>
+            </div>
+            <div>
+              <label htmlFor="bulk-rejection-reason" className="block text-sm font-medium text-gray-700 mb-2">
+                Rejection Reason (Required)
+              </label>
+              <textarea
+                id="bulk-rejection-reason"
+                value={rejectionReason}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setRejectionReason(e.target.value)}
+                placeholder="Please provide a reason for rejecting these commissions..."
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                required
+              />
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmBulkRejection}
+            className="bg-red-600 hover:bg-red-700"
+            disabled={!rejectionReason.trim()}
+          >
+            <FaTimes className="text-sm mr-2" />
+            Reject {selectedCommissions.length} Commissions
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
       {/* View Commission Dialog */}
       <Dialog isOpen={showViewDialog} onClose={() => setShowViewDialog(false)}>
         <DialogHeader>Commission Details</DialogHeader>
@@ -789,6 +993,24 @@ export default function SuperAdminCommissionsPage() {
                   </div>
                 )}
 
+                {viewingCommission.status === 'rejected' && viewingCommission.rejectedAt && (
+                  <div className="bg-red-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-red-900 mb-2">Rejection Information</h4>
+                    <div className="space-y-1 text-sm text-red-800">
+                      <p><span className="font-medium">Rejected At:</span> {new Date(viewingCommission.rejectedAt).toLocaleString()}</p>
+                      {viewingCommission.rejectedBy && (
+                        <p><span className="font-medium">Rejected By:</span> {viewingCommission.rejectedBy.fullName}</p>
+                      )}
+                      {viewingCommission.rejectionReason && (
+                        <div className="mt-2">
+                          <p className="font-medium">Reason:</p>
+                          <p className="text-sm mt-1">{viewingCommission.rejectionReason}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {viewingCommission.notes && (
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-medium text-blue-900 mb-2">Notes</h4>
@@ -804,16 +1026,28 @@ export default function SuperAdminCommissionsPage() {
             Close
           </Button>
           {viewingCommission?.status === 'pending' && (
-            <Button
-              onClick={() => {
-                setShowViewDialog(false);
-                handlePaySingleCommission(viewingCommission);
-              }}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <FaCheck className="text-sm mr-2" />
-              Pay Commission
-            </Button>
+            <>
+              <Button
+                onClick={() => {
+                  setShowViewDialog(false);
+                  handlePaySingleCommission(viewingCommission);
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <FaCheck className="text-sm mr-2" />
+                Pay Commission
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowViewDialog(false);
+                  handleRejectSingleCommission(viewingCommission);
+                }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <FaTimes className="text-sm mr-2" />
+                Reject Commission
+              </Button>
+            </>
           )}
         </DialogFooter>
       </Dialog>
