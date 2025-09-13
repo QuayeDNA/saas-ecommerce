@@ -108,11 +108,6 @@ const AfaRegistrationPage = lazy(() =>
     default: module.AfaRegistrationPage,
   }))
 );
-const UserManagementPage = lazy(() =>
-  import("../pages/user-management-page").then((module) => ({
-    default: module.UserManagementPage,
-  }))
-);
 const WalletPage = lazy(() =>
   import("../pages/wallet-page").then((module) => ({
     default: module.WalletPage,
@@ -371,14 +366,6 @@ const agentRoutes: RouteObject[] = [
               </Suspense>
             ),
           },
-          {
-            path: "users",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <UserManagementPage />
-              </Suspense>
-            ),
-          },
         ],
       },
     ],
@@ -400,14 +387,6 @@ const adminRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <DashboardPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "users",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <UserManagementPage />
               </Suspense>
             ),
           },

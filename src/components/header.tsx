@@ -5,9 +5,20 @@ import { settingsService } from "../services/settings.service";
 import { useToast } from "../design-system/components/toast";
 import { Button } from "../design-system";
 import { Link } from "react-router-dom";
-import { FaPowerOff, FaCheck, FaBars, FaUser, FaSignOutAlt, FaWallet, FaSync, FaStar, FaWifi } from "react-icons/fa";
+import {
+  FaPowerOff,
+  FaCheck,
+  FaBars,
+  FaUser,
+  FaSignOutAlt,
+  FaWallet,
+  FaSync,
+  FaStar,
+  FaWifi,
+} from "react-icons/fa";
 import { NotificationDropdown } from "./notifications/NotificationDropdown";
 import { ImpersonationService } from "../utils/impersonation";
+import { canHaveWallet, isAdminUser } from "../utils/userTypeHelpers";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -15,7 +26,8 @@ interface HeaderProps {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { authState, logout } = useAuth();
-  const { walletBalance, refreshWallet, isLoading, connectionStatus } = useWallet();
+  const { walletBalance, refreshWallet, isLoading, connectionStatus } =
+    useWallet();
   const { dailySpending, isLoading: dailySpendingLoading } = useDailySpending();
   const { siteStatus, refreshSiteStatus } = useSiteStatus();
   const { addToast } = useToast();
@@ -24,14 +36,18 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const [showGreeting, setShowGreeting] = useState(true);
   const [isTogglingSite, setIsTogglingSite] = useState(false);
 
+  // Check if user can have a wallet (all business users)
+  const canShowWallet = canHaveWallet(authState.user?.userType || "");
+  const isAdmin = isAdminUser(authState.user?.userType || "");
+
   // Get connection status indicator
   const getConnectionStatusIndicator = () => {
     switch (connectionStatus) {
-      case 'websocket':
+      case "websocket":
         return <FaWifi className="w-3 h-3 text-green-400" />;
-      case 'polling':
+      case "polling":
         return <FaSync className="w-3 h-3 text-yellow-400 animate-spin" />;
-      case 'disconnected':
+      case "disconnected":
         return <FaWifi className="w-3 h-3 text-red-400" />;
       default:
         return <FaWifi className="w-3 h-3 text-gray-400" />;
@@ -41,14 +57,14 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   // Get connection status text
   const getConnectionStatusText = () => {
     switch (connectionStatus) {
-      case 'websocket':
-        return 'Live';
-      case 'polling':
-        return 'Syncing';
-      case 'disconnected':
-        return 'Offline';
+      case "websocket":
+        return "Live";
+      case "polling":
+        return "Syncing";
+      case "disconnected":
+        return "Offline";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   };
 
@@ -62,9 +78,9 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
   // Format amount
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS'
+    return new Intl.NumberFormat("en-GH", {
+      style: "currency",
+      currency: "GHS",
     }).format(amount);
   };
 
@@ -85,14 +101,14 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     }
   };
 
-  // Show site message animation for agents and toast notifications for all users
+  // Show site message animation for business users and toast notifications for all users
   useEffect(() => {
-    if (authState.user?.userType === "agent" && siteStatus) {
+    if (canShowWallet && siteStatus) {
       setShowGreeting(false);
       setTimeout(() => {
         setShowSiteMessage(true);
       }, 300); // Wait for greeting to slide out
-      
+
       const timer = setTimeout(() => {
         setShowSiteMessage(false);
         setTimeout(() => {
@@ -101,7 +117,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       }, 5000); // Show for 5 seconds
       return () => clearTimeout(timer);
     }
-  }, [siteStatus, authState.user?.userType]);
+  }, [siteStatus, canShowWallet]);
 
   // Track previous site status to show toast only on changes
   const [prevSiteStatus, setPrevSiteStatus] = useState<boolean | null>(null);
@@ -121,7 +137,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       }
     }
     setPrevSiteStatus(siteStatus?.isSiteOpen ?? null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteStatus?.isSiteOpen, authState.user, addToast, prevSiteStatus]);
 
   // Get site message for agents
@@ -132,17 +148,15 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       : "Sorry, store is currently closed for business 😔";
   };
 
-  // Check if user is an agent
-  const isAgent = authState.user?.userType === "agent";
-  const isAdmin =
-    authState.user?.userType === "super_admin" ||
-    authState.user?.userType === "admin";
-
   // Check if impersonating to adjust header position
   const isImpersonating = ImpersonationService.isImpersonating();
 
   return (
-    <header className={`sticky z-10 bg-[#142850] shadow-sm border-b border-[#0f1f3a] rounded-b-xl ${isImpersonating ? 'top-0' : 'top-0'}`}>
+    <header
+      className={`sticky z-10 bg-[#142850] shadow-sm border-b border-[#0f1f3a] rounded-b-xl ${
+        isImpersonating ? "top-0" : "top-0"
+      }`}
+    >
       <div className="px-2 sm:px-6 lg:px-8 py-4 sm:py-5">
         {/* Main Header Row */}
         <div className="flex items-center justify-between gap-4">
@@ -162,7 +176,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             {/* Greeting Section */}
             <div className="min-w-0 flex-1">
               <div className="relative overflow-hidden">
-                {showSiteMessage && isAgent ? (
+                {showSiteMessage && canShowWallet ? (
                   <div className="transform transition-all duration-500 ease-in-out animate-slide-up">
                     <div className="flex items-center gap-2">
                       <div className="bg-green-50 text-green-600 p-1.5 rounded-md flex-shrink-0">
@@ -183,7 +197,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       </div>
                       <div className="min-w-0">
                         <div className="text-sm sm:text-base lg:text-lg font-semibold text-white truncate">
-                          {getGreeting().text}, {authState.user?.fullName.split(" ")[0]}
+                          {getGreeting().text},{" "}
+                          {authState.user?.fullName.split(" ")[0]}
                         </div>
                         <div className="text-xs sm:text-sm text-gray-200 truncate">
                           Welcome back! 👋
@@ -273,8 +288,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       </div>
                     </div>
 
-                    {/* Profile Link - Only for agents */}
-                    {isAgent && (
+                    {/* Profile Link - Only for business users */}
+                    {canShowWallet && (
                       <Link
                         to="/agent/dashboard/profile"
                         className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -285,8 +300,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       </Link>
                     )}
 
-                    {/* AFA Registration - Only for agents */}
-                    {isAgent && (
+                    {/* AFA Registration - Only for business users */}
+                    {canShowWallet && (
                       <Link
                         to="/agent/dashboard/afa-registration"
                         className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -330,17 +345,17 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           </div>
         </div>
 
-        {/* Wallet Section - Only for agents */}
-        {isAgent && (
+        {/* Wallet Section - Only for business users */}
+        {canShowWallet && (
           <div className="mt-2">
-            <button 
+            <button
               className="bg-white/10 backdrop-blur-sm border border-white/20 text-white p-2 sm:p-3 rounded-lg shadow-sm cursor-pointer hover:bg-white/15 transition-all duration-200 active:scale-95 appearance-none w-full"
               onClick={() => {
                 refreshWallet();
               }}
               tabIndex={0}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   refreshWallet();
                 }
@@ -369,10 +384,10 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Vertical divider - hidden on very small screens */}
                 <div className="hidden sm:block w-px h-8 sm:h-12 bg-white/30 mx-4 sm:mx-6 flex-shrink-0"></div>
-                
+
                 {/* Daily Spending Section */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-1">
                   <div className="min-w-0 flex-1">
@@ -381,7 +396,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     </div>
                     <div className="text-base sm:text-lg lg:text-xl font-bold text-white">
                       {dailySpendingLoading || isLoading ? (
-                       <span> </span>
+                        <span> </span>
                       ) : (
                         formatAmount(dailySpending)
                       )}

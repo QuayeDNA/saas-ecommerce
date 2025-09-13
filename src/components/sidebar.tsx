@@ -79,11 +79,6 @@ const getAgentNavItems = (): NavItem[] => [
     icon: <FaMobile />,
   },
   {
-    label: "My Customers",
-    path: "/agent/dashboard/users",
-    icon: <FaUsers />,
-  },
-  {
     label: "Wallet",
     path: "/agent/dashboard/wallet",
     icon: <FaWallet />,

@@ -1,8 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth, useUser, useWallet } from '../hooks';
-import { Card, CardBody, CardHeader, Button, Badge, Alert } from '../design-system';
-import { FaEdit, FaKey, FaUser, FaEnvelope, FaPhone, FaCalendar, FaWallet, FaStore, FaBriefcase, FaWifi, FaSync } from 'react-icons/fa';
-import type { User } from '../types';
+import React, { useState, useEffect } from "react";
+import { useAuth, useUser, useWallet } from "../hooks";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Button,
+  Badge,
+  Alert,
+} from "../design-system";
+import {
+  FaEdit,
+  FaKey,
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaCalendar,
+  FaWallet,
+  FaStore,
+  FaBriefcase,
+  FaWifi,
+  FaSync,
+} from "react-icons/fa";
+import type { User } from "../types";
+import { isBusinessUser } from "../utils/userTypeHelpers";
 
 export const ProfilePage: React.FC = () => {
   const { authState, logout } = useAuth();
@@ -11,7 +31,7 @@ export const ProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<User | null>(authState.user);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   useEffect(() => {
     const fetchProfile = async () => {
       if (!authState.user) {
@@ -20,33 +40,39 @@ export const ProfilePage: React.FC = () => {
           const profile = await getProfile();
           setProfileData(profile);
         } catch (err) {
-          setError('Failed to load profile data');
-          console.error('Profile fetch error:', err);
+          setError("Failed to load profile data");
+          console.error("Profile fetch error:", err);
         } finally {
           setIsLoading(false);
         }
       }
     };
-    
+
     fetchProfile();
   }, [authState.user, getProfile]);
 
-  const getUserTypeColor = (userType: string): "blue" | "green" | "yellow" | "red" | "gray" => {
+  const getUserTypeColor = (
+    userType: string
+  ): "blue" | "green" | "yellow" | "red" | "gray" => {
     switch (userType) {
-      case 'agent': return 'blue';
-      case 'customer': return 'green';
-      case 'super_admin': return 'red';
-      default: return 'gray';
+      case "agent":
+        return "blue";
+      case "customer":
+        return "green";
+      case "super_admin":
+        return "red";
+      default:
+        return "gray";
     }
   };
 
   const getConnectionStatusIndicator = () => {
     switch (connectionStatus) {
-      case 'websocket':
+      case "websocket":
         return <FaWifi className="w-4 h-4 text-green-500" />;
-      case 'polling':
+      case "polling":
         return <FaSync className="w-4 h-4 text-yellow-500 animate-spin" />;
-      case 'disconnected':
+      case "disconnected":
         return <FaWifi className="w-4 h-4 text-red-500" />;
       default:
         return <FaWifi className="w-4 h-4 text-gray-500" />;
@@ -55,14 +81,14 @@ export const ProfilePage: React.FC = () => {
 
   const getConnectionStatusText = () => {
     switch (connectionStatus) {
-      case 'websocket':
-        return 'Live';
-      case 'polling':
-        return 'Syncing';
-      case 'disconnected':
-        return 'Offline';
+      case "websocket":
+        return "Live";
+      case "polling":
+        return "Syncing";
+      case "disconnected":
+        return "Offline";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   };
 
@@ -74,7 +100,7 @@ export const ProfilePage: React.FC = () => {
     try {
       await refreshWallet();
     } catch (err) {
-      console.error('Failed to refresh wallet:', err);
+      console.error("Failed to refresh wallet:", err);
     }
   };
 
@@ -130,13 +156,16 @@ export const ProfilePage: React.FC = () => {
           <div className="lg:col-span-2">
             <Card className="shadow-lg">
               <CardHeader className="p-4 sm:p-6 pb-0">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Profile Information</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Profile Information
+                </h2>
               </CardHeader>
               <CardBody className="p-4 sm:p-6 pt-0">
                 {/* Profile Avatar and Basic Info */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-white shadow-lg mx-auto sm:mx-0">
-                    {profileData.fullName.charAt(0)}{profileData.fullName.split(' ')[1]?.charAt(0) ?? ''}
+                    {profileData.fullName.charAt(0)}
+                    {profileData.fullName.split(" ")[1]?.charAt(0) ?? ""}
                   </div>
                   <div className="text-center sm:text-left">
                     <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">
@@ -163,28 +192,40 @@ export const ProfilePage: React.FC = () => {
                         <FaUser className="text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Full Name</p>
-                        <p className="text-gray-900 font-medium">{profileData.fullName}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          Full Name
+                        </p>
+                        <p className="text-gray-900 font-medium">
+                          {profileData.fullName}
+                        </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <FaEnvelope className="text-green-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Email</p>
-                        <p className="text-gray-900 font-medium break-all">{profileData.email}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          Email
+                        </p>
+                        <p className="text-gray-900 font-medium break-all">
+                          {profileData.email}
+                        </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <FaPhone className="text-purple-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Phone</p>
-                        <p className="text-gray-900 font-medium">{profileData.phone}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          Phone
+                        </p>
+                        <p className="text-gray-900 font-medium">
+                          {profileData.phone}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -196,10 +237,14 @@ export const ProfilePage: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-medium text-gray-500">Wallet Balance</p>
+                          <p className="text-sm font-medium text-gray-500">
+                            Wallet Balance
+                          </p>
                           <div className="flex items-center gap-2">
                             {getConnectionStatusIndicator()}
-                            <span className="text-xs text-gray-500">{getConnectionStatusText()}</span>
+                            <span className="text-xs text-gray-500">
+                              {getConnectionStatusText()}
+                            </span>
                             <button
                               onClick={handleRefreshWallet}
                               className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -210,30 +255,36 @@ export const ProfilePage: React.FC = () => {
                           </div>
                         </div>
                         <p className="text-2xl font-bold text-green-600">
-                          GH¢{walletBalance?.toFixed(2) || '0.00'}
+                          GH¢{walletBalance?.toFixed(2) || "0.00"}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
                           Real-time balance from live connection
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <FaCalendar className="text-orange-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Member Since</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          Member Since
+                        </p>
                         <p className="text-gray-900 font-medium">
-                          {profileData.createdAt ? new Date(profileData.createdAt).toLocaleDateString() : 'N/A'}
+                          {profileData.createdAt
+                            ? new Date(
+                                profileData.createdAt
+                              ).toLocaleDateString()
+                            : "N/A"}
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Agent-specific information */}
-                {profileData.userType === 'agent' && (
+                {/* Business user-specific information */}
+                {isBusinessUser(profileData.userType) && (
                   <div className="border-t border-gray-200 pt-6 sm:pt-8 mt-6 sm:mt-8">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2">
                       <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -243,25 +294,41 @@ export const ProfilePage: React.FC = () => {
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Business Name</p>
-                        <p className="text-gray-900 font-medium">{profileData.businessName ?? 'N/A'}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          Business Name
+                        </p>
+                        <p className="text-gray-900 font-medium">
+                          {profileData.businessName ?? "N/A"}
+                        </p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Business Category</p>
-                        <p className="text-gray-900 font-medium capitalize">{profileData.businessCategory ?? 'N/A'}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          Business Category
+                        </p>
+                        <p className="text-gray-900 font-medium capitalize">
+                          {profileData.businessCategory ?? "N/A"}
+                        </p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-500 mb-2">Subscription Plan</p>
+                        <p className="text-sm font-medium text-gray-500 mb-2">
+                          Subscription Plan
+                        </p>
                         <Badge color="blue">
-                          {profileData.subscriptionPlan ?? 'Basic'}
+                          {profileData.subscriptionPlan ?? "Basic"}
                         </Badge>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-500 mb-2">Subscription Status</p>
-                        <Badge 
-                          color={profileData.subscriptionStatus === 'active' ? 'green' : 'yellow'}
+                        <p className="text-sm font-medium text-gray-500 mb-2">
+                          Subscription Status
+                        </p>
+                        <Badge
+                          color={
+                            profileData.subscriptionStatus === "active"
+                              ? "green"
+                              : "yellow"
+                          }
                         >
-                          {profileData.subscriptionStatus ?? 'Inactive'}
+                          {profileData.subscriptionStatus ?? "Inactive"}
                         </Badge>
                       </div>
                     </div>
@@ -279,21 +346,42 @@ export const ProfilePage: React.FC = () => {
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-500 mb-1">AFA ID</p>
-                        <p className="text-gray-900 font-medium font-mono">{profileData.afaRegistration.afaId}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          AFA ID
+                        </p>
+                        <p className="text-gray-900 font-medium font-mono">
+                          {profileData.afaRegistration.afaId}
+                        </p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Registration Type</p>
-                        <p className="text-gray-900 font-medium capitalize">{profileData.afaRegistration.registrationType}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          Registration Type
+                        </p>
+                        <p className="text-gray-900 font-medium capitalize">
+                          {profileData.afaRegistration.registrationType}
+                        </p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Registration Fee</p>
-                        <p className="text-gray-900 font-medium">GH¢{profileData.afaRegistration.registrationFee?.toFixed(2)}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          Registration Fee
+                        </p>
+                        <p className="text-gray-900 font-medium">
+                          GH¢
+                          {profileData.afaRegistration.registrationFee?.toFixed(
+                            2
+                          )}
+                        </p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-500 mb-2">Status</p>
-                        <Badge 
-                          color={profileData.afaRegistration.status === 'completed' ? 'green' : 'yellow'}
+                        <p className="text-sm font-medium text-gray-500 mb-2">
+                          Status
+                        </p>
+                        <Badge
+                          color={
+                            profileData.afaRegistration.status === "completed"
+                              ? "green"
+                              : "yellow"
+                          }
                         >
                           {profileData.afaRegistration.status}
                         </Badge>
@@ -309,19 +397,21 @@ export const ProfilePage: React.FC = () => {
           <div className="space-y-6">
             <Card className="shadow-lg">
               <CardHeader className="p-6 sm:p-8 pb-0">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Quick Actions</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Quick Actions
+                </h2>
               </CardHeader>
               <CardBody className="p-6 sm:p-8 pt-6 space-y-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   fullWidth
                   leftIcon={<FaEdit />}
                   className="justify-start"
                 >
                   Edit Profile
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   fullWidth
                   leftIcon={<FaKey />}
                   className="justify-start"
@@ -329,7 +419,7 @@ export const ProfilePage: React.FC = () => {
                   Change Password
                 </Button>
                 <div className="border-t border-gray-200 pt-3 mt-3">
-                  <Button 
+                  <Button
                     color="red"
                     variant="outline"
                     fullWidth
@@ -345,27 +435,33 @@ export const ProfilePage: React.FC = () => {
             {/* Support Card */}
             <Card className="shadow-lg">
               <CardHeader className="p-6 sm:p-8 pb-0">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Support & Community</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Support & Community
+                </h2>
               </CardHeader>
               <CardBody className="p-6 sm:p-8 pt-6 space-y-4">
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-1">Need help? Contact support</p>
-                  <a 
-                    href="https://wa.me/+233548983019" 
-                    target="_blank" 
-                    rel="noreferrer" 
+                  <p className="text-sm text-gray-600 mb-1">
+                    Need help? Contact support
+                  </p>
+                  <a
+                    href="https://wa.me/+233548983019"
+                    target="_blank"
+                    rel="noreferrer"
                     className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
                   >
                     +233 54 898 3019
                   </a>
                 </div>
-                
+
                 <div className="bg-green-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-1">Join our community</p>
-                  <a 
-                    href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t" 
-                    target="_blank" 
-                    rel="noreferrer" 
+                  <p className="text-sm text-gray-600 mb-1">
+                    Join our community
+                  </p>
+                  <a
+                    href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
+                    target="_blank"
+                    rel="noreferrer"
                     className="text-green-600 hover:text-green-500 font-medium transition-colors"
                   >
                     WhatsApp Community

@@ -1,10 +1,11 @@
-import { apiClient } from '../utils/api-client';
-import type { 
+import { apiClient } from "../utils/api-client";
+import type {
   WalletInfo,
   TransactionHistoryResponse,
-  WalletTransaction, 
-  WalletAnalytics 
-} from '../types/wallet';
+  WalletTransaction,
+  WalletAnalytics,
+} from "../types/wallet";
+import { canHaveWallet } from "../utils/userTypeHelpers";
 
 // Use the consolidated apiClient for all wallet operations
 export const walletService = {
@@ -14,12 +15,15 @@ export const walletService = {
    * @returns Wallet information with recent transactions
    */
   getWalletInfo: async (userType?: string): Promise<WalletInfo | null> => {
-    // Only fetch wallet data for agents
-    if (userType !== 'agent') {
+    // Only fetch wallet data for business users
+    if (!canHaveWallet(userType || "")) {
       return null;
     }
 
-    const response = await apiClient.get<{success: boolean; wallet: WalletInfo}>('/api/wallet/info');
+    const response = await apiClient.get<{
+      success: boolean;
+      wallet: WalletInfo;
+    }>("/api/wallet/info");
     return response.data.wallet;
   },
 
@@ -33,34 +37,34 @@ export const walletService = {
    * @returns Paginated transaction history
    */
   getTransactionHistory: async (
-    page = 1, 
-    limit = 20, 
-    type?: 'credit' | 'debit',
+    page = 1,
+    limit = 20,
+    type?: "credit" | "debit",
     startDate?: string,
     endDate?: string
   ): Promise<TransactionHistoryResponse> => {
     const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
-    
-    if (type) params.append('type', type);
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+
+    if (type) params.append("type", type);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
     const response = await apiClient.get<{
-      success: boolean; 
-      transactions: WalletTransaction[]; 
-      pagination: { 
-        total: number; 
-        page: number; 
-        limit: number; 
+      success: boolean;
+      transactions: WalletTransaction[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
         pages: number;
-      }
+      };
     }>(`/api/wallet/transactions?${params.toString()}`);
-    
+
     return {
       transactions: response.data.transactions,
-      pagination: response.data.pagination
+      pagination: response.data.pagination,
     };
   },
 
@@ -70,12 +74,15 @@ export const walletService = {
    * @param description Reason for the top-up
    * @returns The created transaction request
    */
-  requestTopUp: async (amount: number, description: string): Promise<WalletTransaction> => {
-    const response = await apiClient.post<{success: boolean; transaction: WalletTransaction}>(
-      '/api/wallet/request-top-up',
-      { amount, description }
-    );
-    
+  requestTopUp: async (
+    amount: number,
+    description: string
+  ): Promise<WalletTransaction> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      transaction: WalletTransaction;
+    }>("/api/wallet/request-top-up", { amount, description });
+
     return response.data.transaction;
   },
 
@@ -86,12 +93,16 @@ export const walletService = {
    * @param description Optional description
    * @returns The created transaction
    */
-  adminTopUpWallet: async (userId: string, amount: number, description = 'Wallet top-up by admin'): Promise<WalletTransaction> => {
-    const response = await apiClient.post<{success: boolean; transaction: WalletTransaction}>(
-      '/api/wallet/top-up',
-      { userId, amount, description }
-    );
-    
+  adminTopUpWallet: async (
+    userId: string,
+    amount: number,
+    description = "Wallet top-up by admin"
+  ): Promise<WalletTransaction> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      transaction: WalletTransaction;
+    }>("/api/wallet/top-up", { userId, amount, description });
+
     return response.data.transaction;
   },
 
@@ -102,12 +113,16 @@ export const walletService = {
    * @param description Optional description
    * @returns The created transaction
    */
-  adminDebitWallet: async (userId: string, amount: number, description = 'Wallet debit by admin'): Promise<WalletTransaction> => {
-    const response = await apiClient.post<{success: boolean; transaction: WalletTransaction}>(
-      '/api/wallet/debit',
-      { userId, amount, description }
-    );
-    
+  adminDebitWallet: async (
+    userId: string,
+    amount: number,
+    description = "Wallet debit by admin"
+  ): Promise<WalletTransaction> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      transaction: WalletTransaction;
+    }>("/api/wallet/debit", { userId, amount, description });
+
     return response.data.transaction;
   },
 
@@ -117,25 +132,28 @@ export const walletService = {
    * @param limit Items per page
    * @returns Paginated pending requests
    */
-  getPendingRequests: async (page = 1, limit = 20): Promise<TransactionHistoryResponse> => {
+  getPendingRequests: async (
+    page = 1,
+    limit = 20
+  ): Promise<TransactionHistoryResponse> => {
     const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
-    
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+
     const response = await apiClient.get<{
-      success: boolean; 
-      requests: WalletTransaction[]; 
-      pagination: { 
-        total: number; 
-        page: number; 
-        limit: number; 
+      success: boolean;
+      requests: WalletTransaction[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
         pages: number;
-      }
+      };
     }>(`/api/wallet/pending-requests?${params.toString()}`);
-    
+
     return {
       transactions: response.data.requests,
-      pagination: response.data.pagination
+      pagination: response.data.pagination,
     };
   },
 
@@ -145,12 +163,15 @@ export const walletService = {
    * @param approve Whether to approve or reject
    * @returns The updated transaction
    */
-  processTopUpRequest: async (transactionId: string, approve: boolean): Promise<WalletTransaction> => {
-    const response = await apiClient.post<{success: boolean; transaction: WalletTransaction}>(
-      `/api/wallet/requests/${transactionId}/process`,
-      { approve }
-    );
-    
+  processTopUpRequest: async (
+    transactionId: string,
+    approve: boolean
+  ): Promise<WalletTransaction> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      transaction: WalletTransaction;
+    }>(`/api/wallet/requests/${transactionId}/process`, { approve });
+
     return response.data.transaction;
   },
 
@@ -160,15 +181,19 @@ export const walletService = {
    * @param endDate Optional end date filter
    * @returns Wallet analytics
    */
-  getWalletAnalytics: async (startDate?: string, endDate?: string): Promise<WalletAnalytics> => {
+  getWalletAnalytics: async (
+    startDate?: string,
+    endDate?: string
+  ): Promise<WalletAnalytics> => {
     const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    
-    const response = await apiClient.get<{success: boolean; analytics: WalletAnalytics}>(
-      `/api/wallet/analytics?${params.toString()}`
-    );
-    
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
+    const response = await apiClient.get<{
+      success: boolean;
+      analytics: WalletAnalytics;
+    }>(`/api/wallet/analytics?${params.toString()}`);
+
     return response.data.analytics;
-  }
+  },
 };
