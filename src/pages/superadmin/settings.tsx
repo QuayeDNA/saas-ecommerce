@@ -61,19 +61,6 @@ export default function SuperAdminSettingsPage() {
     text: string;
   } | null>(null);
 
-  // Password Reset
-  const [passwordReset, setPasswordReset] = useState({
-    userId: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
-  // User Role Management
-  const [userRole, setUserRole] = useState({
-    userId: "",
-    newRole: "customer",
-  });
-
   // Admin Password Change
   const [adminPassword, setAdminPassword] = useState({
     currentPassword: "",
@@ -118,49 +105,6 @@ export default function SuperAdminSettingsPage() {
       setEditingSection(null);
     } catch {
       setMessage({ type: "error", text: `Failed to save ${section} settings` });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePasswordReset = async () => {
-    if (passwordReset.newPassword !== passwordReset.confirmPassword) {
-      setMessage({ type: "error", text: "Passwords do not match" });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await settingsService.resetUserPassword({
-        userId: passwordReset.userId,
-        newPassword: passwordReset.newPassword,
-      });
-      setMessage({ type: "success", text: "Password reset successfully" });
-      setPasswordReset({ userId: "", newPassword: "", confirmPassword: "" });
-    } catch {
-      setMessage({ type: "error", text: "Failed to reset password" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRoleChange = async () => {
-    setLoading(true);
-    try {
-      await settingsService.changeUserRole({
-        userId: userRole.userId,
-        newRole: userRole.newRole as
-          | "agent"
-          | "super_agent"
-          | "dealer"
-          | "super_dealer"
-          | "admin"
-          | "super_admin",
-      });
-      setMessage({ type: "success", text: "User role updated successfully" });
-      setUserRole({ userId: "", newRole: "customer" });
-    } catch {
-      setMessage({ type: "error", text: "Failed to update user role" });
     } finally {
       setLoading(false);
     }
@@ -353,103 +297,6 @@ export default function SuperAdminSettingsPage() {
           </div>
 
           <div className="space-y-4">
-            {/* Password Reset */}
-            <div className="space-y-3">
-              <h3 className="font-medium text-gray-900">Reset User Password</h3>
-              <div className="grid grid-cols-1 gap-3">
-                <Input
-                  label="User ID"
-                  value={passwordReset.userId}
-                  onChange={(e) =>
-                    setPasswordReset((prev) => ({
-                      ...prev,
-                      userId: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter user ID"
-                />
-                <Input
-                  label="New Password"
-                  type="password"
-                  value={passwordReset.newPassword}
-                  onChange={(e) =>
-                    setPasswordReset((prev) => ({
-                      ...prev,
-                      newPassword: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter new password"
-                />
-                <Input
-                  label="Confirm Password"
-                  type="password"
-                  value={passwordReset.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordReset((prev) => ({
-                      ...prev,
-                      confirmPassword: e.target.value,
-                    }))
-                  }
-                  placeholder="Confirm new password"
-                />
-                <Button
-                  variant="primary"
-                  onClick={handlePasswordReset}
-                  disabled={
-                    loading ||
-                    !passwordReset.userId ||
-                    !passwordReset.newPassword
-                  }
-                >
-                  <FaKey className="w-3 h-3 mr-1" />
-                  Reset Password
-                </Button>
-              </div>
-            </div>
-
-            {/* Role Management */}
-            <div className="space-y-3 pt-4 border-t border-gray-200">
-              <h3 className="font-medium text-gray-900">Change User Role</h3>
-              <div className="grid grid-cols-1 gap-3">
-                <Input
-                  label="User ID"
-                  value={userRole.userId}
-                  onChange={(e) =>
-                    setUserRole((prev) => ({ ...prev, userId: e.target.value }))
-                  }
-                  placeholder="Enter user ID"
-                />
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    New Role
-                  </label>
-                  <select
-                    value={userRole.newRole}
-                    onChange={(e) =>
-                      setUserRole((prev) => ({
-                        ...prev,
-                        newRole: e.target.value,
-                      }))
-                    }
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="customer">Customer</option>
-                    <option value="agent">Agent</option>
-                    <option value="admin">Admin</option>
-                    <option value="super_admin">Super Admin</option>
-                  </select>
-                </div>
-                <Button
-                  variant="primary"
-                  onClick={handleRoleChange}
-                  disabled={loading || !userRole.userId}
-                >
-                  <FaUserShield className="w-3 h-3 mr-1" />
-                  Update Role
-                </Button>
-              </div>
-            </div>
-
             {/* Admin Password Change */}
             <div className="space-y-3 pt-4 border-t border-gray-200">
               <h3 className="font-medium text-gray-900">

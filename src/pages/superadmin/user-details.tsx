@@ -63,6 +63,7 @@ export default function SuperAdminUserDetailsPage() {
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
+      userType: user.userType,
       businessName: user.businessName,
       businessCategory: user.businessCategory,
       subscriptionPlan: user.subscriptionPlan,
@@ -687,7 +688,26 @@ export default function SuperAdminUserDetailsPage() {
                   value={editData.phone || ""}
                   onChange={handleEditChange}
                 />
-                {user.userType === "agent" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    User Type
+                  </label>
+                  <select
+                    name="userType"
+                    value={editData.userType || ""}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="agent">Agent</option>
+                    <option value="super_agent">Super Agent</option>
+                    <option value="dealer">Dealer</option>
+                    <option value="super_dealer">Super Dealer</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                </div>
+                {["agent", "super_agent", "dealer", "super_dealer"].includes(
+                  editData.userType || user.userType
+                ) && (
                   <>
                     <Input
                       label="Business Name"

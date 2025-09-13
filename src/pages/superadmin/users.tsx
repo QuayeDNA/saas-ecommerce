@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { userService, type User } from "../../services/user.service";
 import { SearchAndFilter } from "../../components/common";
-import { 
-  FaCheck, 
-  FaTimes, 
-  FaUser, 
-  FaStore, 
-  FaShieldAlt, 
+import {
+  FaCheck,
+  FaTimes,
+  FaUser,
+  FaStore,
+  FaShieldAlt,
   FaEye,
   FaUserCheck,
   FaDownload,
@@ -15,31 +15,38 @@ import {
   FaEnvelope,
   FaCalendar,
   FaBuilding,
-  FaIdCard
+  FaIdCard,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../design-system/components/button";
 import { colors } from "../../design-system/tokens";
 
 const userTypeOptions = [
-  { value: '', label: 'All Users', icon: FaUser },
-  { value: 'agent', label: 'Agents', icon: FaStore },
-  { value: 'super_admin', label: 'Super Admins', icon: FaShieldAlt },
+  { value: "", label: "All Users", icon: FaUser },
+  { value: "agent", label: "Agents", icon: FaStore },
+  { value: "super_agent", label: "Super Agents", icon: FaStore },
+  { value: "dealer", label: "Dealers", icon: FaStore },
+  { value: "super_dealer", label: "Super Dealers", icon: FaStore },
+  { value: "super_admin", label: "Super Admins", icon: FaShieldAlt },
 ];
 
 const statusOptions = [
-  { value: '', label: 'All Status' },
-  { value: 'pending', label: 'Pending Approval', color: 'text-yellow-600 bg-yellow-100' },
-  { value: 'active', label: 'Active', color: 'text-green-600 bg-green-100' },
-  { value: 'rejected', label: 'Rejected', color: 'text-red-600 bg-red-100' },
+  { value: "", label: "All Status" },
+  {
+    value: "pending",
+    label: "Pending Approval",
+    color: "text-yellow-600 bg-yellow-100",
+  },
+  { value: "active", label: "Active", color: "text-green-600 bg-green-100" },
+  { value: "rejected", label: "Rejected", color: "text-red-600 bg-red-100" },
 ];
 
 export default function SuperAdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [userType, setUserType] = useState('');
-  const [status, setStatus] = useState(''); // Changed from 'pending' to '' to show all users
-  const [search, setSearch] = useState('');
+  const [userType, setUserType] = useState("");
+  const [status, setStatus] = useState(""); // Changed from 'pending' to '' to show all users
+  const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [processingUser, setProcessingUser] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -49,29 +56,29 @@ export default function SuperAdminUsersPage() {
     userType: {
       value: userType,
       options: userTypeOptions,
-      label: 'User Type',
-      placeholder: 'All Users'
+      label: "User Type",
+      placeholder: "All Users",
     },
     status: {
       value: status,
       options: statusOptions,
-      label: 'Status',
-      placeholder: 'All Status'
-    }
+      label: "Status",
+      placeholder: "All Status",
+    },
   };
 
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await userService.fetchUsers({ 
-        userType, 
+      const data = await userService.fetchUsers({
+        userType,
         status: status || undefined, // Only send if status is not empty
-        search: search.trim() || undefined
+        search: search.trim() || undefined,
       });
       setUsers(data);
     } catch {
-      setError('Failed to fetch users');
+      setError("Failed to fetch users");
       // Error fetching users
     } finally {
       setLoading(false);
@@ -88,16 +95,16 @@ export default function SuperAdminUsersPage() {
   };
 
   const handleClearFilters = () => {
-    setSearch('');
-    setUserType('');
-    setStatus(''); // Clear status filter
+    setSearch("");
+    setUserType("");
+    setStatus(""); // Clear status filter
     fetchUsers();
   };
 
   const handleFilterChange = (filterKey: string, value: string) => {
-    if (filterKey === 'userType') {
+    if (filterKey === "userType") {
       setUserType(value);
-    } else if (filterKey === 'status') {
+    } else if (filterKey === "status") {
       setStatus(value);
     }
   };
@@ -105,10 +112,10 @@ export default function SuperAdminUsersPage() {
   const handleApprove = async (id: string) => {
     setProcessingUser(id);
     try {
-      await userService.updateAgentStatus(id, 'active');
+      await userService.updateAgentStatus(id, "active");
       await fetchUsers();
     } catch {
-      setError('Failed to approve user');
+      setError("Failed to approve user");
       // Error approving user
     } finally {
       setProcessingUser(null);
@@ -118,10 +125,10 @@ export default function SuperAdminUsersPage() {
   const handleReject = async (id: string) => {
     setProcessingUser(id);
     try {
-      await userService.updateAgentStatus(id, 'rejected');
+      await userService.updateAgentStatus(id, "rejected");
       await fetchUsers();
     } catch {
-      setError('Failed to reject user');
+      setError("Failed to reject user");
       // Error rejecting user
     } finally {
       setProcessingUser(null);
@@ -130,45 +137,67 @@ export default function SuperAdminUsersPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
-      case 'active': return 'text-green-600 bg-green-100';
-      case 'rejected': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case "pending":
+        return "text-yellow-600 bg-yellow-100";
+      case "active":
+        return "text-green-600 bg-green-100";
+      case "rejected":
+        return "text-red-600 bg-red-100";
+      default:
+        return "text-gray-600 bg-gray-100";
     }
   };
 
   const getUserTypeIcon = (userType: string) => {
     switch (userType) {
-      case 'agent': return <FaStore className="text-blue-600" />;
-      case 'super_admin': return <FaShieldAlt className="text-purple-600" />;
-      default: return <FaUser className="text-gray-600" />;
+      case "agent":
+        return <FaStore className="text-blue-600" />;
+      case "super_agent":
+        return <FaStore className="text-indigo-600" />;
+      case "dealer":
+        return <FaStore className="text-green-600" />;
+      case "super_dealer":
+        return <FaStore className="text-emerald-600" />;
+      case "super_admin":
+        return <FaShieldAlt className="text-purple-600" />;
+      default:
+        return <FaUser className="text-gray-600" />;
     }
   };
 
   const getUserTypeLabel = (userType: string) => {
     switch (userType) {
-      case 'agent': return 'Agent';
-      case 'super_admin': return 'Super Admin';
-      default: return 'User';
+      case "agent":
+        return "Agent";
+      case "super_agent":
+        return "Super Agent";
+      case "dealer":
+        return "Dealer";
+      case "super_dealer":
+        return "Super Dealer";
+      case "super_admin":
+        return "Super Admin";
+      default:
+        return "User";
     }
   };
 
   const formatDate = (date: string) => {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     }).format(new Date(date));
   };
 
   // Calculate statistics
   const stats = {
     total: users.length,
-    pending: users.filter(u => u.status === 'pending').length,
-    active: users.filter(u => u.status === 'active').length,
-    rejected: users.filter(u => u.status === 'rejected').length,
-    agents: users.filter(u => u.userType === 'agent').length,
-    superAdmins: users.filter(u => u.userType === 'super_admin').length,
+    pending: users.filter((u) => u.status === "pending").length,
+    active: users.filter((u) => u.status === "active").length,
+    rejected: users.filter((u) => u.status === "rejected").length,
+    agents: users.filter((u) => u.userType === "agent").length,
+    superAdmins: users.filter((u) => u.userType === "super_admin").length,
   };
 
   return (
@@ -177,13 +206,23 @@ export default function SuperAdminUsersPage() {
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
+            <h1
+              className="text-xl sm:text-2xl font-bold mb-2"
+              style={{ color: colors.brand.primary }}
+            >
               User Management
             </h1>
-            <p className="text-sm sm:text-base text-gray-600">Manage agent registrations and user accounts</p>
+            <p className="text-sm sm:text-base text-gray-600">
+              Manage agent registrations and user accounts
+            </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={fetchUsers} disabled={loading} size="sm">
+            <Button
+              variant="outline"
+              onClick={fetchUsers}
+              disabled={loading}
+              size="sm"
+            >
               <FaRedo className="mr-2" />
               Refresh
             </Button>
@@ -200,8 +239,12 @@ export default function SuperAdminUsersPage() {
         <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Users</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">
+                Total Users
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                {stats.total}
+              </p>
             </div>
             <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
               <FaUser className="text-blue-600 text-lg sm:text-xl" />
@@ -212,8 +255,12 @@ export default function SuperAdminUsersPage() {
         <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-lg sm:text-2xl font-bold text-yellow-600">{stats.pending}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">
+                Pending
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-yellow-600">
+                {stats.pending}
+              </p>
             </div>
             <div className="p-2 sm:p-3 bg-yellow-100 rounded-full">
               <FaUserCheck className="text-yellow-600 text-lg sm:text-xl" />
@@ -224,8 +271,12 @@ export default function SuperAdminUsersPage() {
         <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
-              <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.active}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">
+                Active
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-green-600">
+                {stats.active}
+              </p>
             </div>
             <div className="p-2 sm:p-3 bg-green-100 rounded-full">
               <FaUserCheck className="text-green-600 text-lg sm:text-xl" />
@@ -236,8 +287,12 @@ export default function SuperAdminUsersPage() {
         <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">Agents</p>
-              <p className="text-lg sm:text-2xl font-bold text-blue-600">{stats.agents}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600">
+                Agents
+              </p>
+              <p className="text-lg sm:text-2xl font-bold text-blue-600">
+                {stats.agents}
+              </p>
             </div>
             <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
               <FaStore className="text-blue-600 text-lg sm:text-xl" />
@@ -271,18 +326,25 @@ export default function SuperAdminUsersPage() {
           <div className="p-6 sm:p-8 text-center">
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-sm sm:text-base text-gray-600">Loading users...</span>
+              <span className="ml-3 text-sm sm:text-base text-gray-600">
+                Loading users...
+              </span>
             </div>
           </div>
         ) : users.length === 0 ? (
           <div className="p-6 sm:p-8 text-center">
             <FaUser className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
-            <p className="text-sm sm:text-base text-gray-500">No users found matching your criteria.</p>
+            <p className="text-sm sm:text-base text-gray-500">
+              No users found matching your criteria.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {users.map(user => (
-              <div key={user._id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+            {users.map((user) => (
+              <div
+                key={user._id}
+                className="p-4 sm:p-6 hover:bg-gray-50 transition-colors"
+              >
                 <div className="flex flex-col gap-4">
                   {/* User Info */}
                   <div className="flex-1">
@@ -308,10 +370,16 @@ export default function SuperAdminUsersPage() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getStatusColor(user.status)}`}>
-                        {user.status === 'pending' ? 'Pending Approval' : user.status}
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getStatusColor(
+                          user.status
+                        )}`}
+                      >
+                        {user.status === "pending"
+                          ? "Pending Approval"
+                          : user.status}
                       </span>
                       <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800">
                         {getUserTypeLabel(user.userType)}
@@ -324,14 +392,14 @@ export default function SuperAdminUsersPage() {
                       )}
                       <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800">
                         <FaCalendar className="w-3 h-3 mr-1 flex-shrink-0" />
-                        {formatDate(user.createdAt || '')}
+                        {formatDate(user.createdAt || "")}
                       </span>
                     </div>
                   </div>
 
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                    {user.userType === 'agent' && user.status === 'pending' && (
+                    {user.userType === "agent" && user.status === "pending" && (
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Button
                           size="sm"
@@ -388,4 +456,4 @@ export default function SuperAdminUsersPage() {
       </div>
     </div>
   );
-} 
+}
