@@ -6,6 +6,12 @@ import { getProviderColors } from "../../utils/provider-colors";
 import { SingleOrderModal } from "../orders/SingleOrderModal";
 import { BulkOrderModal } from "../orders/BulkOrderModal";
 import { SearchAndFilter } from "../common/SearchAndFilter";
+import { useAuth } from "../../hooks/use-auth";
+import {
+  getPriceForUserType,
+  formatCurrency,
+  calculateDiscountPercentage,
+} from "../../utils/pricingHelpers";
 import { FaBox, FaBuilding } from "react-icons/fa";
 import {
   Card,
@@ -32,6 +38,10 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
   packageId,
   filters = {},
 }) => {
+  // Authentication
+  const { authState } = useAuth();
+  const userType = authState.user?.userType;
+
   // State
   const [packages, setPackages] = useState<Package[]>([]);
   const [bundles, setBundles] = useState<Record<string, Bundle[]>>({}); // key: packageId
@@ -58,19 +68,21 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     setBundles({});
     setProviderData(null);
     setProviderLogoFailed(false);
-    
+
     const fetch = async () => {
       try {
         // Fetch provider data first
         try {
           const providerResponse = await providerService.getProviders();
-          const providerInfo = providerResponse.providers.find(p => p.code === provider);
+          const providerInfo = providerResponse.providers.find(
+            (p) => p.code === provider
+          );
           if (providerInfo) {
             setProviderData(providerInfo);
           }
         } catch (providerError) {
           // Provider fetch failed, continue with packages
-          console.warn('Failed to fetch provider data:', providerError);
+          console.warn("Failed to fetch provider data:", providerError);
         }
 
         let pkgList: Package[] = [];
@@ -80,10 +92,10 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
           if (pkg) pkgList = [pkg];
         } else {
           // Build filters - ensure we get all active packages
-          const pkgFilters: Record<string, unknown> = { 
-            provider, 
+          const pkgFilters: Record<string, unknown> = {
+            provider,
             isActive: true, // Ensure only active packages
-            ...filters 
+            ...filters,
           };
           if (category) pkgFilters.category = category;
           // Fetch all packages for provider/category
@@ -96,7 +108,9 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
         for (const pkg of pkgList) {
           if (pkg._id) {
             // Get all bundles by setting a high limit
-            const resp = await bundleService.getBundlesByPackage(pkg._id, { limit: 1000 });
+            const resp = await bundleService.getBundlesByPackage(pkg._id, {
+              limit: 1000,
+            });
             bundleMap[pkg._id] = resp.bundles || [];
           }
         }
@@ -136,21 +150,23 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     onSearchChange: setSearchTerm,
     searchPlaceholder: "Search bundles...",
     filters: {
-      ...((!category && !packageId && categories.length > 1) ? {
-        category: {
-          label: "Category",
-          value: selectedCategory,
-          options: categories.map((cat) => ({
-            value: cat ?? "",
-            label:
-              cat === "all"
-                ? "All Categories"
-                : typeof cat === "string"
-                ? cat.charAt(0).toUpperCase() + cat.slice(1)
-                : "",
-          })),
-        },
-      } : {}),
+      ...(!category && !packageId && categories.length > 1
+        ? {
+            category: {
+              label: "Category",
+              value: selectedCategory,
+              options: categories.map((cat) => ({
+                value: cat ?? "",
+                label:
+                  cat === "all"
+                    ? "All Categories"
+                    : typeof cat === "string"
+                    ? cat.charAt(0).toUpperCase() + cat.slice(1)
+                    : "",
+              })),
+            },
+          }
+        : {}),
       status: {
         label: "Status",
         value: selectedStatus,
@@ -303,26 +319,32 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                 <div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {(bundles[pkg._id!] || [])
-                      .filter(
-                        (bundle) => {
-                          // Search filter
-                          const matchesSearch = searchTerm === "" ||
-                            bundle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            (bundle.description?.toLowerCase() ?? "").includes(searchTerm.toLowerCase());
-                          
-                          // Status filter
-                          const matchesStatus = selectedStatus === "all" ||
-                            (selectedStatus === "active" && bundle.isActive) ||
-                            (selectedStatus === "inactive" && !bundle.isActive);
-                          
-                          return matchesSearch && matchesStatus;
-                        }
-                      )
+                      .filter((bundle) => {
+                        // Search filter
+                        const matchesSearch =
+                          searchTerm === "" ||
+                          bundle.name
+                            .toLowerCase()
+                            .includes(searchTerm.toLowerCase()) ||
+                          (bundle.description?.toLowerCase() ?? "").includes(
+                            searchTerm.toLowerCase()
+                          );
+
+                        // Status filter
+                        const matchesStatus =
+                          selectedStatus === "all" ||
+                          (selectedStatus === "active" && bundle.isActive) ||
+                          (selectedStatus === "inactive" && !bundle.isActive);
+
+                        return matchesSearch && matchesStatus;
+                      })
 
                       .map((bundle) => (
                         <Card
                           key={bundle._id}
-                          className={`hover:shadow-md transition ${!bundle.isActive ? 'opacity-75' : ''}`}
+                          className={`hover:shadow-md transition ${
+                            !bundle.isActive ? "opacity-75" : ""
+                          }`}
                         >
                           <CardBody>
                             <div className="flex flex-col gap-3">
@@ -360,15 +382,55 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                                     : `${bundle.validity} ${bundle.validityUnit}`}
                                 </Badge>
                               </div>
-                              <div className="text-lg font-bold text-gray-900">
-                                {bundle.price} {bundle.currency}
+                              <div className="space-y-1">
+                                <div className="text-lg font-bold text-gray-900">
+                                  {userType
+                                    ? formatCurrency(
+                                        getPriceForUserType(bundle, userType),
+                                        bundle.currency
+                                      )
+                                    : `${bundle.price} ${bundle.currency}`}
+                                </div>
+                                {userType &&
+                                  (() => {
+                                    const userPrice = getPriceForUserType(
+                                      bundle,
+                                      userType
+                                    );
+                                    const discount =
+                                      calculateDiscountPercentage(
+                                        bundle.price,
+                                        userPrice
+                                      );
+                                    return discount > 0 ? (
+                                      <div className="flex items-center gap-2">
+                                        <Badge
+                                          variant="subtle"
+                                          colorScheme="success"
+                                          className="text-xs"
+                                        >
+                                          {discount}% OFF
+                                        </Badge>
+                                        <span className="text-sm text-gray-500 line-through">
+                                          {formatCurrency(
+                                            bundle.price,
+                                            bundle.currency
+                                          )}
+                                        </span>
+                                      </div>
+                                    ) : null;
+                                  })()}
                               </div>
                               <Button
                                 className="font-semibold"
                                 disabled={!bundle.isActive}
                                 style={{
-                                  backgroundColor: bundle.isActive ? providerColors.primary : '#9CA3AF',
-                                  color: bundle.isActive ? providerColors.text : '#FFFFFF',
+                                  backgroundColor: bundle.isActive
+                                    ? providerColors.primary
+                                    : "#9CA3AF",
+                                  color: bundle.isActive
+                                    ? providerColors.text
+                                    : "#FFFFFF",
                                 }}
                                 onClick={() => {
                                   if (bundle.isActive) {
@@ -377,7 +439,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                                   }
                                 }}
                               >
-                                {bundle.isActive ? 'Order Now' : 'Out of Stock'}
+                                {bundle.isActive ? "Order Now" : "Out of Stock"}
                               </Button>
                             </div>
                           </CardBody>

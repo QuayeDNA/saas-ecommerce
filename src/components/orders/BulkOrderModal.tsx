@@ -16,8 +16,13 @@ import {
 } from "react-icons/fa";
 import { useOrder } from "../../contexts/OrderContext";
 import { useSiteStatus } from "../../contexts/site-status-context";
+import { useAuth } from "../../hooks/use-auth";
 import { bundleService } from "../../services/bundle.service";
 import { getProviderColors } from "../../utils/provider-colors";
+import {
+  getPriceForUserType,
+  formatCurrency,
+} from "../../utils/pricingHelpers";
 import { DuplicateOrderWarningModal } from "./DuplicateOrderWarningModal";
 import {
   Dialog,
@@ -63,6 +68,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 }) => {
   const { loading, createBulkOrder } = useOrder();
   const { siteStatus } = useSiteStatus();
+  const { authState } = useAuth();
+  const userType = authState.user?.userType;
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const navigate = useNavigate();
   const [bulkText, setBulkText] = useState("");
@@ -70,7 +77,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const [showSummary, setShowSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [importMethod, setImportMethod] = useState<"file" | "manual">("manual");
-  const [duplicateCheckResult, setDuplicateCheckResult] = useState<DuplicateCheckResult | null>(null);
+  const [duplicateCheckResult, setDuplicateCheckResult] =
+    useState<DuplicateCheckResult | null>(null);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
 
   // Get provider colors for branding
@@ -261,7 +269,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       navigate("/agent/dashboard/orders");
     } catch (err: unknown) {
       // Check if this is a duplicate order error
-      if (err && typeof err === 'object' && 'code' in err && err.code === 'DUPLICATE_ORDER_DETECTED' && 'duplicateInfo' in err) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        err.code === "DUPLICATE_ORDER_DETECTED" &&
+        "duplicateInfo" in err
+      ) {
         setDuplicateCheckResult(err.duplicateInfo as DuplicateCheckResult);
         setShowDuplicateWarning(true);
         return;
@@ -335,7 +349,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     0
   );
   const totalPrice = validOrders.reduce(
-    (sum, item) => sum + (item.bundle ? item.bundle.price : 0),
+    (sum, item) =>
+      sum + (item.bundle ? getPriceForUserType(item.bundle, userType) : 0),
     0
   );
   const currency =
@@ -376,7 +391,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                       {providerName} Package
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      Available active bundles in this package ({availableBundles.length} available)
+                      Available active bundles in this package (
+                      {availableBundles.length} available)
                     </p>
                   </div>
                 </div>
@@ -408,7 +424,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                           className="font-bold text-sm flex-shrink-0 ml-2"
                           style={{ color: providerColors.primary }}
                         >
-                          {bundle.currency} {bundle.price}
+                          {formatCurrency(
+                            getPriceForUserType(bundle, userType),
+                            bundle.currency
+                          )}
                         </div>
                       </div>
                     ))}
@@ -664,7 +683,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               <h3 className="font-medium text-green-600 mb-2 text-base sm:text-lg">
                 Valid Orders ({validOrders.length})
               </h3>
-              
+
               <Card noPadding>
                 {validOrders.length > 0 ? (
                   <>
@@ -678,7 +697,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     <CardBody className="p-0">
                       <div className="divide-y divide-gray-100">
                         {validOrders.map((item, index) => (
-                          <div key={index} className="p-3 sm:p-4 hover:bg-gray-50">
+                          <div
+                            key={index}
+                            className="p-3 sm:p-4 hover:bg-gray-50"
+                          >
                             <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                               <div className="font-medium truncate">
                                 {item.customerPhone}
@@ -688,8 +710,16 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                               </div>
                               <div className="text-right font-medium">
                                 {item.bundle && (
-                                  <span style={{ color: providerColors.primary }}>
-                                    {item.bundle.currency} {item.bundle.price}
+                                  <span
+                                    style={{ color: providerColors.primary }}
+                                  >
+                                    {formatCurrency(
+                                      getPriceForUserType(
+                                        item.bundle,
+                                        userType
+                                      ),
+                                      item.bundle.currency
+                                    )}
                                   </span>
                                 )}
                               </div>
@@ -715,7 +745,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 <h3 className="font-medium text-red-600 mb-2 text-base sm:text-lg">
                   Invalid Orders ({invalidOrders.length})
                 </h3>
-                
+
                 <Card noPadding>
                   <CardHeader className="bg-[#142850] text-white p-3 sm:p-4">
                     <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
@@ -727,7 +757,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                   <CardBody className="p-0">
                     <div className="divide-y divide-gray-100">
                       {invalidOrders.map((item, index) => (
-                        <div key={index} className="p-3 sm:p-4 hover:bg-gray-50">
+                        <div
+                          key={index}
+                          className="p-3 sm:p-4 hover:bg-gray-50"
+                        >
                           <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                             <div className="font-medium truncate">
                               {item.customerPhone}
@@ -737,12 +770,18 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                             </div>
                             <div className="text-red-600">
                               {item.phoneError && (
-                                <div className="truncate" title={item.phoneError}>
+                                <div
+                                  className="truncate"
+                                  title={item.phoneError}
+                                >
                                   {item.phoneError}
                                 </div>
                               )}
                               {item.dataError && (
-                                <div className="truncate" title={item.dataError}>
+                                <div
+                                  className="truncate"
+                                  title={item.dataError}
+                                >
                                   {item.dataError}
                                 </div>
                               )}
@@ -765,7 +804,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                   {validOrders
                     .reduce(
                       (sum, item) =>
-                        sum + (item.bundle ? item.bundle.price : 0),
+                        sum +
+                        (item.bundle
+                          ? getPriceForUserType(item.bundle, userType)
+                          : 0),
                       0
                     )
                     .toFixed(2)}

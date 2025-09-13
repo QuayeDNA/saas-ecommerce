@@ -5,7 +5,7 @@ export interface Package {
   name: string;
   description?: string;
   provider: string; // Provider code (MTN, TELECEL, etc.)
-  category: 'daily' | 'weekly' | 'monthly' | 'unlimited' | 'custom';
+  category: "daily" | "weekly" | "monthly" | "unlimited" | "custom";
   isActive: boolean;
   isDeleted: boolean;
   tenantId: string;
@@ -22,9 +22,9 @@ export interface Bundle {
   name: string;
   description?: string;
   dataVolume: number;
-  dataUnit: 'MB' | 'GB' | 'TB';
-  validity: number | 'unlimited';
-  validityUnit: 'hours' | 'days' | 'weeks' | 'months' | 'unlimited';
+  dataUnit: "MB" | "GB" | "TB";
+  validity: number | "unlimited";
+  validityUnit: "hours" | "days" | "weeks" | "months" | "unlimited";
   price: number;
   currency: string;
   features: string[];
@@ -32,11 +32,20 @@ export interface Bundle {
   bundleCode?: string;
   category?: string;
   tags: string[];
-  
+
+  // User type-based pricing
+  pricingTiers?: {
+    agent?: number;
+    super_agent?: number;
+    dealer?: number;
+    super_dealer?: number;
+    default?: number;
+  };
+
   // Relationships
   packageId: string;
   providerId: string;
-  
+
   // Multi-tenant and audit
   tenantId: string;
   createdBy: string;
@@ -46,12 +55,12 @@ export interface Bundle {
   deletedBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
-  
+
   // Virtual fields
   isAvailable?: boolean;
   formattedDataVolume?: string;
   formattedValidity?: string;
-  
+
   // Populated fields
   package?: Package;
   provider?: Provider;
@@ -61,7 +70,7 @@ export interface Bundle {
 export interface Provider {
   _id: string;
   name: string;
-  code: 'MTN' | 'TELECEL' | 'AT' | 'AFA' | string;
+  code: "MTN" | "TELECEL" | "AT" | "AFA" | string;
   description?: string;
   logo?: {
     url: string;
@@ -132,7 +141,7 @@ export interface BundleFilters {
   providerId?: string;
   packageId?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 export interface ProviderFilters {
@@ -146,7 +155,7 @@ export interface Pagination {
   page: number;
   limit: number;
   sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  sortOrder: "asc" | "desc";
 }
 
 // Analytics interfaces
@@ -181,9 +190,9 @@ export interface CreateBundleData {
   name: string;
   description?: string;
   dataVolume: number;
-  dataUnit: 'MB' | 'GB' | 'TB';
-  validity: number | 'unlimited';
-  validityUnit: 'hours' | 'days' | 'weeks' | 'months' | 'unlimited';
+  dataUnit: "MB" | "GB" | "TB";
+  validity: number | "unlimited";
+  validityUnit: "hours" | "days" | "weeks" | "months" | "unlimited";
   price: number;
   currency?: string;
   features?: string[];
@@ -205,7 +214,7 @@ export interface CreatePackageData {
   name: string;
   description?: string;
   provider: string;
-  category: 'daily' | 'weekly' | 'monthly' | 'unlimited' | 'custom';
+  category: "daily" | "weekly" | "monthly" | "unlimited" | "custom";
 }
 
 export interface UpdatePackageData extends Partial<CreatePackageData> {
@@ -213,8 +222,8 @@ export interface UpdatePackageData extends Partial<CreatePackageData> {
 }
 
 // Legacy types for backward compatibility (to be removed later)
-export type PackageGroup = Package
-export type PackageItem = Bundle
+export type PackageGroup = Package;
+export type PackageItem = Bundle;
 export interface LowStockAlert {
   productId: string;
   productName: string;

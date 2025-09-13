@@ -1,5 +1,5 @@
 // src/services/bundle.service.ts
-import { apiClient } from '../utils/api-client';
+import { apiClient } from "../utils/api-client";
 import type {
   Bundle,
   BundleResponse,
@@ -17,7 +17,7 @@ class BundleService {
     pagination: Partial<Pagination> = {}
   ): Promise<BundleResponse> {
     const params = { ...filters, ...pagination };
-    const response = await apiClient.get('/api/bundles', { params });
+    const response = await apiClient.get("/api/bundles", { params });
     return response.data;
   }
 
@@ -29,7 +29,7 @@ class BundleService {
 
   // Create bundle
   async createBundle(bundleData: CreateBundleData): Promise<Bundle> {
-    const response = await apiClient.post('/api/bundles', bundleData);
+    const response = await apiClient.post("/api/bundles", bundleData);
     return response.data.data;
   }
 
@@ -48,32 +48,49 @@ class BundleService {
   }
 
   // Get bundles by provider
-  async getBundlesByProvider(providerId: string, pagination?: Partial<Pagination>): Promise<BundleResponse> {
+  async getBundlesByProvider(
+    providerId: string,
+    pagination?: Partial<Pagination>
+  ): Promise<BundleResponse> {
     const params = pagination || {};
-    const response = await apiClient.get(`/api/bundles/provider/${providerId}`, { params });
+    const response = await apiClient.get(
+      `/api/bundles/provider/${providerId}`,
+      { params }
+    );
     return response.data;
   }
 
   // Get bundles by package
-  async getBundlesByPackage(packageId: string, pagination?: Partial<Pagination>): Promise<BundleResponse> {
+  async getBundlesByPackage(
+    packageId: string,
+    pagination?: Partial<Pagination>
+  ): Promise<BundleResponse> {
     const params = pagination || {};
-    const response = await apiClient.get(`/api/bundles/package/${packageId}`, { params });
+    const response = await apiClient.get(`/api/bundles/package/${packageId}`, {
+      params,
+    });
     return response.data;
   }
 
   // Get bundle analytics
-  async getBundleAnalytics(period = '30d'): Promise<BundleAnalytics> {
-    const response = await apiClient.get('/api/bundles/analytics/overview', {
-      params: { period }
+  async getBundleAnalytics(period = "30d"): Promise<BundleAnalytics> {
+    const response = await apiClient.get("/api/bundles/analytics/overview", {
+      params: { period },
     });
     return response.data.data;
   }
 
   // Get provider bundle analytics
-  async getProviderBundleAnalytics(providerId: string, period = '30d'): Promise<BundleAnalytics> {
-    const response = await apiClient.get(`/api/bundles/analytics/provider/${providerId}`, {
-      params: { period }
-    });
+  async getProviderBundleAnalytics(
+    providerId: string,
+    period = "30d"
+  ): Promise<BundleAnalytics> {
+    const response = await apiClient.get(
+      `/api/bundles/analytics/provider/${providerId}`,
+      {
+        params: { period },
+      }
+    );
     return response.data.data;
   }
 
@@ -83,17 +100,21 @@ class BundleService {
     failed: number;
     errors: Array<{ bundle: string; error: string }>;
   }> {
-    const response = await apiClient.post('/api/bundles/bulk', { bundles });
+    const response = await apiClient.post("/api/bundles/bulk", { bundles });
     return response.data.data;
   }
 
   // Bulk update bundles
-  async updateBulkBundles(bundles: Array<{ id: string } & UpdateBundleData>): Promise<{
+  async updateBulkBundles(
+    bundles: Array<{ id: string } & UpdateBundleData>
+  ): Promise<{
     updated: number;
     failed: number;
     errors: Array<{ bundleId: string; error: string }>;
   }> {
-    const response = await apiClient.put('/api/bundles/bulk/update', { bundles });
+    const response = await apiClient.put("/api/bundles/bulk/update", {
+      bundles,
+    });
     return response.data.data;
   }
 
@@ -103,16 +124,78 @@ class BundleService {
     failed: number;
     errors: Array<{ bundleId: string; error: string }>;
   }> {
-    const response = await apiClient.delete('/api/bundles/bulk/delete', { data: { bundleIds } });
+    const response = await apiClient.delete("/api/bundles/bulk/delete", {
+      data: { bundleIds },
+    });
     return response.data.data;
   }
 
   // Public bundle access (for storefront)
-  async getPublicBundles(filters?: BundleFilters, pagination?: Partial<Pagination>): Promise<BundleResponse> {
+  async getPublicBundles(
+    filters?: BundleFilters,
+    pagination?: Partial<Pagination>
+  ): Promise<BundleResponse> {
     const params = { ...filters, ...pagination };
-    const response = await apiClient.get('/api/bundles', { params });
+    const response = await apiClient.get("/api/bundles", { params });
     return response.data;
+  }
+
+  // Pricing Management Methods
+
+  // Get bundle pricing tiers
+  async getBundlePricing(bundleId: string): Promise<{
+    bundleId: string;
+    name: string;
+    basePrice: number;
+    pricingTiers: Record<string, number>;
+    lastUpdated: string;
+  }> {
+    const response = await apiClient.get(`/api/bundles/${bundleId}/pricing`);
+    return response.data.data;
+  }
+
+  // Update bundle pricing tiers
+  async updateBundlePricing(
+    bundleId: string,
+    pricingTiers: Record<string, number>
+  ): Promise<{
+    bundleId: string;
+    name: string;
+    basePrice: number;
+    pricingTiers: Record<string, number>;
+    lastUpdated: string;
+  }> {
+    const response = await apiClient.put(`/api/bundles/${bundleId}/pricing`, {
+      pricingTiers,
+    });
+    return response.data.data;
+  }
+
+  // Bulk update pricing for multiple bundles
+  async bulkUpdatePricing(
+    updates: Array<{ bundleId: string; pricingTiers: Record<string, number> }>
+  ): Promise<{
+    successful: Array<{
+      bundleId: string;
+      name: string;
+      status: string;
+      pricingTiers: Record<string, number>;
+    }>;
+    failed: Array<{
+      bundleId: string;
+      error: string;
+    }>;
+    summary: {
+      total: number;
+      successful: number;
+      failed: number;
+    };
+  }> {
+    const response = await apiClient.post("/api/bundles/pricing/bulk-update", {
+      updates,
+    });
+    return response.data.data;
   }
 }
 
-export const bundleService = new BundleService(); 
+export const bundleService = new BundleService();

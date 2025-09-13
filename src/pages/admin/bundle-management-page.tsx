@@ -4,10 +4,10 @@ import { bundleService } from "../../services/bundle.service";
 import { packageService } from "../../services/package.service";
 import type { Bundle, Package } from "../../types/package";
 import { SearchAndFilter } from "../../components/common";
-import { 
-  FaCube, 
-  FaEdit, 
-  FaTrash, 
+import {
+  FaCube,
+  FaEdit,
+  FaTrash,
   FaPlus,
   FaBuilding,
   FaDownload,
@@ -16,44 +16,50 @@ import {
   FaCheckCircle,
   FaDatabase,
   FaArrowLeft,
-  FaTimesCircle
+  FaTimesCircle,
+  FaDollarSign,
 } from "react-icons/fa";
-import { 
-  Button, 
-  Card, 
-  CardHeader, 
-  CardBody, 
-  Badge, 
+import {
+  Button,
+  Card,
+  CardHeader,
+  CardBody,
+  Badge,
   Spinner,
   Dialog,
   DialogHeader,
   DialogBody,
-  DialogFooter
+  DialogFooter,
 } from "../../design-system";
 import { BundleCreationModal } from "../../components/products/BundleCreationModal";
+import { PricingManagementModal } from "../../components/products/PricingManagementModal";
 import { useToast } from "../../design-system/components/toast";
 import { getProviderColors } from "../../utils/provider-colors";
 
 const statusOptions = [
-  { value: '', label: 'All Status' },
-  { value: 'active', label: 'Active', color: 'text-green-600 bg-green-100' },
-  { value: 'inactive', label: 'Inactive', color: 'text-red-600 bg-red-100' },
+  { value: "", label: "All Status" },
+  { value: "active", label: "Active", color: "text-green-600 bg-green-100" },
+  { value: "inactive", label: "Inactive", color: "text-red-600 bg-red-100" },
 ];
 
 const categoryOptions = [
-  { value: '', label: 'All Categories' },
-  { value: 'daily', label: 'Daily', color: 'text-blue-600 bg-blue-100' },
-  { value: 'weekly', label: 'Weekly', color: 'text-purple-600 bg-purple-100' },
-  { value: 'monthly', label: 'Monthly', color: 'text-green-600 bg-green-100' },
-  { value: 'unlimited', label: 'Unlimited', color: 'text-orange-600 bg-orange-100' },
-  { value: 'custom', label: 'Custom', color: 'text-gray-600 bg-gray-100' },
+  { value: "", label: "All Categories" },
+  { value: "daily", label: "Daily", color: "text-blue-600 bg-blue-100" },
+  { value: "weekly", label: "Weekly", color: "text-purple-600 bg-purple-100" },
+  { value: "monthly", label: "Monthly", color: "text-green-600 bg-green-100" },
+  {
+    value: "unlimited",
+    label: "Unlimited",
+    color: "text-orange-600 bg-orange-100",
+  },
+  { value: "custom", label: "Custom", color: "text-gray-600 bg-gray-100" },
 ];
 
 const dataUnitOptions = [
-  { value: '', label: 'All Units' },
-  { value: 'MB', label: 'MB', color: 'text-blue-600 bg-blue-100' },
-  { value: 'GB', label: 'GB', color: 'text-green-600 bg-green-100' },
-  { value: 'TB', label: 'TB', color: 'text-purple-600 bg-purple-100' },
+  { value: "", label: "All Units" },
+  { value: "MB", label: "MB", color: "text-blue-600 bg-blue-100" },
+  { value: "GB", label: "GB", color: "text-green-600 bg-green-100" },
+  { value: "TB", label: "TB", color: "text-purple-600 bg-purple-100" },
 ];
 
 export const BundleManagementPage: React.FC = () => {
@@ -69,35 +75,37 @@ export const BundleManagementPage: React.FC = () => {
   const [editBundle, setEditBundle] = useState<Bundle | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteBundle, setDeleteBundle] = useState<Bundle | null>(null);
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [pricingBundle, setPricingBundle] = useState<Bundle | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  
+
   // Filter states
-  const [status, setStatus] = useState('');
-  const [category, setCategory] = useState('');
-  const [dataUnit, setDataUnit] = useState('');
-  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState("");
+  const [category, setCategory] = useState("");
+  const [dataUnit, setDataUnit] = useState("");
+  const [search, setSearch] = useState("");
 
   // Filter options for the reusable component
   const filterOptions = {
     status: {
       value: status,
       options: statusOptions,
-      label: 'Status',
-      placeholder: 'All Status'
+      label: "Status",
+      placeholder: "All Status",
     },
     category: {
       value: category,
       options: categoryOptions,
-      label: 'Category',
-      placeholder: 'All Categories'
+      label: "Category",
+      placeholder: "All Categories",
     },
     dataUnit: {
       value: dataUnit,
       options: dataUnitOptions,
-      label: 'Data Unit',
-      placeholder: 'All Units'
-    }
+      label: "Data Unit",
+      placeholder: "All Units",
+    },
   };
 
   const fetchBundles = async () => {
@@ -106,20 +114,19 @@ export const BundleManagementPage: React.FC = () => {
     setError(null);
     try {
       // Fetch all bundles for this package without filters
-      const response = await bundleService.getBundlesByPackage(packageId, { 
-        page: 1, 
-        limit: 1000 // Get all bundles for this package
+      const response = await bundleService.getBundlesByPackage(packageId, {
+        page: 1,
+        limit: 1000, // Get all bundles for this package
       });
-      
+
       const fetchedBundles = response.bundles || [];
       setAllBundles(fetchedBundles); // Store all bundles for filtering
-      
+
       // Apply current filters to the fetched bundles
       applyFiltersToBundles(fetchedBundles);
-      
     } catch {
-      setError('Failed to fetch bundles');
-      addToast('Failed to fetch bundles', 'error');
+      setError("Failed to fetch bundles");
+      addToast("Failed to fetch bundles", "error");
     } finally {
       setLoading(false);
     }
@@ -127,43 +134,47 @@ export const BundleManagementPage: React.FC = () => {
 
   const applyFiltersToBundles = (bundlesToFilter: Bundle[]) => {
     let filteredBundles = bundlesToFilter;
-    
+
     // Filter by status
     if (status) {
-      filteredBundles = filteredBundles.filter(bundle => 
-        status === 'active' ? bundle.isActive : !bundle.isActive
+      filteredBundles = filteredBundles.filter((bundle) =>
+        status === "active" ? bundle.isActive : !bundle.isActive
       );
     }
-    
+
     // Filter by category
     if (category) {
-      filteredBundles = filteredBundles.filter(bundle => 
-        bundle.category === category
+      filteredBundles = filteredBundles.filter(
+        (bundle) => bundle.category === category
       );
     }
-    
+
     // Filter by data unit
     if (dataUnit) {
-      filteredBundles = filteredBundles.filter(bundle => 
-        bundle.dataUnit === dataUnit
+      filteredBundles = filteredBundles.filter(
+        (bundle) => bundle.dataUnit === dataUnit
       );
     }
-    
+
     // Filter by search term
     if (search.trim()) {
       const searchTerm = search.trim().toLowerCase();
-      filteredBundles = filteredBundles.filter(bundle => 
-        bundle.name.toLowerCase().includes(searchTerm) ||
-        bundle.description?.toLowerCase().includes(searchTerm) ||
-        bundle.dataVolume.toString().includes(searchTerm) ||
-        bundle.dataUnit.toLowerCase().includes(searchTerm)
+      filteredBundles = filteredBundles.filter(
+        (bundle) =>
+          bundle.name.toLowerCase().includes(searchTerm) ||
+          bundle.description?.toLowerCase().includes(searchTerm) ||
+          bundle.dataVolume.toString().includes(searchTerm) ||
+          bundle.dataUnit.toLowerCase().includes(searchTerm)
       );
     }
-    
+
     setBundles(filteredBundles);
-    
-    if (filteredBundles.length === 0 && (status || category || dataUnit || search.trim())) {
-      addToast('No bundles found matching your criteria', 'info');
+
+    if (
+      filteredBundles.length === 0 &&
+      (status || category || dataUnit || search.trim())
+    ) {
+      addToast("No bundles found matching your criteria", "info");
     }
   };
 
@@ -173,7 +184,7 @@ export const BundleManagementPage: React.FC = () => {
       const packageData = await packageService.getPackage(packageId);
       setPkg(packageData);
     } catch {
-      setError('Failed to fetch package details');
+      setError("Failed to fetch package details");
     }
   };
 
@@ -189,17 +200,17 @@ export const BundleManagementPage: React.FC = () => {
     e.preventDefault();
     applyFilters();
     if (search.trim()) {
-      addToast(`Searching for bundles matching "${search}"`, 'info');
+      addToast(`Searching for bundles matching "${search}"`, "info");
     }
   };
 
   const handleClearFilters = () => {
-    setSearch('');
-    setStatus('');
-    setCategory('');
-    setDataUnit('');
+    setSearch("");
+    setStatus("");
+    setCategory("");
+    setDataUnit("");
     applyFilters();
-    addToast('Filters cleared', 'info');
+    addToast("Filters cleared", "info");
   };
 
   const applyFilters = () => {
@@ -208,11 +219,11 @@ export const BundleManagementPage: React.FC = () => {
   };
 
   const handleFilterChange = (filterKey: string, value: string) => {
-    if (filterKey === 'status') {
+    if (filterKey === "status") {
       setStatus(value);
-    } else if (filterKey === 'category') {
+    } else if (filterKey === "category") {
       setCategory(value);
-    } else if (filterKey === 'dataUnit') {
+    } else if (filterKey === "dataUnit") {
       setDataUnit(value);
     }
     // Apply filters immediately when filter changes
@@ -243,13 +254,25 @@ export const BundleManagementPage: React.FC = () => {
       setShowDeleteModal(false);
       setDeleteBundle(null);
       await fetchBundles();
-      addToast('Bundle deleted successfully', 'success');
+      addToast("Bundle deleted successfully", "success");
     } catch {
-      setActionError('Failed to delete bundle');
-      addToast('Failed to delete bundle', 'error');
+      setActionError("Failed to delete bundle");
+      addToast("Failed to delete bundle", "error");
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handlePricingManagement = (bundle: Bundle) => {
+    setPricingBundle(bundle);
+    setShowPricingModal(true);
+  };
+
+  const handlePricingUpdated = async () => {
+    await fetchBundles();
+    setShowPricingModal(false);
+    setPricingBundle(null);
+    addToast("Pricing updated successfully", "success");
   };
 
   const handleFormSubmit = async (data: Bundle) => {
@@ -259,18 +282,18 @@ export const BundleManagementPage: React.FC = () => {
       if (editBundle?._id) {
         // For updates, handle providerId properly
         let providerIdValue: string | undefined = data.providerId;
-        if (typeof data.providerId === 'object' && data.providerId !== null) {
+        if (typeof data.providerId === "object" && data.providerId !== null) {
           const providerObj = data.providerId as { _id?: string; id?: string };
           providerIdValue = providerObj._id || providerObj.id;
         }
-        
+
         const finalUpdateData: {
           name: string;
           description?: string;
           dataVolume: number;
-          dataUnit: 'MB' | 'GB' | 'TB';
-          validity: number | 'unlimited';
-          validityUnit: 'hours' | 'days' | 'weeks' | 'months' | 'unlimited';
+          dataUnit: "MB" | "GB" | "TB";
+          validity: number | "unlimited";
+          validityUnit: "hours" | "days" | "weeks" | "months" | "unlimited";
           price: number;
           currency: string;
           features: string[];
@@ -294,20 +317,20 @@ export const BundleManagementPage: React.FC = () => {
           category: data.category,
           tags: data.tags,
         };
-        
+
         // Only add providerId if we have a valid value
         if (providerIdValue) {
           finalUpdateData.providerId = String(providerIdValue);
         }
-        
+
         await bundleService.updateBundle(editBundle._id, finalUpdateData);
-        addToast('Bundle updated successfully', 'success');
+        addToast("Bundle updated successfully", "success");
       } else {
         // For creation, only send providerCode, not providerId
         if (!pkg?.provider) {
-          throw new Error('Package provider information is missing');
+          throw new Error("Package provider information is missing");
         }
-        
+
         await bundleService.createBundle({
           name: data.name,
           description: data.description,
@@ -322,18 +345,18 @@ export const BundleManagementPage: React.FC = () => {
           bundleCode: data.bundleCode,
           category: data.category,
           tags: data.tags,
-          packageId: packageId || '',
+          packageId: packageId || "",
           providerCode: pkg.provider, // Only send providerCode for creation
         });
-        addToast('Bundle created successfully', 'success');
+        addToast("Bundle created successfully", "success");
       }
       setShowFormModal(false);
       setEditBundle(null);
       await fetchBundles();
     } catch (error) {
-      console.error('Bundle save error:', error);
-      setActionError('Failed to save bundle');
-      addToast('Failed to save bundle', 'error');
+      console.error("Bundle save error:", error);
+      setActionError("Failed to save bundle");
+      addToast("Failed to save bundle", "error");
     } finally {
       setActionLoading(false);
     }
@@ -341,37 +364,41 @@ export const BundleManagementPage: React.FC = () => {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'daily': return 'text-blue-600 bg-blue-100';
-      case 'weekly': return 'text-purple-600 bg-purple-100';
-      case 'monthly': return 'text-green-600 bg-green-100';
-      case 'unlimited': return 'text-orange-600 bg-orange-100';
-      case 'custom': return 'text-gray-600 bg-gray-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case "daily":
+        return "text-blue-600 bg-blue-100";
+      case "weekly":
+        return "text-purple-600 bg-purple-100";
+      case "monthly":
+        return "text-green-600 bg-green-100";
+      case "unlimited":
+        return "text-orange-600 bg-orange-100";
+      case "custom":
+        return "text-gray-600 bg-gray-100";
+      default:
+        return "text-gray-600 bg-gray-100";
     }
   };
 
-
-
   const formatDate = (date: string | Date) => {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     }).format(new Date(date));
   };
 
-  const formatCurrency = (amount: number, currency: string = 'GHS') => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: currency
+  const formatCurrency = (amount: number, currency: string = "GHS") => {
+    return new Intl.NumberFormat("en-GH", {
+      style: "currency",
+      currency: currency,
     }).format(amount);
   };
 
   // Calculate statistics
   const stats = {
     total: bundles.length,
-    active: bundles.filter(b => b.isActive).length,
-    inactive: bundles.filter(b => !b.isActive).length,
+    active: bundles.filter((b) => b.isActive).length,
+    inactive: bundles.filter((b) => !b.isActive).length,
     totalValue: bundles.reduce((sum, b) => sum + (b.price || 0), 0),
   };
 
@@ -417,15 +444,23 @@ export const BundleManagementPage: React.FC = () => {
                   Bundle Management
                 </h1>
                 <p className="text-sm sm:text-base text-gray-600">
-                  Managing bundles for: <span className="font-semibold">{pkg?.name}</span>
+                  Managing bundles for:{" "}
+                  <span className="font-semibold">{pkg?.name}</span>
                 </p>
                 {pkg?.description && (
-                  <p className="text-sm text-gray-500 mt-1">{pkg.description}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {pkg.description}
+                  </p>
                 )}
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={fetchBundles} disabled={loading} size="sm">
+              <Button
+                variant="outline"
+                onClick={fetchBundles}
+                disabled={loading}
+                size="sm"
+              >
                 <FaRedo className="mr-2" />
                 Refresh
               </Button>
@@ -448,8 +483,12 @@ export const BundleManagementPage: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Bundles</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Total Bundles
+                </p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                  {stats.total}
+                </p>
               </div>
               <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
                 <FaCube className="text-blue-600 text-lg sm:text-xl" />
@@ -462,8 +501,12 @@ export const BundleManagementPage: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Active</p>
-                <p className="text-lg sm:text-2xl font-bold text-green-600">{stats.active}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Active
+                </p>
+                <p className="text-lg sm:text-2xl font-bold text-green-600">
+                  {stats.active}
+                </p>
               </div>
               <div className="p-2 sm:p-3 bg-green-100 rounded-full">
                 <FaCheckCircle className="text-green-600 text-lg sm:text-xl" />
@@ -476,8 +519,12 @@ export const BundleManagementPage: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Inactive</p>
-                <p className="text-lg sm:text-2xl font-bold text-red-600">{stats.inactive}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Inactive
+                </p>
+                <p className="text-lg sm:text-2xl font-bold text-red-600">
+                  {stats.inactive}
+                </p>
               </div>
               <div className="p-2 sm:p-3 bg-red-100 rounded-full">
                 <FaTimesCircle className="text-red-600 text-lg sm:text-xl" />
@@ -490,8 +537,12 @@ export const BundleManagementPage: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Value</p>
-                <p className="text-lg sm:text-2xl font-bold text-purple-600">{formatCurrency(stats.totalValue)}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Total Value
+                </p>
+                <p className="text-lg sm:text-2xl font-bold text-purple-600">
+                  {formatCurrency(stats.totalValue)}
+                </p>
               </div>
               <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
                 <FaDatabase className="text-purple-600 text-lg sm:text-xl" />
@@ -504,19 +555,29 @@ export const BundleManagementPage: React.FC = () => {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Provider</p>
-                <p className="text-lg sm:text-2xl font-bold"
-                style={{
-                  color: getProviderColors(pkg?.provider)?.primary
-                }}
-                >{pkg?.provider || 'N/A'}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
+                  Provider
+                </p>
+                <p
+                  className="text-lg sm:text-2xl font-bold"
+                  style={{
+                    color: getProviderColors(pkg?.provider)?.primary,
+                  }}
+                >
+                  {pkg?.provider || "N/A"}
+                </p>
               </div>
-              <div className="p-2 sm:p-3 rounded-full"
-              style={{
-                backgroundColor: getProviderColors(pkg?.provider)?.background
-              }}
+              <div
+                className="p-2 sm:p-3 rounded-full"
+                style={{
+                  backgroundColor: getProviderColors(pkg?.provider)?.background,
+                }}
               >
-                <FaBuilding className={`text-lg sm:text-xl ${getProviderColors(pkg?.provider)?.primary}`} />
+                <FaBuilding
+                  className={`text-lg sm:text-xl ${
+                    getProviderColors(pkg?.provider)?.primary
+                  }`}
+                />
               </div>
             </div>
           </CardBody>
@@ -559,12 +620,16 @@ export const BundleManagementPage: React.FC = () => {
           {loading ? (
             <div className="p-6 sm:p-8 text-center">
               <Spinner size="lg" />
-              <span className="ml-3 text-sm sm:text-base text-gray-600">Loading bundles...</span>
+              <span className="ml-3 text-sm sm:text-base text-gray-600">
+                Loading bundles...
+              </span>
             </div>
           ) : bundles.length === 0 ? (
             <div className="p-6 sm:p-8 text-center">
               <FaCube className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
-              <p className="text-sm sm:text-base text-gray-500">No bundles found matching your criteria.</p>
+              <p className="text-sm sm:text-base text-gray-500">
+                No bundles found matching your criteria.
+              </p>
               <Button onClick={handleCreate} className="mt-4">
                 <FaPlus className="mr-2" />
                 Create Your First Bundle
@@ -572,24 +637,22 @@ export const BundleManagementPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {bundles.map(bundle => {
+              {bundles.map((bundle) => {
                 const providerColors = getProviderColors(pkg?.provider);
                 return (
-                  <Card 
-                    key={bundle._id} 
+                  <Card
+                    key={bundle._id}
                     className="hover:shadow-lg transition-all duration-200 group"
                     style={{
                       borderTop: `4px solid ${providerColors.primary}`,
-                      backgroundColor: providerColors.background
+                      backgroundColor: providerColors.background,
                     }}
                   >
                     {/* Card Header with Provider Branding */}
-                    <div 
-                      className="pb-3"
-                    >
+                    <div className="pb-3">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <div 
+                          <div
                             className="p-2 rounded-full"
                             style={{ backgroundColor: providerColors.primary }}
                           >
@@ -599,32 +662,36 @@ export const BundleManagementPage: React.FC = () => {
                             <h3 className="text-sm font-semibold text-gray-900 truncate">
                               {bundle.name}
                             </h3>
-                            <p 
+                            <p
                               className="text-xs font-medium mt-1"
                               style={{ color: providerColors.primary }}
                             >
-                              {pkg?.provider || 'N/A'}
+                              {pkg?.provider || "N/A"}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Badge 
+                          <Badge
                             colorScheme={bundle.isActive ? "success" : "error"}
                             size="sm"
                           >
-                            {bundle.isActive ? <FaCheckCircle className="w-3 h-3 mr-1" /> : <FaTimesCircle className="w-3 h-3 mr-1" />}
-                            {bundle.isActive ? 'Active' : 'Inactive'}
+                            {bundle.isActive ? (
+                              <FaCheckCircle className="w-3 h-3 mr-1" />
+                            ) : (
+                              <FaTimesCircle className="w-3 h-3 mr-1" />
+                            )}
+                            {bundle.isActive ? "Active" : "Inactive"}
                           </Badge>
                         </div>
                       </div>
-                      
+
                       {/* Description */}
                       {bundle.description && (
                         <p className="text-xs text-gray-600 line-clamp-2 mb-3">
                           {bundle.description}
                         </p>
                       )}
-                      
+
                       {/* Bundle Details */}
                       <div className="space-y-2 mb-3">
                         {/* Data Volume */}
@@ -634,18 +701,20 @@ export const BundleManagementPage: React.FC = () => {
                             {bundle.dataVolume} {bundle.dataUnit}
                           </span>
                         </div>
-                        
+
                         {/* Validity */}
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">Validity:</span>
+                          <span className="text-xs text-gray-500">
+                            Validity:
+                          </span>
                           <span className="text-xs font-medium text-gray-900">
-                            {bundle.validity === 'unlimited' || bundle.validityUnit === 'unlimited' 
-                              ? 'Unlimited' 
-                              : `${bundle.validity} ${bundle.validityUnit}`
-                            }
+                            {bundle.validity === "unlimited" ||
+                            bundle.validityUnit === "unlimited"
+                              ? "Unlimited"
+                              : `${bundle.validity} ${bundle.validityUnit}`}
                           </span>
                         </div>
-                        
+
                         {/* Price */}
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-500">Price:</span>
@@ -654,17 +723,25 @@ export const BundleManagementPage: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      
+
                       {/* Tags */}
                       <div className="flex flex-wrap items-center gap-1">
                         {bundle.category && (
-                          <Badge variant="outline" size="sm" className={getCategoryColor(bundle.category)}>
+                          <Badge
+                            variant="outline"
+                            size="sm"
+                            className={getCategoryColor(bundle.category)}
+                          >
                             {bundle.category}
                           </Badge>
                         )}
-                        <Badge variant="outline" size="sm" className="bg-gray-100 text-gray-700">
+                        <Badge
+                          variant="outline"
+                          size="sm"
+                          className="bg-gray-100 text-gray-700"
+                        >
                           <FaCalendar className="w-3 h-3 mr-1" />
-                          {formatDate(bundle.createdAt || '')}
+                          {formatDate(bundle.createdAt || "")}
                         </Badge>
                       </div>
                     </div>
@@ -686,13 +763,23 @@ export const BundleManagementPage: React.FC = () => {
                           </Button>
                           <Button
                             size="sm"
+                            variant="outline"
+                            onClick={() => handlePricingManagement(bundle)}
+                            disabled={actionLoading}
+                            className="flex-1 text-xs text-green-600 border-green-200 hover:bg-green-50"
+                          >
+                            <FaDollarSign className="mr-1" />
+                            Pricing
+                          </Button>
+                          <Button
+                            size="sm"
                             variant="danger"
                             onClick={() => handleDelete(bundle)}
                             disabled={actionLoading}
                             className="flex-1 text-xs border-none"
                             style={{
                               backgroundColor: providerColors.primary,
-                              color: providerColors.background
+                              color: providerColors.background,
                             }}
                           >
                             <FaTrash className="mr-1" />
@@ -712,7 +799,10 @@ export const BundleManagementPage: React.FC = () => {
       {/* Create/Edit Modal */}
       <BundleCreationModal
         isOpen={showFormModal}
-        onClose={() => { setShowFormModal(false); setEditBundle(null); }}
+        onClose={() => {
+          setShowFormModal(false);
+          setEditBundle(null);
+        }}
         onSubmit={handleFormSubmit}
         initialData={editBundle}
         packageId={packageId}
@@ -720,20 +810,30 @@ export const BundleManagementPage: React.FC = () => {
       />
 
       {/* Delete Confirmation Modal */}
-      <Dialog isOpen={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeleteBundle(null); }}>
+      <Dialog
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setDeleteBundle(null);
+        }}
+      >
         <DialogHeader>
           <h2 className="text-lg font-bold">Delete Bundle</h2>
         </DialogHeader>
         <DialogBody>
           <p className="text-gray-600">
-            Are you sure you want to delete <span className="font-semibold">{deleteBundle?.name}</span>?
-            This action cannot be undone.
+            Are you sure you want to delete{" "}
+            <span className="font-semibold">{deleteBundle?.name}</span>? This
+            action cannot be undone.
           </p>
         </DialogBody>
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => { setShowDeleteModal(false); setDeleteBundle(null); }}
+            onClick={() => {
+              setShowDeleteModal(false);
+              setDeleteBundle(null);
+            }}
             disabled={actionLoading}
           >
             Cancel
@@ -743,12 +843,26 @@ export const BundleManagementPage: React.FC = () => {
             onClick={handleDeleteConfirm}
             disabled={actionLoading}
           >
-            {actionLoading ? 'Deleting...' : 'Delete'}
+            {actionLoading ? "Deleting..." : "Delete"}
           </Button>
         </DialogFooter>
       </Dialog>
+
+      {/* Pricing Management Modal */}
+      {showPricingModal && pricingBundle && (
+        <PricingManagementModal
+          bundleId={pricingBundle._id!}
+          bundleName={pricingBundle.name}
+          isOpen={showPricingModal}
+          onClose={() => {
+            setShowPricingModal(false);
+            setPricingBundle(null);
+          }}
+          onPricingUpdated={handlePricingUpdated}
+        />
+      )}
     </div>
   );
 };
 
-export default BundleManagementPage; 
+export default BundleManagementPage;

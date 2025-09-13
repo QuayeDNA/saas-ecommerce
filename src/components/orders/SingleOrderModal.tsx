@@ -1,26 +1,40 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/orders/SingleOrderModal.tsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaTimes, FaPhone, FaWifi, FaClock, FaCheckCircle } from 'react-icons/fa';
-import { useOrder } from '../../contexts/OrderContext';
-import { useSiteStatus } from '../../contexts/site-status-context';
-import { getProviderColors } from '../../utils/provider-colors';
-import { DuplicateOrderWarningModal } from './DuplicateOrderWarningModal';
-import { 
-  Dialog, 
-  DialogHeader, 
-  DialogBody, 
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FaTimes,
+  FaPhone,
+  FaWifi,
+  FaClock,
+  FaCheckCircle,
+} from "react-icons/fa";
+import { useOrder } from "../../contexts/OrderContext";
+import { useSiteStatus } from "../../contexts/site-status-context";
+import { useAuth } from "../../hooks/use-auth";
+import { getProviderColors } from "../../utils/provider-colors";
+import {
+  getPriceForUserType,
+  formatCurrency,
+} from "../../utils/pricingHelpers";
+import { DuplicateOrderWarningModal } from "./DuplicateOrderWarningModal";
+import {
+  Dialog,
+  DialogHeader,
+  DialogBody,
   DialogFooter,
-  Button, 
-  Card, 
-  CardBody, 
-  Alert, 
+  Button,
+  Card,
+  CardBody,
+  Alert,
   Spinner,
-  Input
-} from '../../design-system';
-import type { Bundle } from '../../types/package';
-import type { CreateSingleOrderData, DuplicateCheckResult } from '../../types/order';
+  Input,
+} from "../../design-system";
+import type { Bundle } from "../../types/package";
+import type {
+  CreateSingleOrderData,
+  DuplicateCheckResult,
+} from "../../types/order";
 
 /**
  * SingleOrderModal expects a Bundle object that is fetched using the new ProviderPackageDisplay logic.
@@ -37,13 +51,15 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  bundle
+  bundle,
 }) => {
   const { createSingleOrder, loading } = useOrder();
   const { siteStatus } = useSiteStatus();
+  const { authState } = useAuth();
+  const userType = authState.user?.userType;
   const navigate = useNavigate();
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [phoneError, setPhoneError] = useState('');
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [showSummary, setShowSummary] = useState(false);
   const [orderSummary, setOrderSummary] = useState<{
     bundle: {
@@ -60,17 +76,21 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
-  const [duplicateInfo, setDuplicateInfo] = useState<DuplicateCheckResult | null>(null);
-  const [pendingOrderData, setPendingOrderData] = useState<CreateSingleOrderData | null>(null);
+  const [duplicateInfo, setDuplicateInfo] =
+    useState<DuplicateCheckResult | null>(null);
+  const [pendingOrderData, setPendingOrderData] =
+    useState<CreateSingleOrderData | null>(null);
 
   // Get provider colors for branding
-  const providerColors = getProviderColors(bundle.provider?.toString() || 'MTN');
+  const providerColors = getProviderColors(
+    bundle.provider?.toString() || "MTN"
+  );
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setCustomerPhone('');
-      setPhoneError('');
+      setCustomerPhone("");
+      setPhoneError("");
       setShowSummary(false);
       setOrderSummary(null);
       setError(null);
@@ -80,39 +100,39 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   // Validate phone number - simplified validation
   const validatePhone = (phone: string): boolean => {
     // Remove any non-digit characters except +
-    const cleanPhone = phone.replace(/[^\d+]/g, '');
-    
+    const cleanPhone = phone.replace(/[^\d+]/g, "");
+
     // Convert to local format if it starts with +233
     let localPhone = cleanPhone;
-    if (cleanPhone.startsWith('+233')) {
-      localPhone = '0' + cleanPhone.substring(4);
-    } else if (cleanPhone.startsWith('233')) {
-      localPhone = '0' + cleanPhone.substring(3);
+    if (cleanPhone.startsWith("+233")) {
+      localPhone = "0" + cleanPhone.substring(4);
+    } else if (cleanPhone.startsWith("233")) {
+      localPhone = "0" + cleanPhone.substring(3);
     }
 
     // Check for unnecessary spaces between digits
-    if (phone.includes(' ') && phone.replace(/\s/g, '').length === 10) {
-      setPhoneError('Remove unnecessary spaces between digits');
+    if (phone.includes(" ") && phone.replace(/\s/g, "").length === 10) {
+      setPhoneError("Remove unnecessary spaces between digits");
       return false;
     }
 
     // Check length - must be exactly 10 digits
     if (localPhone.length !== 10) {
       if (localPhone.length > 10) {
-        setPhoneError('Phone number must be exactly 10 digits');
+        setPhoneError("Phone number must be exactly 10 digits");
       } else {
-        setPhoneError('Phone number must be exactly 10 digits');
+        setPhoneError("Phone number must be exactly 10 digits");
       }
       return false;
     }
 
     // Check if it starts with 0
-    if (!localPhone.startsWith('0')) {
-      setPhoneError('Phone number must start with 0');
+    if (!localPhone.startsWith("0")) {
+      setPhoneError("Phone number must start with 0");
       return false;
     }
 
-    setPhoneError('');
+    setPhoneError("");
     return true;
   };
 
@@ -120,7 +140,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
     setCustomerPhone(value);
     // Clear any existing phone error when user starts typing
     if (phoneError) {
-      setPhoneError('');
+      setPhoneError("");
     }
   };
 
@@ -129,7 +149,8 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       return;
     }
 
-    // Create order summary
+    // Create order summary with user-specific pricing
+    const userPrice = getPriceForUserType(bundle, userType);
     const summary = {
       bundle: {
         name: bundle.name,
@@ -137,11 +158,11 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
         dataUnit: bundle.dataUnit,
         validity: bundle.validity,
         validityUnit: bundle.validityUnit,
-        price: bundle.price,
-        currency: bundle.currency
+        price: userPrice,
+        currency: bundle.currency,
       },
-      customerPhone: customerPhone.replace(/^\+?233/, '0'),
-      totalPrice: bundle.price
+      customerPhone: customerPhone.replace(/^\+?233/, "0"),
+      totalPrice: userPrice,
     };
 
     // Fix type error: ensure validity and validityUnit are strings/numbers as expected
@@ -149,9 +170,15 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       ...summary,
       bundle: {
         ...summary.bundle,
-        validity: typeof summary.bundle.validity === 'number' ? summary.bundle.validity : 0,
-        validityUnit: typeof summary.bundle.validityUnit === 'string' ? summary.bundle.validityUnit : '',
-      }
+        validity:
+          typeof summary.bundle.validity === "number"
+            ? summary.bundle.validity
+            : 0,
+        validityUnit:
+          typeof summary.bundle.validityUnit === "string"
+            ? summary.bundle.validityUnit
+            : "",
+      },
     });
     setShowSummary(true);
   };
@@ -159,74 +186,87 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   const handleConfirmOrder = async () => {
     try {
       setError(null);
-      
+
       // Check if site is closed
       if (siteStatus && !siteStatus.isSiteOpen) {
-        setError(`Site is currently under maintenance: ${siteStatus.customMessage}`);
+        setError(
+          `Site is currently under maintenance: ${siteStatus.customMessage}`
+        );
         return;
       }
-      
+
       const orderData: CreateSingleOrderData = {
-        packageGroupId: typeof bundle.packageId === 'object' && bundle.packageId !== null && '_id' in bundle.packageId
-          ? (bundle.packageId as { _id: string })._id
-          : bundle.packageId,
-        packageItemId: bundle._id || '',
-        customerPhone: customerPhone.replace(/^\+?233/, '0'),
+        packageGroupId:
+          typeof bundle.packageId === "object" &&
+          bundle.packageId !== null &&
+          "_id" in bundle.packageId
+            ? (bundle.packageId as { _id: string })._id
+            : bundle.packageId,
+        packageItemId: bundle._id || "",
+        customerPhone: customerPhone.replace(/^\+?233/, "0"),
         bundleSize: {
           value: bundle.dataVolume,
-          unit: bundle.dataUnit as 'MB' | 'GB'
+          unit: bundle.dataUnit as "MB" | "GB",
         },
-        quantity: 1
+        quantity: 1,
       };
 
       await createSingleOrder(orderData);
-      
+
       // Order created successfully (including draft orders)
       onSuccess();
       onClose();
-      navigate('/agent/dashboard/orders');
-
+      navigate("/agent/dashboard/orders");
     } catch (err: any) {
       // Check if this is a duplicate order error
-      if (err && err.code === 'DUPLICATE_ORDER_DETECTED') {
+      if (err && err.code === "DUPLICATE_ORDER_DETECTED") {
         const orderData: CreateSingleOrderData = {
-          packageGroupId: typeof bundle.packageId === 'object' && bundle.packageId !== null && '_id' in bundle.packageId
-            ? (bundle.packageId as { _id: string })._id
-            : bundle.packageId,
-          packageItemId: bundle._id || '',
-          customerPhone: customerPhone.replace(/^\+?233/, '0'),
+          packageGroupId:
+            typeof bundle.packageId === "object" &&
+            bundle.packageId !== null &&
+            "_id" in bundle.packageId
+              ? (bundle.packageId as { _id: string })._id
+              : bundle.packageId,
+          packageItemId: bundle._id || "",
+          customerPhone: customerPhone.replace(/^\+?233/, "0"),
           bundleSize: {
             value: bundle.dataVolume,
-            unit: bundle.dataUnit as 'MB' | 'GB'
+            unit: bundle.dataUnit as "MB" | "GB",
           },
-          quantity: 1
+          quantity: 1,
         };
-        
+
         setPendingOrderData(orderData);
         setDuplicateInfo(err.duplicateInfo);
         setShowDuplicateWarning(true);
         return;
       }
-      
+
       if (err instanceof Error) {
         const errorMessage = err.message;
-        
+
         // Check if this is a draft order (insufficient wallet balance)
-        if (errorMessage.includes('draft') || errorMessage.includes('insufficient')) {
+        if (
+          errorMessage.includes("draft") ||
+          errorMessage.includes("insufficient")
+        ) {
           setError(errorMessage);
           // Don't close modal, let user see the error and potentially top up wallet
           return;
         }
-        
+
         // Check if site is closed
-        if (errorMessage.includes('maintenance') || errorMessage.includes('Site is currently under maintenance')) {
+        if (
+          errorMessage.includes("maintenance") ||
+          errorMessage.includes("Site is currently under maintenance")
+        ) {
           setError(errorMessage);
           return;
         }
-        
-        setError(errorMessage || 'Failed to create order');
+
+        setError(errorMessage || "Failed to create order");
       } else {
-        setError('Failed to create order');
+        setError("Failed to create order");
       }
     }
   };
@@ -241,20 +281,23 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
     if (pendingOrderData) {
       try {
         setShowDuplicateWarning(false);
-        
+
         // Add forceOverride flag and retry order creation
-        const orderDataWithOverride = { ...pendingOrderData, forceOverride: true };
+        const orderDataWithOverride = {
+          ...pendingOrderData,
+          forceOverride: true,
+        };
         await createSingleOrder(orderDataWithOverride);
-        
+
         // Order created successfully
         onSuccess();
         onClose();
-        navigate('/agent/dashboard/orders');
+        navigate("/agent/dashboard/orders");
       } catch (err) {
         if (err instanceof Error) {
-          setError(err.message || 'Failed to create order after override');
+          setError(err.message || "Failed to create order after override");
         } else {
-          setError('Failed to create order after override');
+          setError("Failed to create order after override");
         }
       } finally {
         setPendingOrderData(null);
@@ -273,9 +316,9 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="md">
-       <DialogHeader className="flex items-start justify-between">
+      <DialogHeader className="flex items-start justify-between">
         <h2 className="text-lg font-semibold text-gray-900">
-          {showSummary ? 'Order Summary' : 'Order Bundle'}
+          {showSummary ? "Order Summary" : "Order Bundle"}
         </h2>
         <Button
           variant="ghost"
@@ -297,28 +340,36 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">{bundle.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{bundle.description}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {bundle.description}
+                    </p>
                   </div>
                   <div className="text-right">
-                    <div 
+                    <div
                       className="text-lg font-bold"
                       style={{ color: providerColors.primary }}
                     >
-                      {bundle.currency} {bundle.price}
+                      {formatCurrency(
+                        getPriceForUserType(bundle, userType),
+                        bundle.currency
+                      )}
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <FaWifi className="text-blue-500" />
-                    <span>{bundle.dataVolume} {bundle.dataUnit}</span>
+                    <span>
+                      {bundle.dataVolume} {bundle.dataUnit}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <FaClock className="text-green-500" />
                     <span>
-                      {bundle.validity === 'unlimited' && bundle.validityUnit === 'unlimited'
-                        ? 'Unlimited'
+                      {bundle.validity === "unlimited" &&
+                      bundle.validityUnit === "unlimited"
+                        ? "Unlimited"
                         : `${bundle.validity} ${bundle.validityUnit}`}
                     </span>
                   </div>
@@ -328,7 +379,10 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
             {/* Phone Number Input */}
             <div>
-              <label htmlFor="Phone Number" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="Phone Number"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Customer Phone Number
               </label>
               <Input
@@ -345,11 +399,13 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
             {/* Continue Button */}
             <Button
               onClick={handleContinue}
-              disabled={!customerPhone || loading || (siteStatus?.isSiteOpen === false)}
+              disabled={
+                !customerPhone || loading || siteStatus?.isSiteOpen === false
+              }
               className="w-full"
-              style={{ 
-                backgroundColor: providerColors.primary, 
-                color: providerColors.text 
+              style={{
+                backgroundColor: providerColors.primary,
+                color: providerColors.text,
               }}
             >
               {loading ? (
@@ -357,10 +413,10 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                   <Spinner size="sm" />
                   Processing...
                 </>
-              ) : (siteStatus && !siteStatus.isSiteOpen) ? (
-                'Site Under Maintenance'
+              ) : siteStatus && !siteStatus.isSiteOpen ? (
+                "Site Under Maintenance"
               ) : (
-                'Continue'
+                "Continue"
               )}
             </Button>
           </div>
@@ -370,33 +426,39 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
             {/* Bundle Summary */}
             <Card>
               <CardBody>
-                <h3 className="font-medium text-gray-900 mb-3">Bundle Details</h3>
+                <h3 className="font-medium text-gray-900 mb-3">
+                  Bundle Details
+                </h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Bundle:</span>
-                    <span className="font-medium">{orderSummary?.bundle.name}</span>
+                    <span className="font-medium">
+                      {orderSummary?.bundle.name}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Data:</span>
                     <span className="font-medium">
-                      {orderSummary?.bundle.dataVolume} {orderSummary?.bundle.dataUnit}
+                      {orderSummary?.bundle.dataVolume}{" "}
+                      {orderSummary?.bundle.dataUnit}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Validity:</span>
                     <span className="font-medium">
-                      {orderSummary?.bundle.validityUnit === 'unlimited'
-                        ? 'Unlimited'
+                      {orderSummary?.bundle.validityUnit === "unlimited"
+                        ? "Unlimited"
                         : `${orderSummary?.bundle.validity} ${orderSummary?.bundle.validityUnit}`}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Price:</span>
-                    <span 
+                    <span
                       className="font-bold"
                       style={{ color: providerColors.primary }}
                     >
-                      {orderSummary?.bundle.currency} {orderSummary?.bundle.price}
+                      {orderSummary?.bundle.currency}{" "}
+                      {orderSummary?.bundle.price}
                     </span>
                   </div>
                 </div>
@@ -406,7 +468,9 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
             {/* Customer Info */}
             <Card>
               <CardBody>
-                <h3 className="font-medium text-gray-900 mb-3">Customer Information</h3>
+                <h3 className="font-medium text-gray-900 mb-3">
+                  Customer Information
+                </h3>
                 <div className="flex items-center gap-2 text-sm">
                   <FaPhone className="text-blue-500" />
                   <span>{orderSummary?.customerPhone}</span>
@@ -418,9 +482,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
             <div className="border-t pt-4">
               <div className="flex justify-between items-center text-lg font-bold">
                 <span>Total Amount:</span>
-                <span 
-                  style={{ color: providerColors.primary }}
-                >
+                <span style={{ color: providerColors.primary }}>
                   {orderSummary?.bundle.currency} {orderSummary?.totalPrice}
                 </span>
               </div>
@@ -439,20 +501,16 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       {showSummary && (
         <DialogFooter>
           <div className="flex gap-3 w-full">
-            <Button
-              variant="secondary"
-              onClick={handleBack}
-              className="flex-1"
-            >
+            <Button variant="secondary" onClick={handleBack} className="flex-1">
               Back
             </Button>
             <Button
               onClick={handleConfirmOrder}
-              disabled={loading || (siteStatus?.isSiteOpen === false)}
+              disabled={loading || siteStatus?.isSiteOpen === false}
               className="flex-1"
-              style={{ 
-                backgroundColor: providerColors.primary, 
-                color: providerColors.text 
+              style={{
+                backgroundColor: providerColors.primary,
+                color: providerColors.text,
               }}
             >
               {loading ? (
@@ -460,7 +518,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                   <Spinner size="sm" />
                   Processing...
                 </>
-              ) : (siteStatus && !siteStatus.isSiteOpen) ? (
+              ) : siteStatus && !siteStatus.isSiteOpen ? (
                 <>
                   <FaTimes />
                   Site Under Maintenance
@@ -489,4 +547,4 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       )}
     </Dialog>
   );
-}; 
+};
