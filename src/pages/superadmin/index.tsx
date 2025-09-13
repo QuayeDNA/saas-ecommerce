@@ -1,8 +1,22 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaUsers, FaBuilding, FaClipboardList, FaWallet, FaCog, FaCheckCircle, FaMoneyBillWave, FaBox, FaChartLine } from "react-icons/fa";
+import {
+  FaUsers,
+  FaBuilding,
+  FaClipboardList,
+  FaWallet,
+  FaCog,
+  FaCheckCircle,
+  FaMoneyBillWave,
+  FaBox,
+  FaChartLine,
+} from "react-icons/fa";
 import { Card, CardHeader, CardBody, Button, Badge } from "../../design-system";
-import { userService, type DashboardStats, type ChartData } from "../../services/user.service";
+import {
+  userService,
+  type DashboardStats,
+  type ChartData,
+} from "../../services/user.service";
 import { colors } from "../../design-system/tokens";
 import {
   Chart as ChartJS,
@@ -14,8 +28,8 @@ import {
   Tooltip,
   Legend,
   ArcElement,
-} from 'chart.js';
-import { Line, Pie } from 'react-chartjs-2';
+} from "chart.js";
+import { Line, Pie } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -29,12 +43,36 @@ ChartJS.register(
 );
 
 const quickLinks = [
-  { to: "/superadmin/users", label: "Manage Users", icon: <FaUsers className="text-blue-600 text-xl sm:text-2xl" /> },
-  { to: "/superadmin/providers", label: "Manage Providers", icon: <FaBuilding className="text-green-600 text-xl sm:text-2xl" /> },
-  { to: "/superadmin/packages", label: "Manage Packages", icon: <FaBox className="text-orange-600 text-xl sm:text-2xl" /> },
-  { to: "/superadmin/orders", label: "View Orders", icon: <FaClipboardList className="text-yellow-600 text-xl sm:text-2xl" /> },
-  { to: "/superadmin/wallet", label: "Wallet & Transactions", icon: <FaWallet className="text-purple-600 text-xl sm:text-2xl" /> },
-  { to: "/superadmin/settings", label: "Settings", icon: <FaCog className="text-gray-600 text-xl sm:text-2xl" /> },
+  {
+    to: "/superadmin/users",
+    label: "Manage Users",
+    icon: <FaUsers className="text-blue-600 text-xl sm:text-2xl" />,
+  },
+  {
+    to: "/superadmin/providers",
+    label: "Manage Providers",
+    icon: <FaBuilding className="text-green-600 text-xl sm:text-2xl" />,
+  },
+  {
+    to: "/superadmin/packages",
+    label: "Manage Packages",
+    icon: <FaBox className="text-orange-600 text-xl sm:text-2xl" />,
+  },
+  {
+    to: "/superadmin/orders",
+    label: "View Orders",
+    icon: <FaClipboardList className="text-yellow-600 text-xl sm:text-2xl" />,
+  },
+  {
+    to: "/superadmin/wallet",
+    label: "Wallet & Transactions",
+    icon: <FaWallet className="text-purple-600 text-xl sm:text-2xl" />,
+  },
+  {
+    to: "/superadmin/settings",
+    label: "Settings",
+    icon: <FaCog className="text-gray-600 text-xl sm:text-2xl" />,
+  },
 ];
 
 // Skeleton loading components
@@ -94,7 +132,7 @@ export default function SuperAdminDashboard() {
         const statsData = await userService.fetchDashboardStats();
         setStats(statsData);
       } catch {
-        setError('Failed to load dashboard stats');
+        setError("Failed to load dashboard stats");
         // Stats error
       } finally {
         setLoadingStats(false);
@@ -125,25 +163,25 @@ export default function SuperAdminDashboard() {
   }, []);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS'
+    return new Intl.NumberFormat("en-GH", {
+      style: "currency",
+      currency: "GHS",
     }).format(amount);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-      case 'active':
-      case 'verified':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'failed':
-      case 'rejected':
-        return 'error';
+      case "completed":
+      case "active":
+      case "verified":
+        return "success";
+      case "pending":
+        return "warning";
+      case "failed":
+      case "rejected":
+        return "error";
       default:
-        return 'default';
+        return "default";
     }
   };
 
@@ -153,7 +191,7 @@ export default function SuperAdminDashboard() {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: "top" as const,
         labels: {
           usePointStyle: true,
           padding: 20,
@@ -180,44 +218,49 @@ export default function SuperAdminDashboard() {
         min: 0, // Ensure no negative values
         suggestedMin: 0, // Additional safeguard
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: "rgba(0, 0, 0, 0.1)",
         },
       },
     },
     interaction: {
       intersect: false,
-      mode: 'index' as const,
+      mode: "index" as const,
     },
   };
 
-  const createLineChartData = (labels: string[], userData: number[], orderData: number[], revenueData: number[]) => ({
+  const createLineChartData = (
+    labels: string[],
+    userData: number[],
+    orderData: number[],
+    revenueData: number[]
+  ) => ({
     labels,
     datasets: [
       {
-        label: 'User Registrations',
+        label: "User Registrations",
         data: userData,
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: "rgb(59, 130, 246)",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
         tension: 0.4,
         fill: false,
         pointRadius: 4,
         pointHoverRadius: 6,
       },
       {
-        label: 'Orders',
+        label: "Orders",
         data: orderData,
-        borderColor: 'rgb(245, 158, 11)',
-        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+        borderColor: "rgb(245, 158, 11)",
+        backgroundColor: "rgba(245, 158, 11, 0.1)",
         tension: 0.4,
         fill: false,
         pointRadius: 4,
         pointHoverRadius: 6,
       },
       {
-        label: 'Revenue (GHS)',
+        label: "Revenue (GHS)",
         data: revenueData,
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderColor: "rgb(34, 197, 94)",
+        backgroundColor: "rgba(34, 197, 94, 0.1)",
         tension: 0.4,
         fill: false,
         pointRadius: 4,
@@ -226,13 +269,17 @@ export default function SuperAdminDashboard() {
     ],
   });
 
-  const createPieChartData = (labels: string[], data: number[], colors: string[]) => ({
+  const createPieChartData = (
+    labels: string[],
+    data: number[],
+    colors: string[]
+  ) => ({
     labels,
     datasets: [
       {
         data,
         backgroundColor: colors,
-        borderColor: colors.map(color => color.replace('0.8', '1')),
+        borderColor: colors.map((color) => color.replace("0.8", "1")),
         borderWidth: 2,
         hoverOffset: 4,
       },
@@ -244,7 +291,7 @@ export default function SuperAdminDashboard() {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom' as const,
+        position: "bottom" as const,
         labels: {
           usePointStyle: true,
           padding: 20,
@@ -257,33 +304,35 @@ export default function SuperAdminDashboard() {
   };
 
   // Check if chart data has meaningful values
-  const hasChartData = chartData && (
-    chartData.userRegistrations.some(val => val > 0) ||
-    chartData.orders.some(val => val > 0) ||
-    chartData.revenue.some(val => val > 0)
-  );
+  const hasChartData =
+    chartData &&
+    (chartData.userRegistrations.some((val) => val > 0) ||
+      chartData.orders.some((val) => val > 0) ||
+      chartData.revenue.some((val) => val > 0));
 
-  const hasPieChartData = chartData && (
-    chartData.orderStatus.completed > 0 ||
-    chartData.orderStatus.pending > 0 ||
-    chartData.orderStatus.failed > 0
-  );
+  const hasPieChartData =
+    chartData &&
+    (chartData.orderStatus.completed > 0 ||
+      chartData.orderStatus.pending > 0 ||
+      chartData.orderStatus.failed > 0);
 
   // Filter out negative values from chart data and ensure all values are non-negative
-  const sanitizedChartData = chartData ? {
-    ...chartData,
-    userRegistrations: chartData.userRegistrations.map(val => Math.max(0, val || 0)),
-    orders: chartData.orders.map(val => Math.max(0, val || 0)),
-    revenue: chartData.revenue.map(val => Math.max(0, val || 0)),
-  } : null;
+  const sanitizedChartData = chartData
+    ? {
+        ...chartData,
+        userRegistrations: chartData.userRegistrations.map((val) =>
+          Math.max(0, val || 0)
+        ),
+        orders: chartData.orders.map((val) => Math.max(0, val || 0)),
+        revenue: chartData.revenue.map((val) => Math.max(0, val || 0)),
+      }
+    : null;
 
   if (error && !stats) {
     return (
       <div className="text-center py-8">
         <div className="text-red-600 mb-4">{error}</div>
-        <Button onClick={() => window.location.reload()}>
-          Retry
-        </Button>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
       </div>
     );
   }
@@ -293,10 +342,15 @@ export default function SuperAdminDashboard() {
       {/* Header */}
       <Card>
         <CardBody className="text-center sm:text-left">
-          <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
+          <h1
+            className="text-xl sm:text-2xl font-bold mb-2"
+            style={{ color: colors.brand.primary }}
+          >
             Welcome, Super Admin!
           </h1>
-          <p className="text-gray-600 text-sm sm:text-base">Platform overview and analytics dashboard</p>
+          <p className="text-gray-600 text-sm sm:text-base">
+            Platform overview and analytics dashboard
+          </p>
         </CardBody>
       </Card>
 
@@ -318,8 +372,12 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-4 sm:p-5 lg:p-6">
                 <div className="flex items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Users</p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{stats.users.total.toLocaleString()}</p>
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                      Total Users
+                    </p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                      {stats.users.total.toLocaleString()}
+                    </p>
                     <p className="text-xs text-green-400 mt-1 sm:mt-2">
                       +{stats.users.newThisWeek} this week
                     </p>
@@ -336,8 +394,12 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-4 sm:p-5 lg:p-6">
                 <div className="flex items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Revenue</p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{formatCurrency(stats.revenue.total)}</p>
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                      Total Revenue
+                    </p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                      {formatCurrency(stats.revenue.total)}
+                    </p>
                     <p className="text-xs text-green-400 mt-1 sm:mt-2">
                       +{formatCurrency(stats.revenue.total)} total
                     </p>
@@ -354,8 +416,12 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-4 sm:p-5 lg:p-6">
                 <div className="flex items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Orders</p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{stats.orders.total.toLocaleString()}</p>
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                      Total Orders
+                    </p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                      {stats.orders.total.toLocaleString()}
+                    </p>
                     <p className="text-xs text-blue-400 mt-1 sm:mt-2">
                       {stats.orders.successRate}% success rate
                     </p>
@@ -372,8 +438,12 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-4 sm:p-5 lg:p-6">
                 <div className="flex items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Active Agents</p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{stats.users.activeAgents}</p>
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                      Active Agents
+                    </p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                      {stats.users.activeAgents}
+                    </p>
                     <p className="text-xs text-purple-400 mt-1 sm:mt-2">
                       {stats?.rates?.agentActivation ?? 0}% activation rate
                     </p>
@@ -390,8 +460,12 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-4 sm:p-5 lg:p-6">
                 <div className="flex items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Total Commissions</p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{formatCurrency(stats.commissions.totalPaid)}</p>
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                      Total Commissions
+                    </p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                      {formatCurrency(stats.commissions.totalPaid)}
+                    </p>
                     <p className="text-xs text-yellow-400 mt-1 sm:mt-2">
                       {stats.commissions.pendingCount} pending
                     </p>
@@ -408,8 +482,12 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-4 sm:p-5 lg:p-6">
                 <div className="flex items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">Active Providers</p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{stats.providers.active}</p>
+                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                      Active Providers
+                    </p>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                      {stats.providers.active}
+                    </p>
                     <p className="text-xs text-indigo-400 mt-1 sm:mt-2">
                       {stats.providers.newThisMonth} new this month
                     </p>
@@ -464,21 +542,23 @@ export default function SuperAdminDashboard() {
             <CardBody>
               {hasChartData ? (
                 <div className="h-auto">
-                  <Line 
-                    options={lineChartOptions} 
+                  <Line
+                    options={lineChartOptions}
                     data={createLineChartData(
                       sanitizedChartData!.labels,
                       sanitizedChartData!.userRegistrations,
                       sanitizedChartData!.orders,
                       sanitizedChartData!.revenue
-                    )} 
+                    )}
                   />
                 </div>
               ) : (
                 <div className="h-60 sm:h-80 flex items-center justify-center">
                   <div className="text-center">
                     <FaChartLine className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">No Activity Data</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">
+                      No Activity Data
+                    </h3>
                     <p className="text-sm text-gray-500">
                       No activity data available for the selected period.
                     </p>
@@ -493,16 +573,26 @@ export default function SuperAdminDashboard() {
             {/* Order Status Distribution */}
             <Card>
               <CardHeader>
-                <h3 className="text-lg font-semibold">Order Status Distribution</h3>
+                <h3 className="text-lg font-semibold">
+                  Order Status Distribution
+                </h3>
               </CardHeader>
               <CardBody>
                 {hasPieChartData ? (
                   <div className="h-60 sm:h-64">
-                    <Pie 
+                    <Pie
                       data={createPieChartData(
-                        ['Completed', 'Pending', 'Failed'],
-                        [chartData.orderStatus.completed, chartData.orderStatus.pending, chartData.orderStatus.failed],
-                        ['rgba(34, 197, 94, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(239, 68, 68, 0.8)']
+                        ["Completed", "Pending", "Failed"],
+                        [
+                          chartData.orderStatus.completed,
+                          chartData.orderStatus.pending,
+                          chartData.orderStatus.failed,
+                        ],
+                        [
+                          "rgba(34, 197, 94, 0.8)",
+                          "rgba(245, 158, 11, 0.8)",
+                          "rgba(239, 68, 68, 0.8)",
+                        ]
                       )}
                       options={pieChartOptions}
                     />
@@ -511,7 +601,9 @@ export default function SuperAdminDashboard() {
                   <div className="h-60 sm:h-64 flex items-center justify-center">
                     <div className="text-center">
                       <FaClipboardList className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                      <h3 className="text-sm font-medium text-gray-900 mb-2">No Order Data</h3>
+                      <h3 className="text-sm font-medium text-gray-900 mb-2">
+                        No Order Data
+                      </h3>
                       <p className="text-sm text-gray-500">
                         No order status data available.
                       </p>
@@ -544,11 +636,15 @@ export default function SuperAdminDashboard() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Total Agents</span>
-                  <span className="font-medium">{stats.users.byType?.agents || 0}</span>
+                  <span className="font-medium">
+                    {stats.users.byType?.agents || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Total Customers</span>
-                  <span className="font-medium">{stats.users.byType?.customers || 0}</span>
+                  <span className="font-medium">
+                    {stats.users.byType?.dealers || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Verified Users</span>
@@ -556,11 +652,17 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Active Agents</span>
-                  <Badge colorScheme="warning" size="sm">{stats.users.activeAgents}</Badge>
+                  <Badge colorScheme="warning" size="sm">
+                    {stats.users.activeAgents}
+                  </Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Verification Rate</span>
-                  <Badge colorScheme="success" size="sm">{(stats?.rates?.userVerification ?? 0)}%</Badge>
+                  <span className="text-sm text-gray-600">
+                    Verification Rate
+                  </span>
+                  <Badge colorScheme="success" size="sm">
+                    {stats?.rates?.userVerification ?? 0}%
+                  </Badge>
                 </div>
               </div>
             </CardBody>
@@ -577,16 +679,24 @@ export default function SuperAdminDashboard() {
             <CardBody>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Completed Orders</span>
-                  <Badge colorScheme="success" size="sm">{stats.orders.completed}</Badge>
+                  <span className="text-sm text-gray-600">
+                    Completed Orders
+                  </span>
+                  <Badge colorScheme="success" size="sm">
+                    {stats.orders.completed}
+                  </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Pending Orders</span>
-                  <Badge colorScheme="warning" size="sm">{stats.orders.pending}</Badge>
+                  <Badge colorScheme="warning" size="sm">
+                    {stats.orders.pending}
+                  </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Failed Orders</span>
-                  <Badge colorScheme="error" size="sm">{stats.orders.failed}</Badge>
+                  <Badge colorScheme="error" size="sm">
+                    {stats.orders.failed}
+                  </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Total Orders</span>
@@ -594,7 +704,9 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Success Rate</span>
-                  <Badge colorScheme="success" size="sm">{stats.orders.successRate}%</Badge>
+                  <Badge colorScheme="success" size="sm">
+                    {stats.orders.successRate}%
+                  </Badge>
                 </div>
               </div>
             </CardBody>
@@ -622,15 +734,21 @@ export default function SuperAdminDashboard() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Total Revenue</span>
-                  <span className="font-medium text-green-600">{formatCurrency(stats.revenue.total)}</span>
+                  <span className="font-medium text-green-600">
+                    {formatCurrency(stats.revenue.total)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Total Revenue</span>
-                  <span className="font-medium">{formatCurrency(stats.revenue.total)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(stats.revenue.total)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Avg Order Value</span>
-                  <span className="font-medium">{formatCurrency(stats.revenue.averageOrderValue)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(stats.revenue.averageOrderValue)}
+                  </span>
                 </div>
               </div>
             </CardBody>
@@ -651,12 +769,18 @@ export default function SuperAdminDashboard() {
                   <span className="font-medium">{stats.providers.total}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Active Providers</span>
-                  <Badge colorScheme="success" size="sm">{stats.providers.active}</Badge>
+                  <span className="text-sm text-gray-600">
+                    Active Providers
+                  </span>
+                  <Badge colorScheme="success" size="sm">
+                    {stats.providers.active}
+                  </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">New This Month</span>
-                  <span className="font-medium">{stats.providers.newThisMonth}</span>
+                  <span className="font-medium">
+                    {stats.providers.newThisMonth}
+                  </span>
                 </div>
               </div>
             </CardBody>
@@ -675,7 +799,10 @@ export default function SuperAdminDashboard() {
                   <div className="h-5 bg-gray-200 rounded w-24 mb-3"></div>
                   <div className="space-y-2">
                     {[...Array(5)].map((_, j) => (
-                      <div key={j} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div
+                        key={j}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                      >
                         <div className="flex-1">
                           <div className="h-4 bg-gray-200 rounded w-20 mb-1"></div>
                           <div className="h-3 bg-gray-200 rounded w-16"></div>
@@ -704,7 +831,10 @@ export default function SuperAdminDashboard() {
                 <h4 className="font-medium text-gray-700 mb-3">Recent Users</h4>
                 <div className="space-y-2">
                   {stats.recentActivity.users?.slice(0, 5)?.map((user) => (
-                    <div key={user._id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div
+                      key={user._id}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                    >
                       <div>
                         <p className="text-sm font-medium">{user.fullName}</p>
                         <p className="text-xs text-gray-500">{user.email}</p>
@@ -723,13 +853,22 @@ export default function SuperAdminDashboard() {
 
               {/* Recent Orders */}
               <div>
-                <h4 className="font-medium text-gray-700 mb-3">Recent Orders</h4>
+                <h4 className="font-medium text-gray-700 mb-3">
+                  Recent Orders
+                </h4>
                 <div className="space-y-2">
                   {stats.recentActivity.orders?.slice(0, 5)?.map((order) => (
-                    <div key={order._id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div
+                      key={order._id}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                    >
                       <div>
-                        <p className="text-sm font-medium">{order.orderNumber}</p>
-                        <p className="text-xs text-gray-500">{formatCurrency(order.total)}</p>
+                        <p className="text-sm font-medium">
+                          {order.orderNumber}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formatCurrency(order.total)}
+                        </p>
                       </div>
                       <Badge
                         variant="subtle"
@@ -745,23 +884,34 @@ export default function SuperAdminDashboard() {
 
               {/* Recent Transactions */}
               <div>
-                <h4 className="font-medium text-gray-700 mb-3">Recent Transactions</h4>
+                <h4 className="font-medium text-gray-700 mb-3">
+                  Recent Transactions
+                </h4>
                 <div className="space-y-2">
-                  {stats.recentActivity.transactions?.slice(0, 5)?.map((transaction) => (
-                    <div key={transaction._id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <div>
-                        <p className="text-sm font-medium">{transaction.description || transaction.type}</p>
-                        <p className="text-xs text-gray-500">{formatCurrency(transaction.amount)}</p>
-                      </div>
-                      <Badge
-                        variant="subtle"
-                        colorScheme={getStatusColor(transaction.type)}
-                        size="xs"
+                  {stats.recentActivity.transactions
+                    ?.slice(0, 5)
+                    ?.map((transaction) => (
+                      <div
+                        key={transaction._id}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded"
                       >
-                        {transaction.type}
-                      </Badge>
-                    </div>
-                  )) || []}
+                        <div>
+                          <p className="text-sm font-medium">
+                            {transaction.description || transaction.type}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {formatCurrency(transaction.amount)}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="subtle"
+                          colorScheme={getStatusColor(transaction.type)}
+                          size="xs"
+                        >
+                          {transaction.type}
+                        </Badge>
+                      </div>
+                    )) || []}
                 </div>
               </div>
             </div>
@@ -770,4 +920,4 @@ export default function SuperAdminDashboard() {
       ) : null}
     </div>
   );
-} 
+}

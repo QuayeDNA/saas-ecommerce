@@ -158,7 +158,7 @@ const publicRoutes: RouteObject[] = [
     path: "/",
     element: (
       <Suspense fallback={<PageLoader />}>
-         <LoginPage />
+        <LoginPage />
       </Suspense>
     ),
   },
@@ -257,7 +257,11 @@ const publicRoutes: RouteObject[] = [
 const agentRoutes: RouteObject[] = [
   {
     path: "/agent",
-    element: <ProtectedRoute allowedUserTypes={["agent"]} />,
+    element: (
+      <ProtectedRoute
+        allowedUserTypes={["agent", "super_agent", "dealer", "super_dealer"]}
+      />
+    ),
     children: [
       {
         path: "dashboard",
@@ -277,7 +281,7 @@ const agentRoutes: RouteObject[] = [
               <Suspense fallback={<PageLoader />}>
                 <PackageManagementPage />
               </Suspense>
-            )
+            ),
           },
           {
             path: "packages/mtn",
@@ -325,7 +329,7 @@ const agentRoutes: RouteObject[] = [
               <Suspense fallback={<PageLoader />}>
                 <StorefrontManagementPage />
               </Suspense>
-            )
+            ),
           },
           {
             path: "profile",
@@ -372,47 +376,6 @@ const agentRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <UserManagementPage />
-              </Suspense>
-            ),
-          },
-        ],
-      },
-    ],
-  },
-];
-
-// Customer routes configuration
-const customerRoutes: RouteObject[] = [
-  {
-    path: "/customer",
-    element: <ProtectedRoute allowedUserTypes={["customer"]} />,
-    children: [
-      {
-        path: "dashboard",
-        element: <DashboardLayout />,
-        children: [
-          {
-            index: true,
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <DashboardPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "profile",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <ProfilePage />
-              </Suspense>
-            ),
-          },
-
-          {
-            path: "privacy-policy",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <PrivacyPolicyPage />
               </Suspense>
             ),
           },
@@ -476,15 +439,14 @@ const adminRoutes: RouteObject[] = [
 export const routes: RouteObject[] = [
   // Public routes
   ...publicRoutes,
-  
+
   // Protected routes by user type
   ...agentRoutes,
-  ...customerRoutes,
   ...adminRoutes,
-  
+
   // Super admin routes (separate layout)
   superadminRoutes,
-  
+
   // Catch all route - redirect to 404
   {
     path: "*",

@@ -2,7 +2,7 @@
 
 /**
  * Support Page
- * 
+ *
  * Features:
  * - FAQs with expandable answers
  * - Contact form
@@ -11,14 +11,27 @@
  * - Mobile-first responsive design
  */
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Container, Card, CardHeader, CardBody, Button, Input, Alert } from '../design-system';
-import { 
-  FaArrowLeft, FaEnvelope, FaPhone, FaComment, 
-  FaQuestionCircle, FaChevronDown, FaChevronUp,
-  FaCheckCircle
-} from 'react-icons/fa';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Container,
+  Card,
+  CardHeader,
+  CardBody,
+  Button,
+  Input,
+  Alert,
+} from "../design-system";
+import {
+  FaArrowLeft,
+  FaEnvelope,
+  FaPhone,
+  FaComment,
+  FaQuestionCircle,
+  FaChevronDown,
+  FaChevronUp,
+  FaCheckCircle,
+} from "react-icons/fa";
 
 interface FAQItem {
   id: number;
@@ -30,10 +43,10 @@ export const SupportPage: React.FC = () => {
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -43,7 +56,9 @@ export const SupportPage: React.FC = () => {
   };
 
   // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
@@ -51,73 +66,80 @@ export const SupportPage: React.FC = () => {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Simple validation
     if (!formData.name || !formData.email || !formData.message) {
-      setFormError('Please fill in all required fields');
+      setFormError("Please fill in all required fields");
       return;
     }
-    
-    if (!formData.email.includes('@')) {
-      setFormError('Please enter a valid email address');
+
+    if (!formData.email.includes("@")) {
+      setFormError("Please enter a valid email address");
       return;
     }
-    
+
     // Clear errors and show success state
     setFormError(null);
     setFormSubmitted(true);
-    
+
     // In a real app, you would send the data to your backend here
     // Form data submitted
   };
 
   // Sample FAQ data
   const faqs: FAQItem[] = [
-    { 
-      id: 1, 
-      question: 'How do I make a single airtime purchase?', 
-      answer: 'To make a single airtime purchase, log in to your account, navigate to the desired network page (MTN, Vodafone, or AirtelTigo), enter the phone number and amount, then click on "Purchase Airtime". Follow the payment instructions to complete your transaction.' 
+    {
+      id: 1,
+      question: "How do I make a single airtime purchase?",
+      answer:
+        'To make a single airtime purchase, log in to your account, navigate to the desired network page (MTN, Vodafone, or AirtelTigo), enter the phone number and amount, then click on "Purchase Airtime". Follow the payment instructions to complete your transaction.',
     },
-    { 
-      id: 2, 
-      question: 'How do I make bulk airtime purchases?', 
-      answer: 'For bulk purchases, go to the MTN page and select the "Bulk Purchase" option. You can either enter multiple numbers manually or upload an Excel file with the required format. Follow the instructions to complete the transaction.' 
+    {
+      id: 2,
+      question: "How do I make bulk airtime purchases?",
+      answer:
+        'For bulk purchases, go to the MTN page and select the "Bulk Purchase" option. You can either enter multiple numbers manually or upload an Excel file with the required format. Follow the instructions to complete the transaction.',
     },
-    { 
-      id: 3, 
-      question: 'What payment methods are accepted?', 
-      answer: 'We accept various payment methods including mobile money (MTN MoMo, Vodafone Cash, AirtelTigo Money), bank transfers, and credit/debit cards. The available payment options will be displayed during checkout.' 
+    {
+      id: 3,
+      question: "What payment methods are accepted?",
+      answer:
+        "We accept various payment methods including mobile money (MTN MoMo, Vodafone Cash, AirtelTigo Money), bank transfers, and credit/debit cards. The available payment options will be displayed during checkout.",
     },
-    { 
-      id: 4, 
-      question: 'How do I check my transaction history?', 
-      answer: 'You can view your transaction history by navigating to the "History" page from your dashboard. This page displays all your past transactions with details such as date, amount, status, and recipient.' 
+    {
+      id: 4,
+      question: "How do I check my transaction history?",
+      answer:
+        'You can view your transaction history by navigating to the "History" page from your dashboard. This page displays all your past transactions with details such as date, amount, status, and recipient.',
     },
-    { 
-      id: 5, 
-      question: 'What should I do if a transaction fails?', 
-      answer: 'If a transaction fails, first check your transaction history to confirm the status. If the amount was deducted but the service wasn\'t delivered, please contact our support team with your transaction details for assistance.' 
+    {
+      id: 5,
+      question: "What should I do if a transaction fails?",
+      answer:
+        "If a transaction fails, first check your transaction history to confirm the status. If the amount was deducted but the service wasn't delivered, please contact our support team with your transaction details for assistance.",
     },
-    { 
-      id: 6, 
-      question: 'How do I register as an agent?', 
-      answer: 'To register as an agent, click on "Register" on the homepage and select "Business Agent" as your account type. Fill in your business details, choose a subscription plan, and complete the registration process.' 
+    {
+      id: 6,
+      question: "How do I register as an agent?",
+      answer:
+        'To register as an agent, click on "Register" on the homepage and select "Business Agent" as your account type. Fill in your business details, choose a subscription plan, and complete the registration process.',
     },
-    { 
-      id: 7, 
-      question: 'What is AFA registration?', 
-      answer: 'AFA (Airtime For All) registration is a special program that allows you to register customers under your agent account. Navigate to the "AFA Registration" page from your dashboard to register new customers.' 
+    {
+      id: 7,
+      question: "What is AFA registration?",
+      answer:
+        'AFA (Airtime For All) registration is a special program that allows you to register users under your agent account. Navigate to the "AFA Registration" page from your dashboard to register new users.',
     },
   ];
 
   // Knowledge base categories
   const knowledgeBaseCategories = [
-    { title: 'Getting Started', count: 12, icon: '🚀' },
-    { title: 'Account & Billing', count: 8, icon: '💳' },
-    { title: 'Airtime Purchases', count: 15, icon: '📱' },
-    { title: 'Bulk Orders', count: 6, icon: '📊' },
-    { title: 'Agent Resources', count: 10, icon: '🏪' },
-    { title: 'Technical Issues', count: 9, icon: '🔧' },
+    { title: "Getting Started", count: 12, icon: "🚀" },
+    { title: "Account & Billing", count: 8, icon: "💳" },
+    { title: "Airtime Purchases", count: 15, icon: "📱" },
+    { title: "Bulk Orders", count: 6, icon: "📊" },
+    { title: "Agent Resources", count: 10, icon: "🏪" },
+    { title: "Technical Issues", count: 9, icon: "🔧" },
   ];
 
   return (
@@ -127,13 +149,17 @@ export const SupportPage: React.FC = () => {
         <Container padding="md">
           <div className="py-4 flex items-center justify-between">
             <div className="flex items-center">
-              <Link to="/" className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors group">
+              <Link
+                to="/"
+                className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
+              >
                 <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
                 <span>Back to Home</span>
               </Link>
             </div>
-            
-            <div className="text-lg font-bold text-gray-900">Support Center</div>
+            <div className="text-lg font-bold text-gray-900">
+              Support Center
+            </div>
             <div className="w-24"></div> {/* Spacer for alignment */}
           </div>
         </Container>
@@ -143,14 +169,16 @@ export const SupportPage: React.FC = () => {
       <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white py-12">
         <Container>
           <div className="text-center max-w-2xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-4">How can we help you?</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-4">
+              How can we help you?
+            </h1>
             <p className="text-blue-100 mb-6">
               Find answers to common questions or reach out to our support team
             </p>
-            
+
             {/* Quick contact options */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-8">
-              <a 
+              <a
                 href="https://wa.me/+233548983019"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -160,8 +188,8 @@ export const SupportPage: React.FC = () => {
                 <span className="text-sm font-medium">WhatsApp Support</span>
                 <span className="text-xs opacity-80">24/7 Support</span>
               </a>
-              
-              <a 
+
+              <a
                 href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -171,8 +199,8 @@ export const SupportPage: React.FC = () => {
                 <span className="text-sm font-medium">Community</span>
                 <span className="text-xs opacity-80">Join WhatsApp Group</span>
               </a>
-              
-              <a 
+
+              <a
                 href="#contact-form"
                 className="col-span-2 sm:col-span-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
               >
@@ -200,9 +228,9 @@ export const SupportPage: React.FC = () => {
               <CardBody>
                 <div className="space-y-3">
                   {knowledgeBaseCategories.map((category) => (
-                    <Link 
+                    <Link
                       key={category.title}
-                      to="#" 
+                      to="#"
                       className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
                     >
                       <div className="flex items-center">
@@ -215,12 +243,12 @@ export const SupportPage: React.FC = () => {
                     </Link>
                   ))}
                 </div>
-                
+
                 <div className="mt-6">
-                  <Button 
-                    variant="outline" 
-                    colorScheme="default" 
-                    size="md" 
+                  <Button
+                    variant="outline"
+                    colorScheme="default"
+                    size="md"
                     fullWidth
                   >
                     Browse All Articles
@@ -235,23 +263,33 @@ export const SupportPage: React.FC = () => {
             {/* FAQs */}
             <Card variant="elevated" size="lg" className="mb-8">
               <CardHeader>
-                <h2 className="text-2xl font-bold text-gray-900">Frequently Asked Questions</h2>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Frequently Asked Questions
+                </h2>
               </CardHeader>
               <CardBody>
                 <div className="space-y-4">
-                  {faqs.map(faq => (
-                    <div 
-                      key={faq.id} 
+                  {faqs.map((faq) => (
+                    <div
+                      key={faq.id}
                       className="border rounded-lg overflow-hidden transition-all duration-200"
                     >
-                      <button 
-                        className={`w-full flex justify-between items-center p-4 text-left ${expandedFAQ === faq.id ? 'bg-blue-50' : 'bg-white'}`}
+                      <button
+                        className={`w-full flex justify-between items-center p-4 text-left ${
+                          expandedFAQ === faq.id ? "bg-blue-50" : "bg-white"
+                        }`}
                         onClick={() => toggleFAQ(faq.id)}
                       >
-                        <span className="font-medium text-gray-900">{faq.question}</span>
-                        {expandedFAQ === faq.id ? <FaChevronUp /> : <FaChevronDown />}
+                        <span className="font-medium text-gray-900">
+                          {faq.question}
+                        </span>
+                        {expandedFAQ === faq.id ? (
+                          <FaChevronUp />
+                        ) : (
+                          <FaChevronDown />
+                        )}
                       </button>
-                      
+
                       {expandedFAQ === faq.id && (
                         <div className="p-4 border-t bg-gray-50">
                           <p className="text-gray-700">{faq.answer}</p>
@@ -266,8 +304,12 @@ export const SupportPage: React.FC = () => {
             {/* Contact Form */}
             <Card variant="elevated" size="lg" id="contact-form">
               <CardHeader>
-                <h2 className="text-2xl font-bold text-gray-900">Contact Support</h2>
-                <p className="text-gray-600 mt-1">Fill out the form below and we'll get back to you shortly.</p>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Contact Support
+                </h2>
+                <p className="text-gray-600 mt-1">
+                  Fill out the form below and we'll get back to you shortly.
+                </p>
               </CardHeader>
               <CardBody>
                 {formSubmitted ? (
@@ -275,21 +317,24 @@ export const SupportPage: React.FC = () => {
                     <div className="mx-auto bg-green-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mb-6">
                       <FaCheckCircle className="text-green-600 text-3xl" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Message Received!</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      Message Received!
+                    </h3>
                     <p className="text-gray-600 mb-6">
-                      Thank you for contacting us. Our support team will respond within 24 hours.
+                      Thank you for contacting us. Our support team will respond
+                      within 24 hours.
                     </p>
-                    <Button 
-                      variant="outline" 
-                      colorScheme="default" 
+                    <Button
+                      variant="outline"
+                      colorScheme="default"
                       size="md"
                       onClick={() => {
                         setFormSubmitted(false);
                         setFormData({
-                          name: '',
-                          email: '',
-                          subject: '',
-                          message: ''
+                          name: "",
+                          email: "",
+                          subject: "",
+                          message: "",
                         });
                       }}
                     >
@@ -303,7 +348,7 @@ export const SupportPage: React.FC = () => {
                         {formError}
                       </Alert>
                     )}
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <Input
                         id="name"
@@ -314,7 +359,7 @@ export const SupportPage: React.FC = () => {
                         placeholder="Enter your full name"
                         required
                       />
-                      
+
                       <Input
                         id="email"
                         name="email"
@@ -326,7 +371,7 @@ export const SupportPage: React.FC = () => {
                         required
                       />
                     </div>
-                    
+
                     <Input
                       id="subject"
                       name="subject"
@@ -335,9 +380,12 @@ export const SupportPage: React.FC = () => {
                       label="Subject"
                       placeholder="What is your inquiry about?"
                     />
-                    
+
                     <div>
-                      <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="message"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Message
                       </label>
                       <textarea
@@ -351,7 +399,7 @@ export const SupportPage: React.FC = () => {
                         required
                       ></textarea>
                     </div>
-                    
+
                     <div className="flex items-center">
                       <input
                         id="privacy"
@@ -360,11 +408,20 @@ export const SupportPage: React.FC = () => {
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         required
                       />
-                      <label htmlFor="privacy" className="ml-2 block text-sm text-gray-700">
-                        I agree to the <Link to="/privacy-policy" className="text-blue-600 hover:text-blue-800">Privacy Policy</Link>
+                      <label
+                        htmlFor="privacy"
+                        className="ml-2 block text-sm text-gray-700"
+                      >
+                        I agree to the{" "}
+                        <Link
+                          to="/privacy-policy"
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          Privacy Policy
+                        </Link>
                       </label>
                     </div>
-                    
+
                     <Button
                       type="submit"
                       variant="primary"

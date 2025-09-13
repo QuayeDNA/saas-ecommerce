@@ -2,32 +2,36 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { userService, type User } from "../../services/user.service";
 import { Button } from "../../design-system/components/button";
-import { 
-  FaArrowLeft, 
-  FaEdit, 
-  FaTrash, 
-  FaUserShield, 
-  FaUserCheck, 
-  FaUserTimes, 
-  FaEnvelope, 
-  FaPhone, 
-  FaBuilding, 
-  FaCalendar, 
-  FaWallet, 
+import {
+  FaArrowLeft,
+  FaEdit,
+  FaTrash,
+  FaUserShield,
+  FaUserCheck,
+  FaUserTimes,
+  FaEnvelope,
+  FaPhone,
+  FaBuilding,
+  FaCalendar,
+  FaWallet,
   FaShoppingCart,
   FaEye,
   FaClock,
   FaCheckCircle,
   FaExclamationTriangle,
   FaUser,
-  FaIdCard
+  FaIdCard,
 } from "react-icons/fa";
 import { orderService } from "../../services/order.service";
 import { Input } from "../../design-system/components/input";
 import type { Order } from "../../types/order";
 import { Modal } from "../../design-system/components/modal";
 import { useToast } from "../../design-system/components/toast";
-import { Card, CardHeader, CardBody } from "../../design-system/components/card";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+} from "../../design-system/components/card";
 
 export default function SuperAdminUserDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,7 +43,9 @@ export default function SuperAdminUserDetailsPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [editData, setEditData] = useState<Partial<User & { subscriptionPlan?: string; subscriptionStatus?: string }>>({});
+  const [editData, setEditData] = useState<
+    Partial<User & { subscriptionPlan?: string; subscriptionStatus?: string }>
+  >({});
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const { addToast } = useToast();
@@ -67,7 +73,9 @@ export default function SuperAdminUserDetailsPage() {
     addToast("Edit mode enabled", "info");
   };
 
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleEditChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setEditData({ ...editData, [e.target.name]: e.target.value });
   };
 
@@ -231,31 +239,43 @@ export default function SuperAdminUserDetailsPage() {
     setImpersonateLoading(true);
     try {
       // Get current admin token from cookies (auth service uses cookies)
-      const Cookies = (await import('js-cookie')).default;
-      const adminToken = Cookies.get('authToken');
-      
+      const Cookies = (await import("js-cookie")).default;
+      const adminToken = Cookies.get("authToken");
+
       if (!adminToken) {
         throw new Error("No admin token found");
       }
-      
+
       // Call the impersonation API
-      const { token, user: impersonatedUser } = await userService.impersonateUser(user._id);
-      
+      const { token, user: impersonatedUser } =
+        await userService.impersonateUser(user._id);
+
       // Use the impersonation service to start impersonation
-      const ImpersonationService = (await import('../../utils/impersonation')).default;
-      ImpersonationService.startImpersonation(adminToken, impersonatedUser, token);
-      
+      const ImpersonationService = (await import("../../utils/impersonation"))
+        .default;
+      ImpersonationService.startImpersonation(
+        adminToken,
+        impersonatedUser,
+        token
+      );
+
       // Show success message
       addToast(`Now impersonating ${impersonatedUser.fullName}`, "success");
-      
+
       // Redirect based on user type
-      if (impersonatedUser.userType === 'agent') {
-        window.location.href = '/agent/dashboard';
-      } else if (impersonatedUser.userType === 'customer') {
-        window.location.href = '/customer/dashboard';
+      if (impersonatedUser.userType === "agent") {
+        window.location.href = "/agent/dashboard";
+      } else if (
+        ["dealer", "super_dealer", "super_agent"].includes(
+          impersonatedUser.userType
+        )
+      ) {
+        window.location.href = "/agent/dashboard";
+      } else if (impersonatedUser.userType === "super_admin") {
+        window.location.href = "/superadmin";
       } else {
         // Fallback to home page
-        window.location.href = '/';
+        window.location.href = "/";
       }
     } catch (e) {
       if (e instanceof Error) {
@@ -271,7 +291,7 @@ export default function SuperAdminUserDetailsPage() {
   const handleViewOrder = (orderId: string) => {
     try {
       // Navigate to the correct order details page
-      window.open(`/orders/${orderId}`, '_blank');
+      window.open(`/orders/${orderId}`, "_blank");
       addToast("Opening order details", "info");
     } catch {
       addToast("Failed to open order details", "error");
@@ -280,45 +300,57 @@ export default function SuperAdminUserDetailsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-600 bg-green-100';
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
-      case 'rejected': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case "active":
+        return "text-green-600 bg-green-100";
+      case "pending":
+        return "text-yellow-600 bg-yellow-100";
+      case "rejected":
+        return "text-red-600 bg-red-100";
+      default:
+        return "text-gray-600 bg-gray-100";
     }
   };
 
   const getUserTypeIcon = (userType: string) => {
     switch (userType) {
-      case 'agent': return <FaUserShield className="text-blue-600" />;
-      case 'customer': return <FaUser className="text-green-600" />;
-      case 'super_admin': return <FaUserCheck className="text-purple-600" />;
-      default: return <FaUser className="text-gray-600" />;
+      case "agent":
+        return <FaUserShield className="text-blue-600" />;
+      case "customer":
+        return <FaUser className="text-green-600" />;
+      case "super_admin":
+        return <FaUserCheck className="text-purple-600" />;
+      default:
+        return <FaUser className="text-gray-600" />;
     }
   };
 
   const getUserTypeLabel = (userType: string) => {
     switch (userType) {
-      case 'agent': return 'Agent';
-      case 'customer': return 'Customer';
-      case 'super_admin': return 'Super Admin';
-      default: return userType;
+      case "agent":
+        return "Agent";
+      case "customer":
+        return "Customer";
+      case "super_admin":
+        return "Super Admin";
+      default:
+        return userType;
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS'
+    return new Intl.NumberFormat("en-GH", {
+      style: "currency",
+      currency: "GHS",
     }).format(amount);
   };
 
   const formatDate = (date: string | Date) => {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(date));
   };
 
@@ -327,7 +359,9 @@ export default function SuperAdminUserDetailsPage() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-sm sm:text-base text-gray-600">Loading user details...</p>
+          <p className="text-sm sm:text-base text-gray-600">
+            Loading user details...
+          </p>
         </div>
       </div>
     );
@@ -338,9 +372,11 @@ export default function SuperAdminUserDetailsPage() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <FaExclamationTriangle className="text-red-500 text-3xl sm:text-4xl mx-auto mb-4" />
-          <p className="text-red-600 text-base sm:text-lg">{error || "User not found"}</p>
-          <Button 
-            variant="outline" 
+          <p className="text-red-600 text-base sm:text-lg">
+            {error || "User not found"}
+          </p>
+          <Button
+            variant="outline"
             onClick={() => navigate(-1)}
             className="mt-4"
             size="sm"
@@ -359,8 +395,8 @@ export default function SuperAdminUserDetailsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-3 sm:space-x-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => navigate(-1)}
               size="sm"
               className="flex items-center"
@@ -369,8 +405,12 @@ export default function SuperAdminUserDetailsPage() {
               <span className="hidden sm:inline">Back</span>
             </Button>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">User Details</h1>
-              <p className="text-sm sm:text-base text-gray-600">Manage user account and permissions</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                User Details
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">
+                Manage user account and permissions
+              </p>
             </div>
           </div>
         </div>
@@ -384,16 +424,24 @@ export default function SuperAdminUserDetailsPage() {
                   {user.fullName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{user.fullName}</h2>
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                    {user.fullName}
+                  </h2>
                   <div className="flex flex-row sm:items-center gap-2 sm:gap-2 text-sm text-gray-600 mt-1">
                     <div className="flex items-center gap-1">
                       {getUserTypeIcon(user.userType)}
                       <span>{getUserTypeLabel(user.userType)}</span>
                       {user.agentCode && (
-                        <span className="text-xs text-gray-500">({user.agentCode})</span>
+                        <span className="text-xs text-gray-500">
+                          ({user.agentCode})
+                        </span>
                       )}
                     </div>
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
+                    <span
+                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                        user.status
+                      )}`}
+                    >
                       {user.status}
                     </span>
                   </div>
@@ -409,7 +457,7 @@ export default function SuperAdminUserDetailsPage() {
                   <FaEdit className="mr-2" />
                   <span className="">Edit</span>
                 </Button>
-                {user.userType !== 'super_admin' && (
+                {user.userType !== "super_admin" && (
                   <Button
                     variant="primary"
                     size="sm"
@@ -436,35 +484,47 @@ export default function SuperAdminUserDetailsPage() {
                     <FaEnvelope className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm text-gray-500">Email</p>
-                      <p className="text-sm sm:text-base text-gray-900 truncate">{user.email}</p>
+                      <p className="text-sm sm:text-base text-gray-900 truncate">
+                        {user.email}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
                     <FaPhone className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm text-gray-500">Phone</p>
-                      <p className="text-sm sm:text-base text-gray-900">{user.phone}</p>
+                      <p className="text-sm sm:text-base text-gray-900">
+                        {user.phone}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
                     <FaCalendar className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-500">Registered</p>
-                      <p className="text-sm sm:text-base text-gray-900">{user.createdAt ? formatDate(user.createdAt) : 'N/A'}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        Registered
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-900">
+                        {user.createdAt ? formatDate(user.createdAt) : "N/A"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
                     <FaWallet className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-500">Wallet Balance</p>
-                      <p className="text-sm sm:text-base text-gray-900">{formatCurrency(user.walletBalance || 0)}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        Wallet Balance
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-900">
+                        {formatCurrency(user.walletBalance || 0)}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Business Information (for agents) */}
-              {user.userType === 'agent' && (
+              {user.userType === "agent" && (
                 <div className="space-y-4">
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                     <FaBuilding className="mr-2 text-green-600" />
@@ -474,29 +534,45 @@ export default function SuperAdminUserDetailsPage() {
                     <div className="flex items-start space-x-3">
                       <FaBuilding className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm text-gray-500">Business Name</p>
-                        <p className="text-sm sm:text-base text-gray-900 truncate">{user.businessName || 'N/A'}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          Business Name
+                        </p>
+                        <p className="text-sm sm:text-base text-gray-900 truncate">
+                          {user.businessName || "N/A"}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
                       <FaUserShield className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm text-gray-500">Business Category</p>
-                        <p className="text-sm sm:text-base text-gray-900 capitalize">{user.businessCategory || 'N/A'}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          Business Category
+                        </p>
+                        <p className="text-sm sm:text-base text-gray-900 capitalize">
+                          {user.businessCategory || "N/A"}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
                       <FaCheckCircle className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm text-gray-500">Subscription Plan</p>
-                        <p className="text-sm sm:text-base text-gray-900 capitalize">{user.subscriptionPlan || 'N/A'}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          Subscription Plan
+                        </p>
+                        <p className="text-sm sm:text-base text-gray-900 capitalize">
+                          {user.subscriptionPlan || "N/A"}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
                       <FaClock className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm text-gray-500">Subscription Status</p>
-                        <p className="text-sm sm:text-base text-gray-900 capitalize">{user.subscriptionStatus || 'N/A'}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          Subscription Status
+                        </p>
+                        <p className="text-sm sm:text-base text-gray-900 capitalize">
+                          {user.subscriptionStatus || "N/A"}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -507,7 +583,7 @@ export default function SuperAdminUserDetailsPage() {
             {/* Action Buttons */}
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="flex flex-wrap gap-2 sm:gap-3">
-                {user.userType === 'agent' && user.status === 'pending' && (
+                {user.userType === "agent" && user.status === "pending" && (
                   <>
                     <Button
                       variant="success"
@@ -582,7 +658,9 @@ export default function SuperAdminUserDetailsPage() {
         {editMode && (
           <Card>
             <CardHeader>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Edit User Information</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+                Edit User Information
+              </h3>
             </CardHeader>
             <CardBody>
               {editError && (
@@ -594,27 +672,27 @@ export default function SuperAdminUserDetailsPage() {
                 <Input
                   label="Full Name"
                   name="fullName"
-                  value={editData.fullName || ''}
+                  value={editData.fullName || ""}
                   onChange={handleEditChange}
                 />
                 <Input
                   label="Email"
                   name="email"
-                  value={editData.email || ''}
+                  value={editData.email || ""}
                   onChange={handleEditChange}
                 />
                 <Input
                   label="Phone"
                   name="phone"
-                  value={editData.phone || ''}
+                  value={editData.phone || ""}
                   onChange={handleEditChange}
                 />
-                {user.userType === 'agent' && (
+                {user.userType === "agent" && (
                   <>
                     <Input
                       label="Business Name"
                       name="businessName"
-                      value={editData.businessName || ''}
+                      value={editData.businessName || ""}
                       onChange={handleEditChange}
                     />
                     <div>
@@ -623,7 +701,7 @@ export default function SuperAdminUserDetailsPage() {
                       </label>
                       <select
                         name="businessCategory"
-                        value={editData.businessCategory || ''}
+                        value={editData.businessCategory || ""}
                         onChange={handleEditChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
@@ -641,7 +719,7 @@ export default function SuperAdminUserDetailsPage() {
                       </label>
                       <select
                         name="subscriptionPlan"
-                        value={editData.subscriptionPlan || ''}
+                        value={editData.subscriptionPlan || ""}
                         onChange={handleEditChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
@@ -657,7 +735,7 @@ export default function SuperAdminUserDetailsPage() {
                       </label>
                       <select
                         name="subscriptionStatus"
-                        value={editData.subscriptionStatus || ''}
+                        value={editData.subscriptionStatus || ""}
                         onChange={handleEditChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
@@ -704,7 +782,7 @@ export default function SuperAdminUserDetailsPage() {
                 Recent Orders
               </h3>
               <div className="text-xs sm:text-sm text-gray-500">
-                {orders.length} order{orders.length !== 1 ? 's' : ''}
+                {orders.length} order{orders.length !== 1 ? "s" : ""}
               </div>
             </div>
           </CardHeader>
@@ -712,12 +790,16 @@ export default function SuperAdminUserDetailsPage() {
             {ordersLoading ? (
               <div className="text-center py-6 sm:py-8">
                 <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-sm sm:text-base text-gray-600">Loading orders...</p>
+                <p className="text-sm sm:text-base text-gray-600">
+                  Loading orders...
+                </p>
               </div>
             ) : orders.length === 0 ? (
               <div className="text-center py-6 sm:py-8">
                 <FaShoppingCart className="text-gray-400 text-3xl sm:text-4xl mx-auto mb-4" />
-                <p className="text-sm sm:text-base text-gray-500">No orders found for this user.</p>
+                <p className="text-sm sm:text-base text-gray-500">
+                  No orders found for this user.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -742,18 +824,23 @@ export default function SuperAdminUserDetailsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {orders.map(order => (
+                    {orders.map((order) => (
                       <tr key={order._id} className="hover:bg-gray-50">
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="text-xs sm:text-sm font-medium text-gray-900">
                             {order.orderNumber || order._id}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                            {order.items.length} item
+                            {order.items.length !== 1 ? "s" : ""}
                           </div>
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                              order.status
+                            )}`}
+                          >
                             {order.status}
                           </span>
                         </td>
@@ -761,13 +848,15 @@ export default function SuperAdminUserDetailsPage() {
                           {formatCurrency(order.total || 0)}
                         </td>
                         <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
-                          {order.createdAt ? formatDate(order.createdAt) : 'N/A'}
+                          {order.createdAt
+                            ? formatDate(order.createdAt)
+                            : "N/A"}
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <Button
                             size="xs"
                             variant="outline"
-                            onClick={() => handleViewOrder(order._id || '')}
+                            onClick={() => handleViewOrder(order._id || "")}
                           >
                             <FaEye className="w-3 h-3" />
                           </Button>
@@ -783,15 +872,21 @@ export default function SuperAdminUserDetailsPage() {
 
         {/* Modals */}
         {showResetModal && (
-          <Modal isOpen={showResetModal} onClose={() => setShowResetModal(false)} title="Reset Password">
+          <Modal
+            isOpen={showResetModal}
+            onClose={() => setShowResetModal(false)}
+            title="Reset Password"
+          >
             <div className="space-y-4">
-              <p className="text-sm sm:text-base text-gray-600">Enter a new password for this user.</p>
+              <p className="text-sm sm:text-base text-gray-600">
+                Enter a new password for this user.
+              </p>
               <Input
                 label="New Password"
                 name="newPassword"
                 type="password"
                 value={resetPassword}
-                onChange={e => setResetPassword(e.target.value)}
+                onChange={(e) => setResetPassword(e.target.value)}
                 minLength={6}
                 required
               />
@@ -826,15 +921,23 @@ export default function SuperAdminUserDetailsPage() {
         )}
 
         {showDeleteConfirm && (
-          <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Delete User">
+          <Modal
+            isOpen={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            title="Delete User"
+          >
             <div className="space-y-4">
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                 <div className="flex items-start">
                   <FaExclamationTriangle className="text-red-500 mr-3 mt-1 flex-shrink-0" />
                   <div>
-                    <h4 className="text-red-800 font-semibold text-sm sm:text-base">Warning</h4>
+                    <h4 className="text-red-800 font-semibold text-sm sm:text-base">
+                      Warning
+                    </h4>
                     <p className="text-red-700 text-xs sm:text-sm mt-1">
-                      Are you sure you want to delete this user? This action cannot be undone and will permanently remove all user data.
+                      Are you sure you want to delete this user? This action
+                      cannot be undone and will permanently remove all user
+                      data.
                     </p>
                   </div>
                 </div>
@@ -866,4 +969,4 @@ export default function SuperAdminUserDetailsPage() {
       </div>
     </div>
   );
-} 
+}

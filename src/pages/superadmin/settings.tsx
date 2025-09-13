@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  FaPowerOff, 
-  FaUserShield, 
-  FaPercentage, 
+import {
+  FaPowerOff,
+  FaUserShield,
+  FaPercentage,
   FaEdit,
   FaSave,
   FaTimes,
@@ -15,29 +15,34 @@ import {
   FaCheck,
   FaBox,
   FaMobile,
-  FaInfoCircle
+  FaInfoCircle,
 } from "react-icons/fa";
 import { Button } from "../../design-system/components/button";
 import { Card } from "../../design-system/components/card";
 import { Input } from "../../design-system/components/input";
 import { Badge } from "../../design-system/components/badge";
-import { settingsService, type SiteSettings, type CommissionRates, type ApiSettings } from "../../services/settings.service";
+import {
+  settingsService,
+  type SiteSettings,
+  type CommissionRates,
+  type ApiSettings,
+} from "../../services/settings.service";
 import { Alert } from "../../design-system/components/alert";
-
 
 export default function SuperAdminSettingsPage() {
   const navigate = useNavigate();
-  
+
   // Site Management
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
     isSiteOpen: true,
-    customMessage: "We're currently performing maintenance. Please check back later."
+    customMessage:
+      "We're currently performing maintenance. Please check back later.",
   });
 
   // Commission Rates
   const [commissionRates, setCommissionRates] = useState<CommissionRates>({
     agentCommission: 5.0,
-    customerCommission: 2.5
+    customerCommission: 2.5,
   });
 
   // API Settings
@@ -45,42 +50,48 @@ export default function SuperAdminSettingsPage() {
     mtnApiKey: "",
     telecelApiKey: "",
     airtelTigoApiKey: "",
-    apiEndpoint: "https://api.telecomsaas.com"
+    apiEndpoint: "https://api.telecomsaas.com",
   });
 
   // Form States
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error" | "info";
+    text: string;
+  } | null>(null);
 
   // Password Reset
   const [passwordReset, setPasswordReset] = useState({
     userId: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
 
   // User Role Management
   const [userRole, setUserRole] = useState({
     userId: "",
-    newRole: "customer"
+    newRole: "customer",
   });
 
   // Admin Password Change
   const [adminPassword, setAdminPassword] = useState({
     currentPassword: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
 
   const handleSiteToggle = async () => {
     setLoading(true);
     try {
       const result = await settingsService.toggleSiteStatus();
-      setSiteSettings(prev => ({ ...prev, isSiteOpen: result.isSiteOpen }));
-      setMessage({ type: 'success', text: `Site ${result.isSiteOpen ? 'opened' : 'closed'} successfully` });
+      setSiteSettings((prev) => ({ ...prev, isSiteOpen: result.isSiteOpen }));
+      setMessage({
+        type: "success",
+        text: `Site ${result.isSiteOpen ? "opened" : "closed"} successfully`,
+      });
     } catch {
-      setMessage({ type: 'error', text: 'Failed to update site status' });
+      setMessage({ type: "error", text: "Failed to update site status" });
     } finally {
       setLoading(false);
     }
@@ -90,20 +101,23 @@ export default function SuperAdminSettingsPage() {
     setLoading(true);
     try {
       switch (section) {
-        case 'Site':
+        case "Site":
           await settingsService.updateSiteSettings(siteSettings);
           break;
-        case 'Commission':
+        case "Commission":
           await settingsService.updateCommissionRates(commissionRates);
           break;
-        case 'API':
+        case "API":
           await settingsService.updateApiSettings(apiSettings);
           break;
       }
-      setMessage({ type: 'success', text: `${section} settings saved successfully` });
+      setMessage({
+        type: "success",
+        text: `${section} settings saved successfully`,
+      });
       setEditingSection(null);
     } catch {
-      setMessage({ type: 'error', text: `Failed to save ${section} settings` });
+      setMessage({ type: "error", text: `Failed to save ${section} settings` });
     } finally {
       setLoading(false);
     }
@@ -111,20 +125,20 @@ export default function SuperAdminSettingsPage() {
 
   const handlePasswordReset = async () => {
     if (passwordReset.newPassword !== passwordReset.confirmPassword) {
-      setMessage({ type: 'error', text: 'Passwords do not match' });
+      setMessage({ type: "error", text: "Passwords do not match" });
       return;
     }
-    
+
     setLoading(true);
     try {
       await settingsService.resetUserPassword({
         userId: passwordReset.userId,
-        newPassword: passwordReset.newPassword
+        newPassword: passwordReset.newPassword,
       });
-      setMessage({ type: 'success', text: 'Password reset successfully' });
+      setMessage({ type: "success", text: "Password reset successfully" });
       setPasswordReset({ userId: "", newPassword: "", confirmPassword: "" });
     } catch {
-      setMessage({ type: 'error', text: 'Failed to reset password' });
+      setMessage({ type: "error", text: "Failed to reset password" });
     } finally {
       setLoading(false);
     }
@@ -135,12 +149,18 @@ export default function SuperAdminSettingsPage() {
     try {
       await settingsService.changeUserRole({
         userId: userRole.userId,
-        newRole: userRole.newRole as 'customer' | 'agent' | 'admin' | 'super_admin'
+        newRole: userRole.newRole as
+          | "agent"
+          | "super_agent"
+          | "dealer"
+          | "super_dealer"
+          | "admin"
+          | "super_admin",
       });
-      setMessage({ type: 'success', text: 'User role updated successfully' });
+      setMessage({ type: "success", text: "User role updated successfully" });
       setUserRole({ userId: "", newRole: "customer" });
     } catch {
-      setMessage({ type: 'error', text: 'Failed to update user role' });
+      setMessage({ type: "error", text: "Failed to update user role" });
     } finally {
       setLoading(false);
     }
@@ -148,20 +168,27 @@ export default function SuperAdminSettingsPage() {
 
   const handleAdminPasswordChange = async () => {
     if (adminPassword.newPassword !== adminPassword.confirmPassword) {
-      setMessage({ type: 'error', text: 'Passwords do not match' });
+      setMessage({ type: "error", text: "Passwords do not match" });
       return;
     }
-    
+
     setLoading(true);
     try {
       await settingsService.changeAdminPassword({
         currentPassword: adminPassword.currentPassword,
-        newPassword: adminPassword.newPassword
+        newPassword: adminPassword.newPassword,
       });
-      setMessage({ type: 'success', text: 'Admin password changed successfully' });
-      setAdminPassword({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setMessage({
+        type: "success",
+        text: "Admin password changed successfully",
+      });
+      setAdminPassword({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch {
-      setMessage({ type: 'error', text: 'Failed to change admin password' });
+      setMessage({ type: "error", text: "Failed to change admin password" });
     } finally {
       setLoading(false);
     }
@@ -175,7 +202,9 @@ export default function SuperAdminSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-          <p className="text-gray-600 mt-1">Manage site configuration, user permissions, and system preferences</p>
+          <p className="text-gray-600 mt-1">
+            Manage site configuration, user permissions, and system preferences
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge colorScheme={siteSettings.isSiteOpen ? "success" : "error"}>
@@ -197,9 +226,21 @@ export default function SuperAdminSettingsPage() {
       {/* Message Display */}
       {message && (
         <Alert
-          status={message.type === 'success' ? 'success' : message.type === 'error' ? 'error' : 'info'}
+          status={
+            message.type === "success"
+              ? "success"
+              : message.type === "error"
+              ? "error"
+              : "info"
+          }
           onClose={clearMessage}
-          title={message.type === 'success' ? 'Success' : message.type === 'error' ? 'Error' : 'Info'}
+          title={
+            message.type === "success"
+              ? "Success"
+              : message.type === "error"
+              ? "Error"
+              : "Info"
+          }
         >
           {message.text}
         </Alert>
@@ -211,14 +252,16 @@ export default function SuperAdminSettingsPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FaGlobe className="text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Site Management</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Site Management
+              </h2>
             </div>
-            {editingSection === 'site' ? (
+            {editingSection === "site" ? (
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="primary"
-                  onClick={() => handleSaveSettings('Site')}
+                  onClick={() => handleSaveSettings("Site")}
                   disabled={loading}
                 >
                   <FaSave className="w-3 h-3 mr-1" />
@@ -237,7 +280,7 @@ export default function SuperAdminSettingsPage() {
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => setEditingSection('site')}
+                onClick={() => setEditingSection("site")}
               >
                 <FaEdit className="w-3 h-3 mr-1" />
                 Edit
@@ -251,7 +294,9 @@ export default function SuperAdminSettingsPage() {
               <div>
                 <h3 className="font-medium text-gray-900">Site Status</h3>
                 <p className="text-sm text-gray-600">
-                  {siteSettings.isSiteOpen ? 'Site is currently open to users' : 'Site is currently closed to users'}
+                  {siteSettings.isSiteOpen
+                    ? "Site is currently open to users"
+                    : "Site is currently closed to users"}
                 </p>
               </div>
               <Button
@@ -274,14 +319,19 @@ export default function SuperAdminSettingsPage() {
             </div>
 
             {/* Custom Message */}
-            {editingSection === 'site' && (
+            {editingSection === "site" && (
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Custom Message (when site is closed)
                 </label>
                 <textarea
                   value={siteSettings.customMessage}
-                  onChange={(e) => setSiteSettings(prev => ({ ...prev, customMessage: e.target.value }))}
+                  onChange={(e) =>
+                    setSiteSettings((prev) => ({
+                      ...prev,
+                      customMessage: e.target.value,
+                    }))
+                  }
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   rows={3}
                   placeholder="Enter custom message to display when site is closed..."
@@ -296,7 +346,9 @@ export default function SuperAdminSettingsPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FaUserShield className="text-green-600" />
-              <h2 className="text-lg font-semibold text-gray-900">User Management</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                User Management
+              </h2>
             </div>
           </div>
 
@@ -308,27 +360,46 @@ export default function SuperAdminSettingsPage() {
                 <Input
                   label="User ID"
                   value={passwordReset.userId}
-                  onChange={(e) => setPasswordReset(prev => ({ ...prev, userId: e.target.value }))}
+                  onChange={(e) =>
+                    setPasswordReset((prev) => ({
+                      ...prev,
+                      userId: e.target.value,
+                    }))
+                  }
                   placeholder="Enter user ID"
                 />
                 <Input
                   label="New Password"
                   type="password"
                   value={passwordReset.newPassword}
-                  onChange={(e) => setPasswordReset(prev => ({ ...prev, newPassword: e.target.value }))}
+                  onChange={(e) =>
+                    setPasswordReset((prev) => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                    }))
+                  }
                   placeholder="Enter new password"
                 />
                 <Input
                   label="Confirm Password"
                   type="password"
                   value={passwordReset.confirmPassword}
-                  onChange={(e) => setPasswordReset(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  onChange={(e) =>
+                    setPasswordReset((prev) => ({
+                      ...prev,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
                   placeholder="Confirm new password"
                 />
                 <Button
                   variant="primary"
                   onClick={handlePasswordReset}
-                  disabled={loading || !passwordReset.userId || !passwordReset.newPassword}
+                  disabled={
+                    loading ||
+                    !passwordReset.userId ||
+                    !passwordReset.newPassword
+                  }
                 >
                   <FaKey className="w-3 h-3 mr-1" />
                   Reset Password
@@ -343,7 +414,9 @@ export default function SuperAdminSettingsPage() {
                 <Input
                   label="User ID"
                   value={userRole.userId}
-                  onChange={(e) => setUserRole(prev => ({ ...prev, userId: e.target.value }))}
+                  onChange={(e) =>
+                    setUserRole((prev) => ({ ...prev, userId: e.target.value }))
+                  }
                   placeholder="Enter user ID"
                 />
                 <div>
@@ -352,7 +425,12 @@ export default function SuperAdminSettingsPage() {
                   </label>
                   <select
                     value={userRole.newRole}
-                    onChange={(e) => setUserRole(prev => ({ ...prev, newRole: e.target.value }))}
+                    onChange={(e) =>
+                      setUserRole((prev) => ({
+                        ...prev,
+                        newRole: e.target.value,
+                      }))
+                    }
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="customer">Customer</option>
@@ -374,33 +452,54 @@ export default function SuperAdminSettingsPage() {
 
             {/* Admin Password Change */}
             <div className="space-y-3 pt-4 border-t border-gray-200">
-              <h3 className="font-medium text-gray-900">Change Admin Password</h3>
+              <h3 className="font-medium text-gray-900">
+                Change Admin Password
+              </h3>
               <div className="grid grid-cols-1 gap-3">
                 <Input
                   label="Current Password"
                   type="password"
                   value={adminPassword.currentPassword}
-                  onChange={(e) => setAdminPassword(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  onChange={(e) =>
+                    setAdminPassword((prev) => ({
+                      ...prev,
+                      currentPassword: e.target.value,
+                    }))
+                  }
                   placeholder="Enter current password"
                 />
                 <Input
                   label="New Password"
                   type="password"
                   value={adminPassword.newPassword}
-                  onChange={(e) => setAdminPassword(prev => ({ ...prev, newPassword: e.target.value }))}
+                  onChange={(e) =>
+                    setAdminPassword((prev) => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                    }))
+                  }
                   placeholder="Enter new password"
                 />
                 <Input
                   label="Confirm New Password"
                   type="password"
                   value={adminPassword.confirmPassword}
-                  onChange={(e) => setAdminPassword(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  onChange={(e) =>
+                    setAdminPassword((prev) => ({
+                      ...prev,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
                   placeholder="Confirm new password"
                 />
                 <Button
                   variant="primary"
                   onClick={handleAdminPasswordChange}
-                  disabled={loading || !adminPassword.currentPassword || !adminPassword.newPassword}
+                  disabled={
+                    loading ||
+                    !adminPassword.currentPassword ||
+                    !adminPassword.newPassword
+                  }
                 >
                   <FaKey className="w-3 h-3 mr-1" />
                   Change Password
@@ -415,14 +514,16 @@ export default function SuperAdminSettingsPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FaPercentage className="text-purple-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Commission Rates</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Commission Rates
+              </h2>
             </div>
-            {editingSection === 'commission' ? (
+            {editingSection === "commission" ? (
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="primary"
-                  onClick={() => handleSaveSettings('Commission')}
+                  onClick={() => handleSaveSettings("Commission")}
                   disabled={loading}
                 >
                   <FaSave className="w-3 h-3 mr-1" />
@@ -441,7 +542,7 @@ export default function SuperAdminSettingsPage() {
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => setEditingSection('commission')}
+                onClick={() => setEditingSection("commission")}
               >
                 <FaEdit className="w-3 h-3 mr-1" />
                 Edit
@@ -455,18 +556,24 @@ export default function SuperAdminSettingsPage() {
                 <div className="flex items-center gap-2">
                   <FaStore className="text-blue-600" />
                   <div>
-                    <h3 className="font-medium text-gray-900">Agent Commission</h3>
-                    <p className="text-sm text-gray-600">Percentage earned by agents</p>
+                    <h3 className="font-medium text-gray-900">
+                      Agent Commission
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Percentage earned by agents
+                    </p>
                   </div>
                 </div>
-                {editingSection === 'commission' ? (
+                {editingSection === "commission" ? (
                   <Input
                     type="number"
                     value={commissionRates.agentCommission}
-                    onChange={(e) => setCommissionRates(prev => ({ 
-                      ...prev, 
-                      agentCommission: parseFloat(e.target.value) || 0 
-                    }))}
+                    onChange={(e) =>
+                      setCommissionRates((prev) => ({
+                        ...prev,
+                        agentCommission: parseFloat(e.target.value) || 0,
+                      }))
+                    }
                     className="w-24"
                     min="0"
                     max="100"
@@ -483,18 +590,24 @@ export default function SuperAdminSettingsPage() {
                 <div className="flex items-center gap-2">
                   <FaUser className="text-green-600" />
                   <div>
-                    <h3 className="font-medium text-gray-900">Customer Commission</h3>
-                    <p className="text-sm text-gray-600">Percentage earned by customers</p>
+                    <h3 className="font-medium text-gray-900">
+                      Customer Commission
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Percentage earned by customers
+                    </p>
                   </div>
                 </div>
-                {editingSection === 'commission' ? (
+                {editingSection === "commission" ? (
                   <Input
                     type="number"
                     value={commissionRates.customerCommission}
-                    onChange={(e) => setCommissionRates(prev => ({ 
-                      ...prev, 
-                      customerCommission: parseFloat(e.target.value) || 0 
-                    }))}
+                    onChange={(e) =>
+                      setCommissionRates((prev) => ({
+                        ...prev,
+                        customerCommission: parseFloat(e.target.value) || 0,
+                      }))
+                    }
                     className="w-24"
                     min="0"
                     max="100"
@@ -515,14 +628,16 @@ export default function SuperAdminSettingsPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FaDatabase className="text-orange-600" />
-              <h2 className="text-lg font-semibold text-gray-900">API Settings</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                API Settings
+              </h2>
             </div>
-            {editingSection === 'api' ? (
+            {editingSection === "api" ? (
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="primary"
-                  onClick={() => handleSaveSettings('API')}
+                  onClick={() => handleSaveSettings("API")}
                   disabled={loading}
                 >
                   <FaSave className="w-3 h-3 mr-1" />
@@ -541,7 +656,7 @@ export default function SuperAdminSettingsPage() {
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => setEditingSection('api')}
+                onClick={() => setEditingSection("api")}
               >
                 <FaEdit className="w-3 h-3 mr-1" />
                 Edit
@@ -550,33 +665,53 @@ export default function SuperAdminSettingsPage() {
           </div>
 
           <div className="space-y-4">
-            {editingSection === 'api' ? (
+            {editingSection === "api" ? (
               <div className="space-y-3">
                 <Input
                   label="MTN API Key"
                   type="password"
                   value={apiSettings.mtnApiKey}
-                  onChange={(e) => setApiSettings(prev => ({ ...prev, mtnApiKey: e.target.value }))}
+                  onChange={(e) =>
+                    setApiSettings((prev) => ({
+                      ...prev,
+                      mtnApiKey: e.target.value,
+                    }))
+                  }
                   placeholder="Enter MTN API key"
                 />
                 <Input
                   label="Telecel API Key"
                   type="password"
                   value={apiSettings.telecelApiKey}
-                  onChange={(e) => setApiSettings(prev => ({ ...prev, telecelApiKey: e.target.value }))}
+                  onChange={(e) =>
+                    setApiSettings((prev) => ({
+                      ...prev,
+                      telecelApiKey: e.target.value,
+                    }))
+                  }
                   placeholder="Enter Telecel API key"
                 />
                 <Input
                   label="AirtelTigo API Key"
                   type="password"
                   value={apiSettings.airtelTigoApiKey}
-                  onChange={(e) => setApiSettings(prev => ({ ...prev, airtelTigoApiKey: e.target.value }))}
+                  onChange={(e) =>
+                    setApiSettings((prev) => ({
+                      ...prev,
+                      airtelTigoApiKey: e.target.value,
+                    }))
+                  }
                   placeholder="Enter AirtelTigo API key"
                 />
                 <Input
                   label="API Endpoint"
                   value={apiSettings.apiEndpoint}
-                  onChange={(e) => setApiSettings(prev => ({ ...prev, apiEndpoint: e.target.value }))}
+                  onChange={(e) =>
+                    setApiSettings((prev) => ({
+                      ...prev,
+                      apiEndpoint: e.target.value,
+                    }))
+                  }
                   placeholder="https://api.telecomsaas.com"
                 />
               </div>
@@ -586,11 +721,13 @@ export default function SuperAdminSettingsPage() {
                   <div>
                     <h3 className="font-medium text-gray-900">MTN API</h3>
                     <p className="text-sm text-gray-600">
-                      {apiSettings.mtnApiKey ? 'Configured' : 'Not configured'}
+                      {apiSettings.mtnApiKey ? "Configured" : "Not configured"}
                     </p>
                   </div>
-                                    <Badge colorScheme={apiSettings.mtnApiKey ? "success" : "error"}>
-                    {apiSettings.mtnApiKey ? 'Active' : 'Inactive'}
+                  <Badge
+                    colorScheme={apiSettings.mtnApiKey ? "success" : "error"}
+                  >
+                    {apiSettings.mtnApiKey ? "Active" : "Inactive"}
                   </Badge>
                 </div>
 
@@ -598,23 +735,37 @@ export default function SuperAdminSettingsPage() {
                   <div>
                     <h3 className="font-medium text-gray-900">Telecel API</h3>
                     <p className="text-sm text-gray-600">
-                      {apiSettings.telecelApiKey ? 'Configured' : 'Not configured'}
+                      {apiSettings.telecelApiKey
+                        ? "Configured"
+                        : "Not configured"}
                     </p>
                   </div>
-                  <Badge colorScheme={apiSettings.telecelApiKey ? "success" : "error"}>
-                    {apiSettings.telecelApiKey ? 'Active' : 'Inactive'}
+                  <Badge
+                    colorScheme={
+                      apiSettings.telecelApiKey ? "success" : "error"
+                    }
+                  >
+                    {apiSettings.telecelApiKey ? "Active" : "Inactive"}
                   </Badge>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <h3 className="font-medium text-gray-900">AirtelTigo API</h3>
+                    <h3 className="font-medium text-gray-900">
+                      AirtelTigo API
+                    </h3>
                     <p className="text-sm text-gray-600">
-                      {apiSettings.airtelTigoApiKey ? 'Configured' : 'Not configured'}
+                      {apiSettings.airtelTigoApiKey
+                        ? "Configured"
+                        : "Not configured"}
                     </p>
                   </div>
-                  <Badge colorScheme={apiSettings.airtelTigoApiKey ? "success" : "error"}>
-                    {apiSettings.airtelTigoApiKey ? 'Active' : 'Inactive'}
+                  <Badge
+                    colorScheme={
+                      apiSettings.airtelTigoApiKey ? "success" : "error"
+                    }
+                  >
+                    {apiSettings.airtelTigoApiKey ? "Active" : "Inactive"}
                   </Badge>
                 </div>
               </div>
@@ -628,7 +779,9 @@ export default function SuperAdminSettingsPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <FaBox className="text-indigo-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Product & Service Management</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Product & Service Management
+            </h2>
           </div>
         </div>
 
@@ -638,8 +791,14 @@ export default function SuperAdminSettingsPage() {
               <FaMobile className="text-yellow-600" />
               <h3 className="font-medium text-gray-900">MTN Bundles</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-3">Manage MTN data bundles and pricing</p>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/superadmin/packages')}>
+            <p className="text-sm text-gray-600 mb-3">
+              Manage MTN data bundles and pricing
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate("/superadmin/packages")}
+            >
               <FaEdit className="w-3 h-3 mr-1" />
               Manage Bundles
             </Button>
@@ -650,8 +809,14 @@ export default function SuperAdminSettingsPage() {
               <FaMobile className="text-blue-600" />
               <h3 className="font-medium text-gray-900">Telecel Bundles</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-3">Manage Telecel data bundles and pricing</p>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/superadmin/packages')}>
+            <p className="text-sm text-gray-600 mb-3">
+              Manage Telecel data bundles and pricing
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate("/superadmin/packages")}
+            >
               <FaEdit className="w-3 h-3 mr-1" />
               Manage Bundles
             </Button>
@@ -662,8 +827,14 @@ export default function SuperAdminSettingsPage() {
               <FaMobile className="text-red-600" />
               <h3 className="font-medium text-gray-900">AirtelTigo Bundles</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-3">Manage AirtelTigo data bundles and pricing</p>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/superadmin/packages')}>
+            <p className="text-sm text-gray-600 mb-3">
+              Manage AirtelTigo data bundles and pricing
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate("/superadmin/packages")}
+            >
               <FaEdit className="w-3 h-3 mr-1" />
               Manage Bundles
             </Button>
@@ -675,7 +846,9 @@ export default function SuperAdminSettingsPage() {
       <Card>
         <div className="flex items-center gap-2 mb-4">
           <FaInfoCircle className="text-blue-600" />
-          <h2 className="text-lg font-semibold text-gray-900">System Information</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            System Information
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -712,4 +885,4 @@ export default function SuperAdminSettingsPage() {
       </Card>
     </div>
   );
-} 
+}

@@ -1,5 +1,5 @@
 // src/services/analytics.service.ts
-import { apiClient } from '../utils/api-client';
+import { apiClient } from "../utils/api-client";
 
 export interface AnalyticsData {
   users: {
@@ -10,7 +10,9 @@ export interface AnalyticsData {
     unverified: number;
     byType: {
       agents: number;
-      customers: number;
+      super_agents: number;
+      dealers: number;
+      super_dealers: number;
       super_admins: number;
     };
   };
@@ -160,9 +162,11 @@ class AnalyticsService {
    * @param timeframe - Time period (7d, 30d, 90d, 365d)
    * @returns Promise<AnalyticsData>
    */
-  async getSuperAdminAnalytics(timeframe: string = '30d'): Promise<AnalyticsData> {
-    const response = await apiClient.get('/api/analytics/superadmin', {
-      params: { timeframe }
+  async getSuperAdminAnalytics(
+    timeframe: string = "30d"
+  ): Promise<AnalyticsData> {
+    const response = await apiClient.get("/api/analytics/superadmin", {
+      params: { timeframe },
     });
     return response.data.data;
   }
@@ -172,9 +176,11 @@ class AnalyticsService {
    * @param timeframe - Time period (7d, 30d, 90d, 365d)
    * @returns Promise<AgentAnalyticsData>
    */
-  async getAgentAnalytics(timeframe: string = '30d'): Promise<AgentAnalyticsData> {
-    const response = await apiClient.get('/api/analytics/agent', {
-      params: { timeframe }
+  async getAgentAnalytics(
+    timeframe: string = "30d"
+  ): Promise<AgentAnalyticsData> {
+    const response = await apiClient.get("/api/analytics/agent", {
+      params: { timeframe },
     });
     return response.data.data;
   }
@@ -184,9 +190,11 @@ class AnalyticsService {
    * @param timeframe - Time period (7d, 30d, 90d, 365d)
    * @returns Promise<AnalyticsData | AgentAnalyticsData>
    */
-  async getAnalyticsSummary(timeframe: string = '30d'): Promise<AnalyticsData | AgentAnalyticsData> {
-    const response = await apiClient.get('/api/analytics/summary', {
-      params: { timeframe }
+  async getAnalyticsSummary(
+    timeframe: string = "30d"
+  ): Promise<AnalyticsData | AgentAnalyticsData> {
+    const response = await apiClient.get("/api/analytics/summary", {
+      params: { timeframe },
     });
     return response.data.data;
   }
@@ -196,9 +204,9 @@ class AnalyticsService {
    * @param timeframe - Time period (7d, 30d, 90d, 365d)
    * @returns Promise<ChartData>
    */
-  async getChartData(timeframe: string = '30d'): Promise<ChartData> {
-    const response = await apiClient.get('/api/analytics/charts', {
-      params: { timeframe }
+  async getChartData(timeframe: string = "30d"): Promise<ChartData> {
+    const response = await apiClient.get("/api/analytics/charts", {
+      params: { timeframe },
     });
     return response.data.data;
   }
@@ -208,7 +216,7 @@ class AnalyticsService {
    * @returns Promise<RealtimeMetrics>
    */
   async getRealtimeMetrics(): Promise<RealtimeMetrics> {
-    const response = await apiClient.get('/api/analytics/realtime');
+    const response = await apiClient.get("/api/analytics/realtime");
     return response.data.data;
   }
 }

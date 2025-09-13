@@ -1,4 +1,4 @@
-import { apiClient } from '../utils/api-client';
+import { apiClient } from "../utils/api-client";
 
 // =============================================================================
 // TYPES
@@ -37,7 +37,13 @@ export interface PasswordResetRequest {
 
 export interface RoleChangeRequest {
   userId: string;
-  newRole: 'customer' | 'agent' | 'admin' | 'super_admin';
+  newRole:
+    | "agent"
+    | "super_agent"
+    | "dealer"
+    | "super_dealer"
+    | "admin"
+    | "super_admin";
 }
 
 // =============================================================================
@@ -47,70 +53,91 @@ export interface RoleChangeRequest {
 class SettingsService {
   // Site Management
   async getSiteSettings(): Promise<SiteSettings> {
-    const response = await apiClient.get('/api/settings/site');
+    const response = await apiClient.get("/api/settings/site");
     return response.data;
   }
 
   async updateSiteSettings(settings: SiteSettings): Promise<SiteSettings> {
-    const response = await apiClient.put('/api/settings/site', settings);
+    const response = await apiClient.put("/api/settings/site", settings);
     return response.data;
   }
 
   async toggleSiteStatus(): Promise<{ isSiteOpen: boolean }> {
-    const response = await apiClient.post('/api/settings/site/toggle');
+    const response = await apiClient.post("/api/settings/site/toggle");
     return response.data;
   }
 
   // Get site status (public endpoint)
-  async getSiteStatus(): Promise<{ isSiteOpen: boolean; customMessage: string }> {
-    const response = await apiClient.get('/api/settings/site/status');
+  async getSiteStatus(): Promise<{
+    isSiteOpen: boolean;
+    customMessage: string;
+  }> {
+    const response = await apiClient.get("/api/settings/site/status");
     return response.data;
   }
 
   // Commission Rates
   async getCommissionRates(): Promise<CommissionRates> {
-    const response = await apiClient.get('/api/commissions/settings');
+    const response = await apiClient.get("/api/commissions/settings");
     return response.data.data;
   }
 
-  async updateCommissionRates(rates: CommissionRates): Promise<CommissionRates> {
-    const response = await apiClient.put('/api/commissions/settings', rates);
+  async updateCommissionRates(
+    rates: CommissionRates
+  ): Promise<CommissionRates> {
+    const response = await apiClient.put("/api/commissions/settings", rates);
     return response.data.data;
   }
 
   // API Settings
   async getApiSettings(): Promise<ApiSettings> {
-    const response = await apiClient.get('/api/settings/api');
+    const response = await apiClient.get("/api/settings/api");
     return response.data;
   }
 
   async updateApiSettings(settings: ApiSettings): Promise<ApiSettings> {
-    const response = await apiClient.put('/api/settings/api', settings);
+    const response = await apiClient.put("/api/settings/api", settings);
     return response.data;
   }
 
   // User Management
-  async resetUserPassword(request: PasswordResetRequest): Promise<{ message: string }> {
-    const response = await apiClient.post('/api/settings/users/reset-password', request);
+  async resetUserPassword(
+    request: PasswordResetRequest
+  ): Promise<{ message: string }> {
+    const response = await apiClient.post(
+      "/api/settings/users/reset-password",
+      request
+    );
     return response.data;
   }
 
-  async changeUserRole(request: RoleChangeRequest): Promise<{ message: string }> {
-    const response = await apiClient.post('/api/settings/users/change-role', request);
+  async changeUserRole(
+    request: RoleChangeRequest
+  ): Promise<{ message: string }> {
+    const response = await apiClient.post(
+      "/api/settings/users/change-role",
+      request
+    );
     return response.data;
   }
 
   // System Information
   async getSystemInfo(): Promise<SystemInfo> {
-    const response = await apiClient.get('/api/settings/system');
+    const response = await apiClient.get("/api/settings/system");
     return response.data;
   }
 
   // Admin Password Change
-  async changeAdminPassword(request: { currentPassword: string; newPassword: string }): Promise<{ message: string }> {
-    const response = await apiClient.post('/api/settings/admin/change-password', request);
+  async changeAdminPassword(request: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    const response = await apiClient.post(
+      "/api/settings/admin/change-password",
+      request
+    );
     return response.data;
   }
 }
 
-export const settingsService = new SettingsService(); 
+export const settingsService = new SettingsService();

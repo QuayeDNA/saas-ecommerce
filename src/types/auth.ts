@@ -1,4 +1,11 @@
-export type UserType = 'agent' | 'customer' | 'subscriber' | 'super_admin' | 'admin';
+export type UserType =
+  | "agent"
+  | "super_agent"
+  | "dealer"
+  | "super_dealer"
+  | "subscriber"
+  | "super_admin"
+  | "admin";
 
 export interface User {
   id?: string;
@@ -13,20 +20,20 @@ export interface User {
   createdAt?: Date | string;
   // Agent-specific fields
   businessName?: string;
-  businessCategory?: 'electronics' | 'fashion' | 'food' | 'services' | 'other';
-  subscriptionPlan?: 'basic' | 'premium' | 'enterprise';
-  subscriptionStatus?: 'active' | 'inactive' | 'suspended';
+  businessCategory?: "electronics" | "fashion" | "food" | "services" | "other";
+  subscriptionPlan?: "basic" | "premium" | "enterprise";
+  subscriptionStatus?: "active" | "inactive" | "suspended";
   agentCode?: string;
   // Multi-tenant fields
   tenantId?: string;
   // AFA Registration
   afaRegistration?: {
     afaId: string;
-    registrationType: 'agent' | 'subscriber';
+    registrationType: "agent" | "subscriber";
     fullName: string;
     phone: string;
     registrationFee: number;
-    status: 'pending' | 'completed' | 'failed';
+    status: "pending" | "completed" | "failed";
     registrationDate: Date | string;
   };
 }
