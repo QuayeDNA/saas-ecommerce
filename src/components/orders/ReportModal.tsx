@@ -12,6 +12,7 @@ interface ReportModalProps {
   phoneNumber: string;
   packageVolume?: string;
   provider?: string;
+  orderDate?: string;
 }
 
 export const ReportModal: React.FC<ReportModalProps> = ({
@@ -23,6 +24,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   phoneNumber,
   packageVolume,
   provider,
+  orderDate,
 }) => {
   const { addToast } = useToast();
 
@@ -49,7 +51,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   };
 
   const handleWhatsAppContact = () => {
-    let message = `🚨 DATA DELIVERY REPORT 🚨\n\nOrder ID: ${orderNumber}\nPhone Number: ${phoneNumber}`;
+    let message = `⚠Report: Order Not Received\n\nOrder ID: ${orderNumber}\nPhone Number: ${phoneNumber}`;
 
     if (packageVolume) {
       message += `\nPackage Volume: ${packageVolume}`;
@@ -59,8 +61,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       message += `\nProvider: ${provider}`;
     }
 
-    message +=
-      "\n\nIssue: I have not received the data for this completed order. Please investigate immediately.";
+    if (orderDate) {
+      message += `\n\nOrder Date: ${orderDate}`;
+    }
 
     const whatsappUrl = `https://wa.me/+233548983019?text=${encodeURIComponent(
       message
