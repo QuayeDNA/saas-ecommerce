@@ -89,16 +89,25 @@ export default function SuperAdminUsersPage() {
     fetchUsers();
   }, [userType, status]);
 
+  // Add debounced search effect
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      fetchUsers();
+    }, 500); // 500ms delay for debounced search
+
+    return () => clearTimeout(delayedSearch);
+  }, [search, userType, status]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchUsers();
+    // Search is now automatic via useEffect, no need to call fetchUsers manually
   };
 
   const handleClearFilters = () => {
     setSearch("");
     setUserType("");
     setStatus(""); // Clear status filter
-    fetchUsers();
+    // fetchUsers will be called automatically by useEffect when state changes
   };
 
   const handleFilterChange = (filterKey: string, value: string) => {
