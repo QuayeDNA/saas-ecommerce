@@ -237,7 +237,7 @@ const formatCurrency = (amount: number) => {
       {/* Stats Grid */}
       <StatsGrid
         stats={getStatsCards()}
-        columns={6}
+        columns={4}
         gap="md"
       />
     </div>

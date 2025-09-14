@@ -1,10 +1,5 @@
 // src/components/orders/UnifiedOrderList.tsx
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useOrder } from "../../hooks/use-order";
 import { useAuth } from "../../hooks/use-auth";
 import { providerService } from "../../services/provider.service";
@@ -28,6 +23,7 @@ import {
   FaChartBar,
   FaDownload,
   FaSync,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import type { Order, OrderFilters } from "../../types/order";
 import type { Provider } from "../../types/package";
@@ -36,6 +32,7 @@ import { UnifiedOrderTable } from "./UnifiedOrderTable";
 import { UnifiedOrderExcel } from "./UnifiedOrderExcel";
 import { OrderAnalytics } from "./OrderAnalytics";
 import { SearchAndFilter } from "../common/SearchAndFilter";
+import { DraftOrdersHandler } from "./DraftOrdersHandler";
 
 interface UnifiedOrderListProps {
   isAdmin: boolean;
@@ -76,6 +73,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [pendingBulkAction, setPendingBulkAction] = useState<
     "cancel" | "process" | "complete" | null
   >(null);
+
+  // Draft orders handler state
+  const [showDraftHandler, setShowDraftHandler] = useState(false);
 
   // Analytics state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,13 +125,13 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           commission: {
             totalPaid: analytics.commissions?.totalPaid || 0,
             pendingAmount: analytics.commissions?.pendingAmount || 0,
-            pendingCount: analytics.commissions?.pendingCount || 0
+            pendingCount: analytics.commissions?.pendingCount || 0,
           },
           statusCounts: {
             processing: analytics.orders.processing || 0,
             pending: analytics.orders.pending || 0,
-            cancelled: analytics.orders.cancelled || 0
-          }
+            cancelled: analytics.orders.cancelled || 0,
+          },
         };
 
         setAnalyticsData(transformedData);
@@ -151,14 +151,14 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               completed: analytics.orders.todayCounts?.completed || 0,
               processing: analytics.orders.todayCounts?.processing || 0,
               pending: analytics.orders.todayCounts?.pending || 0,
-              cancelled: analytics.orders.todayCounts?.cancelled || 0
-            }
+              cancelled: analytics.orders.todayCounts?.cancelled || 0,
+            },
           },
           revenue: {
             total: analytics.revenue.total || 0,
             thisMonth: analytics.revenue.thisMonth || 0,
-            today: analytics.revenue.today || 0
-          }
+            today: analytics.revenue.today || 0,
+          },
         };
 
         setAnalyticsData(transformedData);
@@ -315,6 +315,21 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     );
   }, []);
 
+  // Calculate draft orders
+  const draftOrders = orders.filter((order) => order.status === "draft");
+  const hasDraftOrders = draftOrders.length > 0;
+
+  // Handle draft orders notification
+  const handleOpenDraftHandler = () => {
+    setShowDraftHandler(true);
+  };
+
+  const handleCloseDraftHandler = () => {
+    setShowDraftHandler(false);
+    // Refresh orders after handling drafts
+    fetchOrders();
+  };
+
   // Define search and filter configuration
   const searchAndFilterConfig = {
     searchTerm,
@@ -324,6 +339,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       status: {
         value: statusFilter,
         options: [
+          { value: "draft", label: "Draft" },
           { value: "pending", label: "Pending" },
           { value: "confirmed", label: "Confirmed" },
           { value: "processing", label: "Processing" },
@@ -450,6 +466,41 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           isAdmin={isAdmin}
           isAgent={isAgent}
         />
+      )}
+
+      {/* Draft Orders Notification - Only show for agents when there are draft orders */}
+      {(isAgent || !isAdmin) && hasDraftOrders && (
+        <Card className="border-yellow-400 bg-yellow-50">
+          <CardBody>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <FaExclamationTriangle className="text-yellow-600 text-xl flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-yellow-800 mb-1">
+                    Draft Orders Need Attention
+                  </h3>
+                  <p className="text-yellow-700 text-sm">
+                    You have {draftOrders.length} draft order
+                    {draftOrders.length !== 1 ? "s" : ""} waiting to be
+                    processed. These orders require sufficient wallet balance to
+                    complete.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button
+                  onClick={handleOpenDraftHandler}
+                  variant="primary"
+                  size="sm"
+                  className="flex-1 sm:flex-none"
+                >
+                  <FaExclamationTriangle className="mr-2" />
+                  Review Drafts ({draftOrders.length})
+                </Button>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
       )}
 
       {/* Search and Filters */}
@@ -752,6 +803,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         </DialogFooter>
       </Dialog>
 
+      {/* Draft Orders Handler Modal */}
+      <DraftOrdersHandler
+        isOpen={showDraftHandler}
+        onClose={handleCloseDraftHandler}
+      />
     </div>
   );
 };
