@@ -8,8 +8,10 @@ import {
   FaPhone,
   FaDatabase,
   FaMoneyBillWave,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import { Button } from "../../design-system";
+import { ReportModal } from "./ReportModal";
 import type { Order } from "../../types/order";
 
 interface UnifiedOrderCardProps {
@@ -32,6 +34,8 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   isSelected = false,
 }) => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
 
   // Click outside handler to close dropdown
   React.useEffect(() => {
@@ -193,6 +197,57 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     return false;
   };
 
+  const canUserReportOrder = (order: Order) => {
+    // Only business users can report (not admins)
+    if (isAdmin) return false;
+
+    // Only completed orders can be reported
+    if (order.status !== "completed") return false;
+
+    // Check if order is older than 3 days
+    const orderDate = new Date(order.createdAt);
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    if (orderDate < threeDaysAgo) return false;
+
+    // Only the order creator can report
+    if (currentUserId) {
+      const createdById =
+        typeof order.createdBy === "string"
+          ? order.createdBy
+          : (order.createdBy as { _id: string })?._id;
+      return createdById === currentUserId;
+    }
+
+    return false;
+  };
+
+  const handleReportSubmit = async () => {
+    setIsReporting(true);
+    try {
+      const response = await fetch(`/api/orders/${order._id}/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit report");
+      }
+
+      setReportModalOpen(false);
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      // You might want to show an error toast here
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   return (
     <div
       className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
@@ -337,7 +392,40 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
             </Button>
           </div>
         )}
+
+        {/* Report Action */}
+        {canUserReportOrder(order) && (
+          <div className="flex justify-start mt-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setReportModalOpen(true)}
+              className="text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400 px-3 py-1 text-sm"
+            >
+              <FaExclamationTriangle className="w-3 h-3 mr-1" />
+              Report Issue
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        onSubmit={handleReportSubmit}
+        isSubmitting={isReporting}
+        orderNumber={order.orderNumber}
+        phoneNumber={order.items?.[0]?.customerPhone || "N/A"}
+        packageVolume={
+          order.items?.[0]?.bundleSize
+            ? `${order.items[0].bundleSize.value} ${order.items[0].bundleSize.unit}`
+            : order.items?.[0]?.packageDetails?.dataVolume
+            ? `${order.items[0].packageDetails.dataVolume} GB`
+            : undefined
+        }
+        provider={order.items?.[0]?.packageDetails?.provider || undefined}
+      />
     </div>
   );
 };
