@@ -1,6 +1,6 @@
 // src/components/orders/UnifiedOrderCard.tsx
-import React, { useState } from 'react';
-import { 
+import React, { useState } from "react";
+import {
   FaWifi,
   FaChevronRight,
   FaTimes,
@@ -8,9 +8,9 @@ import {
   FaPhone,
   FaDatabase,
   FaMoneyBillWave,
-} from 'react-icons/fa';
-import { Button } from '../../design-system';
-import type { Order } from '../../types/order';
+} from "react-icons/fa";
+import { Button } from "../../design-system";
+import type { Order } from "../../types/order";
 
 interface UnifiedOrderCardProps {
   order: Order;
@@ -29,7 +29,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   onUpdateStatus,
   onCancel,
   onSelect,
-  isSelected = false
+  isSelected = false,
 }) => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
@@ -37,44 +37,71 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (statusDropdownOpen && !target.closest('.status-dropdown')) {
+      if (statusDropdownOpen && !target.closest(".status-dropdown")) {
         setStatusDropdownOpen(false);
       }
     };
 
     const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && statusDropdownOpen) {
+      if (event.key === "Escape" && statusDropdownOpen) {
         setStatusDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscapeKey);
-    
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscapeKey);
+
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscapeKey);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscapeKey);
     };
   }, [statusDropdownOpen]);
 
   // Available status options (excluding 'failed' as it's system-controlled)
   const statusOptions = [
-    { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'confirmed', label: 'Confirmed', color: 'bg-purple-100 text-purple-800' },
-    { value: 'processing', label: 'Processing', color: 'bg-blue-100 text-blue-800' },
-    { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
-    { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800' }
+    {
+      value: "pending",
+      label: "Pending",
+      color: "bg-yellow-100 text-yellow-800",
+    },
+    {
+      value: "confirmed",
+      label: "Confirmed",
+      color: "bg-purple-100 text-purple-800",
+    },
+    {
+      value: "processing",
+      label: "Processing",
+      color: "bg-blue-100 text-blue-800",
+    },
+    {
+      value: "completed",
+      label: "Completed",
+      color: "bg-green-100 text-green-800",
+    },
+    {
+      value: "cancelled",
+      label: "Cancelled",
+      color: "bg-gray-100 text-gray-800",
+    },
   ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-[#006400] text-gray-200';
-      case 'processing': return 'bg-[#00008B] text-gray-200';
-      case 'failed': return 'bg-[#8B0000] text-gray-200';
-      case 'cancelled': return 'bg-[#8B0000] text-gray-200';
-      case 'pending': return 'bg-[#B8860B] text-gray-200';
-      case 'confirmed': return 'bg-[#800080] text-gray-200';
-      default: return 'bg-[#696969] text-gray-200';
+      case "completed":
+        return "bg-[#006400] text-gray-200";
+      case "processing":
+        return "bg-[#00008B] text-gray-200";
+      case "failed":
+        return "bg-[#8B0000] text-gray-200";
+      case "cancelled":
+        return "bg-[#8B0000] text-gray-200";
+      case "pending":
+        return "bg-[#B8860B] text-gray-200";
+      case "confirmed":
+        return "bg-[#800080] text-gray-200";
+      default:
+        return "bg-[#696969] text-gray-200";
     }
   };
 
@@ -83,38 +110,39 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
       onUpdateStatus(order._id!, newStatus);
       setStatusDropdownOpen(false);
     } catch (error) {
-      console.error('Failed to update status:', error);
+      console.error("Failed to update status:", error);
     }
   };
 
   // Get provider from order items
   const getOrderProvider = (order: Order) => {
     if (order.items && order.items.length > 0) {
-      return order.items[0].packageDetails?.provider || 'Unknown';
+      return order.items[0].packageDetails?.provider || "Unknown";
     }
-    return 'Unknown';
+    return "Unknown";
   };
 
   // Get recipient info (phone number for single orders, count for bulk)
   const getOrderRecipient = (order: Order) => {
-    if (order.orderType === 'bulk') {
+    if (order.orderType === "bulk") {
       return `${order.items.length} recipients`;
     }
     if (order.items && order.items.length > 0) {
-      return order.items[0].customerPhone || 'N/A';
+      return order.items[0].customerPhone || "N/A";
     }
-    return 'N/A';
+    return "N/A";
   };
 
   // Get total volume
   const getOrderVolume = (order: Order) => {
-    if (!order.items || order.items.length === 0) return 'N/A';
-    
+    if (!order.items || order.items.length === 0) return "N/A";
+
     const totalVolume = order.items.reduce((sum, item) => {
-      const volume = item.bundleSize?.value || item.packageDetails?.dataVolume || 0;
+      const volume =
+        item.bundleSize?.value || item.packageDetails?.dataVolume || 0;
       return sum + volume;
     }, 0);
-    
+
     if (totalVolume >= 1) {
       return `${totalVolume.toFixed(1)} GB`;
     } else {
@@ -123,45 +151,54 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS'
+    return new Intl.NumberFormat("en-GH", {
+      style: "currency",
+      currency: "GHS",
     }).format(amount);
   };
 
   const formatDate = (date: Date | string) => {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(date));
   };
 
-  const canCancel = (status: string) => ['pending', 'confirmed', 'processing', 'draft'].includes(status);
+  const canCancel = (status: string) =>
+    ["pending", "confirmed", "processing", "draft"].includes(status);
 
   const canUserCancelOrder = (order: Order) => {
     if (!canCancel(order.status)) return false;
-    
+
     // Admins can cancel any order
     if (isAdmin) return true;
-    
-    // Agents can only cancel their own draft orders
-    if (order.status === 'draft' && currentUserId) {
-      const createdById = typeof order.createdBy === 'string' ? order.createdBy : (order.createdBy as { _id: string })?._id;
+
+    // Agents can cancel their own draft or pending orders
+    if (
+      (order.status === "draft" || order.status === "pending") &&
+      currentUserId
+    ) {
+      const createdById =
+        typeof order.createdBy === "string"
+          ? order.createdBy
+          : (order.createdBy as { _id: string })?._id;
       if (createdById === currentUserId) {
         return true;
       }
     }
-    
+
     return false;
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
-      isSelected ? 'ring-2 ring-blue-500' : ''
-    }`}>
+    <div
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
+        isSelected ? "ring-2 ring-blue-500" : ""
+      }`}
+    >
       <div className="p-4">
         {/* Header - Order Number, Date, and Status */}
         <div className="flex items-start justify-between mb-3">
@@ -178,29 +215,35 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
               <h3 className="text-sm font-semibold text-gray-900">
                 {order.orderNumber}
               </h3>
-              <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
+              <p className="text-xs text-gray-500">
+                {formatDate(order.createdAt)}
+              </p>
             </div>
           </div>
-          
+
           {/* Status Badge */}
           <div className="flex-shrink-0 ml-3">
             <div className="relative">
               {isAdmin ? (
                 <button
                   onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)} hover:bg-opacity-80 transition-colors status-dropdown`}
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                    order.status
+                  )} hover:bg-opacity-80 transition-colors status-dropdown`}
                 >
                   <span>{order.status}</span>
                   <FaChevronRight className="text-xs ml-1" />
                 </button>
               ) : (
-                <div 
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}
+                <div
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                    order.status
+                  )}`}
                 >
                   <span>{order.status}</span>
                 </div>
               )}
-              
+
               {isAdmin && statusDropdownOpen && (
                 <div className="absolute z-10 mt-1 right-0 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown min-w-32">
                   <div className="py-1 flex flex-col">
@@ -208,7 +251,11 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                       <button
                         key={option.value}
                         onClick={() => handleStatusChange(option.value)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${option.value === order.status ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${
+                          option.value === order.status
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-700"
+                        }`}
                       >
                         {option.label}
                       </button>
@@ -225,36 +272,54 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
           {/* Network */}
           <div className="flex items-center gap-2 text-sm">
             <FaWifi className="text-gray-400 w-4 h-4 flex-shrink-0" />
-            <span className="text-gray-700 font-medium min-w-0 w-16">Network:</span>
-            <span className="text-gray-900 truncate">{getOrderProvider(order)}</span>
+            <span className="text-gray-700 font-medium min-w-0 w-16">
+              Network:
+            </span>
+            <span className="text-gray-900 truncate">
+              {getOrderProvider(order)}
+            </span>
           </div>
-          
+
           {/* Recipient */}
           <div className="flex items-center gap-2 text-sm">
             <FaPhone className="text-gray-400 w-4 h-4 flex-shrink-0" />
-            <span className="text-gray-700 font-medium min-w-0 w-16">Recipient:</span>
-            <span className="text-gray-900 truncate">{getOrderRecipient(order)}</span>
+            <span className="text-gray-700 font-medium min-w-0 w-16">
+              Recipient:
+            </span>
+            <span className="text-gray-900 truncate">
+              {getOrderRecipient(order)}
+            </span>
           </div>
-          
+
           {/* Volume */}
           <div className="flex items-center gap-2 text-sm">
             <FaDatabase className="text-gray-400 w-4 h-4 flex-shrink-0" />
-            <span className="text-gray-700 font-medium min-w-0 w-16">Volume:</span>
+            <span className="text-gray-700 font-medium min-w-0 w-16">
+              Volume:
+            </span>
             <span className="text-gray-900">{getOrderVolume(order)}</span>
           </div>
-          
+
           {/* Total */}
           <div className="flex items-center gap-2 text-sm">
             <FaMoneyBillWave className="text-gray-400 w-4 h-4 flex-shrink-0" />
-            <span className="text-gray-700 font-medium min-w-0 w-16">Total:</span>
-            <span className="text-gray-900 font-semibold">{formatCurrency(order.total)}</span>
+            <span className="text-gray-700 font-medium min-w-0 w-16">
+              Total:
+            </span>
+            <span className="text-gray-900 font-semibold">
+              {formatCurrency(order.total)}
+            </span>
           </div>
-          
+
           {/* Type */}
           <div className="flex items-center gap-2 text-sm">
             <FaUser className="text-gray-400 w-4 h-4 flex-shrink-0" />
-            <span className="text-gray-700 font-medium min-w-0 w-16">Type:</span>
-            <span className="text-gray-900 capitalize">{order.orderType} • {order.items?.length || 0} item(s)</span>
+            <span className="text-gray-700 font-medium min-w-0 w-16">
+              Type:
+            </span>
+            <span className="text-gray-900 capitalize">
+              {order.orderType} • {order.items?.length || 0} item(s)
+            </span>
           </div>
         </div>
 
@@ -268,11 +333,11 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
               className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400 px-3 py-1 text-sm"
             >
               <FaTimes className="w-3 h-3 mr-1" />
-              {order.status === 'draft' ? 'Delete Draft' : 'Cancel'}
+              {order.status === "draft" ? "Delete Draft" : "Cancel"}
             </Button>
           </div>
         )}
       </div>
     </div>
   );
-}; 
+};
