@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react";
-import { FaPlus, FaEdit, FaTrash, FaUndo, FaToggleOn, FaToggleOff, FaSearch, FaChartBar } from "react-icons/fa";
+import {
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaUndo,
+  FaToggleOn,
+  FaToggleOff,
+  FaChartBar,
+} from "react-icons/fa";
 import { useProvider } from "../../hooks/use-provider";
 import { ProviderFormModal } from "../../components/products/ProviderFormModal";
+import { SearchAndFilter } from "../../components/common/SearchAndFilter";
 import type { Provider } from "../../types/package";
 import type { ProviderFormData } from "../../components/products/ProviderFormModal";
 import { Button } from "../../design-system/components/button";
-import { Input } from "../../design-system/components/input";
 import { colors } from "../../design-system/tokens";
 
 export default function SuperAdminProvidersPage() {
@@ -20,15 +28,16 @@ export default function SuperAdminProvidersPage() {
     updateProvider,
     deleteProvider,
     restoreProvider,
-    setFilters
+    setFilters,
   } = useProvider();
 
-
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
+    null
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [showDeleted, setShowDeleted] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
 
@@ -39,33 +48,68 @@ export default function SuperAdminProvidersPage() {
   // Calculate statistics
   const stats = {
     total: providers.length,
-    active: providers.filter(p => p.isActive && !p.isDeleted).length,
-    inactive: providers.filter(p => !p.isActive && !p.isDeleted).length,
-    deleted: providers.filter(p => p.isDeleted).length,
-    mtn: providers.filter(p => p.code === 'MTN' && !p.isDeleted).length,
-    telecel: providers.filter(p => p.code === 'TELECEL' && !p.isDeleted).length,
-    at: providers.filter(p => p.code === 'AT' && !p.isDeleted).length,
+    active: providers.filter((p) => p.isActive && !p.isDeleted).length,
+    inactive: providers.filter((p) => !p.isActive && !p.isDeleted).length,
+    deleted: providers.filter((p) => p.isDeleted).length,
+    mtn: providers.filter((p) => p.code === "MTN" && !p.isDeleted).length,
+    telecel: providers.filter((p) => p.code === "TELECEL" && !p.isDeleted)
+      .length,
+    at: providers.filter((p) => p.code === "AT" && !p.isDeleted).length,
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const newFilters = { 
-      ...filters, 
+    const newFilters = {
+      ...filters,
       search: searchTerm,
-      isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
-      includeDeleted: showDeleted
+      isActive: statusFilter === "" ? undefined : statusFilter === "active",
+      includeDeleted: showDeleted,
     };
     setFilters(newFilters);
     fetchProviders(newFilters);
   };
 
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    // Auto-search when search term changes
+    setTimeout(() => {
+      const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+      handleSearch(fakeEvent);
+    }, 300); // Debounce for better UX
+  };
+
+  const handleFilterChange = (filterKey: string, value: string) => {
+    if (filterKey === "status") {
+      setStatusFilter(value);
+    } else if (filterKey === "showDeleted") {
+      setShowDeleted(value === "true");
+    }
+    // Auto-search when filters change
+    setTimeout(() => {
+      const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+      handleSearch(fakeEvent);
+    }, 100);
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
+    setShowDeleted(false);
+    setFilters({
+      search: "",
+      isActive: undefined,
+      includeDeleted: false,
+    });
+    fetchProviders();
+  };
+
   const handleModalSubmit = async (data: ProviderFormData) => {
     const providerData: Partial<Provider> = {
       ...data,
-      code: data.code === '' ? undefined : data.code
+      code: data.code === "" ? undefined : data.code,
     };
-  
-    if (modalMode === 'create') {
+
+    if (modalMode === "create") {
       await createProvider(providerData);
     } else if (selectedProvider?._id) {
       await updateProvider(selectedProvider._id, providerData);
@@ -74,25 +118,25 @@ export default function SuperAdminProvidersPage() {
   };
 
   const handleCreateNew = () => {
-    setModalMode('create');
+    setModalMode("create");
     setSelectedProvider(null);
     setShowModal(true);
   };
 
   const handleEdit = (provider: Provider) => {
-    setModalMode('edit');
+    setModalMode("edit");
     setSelectedProvider(provider);
     setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this provider?')) {
+    if (window.confirm("Are you sure you want to delete this provider?")) {
       await deleteProvider(id);
     }
   };
 
   const handleRestore = async (id: string) => {
-    if (window.confirm('Are you sure you want to restore this provider?')) {
+    if (window.confirm("Are you sure you want to restore this provider?")) {
       await restoreProvider(id);
     }
   };
@@ -101,22 +145,24 @@ export default function SuperAdminProvidersPage() {
     await updateProvider(id, { isActive: !currentStatus });
   };
 
-  const handleBulkAction = async (action: 'delete' | 'activate' | 'deactivate') => {
+  const handleBulkAction = async (
+    action: "delete" | "activate" | "deactivate"
+  ) => {
     if (selectedProviders.length === 0) return;
 
     const confirmMessage = {
-      delete: 'Are you sure you want to delete the selected providers?',
-      activate: 'Are you sure you want to activate the selected providers?',
-      deactivate: 'Are you sure you want to deactivate the selected providers?'
+      delete: "Are you sure you want to delete the selected providers?",
+      activate: "Are you sure you want to activate the selected providers?",
+      deactivate: "Are you sure you want to deactivate the selected providers?",
     };
 
     if (window.confirm(confirmMessage[action])) {
       for (const id of selectedProviders) {
         try {
-          if (action === 'delete') {
+          if (action === "delete") {
             await deleteProvider(id);
           } else {
-            await updateProvider(id, { isActive: action === 'activate' });
+            await updateProvider(id, { isActive: action === "activate" });
           }
         } catch {
           // Failed to perform action on provider
@@ -130,35 +176,39 @@ export default function SuperAdminProvidersPage() {
     if (selectedProviders.length === providers.length) {
       setSelectedProviders([]);
     } else {
-      setSelectedProviders(providers.map(p => p._id));
+      setSelectedProviders(providers.map((p) => p._id));
     }
   };
 
   const handleSelectProvider = (id: string) => {
-    setSelectedProviders(prev => 
-      prev.includes(id) 
-        ? prev.filter(p => p !== id)
-        : [...prev, id]
+    setSelectedProviders((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     );
   };
 
   const getStatusColor = (isActive: boolean, isDeleted: boolean) => {
-    if (isDeleted) return 'text-red-600 bg-red-100';
-    return isActive ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100';
+    if (isDeleted) return "text-red-600 bg-red-100";
+    return isActive
+      ? "text-green-600 bg-green-100"
+      : "text-yellow-600 bg-yellow-100";
   };
 
   const getStatusText = (isActive: boolean, isDeleted: boolean) => {
-    if (isDeleted) return 'Deleted';
-    return isActive ? 'Active' : 'Inactive';
+    if (isDeleted) return "Deleted";
+    return isActive ? "Active" : "Inactive";
   };
 
   const getProviderColor = (code: string) => {
     switch (code) {
-      case 'MTN': return 'text-yellow-600 bg-yellow-100';
-      case 'TELECEL': return 'text-red-600 bg-red-100';
-      case 'AT': return 'text-blue-600 bg-blue-100';
+      case "MTN":
+        return "text-yellow-600 bg-yellow-100";
+      case "TELECEL":
+        return "text-red-600 bg-red-100";
+      case "AT":
+        return "text-blue-600 bg-blue-100";
       // case 'GLO': return 'text-green-600 bg-green-100'; // Removed GLO support
-      default: return 'text-gray-600 bg-gray-100';
+      default:
+        return "text-gray-600 bg-gray-100";
     }
   };
 
@@ -176,12 +226,21 @@ export default function SuperAdminProvidersPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center sm:flex-row flex-col gap-4">
           <div>
-            <h1 className="text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
+            <h1
+              className="text-2xl font-bold mb-2"
+              style={{ color: colors.brand.primary }}
+            >
               Provider Management
             </h1>
-            <p className="text-gray-600">Manage telecom service providers and their configurations</p>
+            <p className="text-gray-600">
+              Manage telecom service providers and their configurations
+            </p>
           </div>
-          <Button onClick={handleCreateNew} leftIcon={<FaPlus />} className="w-full sm:w-auto">
+          <Button
+            onClick={handleCreateNew}
+            leftIcon={<FaPlus />}
+            className="w-full sm:w-auto"
+          >
             Add Provider
           </Button>
         </div>
@@ -192,7 +251,9 @@ export default function SuperAdminProvidersPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Providers</p>
+              <p className="text-sm font-medium text-gray-600">
+                Total Providers
+              </p>
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
@@ -204,8 +265,12 @@ export default function SuperAdminProvidersPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Providers</p>
-              <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+              <p className="text-sm font-medium text-gray-600">
+                Active Providers
+              </p>
+              <p className="text-2xl font-bold text-green-600">
+                {stats.active}
+              </p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
               <FaToggleOn className="text-green-600 text-xl" />
@@ -216,8 +281,12 @@ export default function SuperAdminProvidersPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Inactive Providers</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.inactive}</p>
+              <p className="text-sm font-medium text-gray-600">
+                Inactive Providers
+              </p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {stats.inactive}
+              </p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
               <FaToggleOff className="text-yellow-600 text-xl" />
@@ -228,7 +297,9 @@ export default function SuperAdminProvidersPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Deleted Providers</p>
+              <p className="text-sm font-medium text-gray-600">
+                Deleted Providers
+              </p>
               <p className="text-2xl font-bold text-red-600">{stats.deleted}</p>
             </div>
             <div className="p-3 bg-red-100 rounded-full">
@@ -243,11 +314,15 @@ export default function SuperAdminProvidersPage() {
         <h3 className="text-lg font-semibold mb-4">Provider Distribution</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center p-4 bg-yellow-50 rounded-lg">
-            <div className="text-2xl font-bold text-yellow-600">{stats.mtn}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats.mtn}
+            </div>
             <div className="text-sm text-gray-600">MTN</div>
           </div>
           <div className="text-center p-4 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">{stats.telecel}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {stats.telecel}
+            </div>
             <div className="text-sm text-gray-600">TELECEL</div>
           </div>
           <div className="text-center p-4 bg-blue-50 rounded-lg">
@@ -258,52 +333,38 @@ export default function SuperAdminProvidersPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSearch} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-2">
-              <Input
-                label="Search providers"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name, code, or description..."
-                leftIcon={<FaSearch className="text-gray-400" />}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <Button type="submit" disabled={loading}>
-                <FaSearch className="mr-2" />
-                Search
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={showDeleted}
-                onChange={(e) => setShowDeleted(e.target.checked)}
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-600">Show deleted providers</span>
-            </label>
-          </div>
-        </form>
-      </div>
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search by name, code, or description..."
+        filters={{
+          status: {
+            value: statusFilter,
+            options: [
+              { value: "", label: "All Status" },
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+            ],
+            label: "Status",
+            placeholder: "All Status",
+          },
+          showDeleted: {
+            value: showDeleted ? "true" : "false",
+            options: [
+              { value: "false", label: "Hide Deleted" },
+              { value: "true", label: "Show Deleted" },
+            ],
+            label: "Deleted Providers",
+            placeholder: "Hide Deleted",
+          },
+        }}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        onClearFilters={handleClearFilters}
+        showSearchButton={true}
+        showClearButton={true}
+        isLoading={loading}
+      />
 
       {/* Bulk Actions */}
       {selectedProviders.length > 0 && (
@@ -316,7 +377,7 @@ export default function SuperAdminProvidersPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleBulkAction('activate')}
+                onClick={() => handleBulkAction("activate")}
               >
                 <FaToggleOn className="mr-1" />
                 Activate
@@ -324,7 +385,7 @@ export default function SuperAdminProvidersPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleBulkAction('deactivate')}
+                onClick={() => handleBulkAction("deactivate")}
               >
                 <FaToggleOff className="mr-1" />
                 Deactivate
@@ -332,7 +393,7 @@ export default function SuperAdminProvidersPage() {
               <Button
                 size="sm"
                 variant="danger"
-                onClick={() => handleBulkAction('delete')}
+                onClick={() => handleBulkAction("delete")}
               >
                 <FaTrash className="mr-1" />
                 Delete
@@ -351,7 +412,10 @@ export default function SuperAdminProvidersPage() {
                 <th className="px-6 py-3 text-left">
                   <input
                     type="checkbox"
-                    checked={selectedProviders.length === providers.length && providers.length > 0}
+                    checked={
+                      selectedProviders.length === providers.length &&
+                      providers.length > 0
+                    }
                     onChange={handleSelectAll}
                     className="rounded"
                   />
@@ -388,7 +452,10 @@ export default function SuperAdminProvidersPage() {
                 </tr>
               ) : providers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     No providers found.
                   </td>
                 </tr>
@@ -425,12 +492,21 @@ export default function SuperAdminProvidersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getProviderColor(provider.code)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getProviderColor(
+                          provider.code
+                        )}`}
+                      >
                         {provider.code}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(provider.isActive, provider.isDeleted)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                          provider.isActive,
+                          provider.isDeleted
+                        )}`}
+                      >
                         {getStatusText(provider.isActive, provider.isDeleted)}
                       </span>
                     </td>
@@ -454,7 +530,12 @@ export default function SuperAdminProvidersPage() {
                             <Button
                               size="xs"
                               variant="outline"
-                              onClick={() => handleToggleStatus(provider._id, provider.isActive)}
+                              onClick={() =>
+                                handleToggleStatus(
+                                  provider._id,
+                                  provider.isActive
+                                )
+                              }
                             >
                               {provider.isActive ? (
                                 <FaToggleOff className="w-3 h-3" />
@@ -494,21 +575,23 @@ export default function SuperAdminProvidersPage() {
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-              {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-              {pagination.total} results
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+              of {pagination.total} results
             </div>
             <div className="flex space-x-2">
-              {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  size="sm"
-                  variant={page === pagination.page ? "primary" : "outline"}
-                  onClick={() => fetchProviders(filters, { page })}
-                >
-                  {page}
-                </Button>
-              ))}
+              {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    size="sm"
+                    variant={page === pagination.page ? "primary" : "outline"}
+                    onClick={() => fetchProviders(filters, { page })}
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -527,4 +610,4 @@ export default function SuperAdminProvidersPage() {
       )}
     </div>
   );
-} 
+}
