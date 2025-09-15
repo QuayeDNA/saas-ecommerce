@@ -6,10 +6,14 @@ import {
   FaClipboardList,
   FaWallet,
   FaCog,
-  FaCheckCircle,
   FaMoneyBillWave,
   FaBox,
   FaChartLine,
+  FaUserTie,
+  FaUserShield,
+  FaUserCheck,
+  FaUserCog,
+  FaCrown,
 } from "react-icons/fa";
 import { Card, CardHeader, CardBody, Button, Badge } from "../../design-system";
 import {
@@ -122,6 +126,68 @@ export default function SuperAdminDashboard() {
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  // User type carousel data
+  const userTypeCarousel = [
+    {
+      key: "agents",
+      label: "Active Agents",
+      icon: <FaUserTie className="text-white text-sm sm:text-lg lg:text-xl" />,
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/20",
+    },
+    {
+      key: "super_agents",
+      label: "Super Agents",
+      icon: (
+        <FaUserShield className="text-white text-sm sm:text-lg lg:text-xl" />
+      ),
+      color: "text-purple-400",
+      bgColor: "bg-purple-500/20",
+    },
+    {
+      key: "dealers",
+      label: "Dealers",
+      icon: (
+        <FaUserCheck className="text-white text-sm sm:text-lg lg:text-xl" />
+      ),
+      color: "text-green-400",
+      bgColor: "bg-green-500/20",
+    },
+    {
+      key: "super_dealers",
+      label: "Super Dealers",
+      icon: <FaUserCog className="text-white text-sm sm:text-lg lg:text-xl" />,
+      color: "text-orange-400",
+      bgColor: "bg-orange-500/20",
+    },
+    {
+      key: "super_admins",
+      label: "Super Admins",
+      icon: <FaCrown className="text-white text-sm sm:text-lg lg:text-xl" />,
+      color: "text-yellow-400",
+      bgColor: "bg-yellow-500/20",
+    },
+  ];
+
+  const getUserTypeCount = (key: string): number => {
+    if (!stats?.users?.byType) return 0;
+    return (stats.users.byType as Record<string, number>)[key] || 0;
+  };
+
+  // Carousel timer
+  useEffect(() => {
+    if (!stats) return;
+
+    const interval = setInterval(() => {
+      setCarouselIndex(
+        (prevIndex) => (prevIndex + 1) % userTypeCarousel.length
+      );
+    }, 3000); // Change every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [stats, userTypeCarousel.length]);
 
   // Load stats first (faster to load)
   useEffect(() => {
@@ -433,24 +499,42 @@ export default function SuperAdminDashboard() {
               </CardBody>
             </Card>
 
-            {/* Active Agents */}
-            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+            {/* User Types Carousel */}
+            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200 relative overflow-hidden">
               <CardBody className="p-4 sm:p-5 lg:p-6">
                 <div className="flex items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
-                      Active Agents
+                      {userTypeCarousel[carouselIndex].label}
                     </p>
                     <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
-                      {stats.users.activeAgents}
+                      {getUserTypeCount(userTypeCarousel[carouselIndex].key)}
                     </p>
-                    <p className="text-xs text-purple-400 mt-1 sm:mt-2">
-                      {stats?.rates?.agentActivation ?? 0}% activation rate
+                    <p
+                      className={`text-xs mt-1 sm:mt-2 ${userTypeCarousel[carouselIndex].color}`}
+                    >
+                      {getUserTypeCount(userTypeCarousel[carouselIndex].key)}{" "}
+                      total
                     </p>
                   </div>
-                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaCheckCircle className="text-white text-sm sm:text-lg lg:text-xl" />
+                  <div
+                    className={`p-2.5 sm:p-3 lg:p-4 ${userTypeCarousel[carouselIndex].bgColor} rounded-full flex-shrink-0 flex items-center justify-center`}
+                  >
+                    {userTypeCarousel[carouselIndex].icon}
                   </div>
+                </div>
+                {/* Carousel Indicators */}
+                <div className="flex justify-center mt-3 space-x-1">
+                  {userTypeCarousel.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCarouselIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                        index === carouselIndex ? "bg-white" : "bg-white/30"
+                      }`}
+                      aria-label={`Go to ${userTypeCarousel[index].label}`}
+                    />
+                  ))}
                 </div>
               </CardBody>
             </Card>
@@ -634,18 +718,22 @@ export default function SuperAdminDashboard() {
             </CardHeader>
             <CardBody>
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Agents</span>
-                  <span className="font-medium">
-                    {stats.users.byType?.agents || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Customers</span>
-                  <span className="font-medium">
-                    {stats.users.byType?.dealers || 0}
-                  </span>
-                </div>
+                {/* Dynamic User Type Statistics */}
+                {stats.users.byType &&
+                  Object.entries(stats.users.byType).map(
+                    ([userType, count]) => (
+                      <div
+                        key={userType}
+                        className="flex justify-between items-center"
+                      >
+                        <span className="text-sm text-gray-600 capitalize">
+                          {userType.replace(/_/g, " ").replace(/s$/, "")}s
+                        </span>
+                        <span className="font-medium">{count}</span>
+                      </div>
+                    )
+                  )}
+
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Verified Users</span>
                   <span className="font-medium">{stats.users.verified}</span>
