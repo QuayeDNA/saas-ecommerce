@@ -431,24 +431,32 @@ export default function SuperAdminCommissionsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Commission Management
-        </h1>
-        <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Commission Management
+          </h1>
+          <p className="text-sm text-gray-600 mt-1 sm:hidden">
+            Manage agent commissions and payments
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
           <Button
             variant="primary"
             leftIcon={<FaPlay className="text-sm" />}
             onClick={() => setShowGenerateDialog(true)}
-            className="flex items-center"
+            className="flex items-center justify-center w-full sm:w-auto"
+            size="sm"
           >
-            Generate Commissions
+            <span className="sm:hidden">Generate</span>
+            <span className="hidden sm:inline">Generate Commissions</span>
           </Button>
           <Button
             variant="outline"
             onClick={() => setShowSettingsDialog(true)}
-            className="flex items-center"
+            className="flex items-center justify-center w-full sm:w-auto"
             leftIcon={<FaCalculator className="text-sm" />}
+            size="sm"
           >
             Settings
           </Button>
@@ -457,16 +465,18 @@ export default function SuperAdminCommissionsPage() {
               <Button
                 leftIcon={<FaCreditCard className="text-sm" />}
                 onClick={() => setShowPayDialog(true)}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                size="sm"
               >
-                Pay Selected ({selectedCommissions.length})
+                Pay ({selectedCommissions.length})
               </Button>
               <Button
                 onClick={() => setShowRejectDialog(true)}
-                className="flex items-center bg-red-600 hover:bg-red-700"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto bg-red-600 hover:bg-red-700"
                 leftIcon={<FaTimes className="text-sm" />}
+                size="sm"
               >
-                Reject Selected ({selectedCommissions.length})
+                Reject ({selectedCommissions.length})
               </Button>
             </>
           )}
@@ -475,75 +485,83 @@ export default function SuperAdminCommissionsPage() {
 
       {/* Statistics Cards */}
       {statistics && (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
           <Card>
-            <CardBody>
+            <CardBody className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                     Total Paid
                   </p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-lg sm:text-2xl font-bold text-green-600 truncate">
                     {formatCurrency(statistics.totalPaid)}
                   </p>
                 </div>
-                <FaMoneyBillWave className="text-green-500 text-2xl" />
+                <FaMoneyBillWave className="text-green-500 text-lg sm:text-2xl flex-shrink-0 ml-2" />
               </div>
             </CardBody>
           </Card>
 
           <Card>
-            <CardBody>
+            <CardBody className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                     Pending Amount
                   </p>
-                  <p className="text-2xl font-bold text-yellow-600">
+                  <p className="text-lg sm:text-2xl font-bold text-yellow-600 truncate">
                     {formatCurrency(statistics.totalPending)}
                   </p>
                 </div>
-                <FaClock className="text-yellow-500 text-2xl" />
+                <FaClock className="text-yellow-500 text-lg sm:text-2xl flex-shrink-0 ml-2" />
               </div>
             </CardBody>
           </Card>
 
           <Card>
-            <CardBody>
+            <CardBody className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                     Pending Count
                   </p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-lg sm:text-2xl font-bold text-blue-600 truncate">
                     {statistics.pendingCount}
                   </p>
                 </div>
-                <FaUsers className="text-blue-500 text-2xl" />
+                <FaUsers className="text-blue-500 text-lg sm:text-2xl flex-shrink-0 ml-2" />
               </div>
             </CardBody>
           </Card>
 
           <Card>
-            <CardBody>
+            <CardBody className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                     This Month
                   </p>
-                  <p className="text-2xl font-bold text-purple-600">
+                  <p className="text-lg sm:text-2xl font-bold text-purple-600 truncate">
                     {formatCurrency(
                       (statistics.thisMonth?.totalPaid || 0) +
                         (statistics.thisMonth?.totalPending || 0)
                     )}
                   </p>
-                  <p className="text-xs text-gray-500">
-                    Paid: {formatCurrency(statistics.thisMonth?.totalPaid || 0)}{" "}
-                    | Pending:{" "}
-                    {formatCurrency(statistics.thisMonth?.totalPending || 0)}
-                  </p>
+                  <div className="hidden sm:block">
+                    <p className="text-xs text-gray-500 mt-1">
+                      Paid: {formatCurrency(statistics.thisMonth?.totalPaid || 0)} |
+                      Pending: {formatCurrency(statistics.thisMonth?.totalPending || 0)}
+                    </p>
+                  </div>
+                  {/* Mobile version - simplified */}
+                  <div className="sm:hidden mt-1">
+                    <p className="text-xs text-gray-500">
+                      P: {formatCurrency(statistics.thisMonth?.totalPaid || 0).replace('₵', '')} |
+                      Pen: {formatCurrency(statistics.thisMonth?.totalPending || 0).replace('₵', '')}
+                    </p>
+                  </div>
                 </div>
-                <FaCalculator className="text-purple-500 text-2xl" />
+                <FaCalculator className="text-purple-500 text-lg sm:text-2xl flex-shrink-0 ml-2" />
               </div>
             </CardBody>
           </Card>
