@@ -549,15 +549,23 @@ export default function SuperAdminCommissionsPage() {
                   </p>
                   <div className="hidden sm:block">
                     <p className="text-xs text-gray-500 mt-1">
-                      Paid: {formatCurrency(statistics.thisMonth?.totalPaid || 0)} |
-                      Pending: {formatCurrency(statistics.thisMonth?.totalPending || 0)}
+                      Paid:{" "}
+                      {formatCurrency(statistics.thisMonth?.totalPaid || 0)} |
+                      Pending:{" "}
+                      {formatCurrency(statistics.thisMonth?.totalPending || 0)}
                     </p>
                   </div>
                   {/* Mobile version - simplified */}
                   <div className="sm:hidden mt-1">
                     <p className="text-xs text-gray-500">
-                      P: {formatCurrency(statistics.thisMonth?.totalPaid || 0).replace('₵', '')} |
-                      Pen: {formatCurrency(statistics.thisMonth?.totalPending || 0).replace('₵', '')}
+                      P:{" "}
+                      {formatCurrency(
+                        statistics.thisMonth?.totalPaid || 0
+                      ).replace("₵", "")}{" "}
+                      | Pen:{" "}
+                      {formatCurrency(
+                        statistics.thisMonth?.totalPending || 0
+                      ).replace("₵", "")}
                     </p>
                   </div>
                 </div>
