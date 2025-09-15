@@ -1,8 +1,5 @@
-import { apiClient } from '../utils/api-client';
-import type {
-  Provider,
-  ProviderFilters,
-} from "../types/package";
+import { apiClient } from "../utils/api-client";
+import type { Provider, ProviderFilters } from "../types/package";
 
 interface ProviderResponse {
   providers: Provider[];
@@ -21,15 +18,15 @@ class ProviderService {
     pagination: Partial<{ page: number; limit: number }> = {}
   ): Promise<ProviderResponse> {
     const params = { ...filters, ...pagination };
-    const response = await apiClient.get('/api/providers/public', { params });
+    const response = await apiClient.get("/api/providers/public", { params });
     return {
       providers: response.data.providers ?? [],
       pagination: response.data.pagination ?? {
         total: 0,
         page: 1,
         pages: 0,
-        limit: 20
-      }
+        limit: 20,
+      },
     };
   }
 
@@ -39,15 +36,15 @@ class ProviderService {
     pagination: Partial<{ page: number; limit: number }> = {}
   ): Promise<ProviderResponse> {
     const params = { ...filters, ...pagination };
-    const response = await apiClient.get('/api/providers', { params });
+    const response = await apiClient.get("/api/providers", { params });
     return {
       providers: response.data.providers ?? [],
       pagination: response.data.pagination ?? {
         total: 0,
         page: 1,
         pages: 0,
-        limit: 20
-      }
+        limit: 20,
+      },
     };
   }
 
@@ -59,7 +56,7 @@ class ProviderService {
 
   // Create provider (super admin only)
   async createProvider(providerData: Partial<Provider>): Promise<Provider> {
-    const response = await apiClient.post('/api/providers', providerData);
+    const response = await apiClient.post("/api/providers", providerData);
     return response.data.provider;
   }
 
@@ -85,8 +82,20 @@ class ProviderService {
 
   // Get provider analytics (super admin only)
   async getAnalytics(): Promise<Record<string, unknown>> {
-    const response = await apiClient.get('/api/providers/analytics');
+    const response = await apiClient.get("/api/providers/analytics");
     return response.data.analytics;
+  }
+
+  // Get provider by code (authentication required)
+  async getProviderByCode(code: string): Promise<Provider> {
+    const response = await apiClient.get("/api/providers", {
+      params: { search: code, limit: 1 },
+    });
+    const providers = response.data.providers ?? [];
+    if (providers.length === 0) {
+      throw new Error(`Provider with code ${code} not found`);
+    }
+    return providers[0];
   }
 }
 
