@@ -1,5 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { FaSearch, FaFilter, FaEye, FaCheck, FaTimes, FaClock, FaMoneyBillWave, FaDownload, FaUsers, FaWallet, FaPlus, FaMinus } from "react-icons/fa";
+import {
+  FaSearch,
+  FaFilter,
+  FaEye,
+  FaCheck,
+  FaTimes,
+  FaClock,
+  FaMoneyBillWave,
+  FaDownload,
+  FaUsers,
+  FaWallet,
+  FaPlus,
+  FaMinus,
+} from "react-icons/fa";
 import { useWallet } from "../../hooks/use-wallet";
 import { useToast } from "../../design-system/components/toast";
 import { Button } from "../../design-system/components/button";
@@ -14,19 +27,30 @@ import { walletService } from "../../services/wallet-service";
 import { websocketService } from "../../services/websocket.service";
 import { apiClient } from "../../utils/api-client";
 import { Card, CardHeader } from "@/design-system";
-import { type User } from "../../services/user.service"
+import { type User } from "../../services/user.service";
 
 interface WalletTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  mode: 'credit' | 'debit';
-  onTransaction: (userId: string, amount: number, description: string, mode: 'credit' | 'debit') => Promise<void>;
+  mode: "credit" | "debit";
+  onTransaction: (
+    userId: string,
+    amount: number,
+    description: string,
+    mode: "credit" | "debit"
+  ) => Promise<void>;
 }
 
-function WalletTransactionModal({ isOpen, onClose, user, mode, onTransaction }: WalletTransactionModalProps) {
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
+function WalletTransactionModal({
+  isOpen,
+  onClose,
+  user,
+  mode,
+  onTransaction,
+}: WalletTransactionModalProps) {
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,29 +60,43 @@ function WalletTransactionModal({ isOpen, onClose, user, mode, onTransaction }: 
 
     setLoading(true);
     setError(null);
-    
+
     try {
-      await onTransaction(user._id, parseFloat(amount), description || `${mode === 'credit' ? 'Top-up' : 'Debit'} by super admin`, mode);
-      setAmount('');
-      setDescription('');
+      await onTransaction(
+        user._id,
+        parseFloat(amount),
+        description ||
+          `${mode === "credit" ? "Top-up" : "Debit"} by super admin`,
+        mode
+      );
+      setAmount("");
+      setDescription("");
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : `${mode === 'credit' ? 'Top-up' : 'Debit'} failed`);
+      setError(
+        err instanceof Error
+          ? err.message
+          : `${mode === "credit" ? "Top-up" : "Debit"} failed`
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const getModalTitle = () => {
-    return mode === 'credit' ? 'Credit Wallet' : 'Debit Wallet';
+    return mode === "credit" ? "Credit Wallet" : "Debit Wallet";
   };
 
   const getActionButtonText = () => {
-    return loading ? 'Processing...' : mode === 'credit' ? 'Credit' : 'Debit';
+    return loading ? "Processing..." : mode === "credit" ? "Credit" : "Debit";
   };
 
   const getIcon = () => {
-    return mode === 'credit' ? <FaPlus className="w-4 h-4" /> : <FaMinus className="w-4 h-4" />;
+    return mode === "credit" ? (
+      <FaPlus className="w-4 h-4" />
+    ) : (
+      <FaMinus className="w-4 h-4" />
+    );
   };
 
   if (!isOpen || !user) return null;
@@ -68,9 +106,11 @@ function WalletTransactionModal({ isOpen, onClose, user, mode, onTransaction }: 
       <div className="mb-4">
         <p className="text-sm text-gray-600">User: {user.fullName}</p>
         <p className="text-sm text-gray-600">Email: {user.email}</p>
-        <p className="text-sm text-gray-600">Current Balance: GH₵{user.walletBalance.toFixed(2)}</p>
+        <p className="text-sm text-gray-600">
+          Current Balance: GH₵{user.walletBalance.toFixed(2)}
+        </p>
       </div>
-      
+
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <p className="text-red-800 text-sm">{error}</p>
@@ -92,7 +132,7 @@ function WalletTransactionModal({ isOpen, onClose, user, mode, onTransaction }: 
             required
           />
         </FormField>
-        
+
         <FormField>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Description (Optional)
@@ -100,15 +140,15 @@ function WalletTransactionModal({ isOpen, onClose, user, mode, onTransaction }: 
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder={`Reason for ${mode === 'credit' ? 'credit' : 'debit'}`}
+            placeholder={`Reason for ${mode === "credit" ? "credit" : "debit"}`}
           />
         </FormField>
-        
+
         <div className="flex gap-2 pt-4">
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={loading || !amount || parseFloat(amount) <= 0}
-            variant={mode === 'credit' ? 'primary' : 'danger'}
+            variant={mode === "credit" ? "primary" : "danger"}
           >
             {getIcon()}
             <span className="ml-2">{getActionButtonText()}</span>
@@ -125,69 +165,88 @@ function WalletTransactionModal({ isOpen, onClose, user, mode, onTransaction }: 
 export default function SuperAdminWalletPage() {
   const { refreshWallet } = useWallet();
   const { addToast } = useToast();
-  
+
   // State for users
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // State for analytics
   const [analytics, setAnalytics] = useState<WalletAnalytics | null>(null);
-  
+
   // State for filters and search
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [userTypeFilter, setUserTypeFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [userTypeFilter, setUserTypeFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+
   // State for modals
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [transactionMode, setTransactionMode] = useState<'credit' | 'debit'>('credit');
-  
+  const [transactionMode, setTransactionMode] = useState<"credit" | "debit">(
+    "credit"
+  );
+
   // State for pending requests
-  const [pendingRequests, setPendingRequests] = useState<WalletTransaction[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<WalletTransaction[]>(
+    []
+  );
 
   // WebSocket handlers
-  const handleWalletUpdate = useCallback((data: { type: string; userId?: string; balance?: number }) => {
-    if (data.type === 'wallet_update') {
-      // Update user's wallet balance in real-time
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
-          user._id === data.userId 
-            ? { ...user, walletBalance: data.balance || user.walletBalance }
-            : user
-        )
-      );
-      
-      // Refresh analytics if needed
-      fetchAnalytics();
-    }
-  }, []);
+  const handleWalletUpdate = useCallback(
+    (data: { type: string; userId?: string; balance?: number }) => {
+      if (data.type === "wallet_update") {
+        // Update user's wallet balance in real-time
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user._id === data.userId
+              ? { ...user, walletBalance: data.balance || user.walletBalance }
+              : user
+          )
+        );
+
+        // Refresh analytics if needed
+        fetchAnalytics();
+      }
+    },
+    []
+  );
 
   // Filter users based on search term and filters
-  const filterUsers = useCallback((usersList: User[], search: string, userType: string, status: string) => {
-    return usersList.filter(user => {
-      // Search matching - check name, email, ID, and agent code
-      const searchLower = search.toLowerCase().trim();
-      const matchesSearch = !searchLower || 
-        user.fullName.toLowerCase().includes(searchLower) ||
-        user.email.toLowerCase().includes(searchLower) ||
-        user._id.toLowerCase().includes(searchLower) ||
-        (user.agentCode && user.agentCode.toLowerCase().includes(searchLower));
-      
-      // Filter matching
-      const matchesUserType = !userType || user.userType.toLowerCase() === userType.toLowerCase();
-      const matchesStatus = !status || user.status.toLowerCase() === status.toLowerCase();
-      
-      return matchesSearch && matchesUserType && matchesStatus;
-    });
-  }, []);
+  const filterUsers = useCallback(
+    (usersList: User[], search: string, userType: string, status: string) => {
+      return usersList.filter((user) => {
+        // Search matching - check name, email, ID, and agent code
+        const searchLower = search.toLowerCase().trim();
+        const matchesSearch =
+          !searchLower ||
+          user.fullName.toLowerCase().includes(searchLower) ||
+          user.email.toLowerCase().includes(searchLower) ||
+          user._id.toLowerCase().includes(searchLower) ||
+          (user.agentCode &&
+            user.agentCode.toLowerCase().includes(searchLower));
+
+        // Filter matching
+        const matchesUserType =
+          !userType || user.userType.toLowerCase() === userType.toLowerCase();
+        const matchesStatus =
+          !status || user.status.toLowerCase() === status.toLowerCase();
+
+        return matchesSearch && matchesUserType && matchesStatus;
+      });
+    },
+    []
+  );
 
   // Update filtered users when users or filters change
   useEffect(() => {
-    const filtered = filterUsers(users, debouncedSearchTerm, userTypeFilter, statusFilter);
+    const filtered = filterUsers(
+      users,
+      debouncedSearchTerm,
+      userTypeFilter,
+      statusFilter
+    );
     setFilteredUsers(filtered);
   }, [users, debouncedSearchTerm, userTypeFilter, statusFilter, filterUsers]);
 
@@ -202,24 +261,27 @@ export default function SuperAdminWalletPage() {
 
   // Clear filters function
   const handleClearFilters = useCallback(() => {
-    setSearchTerm('');
-    setDebouncedSearchTerm('');
-    setUserTypeFilter('');
-    setStatusFilter('');
-    addToast('Filters cleared', 'info', 2000);
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+    setUserTypeFilter("");
+    setStatusFilter("");
+    addToast("Filters cleared", "info", 2000);
   }, [addToast]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Escape key to clear filters
-      if (event.key === 'Escape' && (debouncedSearchTerm || userTypeFilter || statusFilter)) {
+      if (
+        event.key === "Escape" &&
+        (debouncedSearchTerm || userTypeFilter || statusFilter)
+      ) {
         handleClearFilters();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [debouncedSearchTerm, userTypeFilter, statusFilter, handleClearFilters]);
 
   // Memoized search statistics
@@ -229,9 +291,18 @@ export default function SuperAdminWalletPage() {
       total: users.length,
       filtered: filteredUsers.length,
       hasFilters,
-      percentage: users.length > 0 ? Math.round((filteredUsers.length / users.length) * 100) : 0
+      percentage:
+        users.length > 0
+          ? Math.round((filteredUsers.length / users.length) * 100)
+          : 0,
     };
-  }, [users.length, filteredUsers.length, debouncedSearchTerm, userTypeFilter, statusFilter]);
+  }, [
+    users.length,
+    filteredUsers.length,
+    debouncedSearchTerm,
+    userTypeFilter,
+    statusFilter,
+  ]);
 
   useEffect(() => {
     fetchUsers();
@@ -239,11 +310,17 @@ export default function SuperAdminWalletPage() {
     fetchPendingRequests();
 
     // Connect to WebSocket for real-time updates
-    websocketService.connect('super_admin');
-    websocketService.on('wallet_update', handleWalletUpdate as (data: unknown) => void);
+    websocketService.connect("super_admin");
+    websocketService.on(
+      "wallet_update",
+      handleWalletUpdate as (data: unknown) => void
+    );
 
     return () => {
-      websocketService.off('wallet_update', handleWalletUpdate as (data: unknown) => void);
+      websocketService.off(
+        "wallet_update",
+        handleWalletUpdate as (data: unknown) => void
+      );
     };
   }, [handleWalletUpdate]);
 
@@ -251,21 +328,21 @@ export default function SuperAdminWalletPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/api/users/with-wallet', {
+      const response = await apiClient.get("/api/users/with-wallet", {
         params: {
-          userType: 'agent',
-          includeWallet: 'true',
+          userTypes: "agent,super_agent,dealer,super_dealer", // Include all wallet-enabled user types
+          includeWallet: "true",
           page: 1,
-          limit: 100
-        }
+          limit: 100,
+        },
       });
       if (response.data.success) {
         setUsers(response.data.users);
       } else {
-        setError(response.data.message || 'Failed to fetch users');
+        setError(response.data.message || "Failed to fetch users");
       }
     } catch {
-      setError('Failed to fetch users');
+      setError("Failed to fetch users");
     } finally {
       setLoading(false);
     }
@@ -289,49 +366,59 @@ export default function SuperAdminWalletPage() {
     }
   };
 
-  const handleTransaction = async (userId: string, amount: number, description: string, mode: 'credit' | 'debit') => {
+  const handleTransaction = async (
+    userId: string,
+    amount: number,
+    description: string,
+    mode: "credit" | "debit"
+  ) => {
     try {
-      if (mode === 'credit') {
+      if (mode === "credit") {
         await walletService.adminTopUpWallet(userId, amount, description);
         addToast(
-          `Successfully credited GH₵${amount.toFixed(2)} to wallet`, 
-          'success', 
+          `Successfully credited GH₵${amount.toFixed(2)} to wallet`,
+          "success",
           4000
         );
       } else {
         await walletService.adminDebitWallet(userId, amount, description);
         addToast(
-          `Successfully debited GH₵${amount.toFixed(2)} from wallet`, 
-          'warning', 
+          `Successfully debited GH₵${amount.toFixed(2)} from wallet`,
+          "warning",
           4000
         );
       }
-      
+
       await fetchUsers();
       await fetchAnalytics();
       await refreshWallet();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : `Failed to ${mode} wallet`;
-      addToast(errorMessage, 'error', 5000);
+      const errorMessage =
+        error instanceof Error ? error.message : `Failed to ${mode} wallet`;
+      addToast(errorMessage, "error", 5000);
       throw new Error(errorMessage);
     }
   };
 
-  const handleProcessRequest = async (transactionId: string, approve: boolean) => {
+  const handleProcessRequest = async (
+    transactionId: string,
+    approve: boolean
+  ) => {
     try {
       await walletService.processTopUpRequest(transactionId, approve);
-      
+
       if (approve) {
-        addToast('Top-up request approved successfully', 'success', 4000);
+        addToast("Top-up request approved successfully", "success", 4000);
       } else {
-        addToast('Top-up request rejected', 'warning', 4000);
+        addToast("Top-up request rejected", "warning", 4000);
       }
-      
+
       await fetchPendingRequests();
       await fetchAnalytics();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process request';
-      addToast(errorMessage, 'error', 5000);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to process request";
+      addToast(errorMessage, "error", 5000);
     }
   };
 
@@ -340,55 +427,57 @@ export default function SuperAdminWalletPage() {
     // Filtering is now handled automatically by the useEffect hook
     // This function provides immediate feedback when user hits search button
     const activeFilters = [
-      debouncedSearchTerm && 'search term',
-      userTypeFilter && 'user type',
-      statusFilter && 'status'
+      debouncedSearchTerm && "search term",
+      userTypeFilter && "user type",
+      statusFilter && "status",
     ].filter(Boolean);
-    
+
     if (activeFilters.length > 0) {
       addToast(
-        `Found ${searchStats.filtered} user${searchStats.filtered !== 1 ? 's' : ''} matching ${activeFilters.join(', ')} (${searchStats.percentage}%)`,
-        'info',
+        `Found ${searchStats.filtered} user${
+          searchStats.filtered !== 1 ? "s" : ""
+        } matching ${activeFilters.join(", ")} (${searchStats.percentage}%)`,
+        "info",
         3000
       );
     } else {
-      addToast(
-        `Showing all ${searchStats.filtered} users`,
-        'info',
-        2000
-      );
+      addToast(`Showing all ${searchStats.filtered} users`, "info", 2000);
     }
   };
 
-  const openTransactionModal = (user: User, mode: 'credit' | 'debit') => {
+  const openTransactionModal = (user: User, mode: "credit" | "debit") => {
     setSelectedUser(user);
     setTransactionMode(mode);
     setShowTransactionModal(true);
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS'
+    return new Intl.NumberFormat("en-GH", {
+      style: "currency",
+      currency: "GHS",
     }).format(amount);
   };
 
   const formatDate = (date: Date | string) => {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(date));
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-600 bg-green-100';
-      case 'inactive': return 'text-red-600 bg-red-100';
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case "active":
+        return "text-green-600 bg-green-100";
+      case "inactive":
+        return "text-red-600 bg-red-100";
+      case "pending":
+        return "text-yellow-600 bg-yellow-100";
+      default:
+        return "text-gray-600 bg-gray-100";
     }
   };
 
@@ -406,10 +495,15 @@ export default function SuperAdminWalletPage() {
       <Card variant="outlined">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <CardHeader className="text-center">
-            <h1 className="text-2xl font-bold mb-2" style={{ color: colors.brand.primary }}>
+            <h1
+              className="text-2xl font-bold mb-2"
+              style={{ color: colors.brand.primary }}
+            >
               Wallet Management
             </h1>
-            <p className="text-gray-600">Manage agent wallets and transactions</p>
+            <p className="text-gray-600">
+              Manage agent wallets and transactions
+            </p>
           </CardHeader>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => fetchUsers()}>
@@ -431,7 +525,9 @@ export default function SuperAdminWalletPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.users.total}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {analytics.users.total}
+                </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-full">
                 <FaUsers className="text-blue-600 text-xl" />
@@ -442,8 +538,12 @@ export default function SuperAdminWalletPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Balance</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(analytics.balance.total)}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Balance
+                </p>
+                <p className="text-2xl font-bold text-green-600">
+                  {formatCurrency(analytics.balance.total)}
+                </p>
               </div>
               <div className="p-3 bg-green-100 rounded-full">
                 <FaMoneyBillWave className="text-green-600 text-xl" />
@@ -454,8 +554,12 @@ export default function SuperAdminWalletPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending Requests</p>
-                <p className="text-2xl font-bold text-yellow-600">{analytics.transactions.pendingRequests}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Pending Requests
+                </p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {analytics.transactions.pendingRequests}
+                </p>
               </div>
               <div className="p-3 bg-yellow-100 rounded-full">
                 <FaClock className="text-yellow-600 text-xl" />
@@ -467,7 +571,9 @@ export default function SuperAdminWalletPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg Balance</p>
-                <p className="text-2xl font-bold text-purple-600">{formatCurrency(analytics.balance.average)}</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {formatCurrency(analytics.balance.average)}
+                </p>
               </div>
               <div className="p-3 bg-purple-100 rounded-full">
                 <FaWallet className="text-purple-600 text-xl" />
@@ -480,7 +586,9 @@ export default function SuperAdminWalletPage() {
       {/* Pending Requests */}
       {pendingRequests.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">Pending Top-Up Requests</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Pending Top-Up Requests
+          </h3>
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gray-50">
@@ -507,7 +615,9 @@ export default function SuperAdminWalletPage() {
                   <tr key={request._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        {typeof request.user === 'string' ? request.user : request.user.fullName}
+                        {typeof request.user === "string"
+                          ? request.user
+                          : request.user.fullName}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
@@ -524,14 +634,18 @@ export default function SuperAdminWalletPage() {
                         <Button
                           size="xs"
                           variant="outline"
-                          onClick={() => handleProcessRequest(request._id, true)}
+                          onClick={() =>
+                            handleProcessRequest(request._id, true)
+                          }
                         >
                           <FaCheck className="w-3 h-3" />
                         </Button>
                         <Button
                           size="xs"
                           variant="danger"
-                          onClick={() => handleProcessRequest(request._id, false)}
+                          onClick={() =>
+                            handleProcessRequest(request._id, false)
+                          }
                         >
                           <FaTimes className="w-3 h-3" />
                         </Button>
@@ -556,9 +670,11 @@ export default function SuperAdminWalletPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by name, email, ID, or agent code... (Press Enter to search, Esc to clear)"
                 leftIcon={<FaSearch className="text-gray-400" />}
-                rightIcon={searchTerm !== debouncedSearchTerm ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                ) : undefined}
+                rightIcon={
+                  searchTerm !== debouncedSearchTerm ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  ) : undefined
+                }
               />
             </div>
             <div>
@@ -567,9 +683,13 @@ export default function SuperAdminWalletPage() {
                 value={userTypeFilter}
                 onChange={setUserTypeFilter}
                 options={[
-                  { value: '', label: 'All Types' },
-                  { value: 'agent', label: 'Agent' },
-                  { value: 'customer', label: 'Customer' }
+                  { value: "", label: "All Types" },
+                  { value: "agent", label: "Agent" },
+                  { value: "super_agent", label: "Super Agent" },
+                  { value: "dealer", label: "Dealer" },
+                  { value: "super_dealer", label: "Super Dealer" },
+                  { value: "admin", label: "Admin" },
+                  { value: "super_admin", label: "Super Admin" },
                 ]}
               />
             </div>
@@ -579,10 +699,10 @@ export default function SuperAdminWalletPage() {
                 value={statusFilter}
                 onChange={setStatusFilter}
                 options={[
-                  { value: '', label: 'All Status' },
-                  { value: 'active', label: 'Active' },
-                  { value: 'inactive', label: 'Inactive' },
-                  { value: 'pending', label: 'Pending' }
+                  { value: "", label: "All Status" },
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                  { value: "pending", label: "Pending" },
                 ]}
               />
             </div>
@@ -591,7 +711,11 @@ export default function SuperAdminWalletPage() {
                 <FaSearch className="mr-2" />
                 Search
               </Button>
-              <Button type="button" variant="outline" onClick={handleClearFilters}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClearFilters}
+              >
                 <FaFilter className="mr-2" />
                 Clear
               </Button>
@@ -612,11 +736,7 @@ export default function SuperAdminWalletPage() {
             )}
           </div>
           {searchStats.hasFilters && (
-            <Button
-              size="xs"
-              variant="outline"
-              onClick={handleClearFilters}
-            >
+            <Button size="xs" variant="outline" onClick={handleClearFilters}>
               Clear all filters
             </Button>
           )}
@@ -661,8 +781,13 @@ export default function SuperAdminWalletPage() {
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                    {users.length === 0 ? 'No users found.' : 'No users match your search criteria.'}
+                  <td
+                    colSpan={5}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
+                    {users.length === 0
+                      ? "No users found."
+                      : "No users match your search criteria."}
                   </td>
                 </tr>
               ) : (
@@ -679,7 +804,9 @@ export default function SuperAdminWalletPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 min-w-32 w-40">
-                      <span className="text-sm text-gray-900">{user.agentCode}</span>
+                      <span className="text-sm text-gray-900">
+                        {user.agentCode}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -687,7 +814,11 @@ export default function SuperAdminWalletPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.status)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                          user.status
+                        )}`}
+                      >
                         {user.status}
                       </span>
                     </td>
@@ -699,21 +830,26 @@ export default function SuperAdminWalletPage() {
                         <Button
                           size="xs"
                           variant="outline"
-                          onClick={() => openTransactionModal(user, 'credit')}
+                          onClick={() => openTransactionModal(user, "credit")}
                         >
                           <FaPlus className="w-3 h-3" />
                         </Button>
                         <Button
                           size="xs"
                           variant="danger"
-                          onClick={() => openTransactionModal(user, 'debit')}
+                          onClick={() => openTransactionModal(user, "debit")}
                         >
                           <FaMinus className="w-3 h-3" />
                         </Button>
                         <Button
                           size="xs"
                           variant="outline"
-                          onClick={() => window.open(`/superadmin/users/${user._id}`, '_blank')}
+                          onClick={() =>
+                            window.open(
+                              `/superadmin/users/${user._id}`,
+                              "_blank"
+                            )
+                          }
                         >
                           <FaEye className="w-3 h-3" />
                         </Button>
@@ -737,4 +873,4 @@ export default function SuperAdminWalletPage() {
       />
     </div>
   );
-} 
+}
