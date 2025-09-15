@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { userService, type User } from "../../services/user.service";
 import { SearchAndFilter } from "../../components/common";
 import {
@@ -8,7 +8,6 @@ import {
   FaStore,
   FaShieldAlt,
   FaEye,
-  FaUserCheck,
   FaDownload,
   FaRedo,
   FaPhone,
@@ -16,6 +15,9 @@ import {
   FaCalendar,
   FaBuilding,
   FaIdCard,
+  FaUserTie,
+  FaUserShield,
+  FaCrown,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../design-system/components/button";
@@ -49,6 +51,7 @@ export default function SuperAdminUsersPage() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [processingUser, setProcessingUser] = useState<string | null>(null);
+  const [statusCarouselIndex, setStatusCarouselIndex] = useState(0);
   const navigate = useNavigate();
 
   // Filter options for the reusable component
@@ -67,7 +70,7 @@ export default function SuperAdminUsersPage() {
     },
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -83,11 +86,11 @@ export default function SuperAdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userType, status, search]);
 
   useEffect(() => {
     fetchUsers();
-  }, [userType, status]);
+  }, [fetchUsers]);
 
   // Add debounced search effect
   useEffect(() => {
@@ -96,7 +99,7 @@ export default function SuperAdminUsersPage() {
     }, 500); // 500ms delay for debounced search
 
     return () => clearTimeout(delayedSearch);
-  }, [search, userType, status]);
+  }, [fetchUsers]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,6 +202,74 @@ export default function SuperAdminUsersPage() {
     }).format(new Date(date));
   };
 
+  // Status carousel data
+  const statusCarousel = [
+    {
+      key: "pending",
+      label: "Pending",
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-100",
+      iconColor: "text-yellow-600",
+    },
+    {
+      key: "active",
+      label: "Active",
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+      iconColor: "text-green-600",
+    },
+  ];
+
+  // User type cards data
+  const userTypeCards = [
+    {
+      key: "agents",
+      label: "Agents",
+      icon: <FaStore className="text-blue-600 text-lg sm:text-xl" />,
+      bgColor: "bg-blue-100",
+      textColor: "text-blue-600",
+    },
+    {
+      key: "super_agents",
+      label: "Super Agents",
+      icon: <FaUserShield className="text-indigo-600 text-lg sm:text-xl" />,
+      bgColor: "bg-indigo-100",
+      textColor: "text-indigo-600",
+    },
+    {
+      key: "dealers",
+      label: "Dealers",
+      icon: <FaUserTie className="text-green-600 text-lg sm:text-xl" />,
+      bgColor: "bg-green-100",
+      textColor: "text-green-600",
+    },
+    {
+      key: "super_dealers",
+      label: "Super Dealers",
+      icon: <FaUserTie className="text-emerald-600 text-lg sm:text-xl" />,
+      bgColor: "bg-emerald-100",
+      textColor: "text-emerald-600",
+    },
+    {
+      key: "super_admins",
+      label: "Super Admins",
+      icon: <FaCrown className="text-purple-600 text-lg sm:text-xl" />,
+      bgColor: "bg-purple-100",
+      textColor: "text-purple-600",
+    },
+  ];
+
+  // Carousel timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStatusCarouselIndex(
+        (prevIndex) => (prevIndex + 1) % statusCarousel.length
+      );
+    }, 4000); // Change every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [statusCarousel.length]);
+
   // Calculate statistics
   const stats = {
     total: users.length,
@@ -206,7 +277,10 @@ export default function SuperAdminUsersPage() {
     active: users.filter((u) => u.status === "active").length,
     rejected: users.filter((u) => u.status === "rejected").length,
     agents: users.filter((u) => u.userType === "agent").length,
-    superAdmins: users.filter((u) => u.userType === "super_admin").length,
+    super_agents: users.filter((u) => u.userType === "super_agent").length,
+    dealers: users.filter((u) => u.userType === "dealer").length,
+    super_dealers: users.filter((u) => u.userType === "super_dealer").length,
+    super_admins: users.filter((u) => u.userType === "super_admin").length,
   };
 
   return (
@@ -244,16 +318,45 @@ export default function SuperAdminUsersPage() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="space-y-4">
+        {/* Total Users with Status Carousel - Full Width */}
         <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <p className="text-xs sm:text-sm font-medium text-gray-600">
                 Total Users
               </p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900">
                 {stats.total}
               </p>
+              {/* Status Carousel */}
+              <div className="mt-2">
+                <p
+                  className={`text-xs sm:text-sm font-medium ${statusCarousel[statusCarouselIndex].color}`}
+                >
+                  {statusCarousel[statusCarouselIndex].label}:{" "}
+                  {
+                    stats[
+                      statusCarousel[statusCarouselIndex]
+                        .key as keyof typeof stats
+                    ]
+                  }
+                </p>
+                <div className="flex justify-center mt-2 space-x-1">
+                  {statusCarousel.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setStatusCarouselIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                        index === statusCarouselIndex
+                          ? "bg-gray-600"
+                          : "bg-gray-300"
+                      }`}
+                      aria-label={`Show ${statusCarousel[index].label} count`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
               <FaUser className="text-blue-600 text-lg sm:text-xl" />
@@ -261,52 +364,33 @@ export default function SuperAdminUsersPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">
-                Pending
-              </p>
-              <p className="text-lg sm:text-2xl font-bold text-yellow-600">
-                {stats.pending}
-              </p>
+        {/* User Type Cards - 2x2 Grid on Small Screens */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          {userTypeCards.map((userType) => (
+            <div
+              key={userType.key}
+              className="bg-white rounded-lg shadow p-3 sm:p-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
+                    {userType.label}
+                  </p>
+                  <p
+                    className={`text-lg sm:text-2xl font-bold ${userType.textColor}`}
+                  >
+                    {stats[userType.key as keyof typeof stats]}
+                  </p>
+                </div>
+                {/* Hide icons on small screens, show on sm and up */}
+                <div
+                  className={`hidden sm:flex p-2 sm:p-3 ${userType.bgColor} rounded-full ml-2 flex-shrink-0`}
+                >
+                  <div className="text-lg sm:text-xl">{userType.icon}</div>
+                </div>
+              </div>
             </div>
-            <div className="p-2 sm:p-3 bg-yellow-100 rounded-full">
-              <FaUserCheck className="text-yellow-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">
-                Active
-              </p>
-              <p className="text-lg sm:text-2xl font-bold text-green-600">
-                {stats.active}
-              </p>
-            </div>
-            <div className="p-2 sm:p-3 bg-green-100 rounded-full">
-              <FaUserCheck className="text-green-600 text-lg sm:text-xl" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600">
-                Agents
-              </p>
-              <p className="text-lg sm:text-2xl font-bold text-blue-600">
-                {stats.agents}
-              </p>
-            </div>
-            <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
-              <FaStore className="text-blue-600 text-lg sm:text-xl" />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
