@@ -254,7 +254,10 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
           errorMessage.includes("insufficient")
         ) {
           setError(errorMessage);
-          addToast("Order created as draft due to insufficient wallet balance", "warning");
+          addToast(
+            "Order created as draft due to insufficient wallet balance",
+            "warning"
+          );
           // Don't close modal, let user see the error and potentially top up wallet
           return;
         }

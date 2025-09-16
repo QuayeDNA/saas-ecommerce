@@ -1,8 +1,17 @@
 // src/contexts/NotificationContext.tsx
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { notificationService, type Notification } from '../services/notification.service';
-import { websocketService } from '../services/websocket.service';
-import { useAuth } from '../hooks/use-auth';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import {
+  notificationService,
+  type Notification,
+} from "../services/notification.service";
+import { websocketService } from "../services/websocket.service";
+import { useAuth } from "../hooks/use-auth";
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -11,7 +20,11 @@ interface NotificationContextType {
   error: string | null;
   fetchNotifications: () => Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fetchAllNotifications: (page?: number, limit?: number, read?: boolean) => Promise<{ notifications: Notification[]; pagination?: any }>;
+  fetchAllNotifications: (
+    page?: number,
+    limit?: number,
+    read?: boolean
+  ) => Promise<{ notifications: Notification[]; pagination?: any }>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAsUnread: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
@@ -22,12 +35,16 @@ interface NotificationContextType {
   refreshCount: () => Promise<void>;
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextType | undefined>(
+  undefined
+);
 
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    throw new Error(
+      "useNotifications must be used within a NotificationProvider"
+    );
   }
   return context;
 };
@@ -36,7 +53,9 @@ interface NotificationProviderProps {
   children: React.ReactNode;
 }
 
-export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
+export const NotificationProvider: React.FC<NotificationProviderProps> = ({
+  children,
+}) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,26 +71,34 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const response = await notificationService.getUnreadNotifications();
       setNotifications(response.notifications);
     } catch {
-      setError('Failed to fetch notifications');
+      setError("Failed to fetch notifications");
     } finally {
       setIsLoading(false);
     }
   }, [authState.isAuthenticated]);
 
-  const fetchAllNotifications = useCallback(async (page = 1, limit = 50, read?: boolean) => {
-    if (!authState.isAuthenticated) return { notifications: [], pagination: undefined };
+  const fetchAllNotifications = useCallback(
+    async (page = 1, limit = 50, read?: boolean) => {
+      if (!authState.isAuthenticated)
+        return { notifications: [], pagination: undefined };
 
-    try {
-      const response = await notificationService.getAllNotifications(page, limit, read);
-      return {
-        notifications: response.notifications,
-        pagination: response.pagination
-      };
-    } catch {
-      setError('Failed to fetch all notifications');
-      return { notifications: [], pagination: undefined };
-    }
-  }, [authState.isAuthenticated]);
+      try {
+        const response = await notificationService.getAllNotifications(
+          page,
+          limit,
+          read
+        );
+        return {
+          notifications: response.notifications,
+          pagination: response.pagination,
+        };
+      } catch {
+        setError("Failed to fetch all notifications");
+        return { notifications: [], pagination: undefined };
+      }
+    },
+    [authState.isAuthenticated]
+  );
 
   const refreshCount = useCallback(async () => {
     if (!authState.isAuthenticated) return;
@@ -87,19 +114,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
       await notificationService.markNotificationAsRead(notificationId);
-      
+
       // Update local state
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification._id === notificationId 
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification._id === notificationId
             ? { ...notification, read: true }
             : notification
         )
       );
-      
+
       // Update unread count
-      setUnreadCount(prev => Math.max(0, prev - 1));
-      
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+
       // Removed toast notification - handled by component
     } catch {
       // Error marking notification as read
@@ -109,19 +136,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const markAsUnread = useCallback(async (notificationId: string) => {
     try {
       await notificationService.markNotificationAsUnread(notificationId);
-      
+
       // Update local state
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification._id === notificationId 
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification._id === notificationId
             ? { ...notification, read: false }
             : notification
         )
       );
-      
+
       // Update unread count
-      setUnreadCount(prev => prev + 1);
-      
+      setUnreadCount((prev) => prev + 1);
+
       // Removed toast notification - handled by component
     } catch {
       // Error marking notification as unread
@@ -131,72 +158,83 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const markAllAsRead = useCallback(async () => {
     try {
       await notificationService.markAllNotificationsAsRead();
-      
+
       // Update local state
-      setNotifications(prev => 
-        prev.map(notification => ({ ...notification, read: true }))
+      setNotifications((prev) =>
+        prev.map((notification) => ({ ...notification, read: true }))
       );
-      
+
       // Reset unread count
       setUnreadCount(0);
-      
+
       // Removed toast notification - handled by component
     } catch {
       // Error marking all notifications as read
     }
   }, []);
 
-  const deleteNotification = useCallback(async (notificationId: string) => {
-    try {
-      await notificationService.deleteNotification(notificationId);
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.filter(notification => notification._id !== notificationId)
-      );
-      
-      // Update unread count if the deleted notification was unread
-      const deletedNotification = notifications.find(n => n._id === notificationId);
-      if (deletedNotification && !deletedNotification.read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
-      
-      // Removed toast notification - handled by component
-    } catch {
-      // Error deleting notification
-    }
-  }, [notifications]);
+  const deleteNotification = useCallback(
+    async (notificationId: string) => {
+      try {
+        await notificationService.deleteNotification(notificationId);
 
-  const deleteMultipleNotifications = useCallback(async (notificationIds: string[]) => {
-    try {
-      await notificationService.deleteMultipleNotifications(notificationIds);
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.filter(notification => !notificationIds.includes(notification._id))
-      );
-      
-      // Update unread count
-      const deletedUnreadCount = notifications
-        .filter(notification => 
-          notificationIds.includes(notification._id) && !notification.read
+        // Update local state
+        setNotifications((prev) =>
+          prev.filter((notification) => notification._id !== notificationId)
+        );
+
+        // Update unread count if the deleted notification was unread
+        const deletedNotification = notifications.find(
+          (n) => n._id === notificationId
+        );
+        if (deletedNotification && !deletedNotification.read) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+
+        // Removed toast notification - handled by component
+      } catch {
+        // Error deleting notification
+      }
+    },
+    [notifications]
+  );
+
+  const deleteMultipleNotifications = useCallback(
+    async (notificationIds: string[]) => {
+      try {
+        await notificationService.deleteMultipleNotifications(notificationIds);
+
+        // Update local state
+        setNotifications((prev) =>
+          prev.filter(
+            (notification) => !notificationIds.includes(notification._id)
+          )
+        );
+
+        // Update unread count
+        const deletedUnreadCount = notifications.filter(
+          (notification) =>
+            notificationIds.includes(notification._id) && !notification.read
         ).length;
-      
-      setUnreadCount(prev => Math.max(0, prev - deletedUnreadCount));
-      
-      // Removed toast notification - handled by component
-    } catch {
-      // Error deleting notifications
-    }
-  }, [notifications]);
+
+        setUnreadCount((prev) => Math.max(0, prev - deletedUnreadCount));
+
+        // Removed toast notification - handled by component
+      } catch {
+        // Error deleting notifications
+      }
+    },
+    [notifications]
+  );
 
   const clearReadNotifications = useCallback(async () => {
     try {
       await notificationService.clearReadNotifications();
-      
-      // Update local state - remove read notifications
-      setNotifications(prev => prev.filter(notification => !notification.read));
 
+      // Update local state - remove read notifications
+      setNotifications((prev) =>
+        prev.filter((notification) => !notification.read)
+      );
     } catch {
       // Error clearing read notifications
     }
@@ -205,11 +243,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const clearAllNotifications = useCallback(async () => {
     try {
       await notificationService.clearAllNotifications();
-      
+
       // Clear local state
       setNotifications([]);
       setUnreadCount(0);
-    
     } catch {
       // Error clearing all notifications
     }
@@ -236,24 +273,31 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     // Listen for real-time notifications
     const handleNotification = (data: unknown) => {
       // Type guard to ensure data has the expected structure
-      if (typeof data === 'object' && data !== null && 'type' in data && 'notification' in data) {
-        const notificationData = data as { type: string; notification: Notification };
-        
-        if (notificationData.type === 'new_notification') {
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        "type" in data &&
+        "notification" in data
+      ) {
+        const notificationData = data as {
+          type: string;
+          notification: Notification;
+        };
+
+        if (notificationData.type === "new_notification") {
           // Add new notification to the list
-          setNotifications(prev => [notificationData.notification, ...prev]);
+          setNotifications((prev) => [notificationData.notification, ...prev]);
           // Update count
-          setUnreadCount(prev => prev + 1);
-        
+          setUnreadCount((prev) => prev + 1);
         }
       }
     };
 
-    websocketService.on('notification', handleNotification);
+    websocketService.on("notification", handleNotification);
 
     // Cleanup on unmount
     return () => {
-      websocketService.off('notification', handleNotification);
+      websocketService.off("notification", handleNotification);
       websocketService.disconnect();
     };
   }, [authState.isAuthenticated, authState.user?._id]);
@@ -272,7 +316,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     deleteMultipleNotifications,
     clearReadNotifications,
     clearAllNotifications,
-    refreshCount
+    refreshCount,
   };
 
   return (
@@ -280,4 +324,4 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       {children}
     </NotificationContext.Provider>
   );
-}; 
+};

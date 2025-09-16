@@ -395,59 +395,50 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [fetchOrders, filters]);
 
-  const fetchAnalytics = useCallback(
-    async (timeframe = "30d") => {
-      try {
-        const analyticsData = await orderService.getAnalytics(timeframe);
-        setAnalytics(analyticsData);
-      } catch (err: unknown) {
-        const message = extractErrorMessage(err, "Failed to fetch analytics");
-        setError(message);
+  const fetchAnalytics = useCallback(async (timeframe = "30d") => {
+    try {
+      const analyticsData = await orderService.getAnalytics(timeframe);
+      setAnalytics(analyticsData);
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err, "Failed to fetch analytics");
+      setError(message);
+      // Toast notification removed - handled by component
+    }
+  }, []);
+
+  const getAnalytics = useCallback(async (timeframe = "30d") => {
+    try {
+      const analytics = await orderService.getAnalytics(timeframe);
+      return analytics;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "Failed to fetch analytics");
         // Toast notification removed - handled by component
+        throw err;
+      } else {
+        setError("Failed to fetch analytics");
+        // Toast notification removed - handled by component
+        throw err;
       }
-    },
-    []
-  );
+    }
+  }, []);
 
-  const getAnalytics = useCallback(
-    async (timeframe = "30d") => {
-      try {
-        const analytics = await orderService.getAnalytics(timeframe);
-        return analytics;
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message || "Failed to fetch analytics");
-          // Toast notification removed - handled by component
-          throw err;
-        } else {
-          setError("Failed to fetch analytics");
-          // Toast notification removed - handled by component
-          throw err;
-        }
+  const getAgentAnalytics = useCallback(async (timeframe = "30d") => {
+    try {
+      const analytics = await analyticsService.getAgentAnalytics(timeframe);
+      return analytics;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "Failed to fetch agent analytics");
+        // Toast notification removed - handled by component
+        throw err;
+      } else {
+        setError("Failed to fetch agent analytics");
+        // Toast notification removed - handled by component
+        throw err;
       }
-    },
-    []
-  );
-
-  const getAgentAnalytics = useCallback(
-    async (timeframe = "30d") => {
-      try {
-        const analytics = await analyticsService.getAgentAnalytics(timeframe);
-        return analytics;
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message || "Failed to fetch agent analytics");
-          // Toast notification removed - handled by component
-          throw err;
-        } else {
-          setError("Failed to fetch agent analytics");
-          // Toast notification removed - handled by component
-          throw err;
-        }
-      }
-    },
-    []
-  );
+    }
+  }, []);
 
   const fetchMonthlyRevenue = useCallback(async () => {
     try {
@@ -564,16 +555,16 @@ export const useOrder = () => {
         topProducts: [],
       }),
       getAgentAnalytics: async () => ({
-  totalOrders: 0,
-  completedOrders: 0,
-  overallTotalSales: 0,
-  successRate: 0,
-  walletBalance: 0,
-  timeframe: '30d',
-  monthlyRevenue: 0,
-  monthlyOrderCount:0,
-  month: "",
-  monthlyCommission: 0
+        totalOrders: 0,
+        completedOrders: 0,
+        overallTotalSales: 0,
+        successRate: 0,
+        walletBalance: 0,
+        timeframe: "30d",
+        monthlyRevenue: 0,
+        monthlyOrderCount: 0,
+        month: "",
+        monthlyCommission: 0,
       }),
       fetchMonthlyRevenue: async () => {},
       setFilters: () => {},

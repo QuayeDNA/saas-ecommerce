@@ -284,12 +284,18 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         for (const orderId of selectedOrders) {
           await cancelOrder(orderId, "Bulk cancelled by admin");
         }
-        addToast(`Successfully cancelled ${selectedOrders.length} orders`, "success");
+        addToast(
+          `Successfully cancelled ${selectedOrders.length} orders`,
+          "success"
+        );
       } else {
         const bulkAction =
           pendingBulkAction === "process" ? "processing" : "completed";
         await bulkProcessOrders(selectedOrders, bulkAction);
-        addToast(`Successfully ${bulkAction} ${selectedOrders.length} orders`, "success");
+        addToast(
+          `Successfully ${bulkAction} ${selectedOrders.length} orders`,
+          "success"
+        );
       }
       setSelectedOrders([]);
     } catch {

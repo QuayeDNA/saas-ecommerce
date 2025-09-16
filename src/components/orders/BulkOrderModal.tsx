@@ -224,7 +224,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
         const items = parseBulkText(csv);
         setOrderItems(items);
         setError(null);
-        addToast(`Successfully parsed ${items.length} orders from CSV file`, "success");
+        addToast(
+          `Successfully parsed ${items.length} orders from CSV file`,
+          "success"
+        );
       } catch {
         setError("Failed to parse CSV file. Please check the format.");
         addToast("Failed to parse CSV file. Please check the format.", "error");
@@ -284,7 +287,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       ) {
         setDuplicateCheckResult(err.duplicateInfo as DuplicateCheckResult);
         setShowDuplicateWarning(true);
-        addToast("Duplicate orders detected. Please review and confirm.", "warning");
+        addToast(
+          "Duplicate orders detected. Please review and confirm.",
+          "warning"
+        );
         return;
       }
 
@@ -302,7 +308,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
         }
 
         setError(errorMessage || "Failed to create bulk order");
-        addToast(errorMessage || "Failed to create bulk order. Please try again.", "error");
+        addToast(
+          errorMessage || "Failed to create bulk order. Please try again.",
+          "error"
+        );
       } else {
         setError("Failed to create bulk order");
         addToast("Failed to create bulk order. Please try again.", "error");
