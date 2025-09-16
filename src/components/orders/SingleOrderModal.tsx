@@ -29,6 +29,7 @@ import {
   Alert,
   Spinner,
   Input,
+  useToast,
 } from "../../design-system";
 import type { Bundle } from "../../types/package";
 import type {
@@ -56,6 +57,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   const { createSingleOrder, loading } = useOrder();
   const { siteStatus } = useSiteStatus();
   const { authState } = useAuth();
+  const { addToast } = useToast();
   const userType = authState.user?.userType;
   const navigate = useNavigate();
   const [customerPhone, setCustomerPhone] = useState("");
@@ -214,6 +216,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       await createSingleOrder(orderData);
 
       // Order created successfully (including draft orders)
+      addToast("Order created successfully", "success");
       onSuccess();
       onClose();
       navigate("/agent/dashboard/orders");
@@ -251,6 +254,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
           errorMessage.includes("insufficient")
         ) {
           setError(errorMessage);
+          addToast("Order created as draft due to insufficient wallet balance", "warning");
           // Don't close modal, let user see the error and potentially top up wallet
           return;
         }
@@ -261,10 +265,12 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
           errorMessage.includes("Site is currently under maintenance")
         ) {
           setError(errorMessage);
+          addToast("Site is currently under maintenance", "error");
           return;
         }
 
         setError(errorMessage || "Failed to create order");
+        addToast(errorMessage || "Failed to create order", "error");
       } else {
         setError("Failed to create order");
       }
@@ -290,6 +296,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
         await createSingleOrder(orderDataWithOverride);
 
         // Order created successfully
+        addToast("Order created successfully", "success");
         onSuccess();
         onClose();
         navigate("/agent/dashboard/orders");

@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogBody,
   DialogFooter,
+  useToast,
 } from "../../design-system";
 import {
   FaCheck,
@@ -46,6 +47,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   userType,
 }) => {
   const { authState } = useAuth();
+  const { addToast } = useToast();
   const {
     orders,
     loading,
@@ -250,8 +252,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       await updateOrderStatus(orderId, newStatus);
+      addToast("Order status updated successfully", "success");
     } catch {
-      // Failed to update order status
+      addToast("Failed to update order status", "error");
     }
   };
 
@@ -259,8 +262,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     if (window.confirm("Are you sure you want to cancel this order?")) {
       try {
         await cancelOrder(orderId, "Cancelled by user");
+        addToast("Order cancelled successfully", "success");
       } catch {
-        // Failed to cancel order
+        addToast("Failed to cancel order", "error");
       }
     }
   };
@@ -280,14 +284,16 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         for (const orderId of selectedOrders) {
           await cancelOrder(orderId, "Bulk cancelled by admin");
         }
+        addToast(`Successfully cancelled ${selectedOrders.length} orders`, "success");
       } else {
         const bulkAction =
           pendingBulkAction === "process" ? "processing" : "completed";
         await bulkProcessOrders(selectedOrders, bulkAction);
+        addToast(`Successfully ${bulkAction} ${selectedOrders.length} orders`, "success");
       }
       setSelectedOrders([]);
     } catch {
-      // Failed to perform bulk action
+      addToast(`Failed to perform bulk ${pendingBulkAction} action`, "error");
     } finally {
       setShowBulkConfirmDialog(false);
       setPendingBulkAction(null);

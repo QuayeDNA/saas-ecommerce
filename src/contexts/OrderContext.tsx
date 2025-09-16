@@ -16,7 +16,6 @@ import type {
 } from "../types/order";
 import { orderService } from "../services/order.service";
 import { analyticsService } from "../services/analytics.service";
-import { useToast } from "../design-system";
 import { useAuth } from "../hooks/use-auth";
 
 // Helper function to trigger daily spending refresh from backend
@@ -153,7 +152,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     month: string;
   } | null>(null);
 
-  const { addToast } = useToast();
   const { authState } = useAuth();
 
   // Initialize the provider
@@ -179,12 +177,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (err: unknown) {
         const message = extractErrorMessage(err, "Failed to fetch orders");
         setError(message);
-        addToast(message, "error");
+        // Toast notification removed - handled by component
       } finally {
         setLoading(false);
       }
     },
-    [addToast]
+    []
   );
 
   const createSingleOrder = useCallback(
@@ -199,7 +197,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
         if (order.status === "draft") {
           const message = `Order created as draft due to insufficient wallet balance. Please top up your wallet to process this order.`;
           setError(message);
-          addToast(message, "warning");
+          // Toast notification removed - handled by component
           await fetchOrders(filters);
           return; // Don't throw error, just return
         }
@@ -210,7 +208,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
           triggerDailySpendingRefresh(userId);
         }
 
-        addToast("Single order created successfully", "success");
+        // Toast notification removed - handled by component
         await fetchOrders(filters);
       } catch (err: unknown) {
         // Check if this is a duplicate order error
@@ -226,13 +224,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const message = extractErrorMessage(err, "Failed to create order");
         setError(message);
-        addToast(message, "error");
+        // Toast notification removed - handled by component
         throw new Error(message);
       } finally {
         setLoading(false);
       }
     },
-    [addToast, fetchOrders, filters, authState.user]
+    [fetchOrders, filters, authState.user]
   );
 
   const createBulkOrder = useCallback(
@@ -256,7 +254,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         }
 
-        addToast("Bulk order created successfully", "success");
+        // Toast notification removed - handled by component
         await fetchOrders(filters);
         return summary;
       } catch (err: unknown) {
@@ -273,20 +271,20 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const message = extractErrorMessage(err, "Failed to create bulk order");
         setError(message);
-        addToast(message, "error");
+        // Toast notification removed - handled by component
         throw new Error(message);
       } finally {
         setLoading(false);
       }
     },
-    [addToast, fetchOrders, filters, authState.user]
+    [fetchOrders, filters, authState.user]
   );
 
   const processOrderItem = useCallback(
     async (orderId: string, itemId: string) => {
       try {
         await orderService.processOrderItem(orderId, itemId);
-        addToast("Order item processed successfully", "success");
+        // Toast notification removed - handled by component
         await fetchOrders(filters);
       } catch (err: unknown) {
         const message = extractErrorMessage(
@@ -297,25 +295,21 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // Check if it's a wallet balance error
         if (message.includes("Insufficient wallet balance")) {
-          addToast(message, "error");
-          addToast(
-            "Please top up your wallet to continue processing orders",
-            "warning"
-          );
+          // Toast notifications removed - handled by component
         } else {
-          addToast(message, "error");
+          // Toast notification removed - handled by component
         }
         throw new Error(message);
       }
     },
-    [addToast, fetchOrders, filters]
+    [fetchOrders, filters]
   );
 
   const processBulkOrder = useCallback(
     async (orderId: string) => {
       try {
         await orderService.processBulkOrder(orderId);
-        addToast("Bulk order processing started", "success");
+        // Toast notification removed - handled by component
         await fetchOrders(filters);
       } catch (err: unknown) {
         const message = extractErrorMessage(
@@ -323,18 +317,18 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
           "Failed to process bulk order"
         );
         setError(message);
-        addToast(message, "error");
+        // Toast notification removed - handled by component
         throw new Error(message);
       }
     },
-    [addToast, fetchOrders, filters]
+    [fetchOrders, filters]
   );
 
   const bulkProcessOrders = useCallback(
     async (orderIds: string[], action: "processing" | "completed") => {
       try {
         await orderService.bulkProcessOrders(orderIds, action);
-        addToast(`Bulk ${action} orders started`, "success");
+        // Toast notification removed - handled by component
         await fetchOrders(filters);
       } catch (err: unknown) {
         const message = extractErrorMessage(
@@ -342,34 +336,34 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
           `Failed to bulk ${action} orders`
         );
         setError(message);
-        addToast(message, "error");
+        // Toast notification removed - handled by component
         throw new Error(message);
       }
     },
-    [addToast, fetchOrders, filters]
+    [fetchOrders, filters]
   );
 
   const cancelOrder = useCallback(
     async (orderId: string, reason?: string) => {
       try {
         await orderService.cancelOrder(orderId, reason);
-        addToast("Order cancelled successfully", "success");
+        // Toast notification removed - handled by component
         await fetchOrders(filters);
       } catch (err: unknown) {
         const message = extractErrorMessage(err, "Failed to cancel order");
         setError(message);
-        addToast(message, "error");
+        // Toast notification removed - handled by component
         throw new Error(message);
       }
     },
-    [addToast, fetchOrders, filters]
+    [fetchOrders, filters]
   );
 
   const updateOrderStatus = useCallback(
     async (orderId: string, status: string, notes?: string) => {
       try {
         await orderService.updateOrderStatus(orderId, status, notes);
-        addToast("Order status updated successfully", "success");
+        // Toast notification removed - handled by component
         await fetchOrders(filters);
       } catch (err: unknown) {
         const message = extractErrorMessage(
@@ -377,11 +371,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
           "Failed to update order status"
         );
         setError(message);
-        addToast(message, "error");
+        // Toast notification removed - handled by component
         throw new Error(message);
       }
     },
-    [addToast, fetchOrders, filters]
+    [fetchOrders, filters]
   );
 
   const processDraftOrders = useCallback(async () => {
@@ -409,10 +403,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (err: unknown) {
         const message = extractErrorMessage(err, "Failed to fetch analytics");
         setError(message);
-        addToast(message, "error");
+        // Toast notification removed - handled by component
       }
     },
-    [addToast]
+    []
   );
 
   const getAnalytics = useCallback(
@@ -423,16 +417,16 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (err: unknown) {
         if (err instanceof Error) {
           setError(err.message || "Failed to fetch analytics");
-          addToast("Failed to fetch analytics", "error");
+          // Toast notification removed - handled by component
           throw err;
         } else {
           setError("Failed to fetch analytics");
-          addToast("Failed to fetch analytics", "error");
+          // Toast notification removed - handled by component
           throw err;
         }
       }
     },
-    [addToast]
+    []
   );
 
   const getAgentAnalytics = useCallback(
@@ -443,16 +437,16 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (err: unknown) {
         if (err instanceof Error) {
           setError(err.message || "Failed to fetch agent analytics");
-          addToast("Failed to fetch agent analytics", "error");
+          // Toast notification removed - handled by component
           throw err;
         } else {
           setError("Failed to fetch agent analytics");
-          addToast("Failed to fetch agent analytics", "error");
+          // Toast notification removed - handled by component
           throw err;
         }
       }
     },
-    [addToast]
+    []
   );
 
   const fetchMonthlyRevenue = useCallback(async () => {

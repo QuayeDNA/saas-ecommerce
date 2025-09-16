@@ -3,7 +3,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { notificationService, type Notification } from '../services/notification.service';
 import { websocketService } from '../services/websocket.service';
 import { useAuth } from '../hooks/use-auth';
-import { useToast } from '../design-system/components/toast';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -43,7 +42,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { authState } = useAuth();
-  const { addToast } = useToast();
 
   const fetchNotifications = useCallback(async () => {
     if (!authState.isAuthenticated) return;
@@ -102,12 +100,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // Update unread count
       setUnreadCount(prev => Math.max(0, prev - 1));
       
-      // Show success toast
-      addToast('Notification marked as read', 'success');
+      // Removed toast notification - handled by component
     } catch {
       // Error marking notification as read
     }
-  }, [addToast]);
+  }, []);
 
   const markAsUnread = useCallback(async (notificationId: string) => {
     try {
@@ -125,12 +122,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // Update unread count
       setUnreadCount(prev => prev + 1);
       
-      // Show success toast
-      addToast('Notification marked as unread', 'success');
+      // Removed toast notification - handled by component
     } catch {
       // Error marking notification as unread
     }
-  }, [addToast]);
+  }, []);
 
   const markAllAsRead = useCallback(async () => {
     try {
@@ -144,12 +140,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // Reset unread count
       setUnreadCount(0);
       
-      // Show success toast
-      addToast('All notifications marked as read', 'success');
+      // Removed toast notification - handled by component
     } catch {
       // Error marking all notifications as read
     }
-  }, [addToast]);
+  }, []);
 
   const deleteNotification = useCallback(async (notificationId: string) => {
     try {
@@ -166,12 +161,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
       
-      // Show success toast
-      addToast('Notification deleted', 'success');
+      // Removed toast notification - handled by component
     } catch {
       // Error deleting notification
     }
-  }, [notifications, addToast]);
+  }, [notifications]);
 
   const deleteMultipleNotifications = useCallback(async (notificationIds: string[]) => {
     try {
@@ -190,12 +184,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       
       setUnreadCount(prev => Math.max(0, prev - deletedUnreadCount));
       
-      // Show success toast
-      addToast(`${notificationIds.length} notifications deleted`, 'success');
+      // Removed toast notification - handled by component
     } catch {
       // Error deleting notifications
     }
-  }, [notifications, addToast]);
+  }, [notifications]);
 
   const clearReadNotifications = useCallback(async () => {
     try {
@@ -203,13 +196,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       
       // Update local state - remove read notifications
       setNotifications(prev => prev.filter(notification => !notification.read));
-      
-      // Show success toast
-      addToast('Read notifications cleared', 'success');
+
     } catch {
       // Error clearing read notifications
     }
-  }, [addToast]);
+  }, []);
 
   const clearAllNotifications = useCallback(async () => {
     try {
@@ -218,13 +209,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // Clear local state
       setNotifications([]);
       setUnreadCount(0);
-      
-      // Show success toast
-      addToast('All notifications cleared', 'success');
+    
     } catch {
       // Error clearing all notifications
     }
-  }, [addToast]);
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -255,14 +244,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           setNotifications(prev => [notificationData.notification, ...prev]);
           // Update count
           setUnreadCount(prev => prev + 1);
-          
-          // Show toast notification for new notifications
-          addToast(
-            `New notification: ${notificationData.notification.title}`,
-            notificationData.notification.type === 'success' ? 'success' : 
-            notificationData.notification.type === 'error' ? 'error' : 'info',
-            3000
-          );
+        
         }
       }
     };

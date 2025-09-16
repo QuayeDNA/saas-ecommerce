@@ -36,6 +36,7 @@ import {
   Alert,
   Spinner,
   CardHeader,
+  useToast,
 } from "../../design-system";
 import type { Bundle } from "../../types/package";
 import type { DuplicateCheckResult } from "../../types/order";
@@ -69,6 +70,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   const { loading, createBulkOrder } = useOrder();
   const { siteStatus } = useSiteStatus();
   const { authState } = useAuth();
+  const { addToast } = useToast();
   const userType = authState.user?.userType;
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const navigate = useNavigate();
@@ -222,8 +224,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
         const items = parseBulkText(csv);
         setOrderItems(items);
         setError(null);
+        addToast(`Successfully parsed ${items.length} orders from CSV file`, "success");
       } catch {
         setError("Failed to parse CSV file. Please check the format.");
+        addToast("Failed to parse CSV file. Please check the format.", "error");
       }
     };
     reader.readAsText(file);
@@ -256,6 +260,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
         setError(
           `Site is currently under maintenance: ${siteStatus.customMessage}`
         );
+        addToast("Site is currently under maintenance", "error");
         return;
       }
 
@@ -264,6 +269,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       );
       const orderData = { items, packageId, forceOverride };
       await createBulkOrder(orderData);
+      addToast("Bulk order created successfully", "success");
       onSuccess();
       onClose();
       navigate("/agent/dashboard/orders");
@@ -278,6 +284,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       ) {
         setDuplicateCheckResult(err.duplicateInfo as DuplicateCheckResult);
         setShowDuplicateWarning(true);
+        addToast("Duplicate orders detected. Please review and confirm.", "warning");
         return;
       }
 
@@ -290,12 +297,15 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
           errorMessage.includes("Site is currently under maintenance")
         ) {
           setError(errorMessage);
+          addToast("Site is currently under maintenance", "error");
           return;
         }
 
         setError(errorMessage || "Failed to create bulk order");
+        addToast(errorMessage || "Failed to create bulk order. Please try again.", "error");
       } else {
         setError("Failed to create bulk order");
+        addToast("Failed to create bulk order. Please try again.", "error");
       }
     }
   };
@@ -698,7 +708,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                       <div className="divide-y divide-gray-100">
                         {validOrders.map((item, index) => (
                           <div
-                            key={index}
+                            key={`${item.customerPhone}-${item.dataVolume}-${index}`}
                             className="p-3 sm:p-4 hover:bg-gray-50"
                           >
                             <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
@@ -758,7 +768,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     <div className="divide-y divide-gray-100">
                       {invalidOrders.map((item, index) => (
                         <div
-                          key={index}
+                          key={`${item.customerPhone}-${item.dataVolume}-${index}`}
                           className="p-3 sm:p-4 hover:bg-gray-50"
                         >
                           <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
