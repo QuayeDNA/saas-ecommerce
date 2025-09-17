@@ -315,7 +315,7 @@ class CommissionService {
   }
 
   /**
-   * Get commission statistics (super admin only)
+   * Get commission statistics (business users)
    * @returns Promise<CommissionStatistics>
    */
   async getCommissionStatistics(): Promise<CommissionStatistics> {

@@ -144,7 +144,16 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
   // Load commissions with filters and pagination
   const loadCommissions = useCallback(
     async (newFilters?: CommissionFilters, page = 1) => {
-      if (!authState.isAuthenticated) return;
+      if (!authState.isAuthenticated) {
+        return;
+      }
+
+      const userType = authState.user?.userType;
+      const isSuperAdmin = userType === "super_admin";
+
+      if (!isSuperAdmin) {
+        return; // Only super_admin can load all commissions
+      }
 
       try {
         setIsLoading(true);
@@ -175,7 +184,13 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
         setIsLoading(false);
       }
     },
-    [authState.isAuthenticated, filters, pagination.limit, handleError]
+    [
+      authState.isAuthenticated,
+      authState.user?.userType,
+      filters,
+      pagination.limit,
+      handleError,
+    ]
   );
 
   // Load statistics
@@ -192,7 +207,16 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
 
   // Load settings
   const loadSettings = useCallback(async () => {
-    if (!authState.isAuthenticated) return;
+    if (!authState.isAuthenticated) {
+      return;
+    }
+
+    const userType = authState.user?.userType;
+    const isSuperAdmin = userType === "super_admin";
+
+    if (!isSuperAdmin) {
+      return; // Only super_admin can load settings
+    }
 
     try {
       const settingsData = await commissionService.getCommissionSettings();
@@ -200,15 +224,31 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
     } catch (error) {
       handleError(error, "Failed to load commission settings");
     }
-  }, [authState.isAuthenticated, handleError]);
+  }, [authState.isAuthenticated, authState.user?.userType, handleError]);
 
   // Load all data
   const loadAllData = useCallback(async () => {
-    if (!authState.isAuthenticated) return;
+    if (!authState.isAuthenticated) {
+      return;
+    }
+
+    if (!authState.user) {
+      return;
+    }
+
+    const userType = authState.user?.userType;
+    const isSuperAdmin = userType === "super_admin";
 
     setIsLoading(true);
     try {
-      await Promise.all([loadCommissions(), loadStatistics(), loadSettings()]);
+      // Load data based on user type
+      const promises = [loadStatistics()]; // Statistics are available to all business users
+
+      if (isSuperAdmin) {
+        promises.push(loadCommissions(), loadSettings());
+      }
+
+      await Promise.all(promises);
     } catch (error) {
       handleError(error, "Failed to load commission data");
     } finally {
@@ -216,6 +256,7 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
     }
   }, [
     authState.isAuthenticated,
+    authState.user,
     loadCommissions,
     loadStatistics,
     loadSettings,
@@ -491,7 +532,7 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
 
   // Initial data load
   useEffect(() => {
-    if (authState.isAuthenticated) {
+    if (authState.isAuthenticated && authState.user) {
       loadAllData();
     } else {
       // Clear data when user logs out
@@ -500,7 +541,12 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
       setSettings(null);
       setLastUpdated(null);
     }
-  }, [authState.isAuthenticated, loadAllData]);
+  }, [
+    authState.isAuthenticated,
+    authState.user,
+    authState.user?.userType,
+    loadAllData,
+  ]);
 
   const value: CommissionContextType = {
     // State
