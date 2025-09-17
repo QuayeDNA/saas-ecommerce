@@ -11,6 +11,10 @@ export interface SiteSettings {
 
 export interface CommissionRates {
   agentCommission: number;
+  superAgentCommission: number;
+  dealerCommission: number;
+  superDealerCommission: number;
+  defaultCommissionRate: number;
   customerCommission: number;
 }
 

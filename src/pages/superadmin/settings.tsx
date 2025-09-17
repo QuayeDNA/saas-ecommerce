@@ -3,12 +3,9 @@ import { useNavigate } from "react-router-dom";
 import {
   FaPowerOff,
   FaUserShield,
-  FaPercentage,
   FaEdit,
   FaSave,
   FaTimes,
-  FaStore,
-  FaUser,
   FaDatabase,
   FaKey,
   FaGlobe,
@@ -24,7 +21,6 @@ import { Badge } from "../../design-system/components/badge";
 import {
   settingsService,
   type SiteSettings,
-  type CommissionRates,
   type ApiSettings,
 } from "../../services/settings.service";
 import { Alert } from "../../design-system/components/alert";
@@ -37,12 +33,6 @@ export default function SuperAdminSettingsPage() {
     isSiteOpen: true,
     customMessage:
       "We're currently performing maintenance. Please check back later.",
-  });
-
-  // Commission Rates
-  const [commissionRates, setCommissionRates] = useState<CommissionRates>({
-    agentCommission: 5.0,
-    customerCommission: 2.5,
   });
 
   // API Settings
@@ -90,9 +80,6 @@ export default function SuperAdminSettingsPage() {
       switch (section) {
         case "Site":
           await settingsService.updateSiteSettings(siteSettings);
-          break;
-        case "Commission":
-          await settingsService.updateCommissionRates(commissionRates);
           break;
         case "API":
           await settingsService.updateApiSettings(apiSettings);
@@ -351,120 +338,6 @@ export default function SuperAdminSettingsPage() {
                   <FaKey className="w-3 h-3 mr-1" />
                   Change Password
                 </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Commission Rates */}
-        <Card>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <FaPercentage className="text-purple-600" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Commission Rates
-              </h2>
-            </div>
-            {editingSection === "commission" ? (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => handleSaveSettings("Commission")}
-                  disabled={loading}
-                >
-                  <FaSave className="w-3 h-3 mr-1" />
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setEditingSection(null)}
-                >
-                  <FaTimes className="w-3 h-3 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setEditingSection("commission")}
-              >
-                <FaEdit className="w-3 h-3 mr-1" />
-                Edit
-              </Button>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <FaStore className="text-blue-600" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      Agent Commission
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Percentage earned by agents
-                    </p>
-                  </div>
-                </div>
-                {editingSection === "commission" ? (
-                  <Input
-                    type="number"
-                    value={commissionRates.agentCommission}
-                    onChange={(e) =>
-                      setCommissionRates((prev) => ({
-                        ...prev,
-                        agentCommission: parseFloat(e.target.value) || 0,
-                      }))
-                    }
-                    className="w-24"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                ) : (
-                  <span className="text-lg font-semibold text-blue-600">
-                    {commissionRates.agentCommission}%
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <FaUser className="text-green-600" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      Customer Commission
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Percentage earned by customers
-                    </p>
-                  </div>
-                </div>
-                {editingSection === "commission" ? (
-                  <Input
-                    type="number"
-                    value={commissionRates.customerCommission}
-                    onChange={(e) =>
-                      setCommissionRates((prev) => ({
-                        ...prev,
-                        customerCommission: parseFloat(e.target.value) || 0,
-                      }))
-                    }
-                    className="w-24"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                ) : (
-                  <span className="text-lg font-semibold text-green-600">
-                    {commissionRates.customerCommission}%
-                  </span>
-                )}
               </div>
             </div>
           </div>

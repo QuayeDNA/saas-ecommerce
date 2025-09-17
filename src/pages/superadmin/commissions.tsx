@@ -1023,6 +1023,37 @@ export default function SuperAdminCommissionsPage() {
                   max="100"
                   step="0.1"
                 />
+                <Input
+                  label="Default Commission Rate (%)"
+                  type="number"
+                  value={
+                    localSettings?.defaultCommissionRate ??
+                    settings.defaultCommissionRate
+                  }
+                  onChange={(e) =>
+                    setLocalSettings({
+                      ...localSettings!,
+                      defaultCommissionRate: parseFloat(e.target.value),
+                    })
+                  }
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  className="md:col-span-2"
+                />
+                <div className="md:col-span-2 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    <strong>Default Rate:</strong> This rate will be applied to
+                    all user types that don't have a specific commission rate
+                    set. Currently set to{" "}
+                    <span className="font-semibold">
+                      {localSettings?.defaultCommissionRate ??
+                        settings.defaultCommissionRate}
+                      %
+                    </span>
+                    .
+                  </p>
+                </div>
               </div>
             </div>
           )}

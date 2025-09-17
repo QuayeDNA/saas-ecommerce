@@ -6,6 +6,7 @@ export interface CommissionSettings {
   superAgentCommission: number;
   dealerCommission: number;
   superDealerCommission: number;
+  defaultCommissionRate: number;
 }
 
 export interface CommissionRecord {
