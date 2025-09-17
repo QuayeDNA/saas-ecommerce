@@ -12,10 +12,11 @@ export const apiClient = axios.create({
 });
 
 // Add a request interceptor to inject the auth token
+// Add a request interceptor to inject the auth token
 apiClient.interceptors.request.use(
   (config) => {
-    // Add cache-busting for order endpoints to prevent stale data
-    if (config.url?.includes("/orders")) {
+    // Add cache-busting for order status updates (non-GET requests) to prevent stale data
+    if (config.url?.includes("/orders") && config.method !== "get") {
       config.headers["Cache-Control"] = "no-cache";
       config.headers["Pragma"] = "no-cache";
     }
