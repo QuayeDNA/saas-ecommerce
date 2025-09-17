@@ -5,7 +5,8 @@ class WebSocketService {
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 5;
   private readonly reconnectDelay = 1000; // 1 second
-  private readonly listeners: Map<string, ((data: unknown) => void)[]> = new Map();
+  private readonly listeners: Map<string, ((data: unknown) => void)[]> =
+    new Map();
   private currentUserId: string | null = null;
   private _isPolling = false;
   private pollingInterval: NodeJS.Timeout | null = null;
@@ -18,23 +19,24 @@ class WebSocketService {
     }
 
     this.currentUserId = userId;
-    
+
     // Check if we're in production (Vercel) or if WebSocket URL is not available
-    const isProduction = import.meta.env.PROD || window.location.hostname !== 'localhost';
+    const isProduction =
+      import.meta.env.PROD || window.location.hostname !== "localhost";
     const wsUrl = import.meta.env.VITE_API_URL;
-    
+
     // If we're in production and no WebSocket URL is configured, skip WebSocket and use polling only
     if (isProduction && !wsUrl) {
       this.startPolling(userId);
       return;
     }
-    
+
     // Use WebSocket URL or fallback to localhost for development
-    const finalWsUrl = `${wsUrl || 'ws://localhost:5050'}?userId=${userId}`;
-    
+    const finalWsUrl = `${wsUrl || "ws://localhost:5050"}?userId=${userId}`;
+
     try {
       this.ws = new WebSocket(finalWsUrl);
-      
+
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
         // Stop polling if WebSocket is working
@@ -68,37 +70,66 @@ class WebSocketService {
 
   private startPolling(userId: string) {
     if (this._isPolling) return;
-    
+
     this._isPolling = true;
-    
+
     this.pollingInterval = setInterval(async () => {
       try {
         // Poll for wallet updates
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5050";
         const response = await fetch(`${apiUrl}/api/wallet/info`, {
           headers: {
-            'Authorization': `Bearer ${this.getAuthToken()}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${this.getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.wallet) {
             // Check if we have a new update (simple timestamp check)
             const currentTime = Date.now();
-            if (currentTime - this.lastWalletUpdate > 1000) { // At least 1 second difference
+            if (currentTime - this.lastWalletUpdate > 1000) {
+              // At least 1 second difference
               this.lastWalletUpdate = currentTime;
-              
+
               // Emit wallet update event
-              this.emit('wallet_update', {
-                type: 'wallet_update',
+              this.emit("wallet_update", {
+                type: "wallet_update",
                 userId: userId,
                 balance: data.wallet.balance,
-                recentTransactions: data.wallet.recentTransactions
+                recentTransactions: data.wallet.recentTransactions,
               });
             }
           }
+        }
+
+        // Poll for commission updates
+        try {
+          const commissionResponse = await fetch(
+            `${apiUrl}/api/commissions/agent?status=pending`,
+            {
+              headers: {
+                Authorization: `Bearer ${this.getAuthToken()}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (commissionResponse.ok) {
+            const commissionData = await commissionResponse.json();
+            if (commissionData.success && commissionData.data) {
+              // Emit commission updates for any new or updated commissions
+              commissionData.data.forEach((commission: unknown) => {
+                this.emit("commission", {
+                  type: "commission_update",
+                  commission: commission,
+                });
+              });
+            }
+          }
+        } catch {
+          // Commission polling error - continue with other polling
         }
       } catch {
         // Polling error
@@ -117,17 +148,17 @@ class WebSocketService {
   private getAuthToken(): string {
     // Get token from cookies or localStorage
     const token = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('authToken='))
-      ?.split('=')[1];
-    
-    return token || '';
+      .split("; ")
+      .find((row) => row.startsWith("authToken="))
+      ?.split("=")[1];
+
+    return token || "";
   }
 
   private handleReconnect(userId: string) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      
+
       setTimeout(() => {
         this.connect(userId);
       }, this.reconnectDelay * this.reconnectAttempts);
@@ -137,25 +168,50 @@ class WebSocketService {
     }
   }
 
-  private handleMessage(data: { type: string; data?: unknown; userId?: string; balance?: number; recentTransactions?: unknown[] }) {
+  private handleMessage(data: {
+    type: string;
+    data?: unknown;
+    userId?: string;
+    balance?: number;
+    recentTransactions?: unknown[];
+    commission?: unknown;
+  }) {
     switch (data.type) {
-      case 'notification':
-        this.emit('notification', data.data);
+      case "notification":
+        this.emit("notification", data.data);
         break;
-      case 'wallet_update':
+      case "wallet_update":
         this.lastWalletUpdate = Date.now();
-        this.emit('wallet_update', {
-          type: 'wallet_update',
+        this.emit("wallet_update", {
+          type: "wallet_update",
           userId: data.userId,
           balance: data.balance,
-          recentTransactions: data.recentTransactions
+          recentTransactions: data.recentTransactions,
         });
         break;
-      case 'order_update':
-        this.emit('order_update', data.data);
+      case "order_update":
+        this.emit("order_update", data.data);
         break;
-      case 'transaction_update':
-        this.emit('transaction_update', data.data);
+      case "transaction_update":
+        this.emit("transaction_update", data.data);
+        break;
+      case "commission_update":
+        this.emit("commission", {
+          type: "commission_update",
+          commission: data.commission,
+        });
+        break;
+      case "commission_created":
+        this.emit("commission", {
+          type: "commission_created",
+          commission: data.commission,
+        });
+        break;
+      case "commission_paid":
+        this.emit("commission", {
+          type: "commission_paid",
+          commission: data.commission,
+        });
         break;
       default:
         // Unknown WebSocket message type
@@ -193,7 +249,7 @@ class WebSocketService {
   private emit(event: string, data: unknown) {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
-      callbacks.forEach(callback => {
+      callbacks.forEach((callback) => {
         try {
           callback(data);
         } catch {
@@ -216,4 +272,4 @@ class WebSocketService {
   }
 }
 
-export const websocketService = new WebSocketService(); 
+export const websocketService = new WebSocketService();

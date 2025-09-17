@@ -1,12 +1,12 @@
 import { useRoutes } from "react-router-dom";
 import { routes } from "./routes";
-import { ThemeProvider } from "./design-system";
+import { ThemeProvider, Button } from "./design-system";
 import { ToastProvider } from "./design-system/components/toast";
-import { Button } from "./design-system";
 import "./App.css";
 import "./design-system/theme.css";
 import { AppProvider } from "./providers/app-provider";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import { CommissionProvider } from "./contexts/CommissionContext";
 import { NetworkStatusIndicator } from "./components/network-status-indicator";
 import { MaintenanceBanner } from "./components/maintenance-banner";
 import { InstallPrompt } from "./components/install-prompt";
@@ -54,14 +54,16 @@ function App() {
       <ThemeProvider initialTheme="default">
         <ToastProvider>
           <AppProvider>
-            <NotificationProvider>
-              <div className="min-h-screen flex flex-col">
-                <MaintenanceBanner />
-                <div className="flex-1">{routeElement}</div>
-                <NetworkStatusIndicator />
-                <InstallPrompt />
-              </div>
-            </NotificationProvider>
+            <CommissionProvider>
+              <NotificationProvider>
+                <div className="min-h-screen flex flex-col">
+                  <MaintenanceBanner />
+                  <div className="flex-1">{routeElement}</div>
+                  <NetworkStatusIndicator />
+                  <InstallPrompt />
+                </div>
+              </NotificationProvider>
+            </CommissionProvider>
           </AppProvider>
         </ToastProvider>
       </ThemeProvider>

@@ -1,9 +1,11 @@
 // src/services/commission.service.ts
-import { apiClient } from '../utils/api-client';
+import { apiClient } from "../utils/api-client";
 
 export interface CommissionSettings {
   agentCommission: number;
-  customerCommission: number;
+  superAgentCommission: number;
+  dealerCommission: number;
+  superDealerCommission: number;
 }
 
 export interface CommissionRecord {
@@ -13,16 +15,17 @@ export interface CommissionRecord {
     fullName: string;
     email: string;
     businessName?: string;
+    userType?: string;
   };
   tenantId: string;
-  period: 'monthly' | 'weekly' | 'daily';
+  period: "monthly" | "weekly" | "daily";
   periodStart: string;
   periodEnd: string;
   totalOrders: number;
   totalRevenue: number;
   commissionRate: number;
   amount: number;
-  status: 'pending' | 'paid' | 'rejected' | 'cancelled';
+  status: "pending" | "paid" | "rejected" | "cancelled";
   paidAt?: string;
   paidBy?: {
     _id: string;
@@ -72,8 +75,8 @@ export interface CommissionStatistics {
 }
 
 export interface CommissionFilters {
-  status?: 'pending' | 'paid' | 'rejected' | 'cancelled';
-  period?: 'monthly' | 'weekly' | 'daily';
+  status?: "pending" | "paid" | "rejected" | "cancelled";
+  period?: "monthly" | "weekly" | "daily";
   startDate?: string;
   endDate?: string;
   agentId?: string;
@@ -125,7 +128,7 @@ export interface MultiplePaymentResult {
 export interface MonthlyGenerationResult {
   results: Array<{
     agentId: string;
-    status: 'created' | 'exists' | 'error' | 'success';
+    status: "created" | "exists" | "error" | "success";
     record?: CommissionRecord;
     error?: string;
   }>;
@@ -143,7 +146,7 @@ class CommissionService {
    * @returns Promise<CommissionSettings>
    */
   async getCommissionSettings(): Promise<CommissionSettings> {
-    const response = await apiClient.get('/api/commissions/settings');
+    const response = await apiClient.get("/api/commissions/settings");
     return response.data.data;
   }
 
@@ -152,8 +155,10 @@ class CommissionService {
    * @param settings - Commission settings to update
    * @returns Promise<CommissionSettings>
    */
-  async updateCommissionSettings(settings: Partial<CommissionSettings>): Promise<CommissionSettings> {
-    const response = await apiClient.put('/api/commissions/settings', settings);
+  async updateCommissionSettings(
+    settings: Partial<CommissionSettings>
+  ): Promise<CommissionSettings> {
+    const response = await apiClient.put("/api/commissions/settings", settings);
     return response.data.data;
   }
 
@@ -162,16 +167,18 @@ class CommissionService {
    * @param filters - Optional filters
    * @returns Promise<CommissionRecord[]>
    */
-  async getAgentCommissions(filters: CommissionFilters = {}): Promise<CommissionRecord[]> {
+  async getAgentCommissions(
+    filters: CommissionFilters = {}
+  ): Promise<CommissionRecord[]> {
     const params = new URLSearchParams();
 
-    if (filters.status) params.append('status', filters.status);
-    if (filters.period) params.append('period', filters.period);
-    if (filters.startDate) params.append('startDate', filters.startDate);
-    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.status) params.append("status", filters.status);
+    if (filters.period) params.append("period", filters.period);
+    if (filters.startDate) params.append("startDate", filters.startDate);
+    if (filters.endDate) params.append("endDate", filters.endDate);
 
     const query = params.toString();
-    const baseUrl = '/api/commissions/agent';
+    const baseUrl = "/api/commissions/agent";
     const url = query ? `${baseUrl}?${query}` : baseUrl;
 
     const response = await apiClient.get(url);
@@ -183,18 +190,20 @@ class CommissionService {
    * @param filters - Optional filters
    * @returns Promise<CommissionRecord[]>
    */
-  async getAllCommissions(filters: CommissionFilters = {}): Promise<CommissionRecord[]> {
+  async getAllCommissions(
+    filters: CommissionFilters = {}
+  ): Promise<CommissionRecord[]> {
     const params = new URLSearchParams();
 
-    if (filters.status) params.append('status', filters.status);
-    if (filters.period) params.append('period', filters.period);
-    if (filters.startDate) params.append('startDate', filters.startDate);
-    if (filters.endDate) params.append('endDate', filters.endDate);
-    if (filters.agentId) params.append('agentId', filters.agentId);
-    if (filters.month) params.append('month', filters.month);
+    if (filters.status) params.append("status", filters.status);
+    if (filters.period) params.append("period", filters.period);
+    if (filters.startDate) params.append("startDate", filters.startDate);
+    if (filters.endDate) params.append("endDate", filters.endDate);
+    if (filters.agentId) params.append("agentId", filters.agentId);
+    if (filters.month) params.append("month", filters.month);
 
     const query = params.toString();
-    const baseUrl = '/api/commissions';
+    const baseUrl = "/api/commissions";
     const url = query ? `${baseUrl}?${query}` : baseUrl;
 
     const response = await apiClient.get(url);
@@ -212,7 +221,7 @@ class CommissionService {
     startDate: string;
     endDate: string;
   }): Promise<CommissionCalculation> {
-    const response = await apiClient.post('/api/commissions/calculate', data);
+    const response = await apiClient.post("/api/commissions/calculate", data);
     return response.data.data;
   }
 
@@ -221,8 +230,10 @@ class CommissionService {
    * @param data - Commission record data
    * @returns Promise<CommissionRecord>
    */
-  async createCommissionRecord(data: Omit<CommissionRecord, '_id' | 'createdAt' | 'updatedAt'>): Promise<CommissionRecord> {
-    const response = await apiClient.post('/api/commissions/records', data);
+  async createCommissionRecord(
+    data: Omit<CommissionRecord, "_id" | "createdAt" | "updatedAt">
+  ): Promise<CommissionRecord> {
+    const response = await apiClient.post("/api/commissions/records", data);
     return response.data.data;
   }
 
@@ -232,8 +243,14 @@ class CommissionService {
    * @param data - Payment data
    * @returns Promise<CommissionRecord>
    */
-  async payCommission(commissionId: string, data: PayCommissionData = {}): Promise<CommissionRecord> {
-    const response = await apiClient.put(`/api/commissions/${commissionId}/pay`, data);
+  async payCommission(
+    commissionId: string,
+    data: PayCommissionData = {}
+  ): Promise<CommissionRecord> {
+    const response = await apiClient.put(
+      `/api/commissions/${commissionId}/pay`,
+      data
+    );
     return response.data.data;
   }
 
@@ -242,8 +259,10 @@ class CommissionService {
    * @param data - Multiple payment data
    * @returns Promise<MultiplePaymentResult>
    */
-  async payMultipleCommissions(data: PayMultipleCommissionsData): Promise<MultiplePaymentResult> {
-    const response = await apiClient.put('/api/commissions/pay-multiple', data);
+  async payMultipleCommissions(
+    data: PayMultipleCommissionsData
+  ): Promise<MultiplePaymentResult> {
+    const response = await apiClient.put("/api/commissions/pay-multiple", data);
     return response.data.data;
   }
 
@@ -253,8 +272,14 @@ class CommissionService {
    * @param data - Rejection data
    * @returns Promise<CommissionRecord>
    */
-  async rejectCommission(commissionId: string, data: RejectCommissionData = {}): Promise<CommissionRecord> {
-    const response = await apiClient.put(`/api/commissions/${commissionId}/reject`, data);
+  async rejectCommission(
+    commissionId: string,
+    data: RejectCommissionData = {}
+  ): Promise<CommissionRecord> {
+    const response = await apiClient.put(
+      `/api/commissions/${commissionId}/reject`,
+      data
+    );
     return response.data.data;
   }
 
@@ -263,8 +288,13 @@ class CommissionService {
    * @param data - Multiple rejection data
    * @returns Promise<MultiplePaymentResult>
    */
-  async rejectMultipleCommissions(data: RejectMultipleCommissionsData): Promise<MultiplePaymentResult> {
-    const response = await apiClient.put('/api/commissions/reject-multiple', data);
+  async rejectMultipleCommissions(
+    data: RejectMultipleCommissionsData
+  ): Promise<MultiplePaymentResult> {
+    const response = await apiClient.put(
+      "/api/commissions/reject-multiple",
+      data
+    );
     return response.data.data;
   }
 
@@ -273,8 +303,13 @@ class CommissionService {
    * @param data - Generation parameters
    * @returns Promise<MonthlyGenerationResult>
    */
-  async generateMonthlyCommissions(data: GenerateMonthlyCommissionsData = {}): Promise<MonthlyGenerationResult> {
-    const response = await apiClient.post('/api/commissions/generate-monthly', data);
+  async generateMonthlyCommissions(
+    data: GenerateMonthlyCommissionsData = {}
+  ): Promise<MonthlyGenerationResult> {
+    const response = await apiClient.post(
+      "/api/commissions/generate-monthly",
+      data
+    );
     return response.data.data;
   }
 
@@ -283,7 +318,7 @@ class CommissionService {
    * @returns Promise<CommissionStatistics>
    */
   async getCommissionStatistics(): Promise<CommissionStatistics> {
-    const response = await apiClient.get('/api/commissions/statistics');
+    const response = await apiClient.get("/api/commissions/statistics");
     return response.data.data;
   }
 }

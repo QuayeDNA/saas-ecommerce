@@ -10,11 +10,11 @@ import superadminRoutes from "./superadmin-routes";
 // =============================================================================
 // LAZY LOADED COMPONENTS - PUBLIC PAGES
 // =============================================================================
-// const LandingPage = lazy(() =>
-//   import("../pages/landing-page").then((module) => ({
-//     default: module.LandingPage,
-//   }))
-// );
+const LandingPage = lazy(() =>
+  import("../pages/landing-page").then((module) => ({
+    default: module.LandingPage,
+  }))
+);
 
 const LogoPage = lazy(() =>
   import("../components/common/BryteLinksLogoShowcase").then((module) => ({
@@ -154,6 +154,14 @@ const publicRoutes: RouteObject[] = [
     element: (
       <Suspense fallback={<PageLoader />}>
         <LoginPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/landing",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <LandingPage />
       </Suspense>
     ),
   },

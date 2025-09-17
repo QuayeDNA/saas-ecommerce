@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   FaMoneyBillWave,
   FaUsers,
@@ -25,33 +25,30 @@ import {
   useToast,
 } from "../../design-system";
 import { SearchAndFilter } from "../../components/common/SearchAndFilter";
+import { useCommissions } from "../../hooks/use-commissions";
 import {
-  commissionService,
   type CommissionRecord,
-  type CommissionStatistics,
-  type CommissionSettings,
   type MonthlyGenerationResult,
+  type CommissionSettings,
 } from "../../services/commission.service";
 
-interface CommissionFilters {
-  status?: "pending" | "paid" | "rejected" | "cancelled";
-  period?: "monthly" | "weekly" | "daily";
-  agentId?: string;
-  startDate?: string;
-  endDate?: string;
-  month?: string;
-}
-
 export default function SuperAdminCommissionsPage() {
-  const [commissions, setCommissions] = useState<CommissionRecord[]>([]);
-  const [statistics, setStatistics] = useState<CommissionStatistics | null>(
-    null
-  );
-  const [settings, setSettings] = useState<CommissionSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<CommissionFilters>({
-    status: "pending",
-  }); // Default to pending
+  // Use CommissionContext instead of local state
+  const {
+    commissions,
+    statistics,
+    settings,
+    isLoading,
+    filters,
+    setFilters,
+    payCommission,
+    payMultipleCommissions,
+    rejectCommission,
+    rejectMultipleCommissions,
+    generateMonthlyCommissions,
+    updateCommissionSettings,
+    loadAllData,
+  } = useCommissions();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCommissions, setSelectedCommissions] = useState<string[]>([]);
   const [showPayDialog, setShowPayDialog] = useState(false);
@@ -70,6 +67,11 @@ export default function SuperAdminCommissionsPage() {
   const [singleRejectionReason, setSingleRejectionReason] = useState("");
   const [isMobile, setIsMobile] = useState(false);
 
+  // Local state for settings form
+  const [localSettings, setLocalSettings] = useState<CommissionSettings | null>(
+    null
+  );
+
   // Commission Generation State
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [generationMonth, setGenerationMonth] = useState(
@@ -81,33 +83,6 @@ export default function SuperAdminCommissionsPage() {
   const [showGenerationResult, setShowGenerationResult] = useState(false);
 
   const toast = useToast();
-
-  // Load data on component mount
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [commissionsData, statisticsData, settingsData] = await Promise.all(
-        [
-          commissionService.getAllCommissions(filters),
-          commissionService.getCommissionStatistics(),
-          commissionService.getCommissionSettings(),
-        ]
-      );
-
-      setCommissions(commissionsData);
-      setStatistics(statisticsData);
-      setSettings(settingsData);
-    } catch (error) {
-      console.error("Failed to load commission data:", error);
-      toast.addToast("Failed to load commission data", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, toast]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   // Mobile detection
   useEffect(() => {
@@ -139,7 +114,7 @@ export default function SuperAdminCommissionsPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    loadData();
+    loadAllData();
   };
 
   const handleClearFilters = () => {
@@ -195,7 +170,7 @@ export default function SuperAdminCommissionsPage() {
     },
     showSearchButton: true,
     showClearButton: true,
-    isLoading: loading,
+    isLoading: isLoading,
   };
 
   const handlePaySelected = async () => {
@@ -217,7 +192,7 @@ export default function SuperAdminCommissionsPage() {
     }
 
     try {
-      const result = await commissionService.payMultipleCommissions({
+      const result = await payMultipleCommissions({
         commissionIds: selectedCommissions,
         paymentReference: paymentReference || undefined,
       });
@@ -230,7 +205,7 @@ export default function SuperAdminCommissionsPage() {
       setShowPayDialog(false);
       setSelectedCommissions([]);
       setPaymentReference("");
-      loadData();
+      loadAllData();
     } catch (error) {
       console.error("Failed to process commission payments:", error);
       toast.addToast("Failed to process commission payments", "error");
@@ -257,7 +232,7 @@ export default function SuperAdminCommissionsPage() {
     }
 
     try {
-      await commissionService.payCommission(selectedCommission._id, {
+      await payCommission(selectedCommission._id, {
         paymentReference: singlePaymentReference || undefined,
       });
 
@@ -271,7 +246,6 @@ export default function SuperAdminCommissionsPage() {
       setShowPaySingleDialog(false);
       setSelectedCommission(null);
       setSinglePaymentReference("");
-      loadData();
     } catch (error) {
       console.error("Failed to process commission payment:", error);
       toast.addToast("Failed to process commission payment", "error");
@@ -299,7 +273,7 @@ export default function SuperAdminCommissionsPage() {
     }
 
     try {
-      await commissionService.rejectCommission(selectedCommission._id, {
+      await rejectCommission(selectedCommission._id, {
         rejectionReason: singleRejectionReason || undefined,
       });
 
@@ -313,7 +287,6 @@ export default function SuperAdminCommissionsPage() {
       setShowRejectSingleDialog(false);
       setSelectedCommission(null);
       setSingleRejectionReason("");
-      loadData();
     } catch (error) {
       console.error("Failed to reject commission:", error);
       toast.addToast("Failed to reject commission", "error");
@@ -324,7 +297,7 @@ export default function SuperAdminCommissionsPage() {
     if (selectedCommissions.length === 0) return;
 
     try {
-      await commissionService.rejectMultipleCommissions({
+      await rejectMultipleCommissions({
         commissionIds: selectedCommissions,
         rejectionReason: rejectionReason || undefined,
       });
@@ -337,18 +310,19 @@ export default function SuperAdminCommissionsPage() {
       setShowRejectDialog(false);
       setSelectedCommissions([]);
       setRejectionReason("");
-      loadData();
     } catch (error) {
       console.error("Failed to reject commissions:", error);
       toast.addToast("Failed to reject commissions", "error");
     }
   };
 
-  const handleUpdateSettings = async (newSettings: CommissionSettings) => {
+  const handleUpdateSettings = async () => {
+    if (!localSettings) return;
+
     try {
-      await commissionService.updateCommissionSettings(newSettings);
-      setSettings(newSettings);
+      await updateCommissionSettings(localSettings);
       setShowSettingsDialog(false);
+      setLocalSettings(null);
       toast.addToast("Commission settings updated successfully", "success");
     } catch (error) {
       console.error("Failed to update commission settings:", error);
@@ -360,16 +334,13 @@ export default function SuperAdminCommissionsPage() {
   const handleGenerateCommissions = async () => {
     setIsGenerating(true);
     try {
-      const result = await commissionService.generateMonthlyCommissions({
+      const result = await generateMonthlyCommissions({
         targetMonth: generationMonth,
       });
 
       setGenerationResult(result);
       setShowGenerateDialog(false);
       setShowGenerationResult(true);
-
-      // Refresh the commission list
-      loadData();
 
       toast.addToast(
         `Commission generation completed: ${result.summary.created} created, ${result.summary.exists} existing`,
@@ -420,7 +391,7 @@ export default function SuperAdminCommissionsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Spinner size="lg" />
@@ -453,7 +424,10 @@ export default function SuperAdminCommissionsPage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => setShowSettingsDialog(true)}
+            onClick={() => {
+              setLocalSettings(settings ? { ...settings } : null);
+              setShowSettingsDialog(true);
+            }}
             className="flex items-center justify-center w-full sm:w-auto"
             leftIcon={<FaCalculator className="text-sm" />}
             size="sm"
@@ -813,6 +787,9 @@ export default function SuperAdminCommissionsPage() {
                       Agent
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      User Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Period
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -864,6 +841,23 @@ export default function SuperAdminCommissionsPage() {
                             {commission.agentId.email}
                           </div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        <Badge
+                          colorScheme={
+                            commission.agentId.userType === "super_dealer"
+                              ? "info"
+                              : commission.agentId.userType === "dealer"
+                              ? "success"
+                              : commission.agentId.userType === "super_agent"
+                              ? "warning"
+                              : "default"
+                          }
+                        >
+                          {commission.agentId.userType
+                            ?.replace("_", " ")
+                            .toUpperCase() || "AGENT"}
+                        </Badge>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {new Date(commission.periodStart).toLocaleDateString()}{" "}
@@ -962,34 +956,74 @@ export default function SuperAdminCommissionsPage() {
         <DialogBody>
           {settings && (
             <div className="space-y-4">
-              <Input
-                label="Agent Commission Rate (%)"
-                type="number"
-                value={settings.agentCommission}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    agentCommission: parseFloat(e.target.value),
-                  })
-                }
-                min="0"
-                max="100"
-                step="0.1"
-              />
-              <Input
-                label="Customer Commission Rate (%)"
-                type="number"
-                value={settings.customerCommission}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    customerCommission: parseFloat(e.target.value),
-                  })
-                }
-                min="0"
-                max="100"
-                step="0.1"
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Agent Commission Rate (%)"
+                  type="number"
+                  value={
+                    localSettings?.agentCommission ?? settings.agentCommission
+                  }
+                  onChange={(e) =>
+                    setLocalSettings({
+                      ...localSettings!,
+                      agentCommission: parseFloat(e.target.value),
+                    })
+                  }
+                  min="0"
+                  max="100"
+                  step="0.1"
+                />
+                <Input
+                  label="Super Agent Commission Rate (%)"
+                  type="number"
+                  value={
+                    localSettings?.superAgentCommission ??
+                    settings.superAgentCommission
+                  }
+                  onChange={(e) =>
+                    setLocalSettings({
+                      ...localSettings!,
+                      superAgentCommission: parseFloat(e.target.value),
+                    })
+                  }
+                  min="0"
+                  max="100"
+                  step="0.1"
+                />
+                <Input
+                  label="Dealer Commission Rate (%)"
+                  type="number"
+                  value={
+                    localSettings?.dealerCommission ?? settings.dealerCommission
+                  }
+                  onChange={(e) =>
+                    setLocalSettings({
+                      ...localSettings!,
+                      dealerCommission: parseFloat(e.target.value),
+                    })
+                  }
+                  min="0"
+                  max="100"
+                  step="0.1"
+                />
+                <Input
+                  label="Super Dealer Commission Rate (%)"
+                  type="number"
+                  value={
+                    localSettings?.superDealerCommission ??
+                    settings.superDealerCommission
+                  }
+                  onChange={(e) =>
+                    setLocalSettings({
+                      ...localSettings!,
+                      superDealerCommission: parseFloat(e.target.value),
+                    })
+                  }
+                  min="0"
+                  max="100"
+                  step="0.1"
+                />
+              </div>
             </div>
           )}
         </DialogBody>
@@ -1000,9 +1034,7 @@ export default function SuperAdminCommissionsPage() {
           >
             Cancel
           </Button>
-          <Button onClick={() => settings && handleUpdateSettings(settings)}>
-            Save Settings
-          </Button>
+          <Button onClick={handleUpdateSettings}>Save Settings</Button>
         </DialogFooter>
       </Dialog>
 
