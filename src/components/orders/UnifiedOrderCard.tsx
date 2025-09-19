@@ -11,7 +11,9 @@ import {
   FaExclamationTriangle,
 } from "react-icons/fa";
 import { Button } from "../../design-system";
+import { Select } from "../../design-system/components/select";
 import { ReportModal } from "./ReportModal";
+import { getToken } from "../../utils/auth-storage";
 import type { Order } from "../../types/order";
 
 interface UnifiedOrderCardProps {
@@ -22,6 +24,8 @@ interface UnifiedOrderCardProps {
   onCancel: (orderId: string) => void;
   onSelect?: (orderId: string) => void;
   isSelected?: boolean;
+  onRefresh?: () => void;
+  onUpdateReceptionStatus?: (orderId: string, status: string) => Promise<void>;
 }
 
 export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
@@ -32,10 +36,35 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   onCancel,
   onSelect,
   isSelected = false,
+  onRefresh,
+  onUpdateReceptionStatus,
 }) => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
+
+  const handleReportClick = () => {
+    if (order.reported) {
+      // Show alert for already reported orders
+      alert("This order has already been reported for data delivery issues.");
+      return;
+    }
+    setReportModalOpen(true);
+  };
+
+  const handleReceptionStatusUpdate = async (newStatus: string) => {
+    if (!onUpdateReceptionStatus) return;
+
+    try {
+      await onUpdateReceptionStatus(order._id!, newStatus);
+      // Refresh the list to show updated status
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error("Error updating reception status:", error);
+    }
+  };
 
   // Click outside handler to close dropdown
   React.useEffect(() => {
@@ -106,6 +135,21 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
         return "bg-[#800080] text-gray-200";
       default:
         return "bg-[#696969] text-gray-200";
+    }
+  };
+
+  const getReceptionStatusColor = (receptionStatus: string) => {
+    switch (receptionStatus) {
+      case "received":
+        return "bg-green-100 text-green-800";
+      case "not_received":
+        return "bg-red-100 text-red-800";
+      case "checking":
+        return "bg-yellow-100 text-yellow-800";
+      case "resolved":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -204,6 +248,9 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     // Only completed orders can be reported
     if (order.status !== "completed") return false;
 
+    // Check if order is already reported
+    if (order.reported) return false;
+
     // Check if order is older than 3 days
     const orderDate = new Date(order.createdAt);
     const threeDaysAgo = new Date();
@@ -223,26 +270,74 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     return false;
   };
 
+  const shouldShowReceptionStatusEditor = (order: Order) => {
+    // Only show reception status editor for reported orders
+    if (!order.reported) return false;
+
+    // If the order is not resolved, always show the editor
+    if (order.receptionStatus !== "resolved") return true;
+
+    // If the order is resolved, check if it's been more than 3 days since resolution
+    // For now, we'll use the order's updatedAt or createdAt as a proxy
+    // In a real implementation, you'd want a specific field for when the status was set to resolved
+    const resolvedDate = new Date(order.updatedAt || order.createdAt);
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    // Hide the editor if it's been more than 3 days since resolution
+    return resolvedDate >= threeDaysAgo;
+  };
+
+  const shouldShowReceptionStatusDisplay = (order: Order) => {
+    // Only show reception status display for completed orders with reception status
+    if (order.status !== "completed" || !order.receptionStatus) return false;
+
+    // If the order is not resolved, always show the display
+    if (order.receptionStatus !== "resolved") return true;
+
+    // If the order is resolved, check if it's been more than 3 days since resolution
+    const resolvedDate = new Date(order.updatedAt || order.createdAt);
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    // Hide the display if it's been more than 3 days since resolution
+    return resolvedDate >= threeDaysAgo;
+  };
+
   const handleReportSubmit = async () => {
     setIsReporting(true);
     try {
+      const token = getToken();
+
+      if (!token) {
+        throw new Error("You must be logged in to submit a report");
+      }
+
       const response = await fetch(`/api/orders/${order._id}/report`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({}),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to submit report");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `Failed to submit report: ${response.status}`
+        );
       }
 
       setReportModalOpen(false);
+      // Refresh the order list after successful reporting
+      if (onRefresh) {
+        onRefresh();
+      }
     } catch (error) {
       console.error("Error submitting report:", error);
       // You might want to show an error toast here
+      throw error; // Re-throw so the modal can handle it
     } finally {
       setIsReporting(false);
     }
@@ -278,46 +373,61 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
           {/* Status Badge */}
           <div className="flex-shrink-0 ml-3">
-            <div className="relative">
-              {isAdmin ? (
-                <button
-                  onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                    order.status
-                  )} hover:bg-opacity-80 transition-colors status-dropdown`}
-                >
-                  <span>{order.status}</span>
-                  <FaChevronRight className="text-xs ml-1" />
-                </button>
-              ) : (
-                <div
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                    order.status
-                  )}`}
-                >
-                  <span>{order.status}</span>
-                </div>
-              )}
-
-              {isAdmin && statusDropdownOpen && (
-                <div className="absolute z-10 mt-1 right-0 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown min-w-32">
-                  <div className="py-1 flex flex-col">
-                    {statusOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => handleStatusChange(option.value)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${
-                          option.value === order.status
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
+            <div className="flex flex-col gap-1">
+              <div className="relative">
+                {isAdmin ? (
+                  <button
+                    onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      order.status
+                    )} hover:bg-opacity-80 transition-colors status-dropdown`}
+                  >
+                    <span>{order.status}</span>
+                    <FaChevronRight className="text-xs ml-1" />
+                  </button>
+                ) : (
+                  <div
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      order.status
+                    )}`}
+                  >
+                    <span>{order.status}</span>
                   </div>
-                </div>
-              )}
+                )}
+
+                {isAdmin && statusDropdownOpen && (
+                  <div className="absolute z-10 mt-1 right-0 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown min-w-32">
+                    <div className="py-1 flex flex-col">
+                      {statusOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => handleStatusChange(option.value)}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${
+                            option.value === order.status
+                              ? "bg-blue-50 text-blue-700"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Reception Status - Show for completed orders */}
+              {order.status === "completed" &&
+                order.receptionStatus &&
+                shouldShowReceptionStatusDisplay(order) && (
+                  <div
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getReceptionStatusColor(
+                      order.receptionStatus
+                    )}`}
+                  >
+                    <span>{order.receptionStatus.replace("_", " ")}</span>
+                  </div>
+                )}
             </div>
           </div>
         </div>
@@ -399,7 +509,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setReportModalOpen(true)}
+              onClick={handleReportClick}
               className="text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400 px-3 py-1 text-sm"
             >
               <FaExclamationTriangle className="w-3 h-3 mr-1" />
@@ -407,6 +517,41 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
             </Button>
           </div>
         )}
+
+        {/* Already Reported Indicator */}
+        {order.reported && !isAdmin && (
+          <div className="flex justify-start mt-2">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+              <FaExclamationTriangle className="w-3 h-3 mr-1" />
+              Already Reported
+            </span>
+          </div>
+        )}
+
+        {/* Super Admin Reception Status Editor */}
+        {order.reported &&
+          isAdmin &&
+          shouldShowReceptionStatusEditor(order) && (
+            <div className="flex justify-start mt-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Reception Status:
+                </span>
+                <Select
+                  value={order.receptionStatus || "not_received"}
+                  onChange={handleReceptionStatusUpdate}
+                  options={[
+                    { value: "not_received", label: "Not Received" },
+                    { value: "received", label: "Received" },
+                    { value: "checking", label: "Checking" },
+                    { value: "resolved", label: "Resolved" },
+                  ]}
+                  size="sm"
+                  className="w-40"
+                />
+              </div>
+            </div>
+          )}
       </div>
 
       {/* Report Modal */}

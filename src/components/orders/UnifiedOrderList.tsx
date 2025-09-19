@@ -56,6 +56,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     filters,
     fetchOrders,
     updateOrderStatus,
+    updateReceptionStatus,
     cancelOrder,
     setFilters,
     bulkProcessOrders,
@@ -133,6 +134,12 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             processing: analytics.orders.processing || 0,
             pending: analytics.orders.pending || 0,
             cancelled: analytics.orders.cancelled || 0,
+          },
+          receptionCounts: {
+            received: analytics.orders.completed || 0,
+            not_received: analytics.orders.failed || 0,
+            checking: analytics.orders.processing || 0,
+            resolved: analytics.orders.completed || 0,
           },
         };
 
@@ -255,6 +262,18 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       addToast("Order status updated successfully", "success");
     } catch {
       addToast("Failed to update order status", "error");
+    }
+  };
+
+  const handleReceptionStatusUpdate = async (
+    orderId: string,
+    receptionStatus: string
+  ) => {
+    try {
+      await updateReceptionStatus(orderId, receptionStatus);
+      addToast("Reception status updated successfully", "success");
+    } catch {
+      addToast("Failed to update reception status", "error");
     }
   };
 
@@ -687,6 +706,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               onCancel={handleCancelOrder}
               onSelect={handleSelectOrder}
               isSelected={selectedOrders.includes(order._id || "")}
+              onRefresh={() => fetchOrders(filters)}
+              onUpdateReceptionStatus={handleReceptionStatusUpdate}
             />
           ))}
         </div>
@@ -697,6 +718,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             isAdmin={isAdmin}
             currentUserId={authState.user?._id}
             onUpdateStatus={handleStatusUpdate}
+            onUpdateReceptionStatus={handleReceptionStatusUpdate}
             onCancel={handleCancelOrder}
             onSelect={handleSelectOrder}
             selectedOrders={selectedOrders}

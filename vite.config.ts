@@ -170,6 +170,14 @@ export default defineConfig({
     hmr: true,
     // Open browser on server start
     open: true,
+    // Proxy API requests to backend
+    proxy: {
+      "/api": {
+        target: "http://localhost:5050",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   // Enable dependency pre-bundling for faster cold starts
   optimizeDeps: {

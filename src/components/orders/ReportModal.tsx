@@ -29,21 +29,36 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const { addToast } = useToast();
 
   const handleSubmit = async () => {
-    // Close the modal first
-    handleClose();
+    try {
+      // Submit the report
+      await onSubmit();
 
-    // Submit the report
-    await onSubmit();
+      // Close the modal after successful submission
+      handleClose();
 
-    // Show success toast notification
-    addToast(
-      `Your data delivery report for order ${orderNumber} has been submitted successfully. The super admin will be notified.`,
-      "success",
-      5000
-    );
+      // Show success toast notification
+      addToast(
+        `Your data delivery report for order ${orderNumber} has been submitted successfully. The super admin will be notified.`,
+        "success",
+        5000
+      );
 
-    // Handle WhatsApp contact
-    handleWhatsAppContact();
+      // Handle WhatsApp contact
+      handleWhatsAppContact();
+    } catch (error) {
+      // Re-open the modal if there was an error
+      // Note: handleClose() was called before onSubmit(), so we need to re-open it
+      // Actually, let's not close it until we know it succeeded
+
+      // Show error toast
+      addToast(
+        error instanceof Error
+          ? error.message
+          : "Failed to submit report. Please try again.",
+        "error",
+        5000
+      );
+    }
   };
 
   const handleClose = () => {
@@ -97,7 +112,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      return;
     } else {
       // For Android and desktop, use the standard wa.me URL
       whatsappUrl = `https://wa.me/+233548983019?text=${encodeURIComponent(

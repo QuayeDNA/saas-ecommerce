@@ -17,6 +17,7 @@ import type {
 import { orderService } from "../services/order.service";
 import { analyticsService } from "../services/analytics.service";
 import { useAuth } from "../hooks/use-auth";
+import { getToken } from "../utils/auth-storage";
 
 // Helper function to trigger daily spending refresh from backend
 const triggerDailySpendingRefresh = (userId?: string) => {
@@ -72,6 +73,10 @@ interface OrderContextType {
     orderId: string,
     status: string,
     notes?: string
+  ) => Promise<void>;
+  updateReceptionStatus: (
+    orderId: string,
+    receptionStatus: string
   ) => Promise<void>;
   processDraftOrders: () => Promise<{
     processed: number;
@@ -378,6 +383,40 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     [fetchOrders, filters]
   );
 
+  const updateReceptionStatus = useCallback(
+    async (orderId: string, receptionStatus: string) => {
+      try {
+        const response = await fetch(
+          `/api/orders/${orderId}/reception-status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${getToken()}`,
+            },
+            body: JSON.stringify({ receptionStatus }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update reception status");
+        }
+
+        // Toast notification removed - handled by component
+        await fetchOrders(filters);
+      } catch (err: unknown) {
+        const message = extractErrorMessage(
+          err,
+          "Failed to update reception status"
+        );
+        setError(message);
+        // Toast notification removed - handled by component
+        throw new Error(message);
+      }
+    },
+    [fetchOrders, filters]
+  );
+
   const processDraftOrders = useCallback(async () => {
     try {
       const result = await orderService.processDraftOrders();
@@ -476,6 +515,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       bulkProcessOrders,
       cancelOrder,
       updateOrderStatus,
+      updateReceptionStatus,
       processDraftOrders,
       fetchAnalytics,
       getAnalytics,
@@ -501,6 +541,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       bulkProcessOrders,
       cancelOrder,
       updateOrderStatus,
+      updateReceptionStatus,
       processDraftOrders,
       fetchAnalytics,
       getAnalytics,
@@ -540,6 +581,7 @@ export const useOrder = () => {
       bulkProcessOrders: async () => {},
       cancelOrder: async () => {},
       updateOrderStatus: async () => {},
+      updateReceptionStatus: async () => {},
       processDraftOrders: async () => ({
         processed: 0,
         message: "",

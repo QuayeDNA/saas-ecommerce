@@ -40,7 +40,7 @@ export interface DuplicateCheckResult {
 }
 
 export interface DuplicateOrderError extends Error {
-  code: 'DUPLICATE_ORDER_DETECTED';
+  code: "DUPLICATE_ORDER_DETECTED";
   duplicateInfo: DuplicateCheckResult;
 }
 
@@ -62,9 +62,14 @@ export interface OrderItem {
   customerPhone: string;
   bundleSize?: {
     value: number;
-    unit: 'MB' | 'GB';
+    unit: "MB" | "GB";
   };
-  processingStatus: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  processingStatus:
+    | "pending"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "cancelled";
   processingError?: string;
   processedAt?: Date;
   processedBy?: string;
@@ -73,7 +78,7 @@ export interface OrderItem {
 export interface Order {
   _id?: string;
   orderNumber: string;
-  orderType: 'single' | 'bulk' | 'regular';
+  orderType: "single" | "bulk" | "regular";
   customer?: string;
   customerInfo?: {
     name?: string;
@@ -85,9 +90,18 @@ export interface Order {
   tax: number;
   discount: number;
   total: number;
-  status: 'draft' | 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled' | 'failed';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  paymentMethod: 'cash' | 'card' | 'mobile_money' | 'bank_transfer' | 'wallet';
+  status:
+    | "draft"
+    | "pending"
+    | "confirmed"
+    | "processing"
+    | "completed"
+    | "cancelled"
+    | "failed";
+  receptionStatus?: "not_received" | "received" | "checking" | "resolved";
+  reported?: boolean;
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  paymentMethod: "cash" | "card" | "mobile_money" | "bank_transfer" | "wallet";
   paymentReference?: string;
   bulkData?: {
     rawInput: string;
@@ -103,7 +117,7 @@ export interface Order {
   processedBy?: string;
   notes?: string;
   tags?: string[];
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  priority: "low" | "normal" | "high" | "urgent";
   completionPercentage: number;
   createdAt: Date;
   updatedAt: Date;
@@ -123,7 +137,7 @@ export interface OrderPagination {
   page: number;
   limit: number;
   sortBy: string;
-  sortOrder: 'asc' | 'desc';
+  sortOrder: "asc" | "desc";
 }
 
 export interface OrderResponse {
@@ -157,7 +171,7 @@ export interface CreateSingleOrderData {
   customerPhone: string;
   bundleSize?: {
     value: number;
-    unit: 'MB' | 'GB';
+    unit: "MB" | "GB";
   };
   quantity?: number;
 }
