@@ -65,10 +65,46 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       message += `\n\nOrder Date: ${orderDate}`;
     }
 
-    const whatsappUrl = `https://wa.me/+233548983019?text=${encodeURIComponent(
-      message
-    )}`;
-    window.open(whatsappUrl, "_blank");
+    // Detect iOS devices
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    let whatsappUrl;
+
+    if (isIOS) {
+      // For iOS, use WhatsApp URL scheme first, then fallback to web.whatsapp.com
+      const phoneNumber = "+233548983019";
+      const encodedMessage = encodeURIComponent(message);
+
+      // Try WhatsApp app first
+      whatsappUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
+
+      // Create a fallback link for web.whatsapp.com
+      const webWhatsappUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+
+      // Open WhatsApp app, and if it fails, redirect to web version
+      const link = document.createElement("a");
+      link.href = whatsappUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      // Add a click handler to fallback to web version if app doesn't open
+      link.onclick = () => {
+        setTimeout(() => {
+          window.open(webWhatsappUrl, "_blank", "noopener,noreferrer");
+        }, 1000); // Wait 1 second, then open web version
+      };
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    } else {
+      // For Android and desktop, use the standard wa.me URL
+      whatsappUrl = `https://wa.me/+233548983019?text=${encodeURIComponent(
+        message
+      )}`;
+      window.open(whatsappUrl, "_blank");
+    }
   };
 
   if (!isOpen) return null;
