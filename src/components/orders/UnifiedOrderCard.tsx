@@ -351,7 +351,12 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     <div
       className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
         isSelected ? "ring-2 ring-blue-500" : ""
-      } ${isProdTester ? "bg-yellow-50 border-yellow-300" : ""}`}
+      }`}
+      style={
+        isProdTester
+          ? { backgroundColor: "#fefce8", borderColor: "#fbbf24" }
+          : {}
+      }
     >
       <div className="p-4">
         {/* Header - Order Number, Date, and Status */}

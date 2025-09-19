@@ -288,9 +288,12 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
 
   return (
     <div
-      className={`bg-white rounded-lg shadow overflow-hidden ${
-        isProdTester ? "bg-yellow-50 border border-yellow-300" : ""
-      }`}
+      className="bg-white rounded-lg shadow overflow-hidden"
+      style={
+        isProdTester
+          ? { backgroundColor: "#fefce8", border: "1px solid #fbbf24" }
+          : {}
+      }
     >
       {/* Desktop-optimized table - minimum lg screen required */}
       <div className="overflow-x-auto min-w-full">
