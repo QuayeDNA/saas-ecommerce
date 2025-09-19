@@ -13,9 +13,9 @@ import {
 import { Button } from "../../design-system";
 import { Select } from "../../design-system/components/select";
 import { ReportModal } from "./ReportModal";
-import { getToken } from "../../utils/auth-storage";
 import type { Order } from "../../types/order";
 import { AuthContext } from "../../contexts/AuthContext";
+import { apiClient } from "../../utils/api-client";
 
 interface UnifiedOrderCardProps {
   order: Order;
@@ -311,27 +311,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   const handleReportSubmit = async () => {
     setIsReporting(true);
     try {
-      const token = getToken();
-
-      if (!token) {
-        throw new Error("You must be logged in to submit a report");
-      }
-
-      const response = await fetch(`/api/orders/${order._id}/report`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `Failed to submit report: ${response.status}`
-        );
-      }
+      await apiClient.post(`/api/orders/${order._id}/report`, {});
 
       setReportModalOpen(false);
       // Refresh the order list after successful reporting

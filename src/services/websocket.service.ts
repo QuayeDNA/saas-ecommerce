@@ -1,4 +1,5 @@
 // src/services/websocket.service.ts
+import { apiClient } from "../utils/api-client";
 
 class WebSocketService {
   private ws: WebSocket | null = null;
@@ -76,16 +77,10 @@ class WebSocketService {
     this.pollingInterval = setInterval(async () => {
       try {
         // Poll for wallet updates
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5050";
-        const response = await fetch(`${apiUrl}/api/wallet/info`, {
-          headers: {
-            Authorization: `Bearer ${this.getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await apiClient.get("/api/wallet/info");
 
-        if (response.ok) {
-          const data = await response.json();
+        if (response.status >= 200 && response.status < 300) {
+          const data = response.data;
           if (data.success && data.wallet) {
             // Check if we have a new update (simple timestamp check)
             const currentTime = Date.now();
@@ -106,18 +101,15 @@ class WebSocketService {
 
         // Poll for commission updates
         try {
-          const commissionResponse = await fetch(
-            `${apiUrl}/api/commissions/agent?status=pending`,
-            {
-              headers: {
-                Authorization: `Bearer ${this.getAuthToken()}`,
-                "Content-Type": "application/json",
-              },
-            }
+          const commissionResponse = await apiClient.get(
+            "/api/commissions/agent?status=pending"
           );
 
-          if (commissionResponse.ok) {
-            const commissionData = await commissionResponse.json();
+          if (
+            commissionResponse.status >= 200 &&
+            commissionResponse.status < 300
+          ) {
+            const commissionData = commissionResponse.data;
             if (commissionData.success && commissionData.data) {
               // Emit commission updates for any new or updated commissions
               commissionData.data.forEach((commission: unknown) => {
@@ -143,16 +135,6 @@ class WebSocketService {
       this.pollingInterval = null;
     }
     this._isPolling = false;
-  }
-
-  private getAuthToken(): string {
-    // Get token from cookies or localStorage
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("authToken="))
-      ?.split("=")[1];
-
-    return token || "";
   }
 
   private handleReconnect(userId: string) {

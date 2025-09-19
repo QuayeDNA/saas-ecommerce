@@ -17,7 +17,7 @@ import type {
 import { orderService } from "../services/order.service";
 import { analyticsService } from "../services/analytics.service";
 import { useAuth } from "../hooks/use-auth";
-import { getToken } from "../utils/auth-storage";
+import { apiClient } from "../utils/api-client";
 
 // Helper function to trigger daily spending refresh from backend
 const triggerDailySpendingRefresh = (userId?: string) => {
@@ -386,21 +386,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateReceptionStatus = useCallback(
     async (orderId: string, receptionStatus: string) => {
       try {
-        const response = await fetch(
-          `/api/orders/${orderId}/reception-status`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${getToken()}`,
-            },
-            body: JSON.stringify({ receptionStatus }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to update reception status");
-        }
+        await apiClient.patch(`/api/orders/${orderId}/reception-status`, {
+          receptionStatus,
+        });
 
         // Toast notification removed - handled by component
         await fetchOrders(filters);
