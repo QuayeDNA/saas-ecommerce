@@ -34,6 +34,10 @@ export interface SystemInfo {
   sslStatus: string;
 }
 
+export interface WalletSettings {
+  minimumTopUpAmount: number;
+}
+
 export interface PasswordResetRequest {
   userId: string;
   newPassword: string;
@@ -140,6 +144,17 @@ class SettingsService {
       "/api/settings/admin/change-password",
       request
     );
+    return response.data;
+  }
+
+  // Wallet Settings
+  async getWalletSettings(): Promise<WalletSettings> {
+    const response = await apiClient.get("/api/settings/wallet");
+    return response.data;
+  }
+
+  async updateWalletSettings(settings: WalletSettings): Promise<WalletSettings> {
+    const response = await apiClient.put("/api/settings/wallet", settings);
     return response.data;
   }
 }

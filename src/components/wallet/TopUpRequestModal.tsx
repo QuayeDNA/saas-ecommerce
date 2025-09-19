@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaMoneyBillWave, FaWhatsapp, FaCheck, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { Button, Input, Alert } from '../../design-system';
 import { useToast } from '../../design-system/components/toast';
+import { settingsService } from '../../services/settings.service';
 
 interface TopUpRequestModalProps {
   isOpen: boolean;
@@ -32,8 +33,26 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
     contactMethod: 'whatsapp'
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [minimumAmount, setMinimumAmount] = useState<number>(10); // Default fallback
 
   const totalSteps = 3;
+
+  // Fetch minimum amount on component mount
+  useEffect(() => {
+    const fetchMinimumAmount = async () => {
+      try {
+        const walletSettings = await settingsService.getWalletSettings();
+        setMinimumAmount(walletSettings.minimumTopUpAmount);
+      } catch (error) {
+        console.error('Failed to fetch minimum top-up amount:', error);
+        // Keep default value if fetch fails
+      }
+    };
+
+    if (isOpen) {
+      fetchMinimumAmount();
+    }
+  }, [isOpen]);
 
   const validateStep = (step: number): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -41,8 +60,8 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
     if (step === 1) {
       if (!stepData.amount) {
         newErrors.amount = 'Amount is required';
-      } else if (parseFloat(stepData.amount) <= 0) {
-        newErrors.amount = 'Amount must be greater than 0';
+      } else if (parseFloat(stepData.amount) < minimumAmount) {
+        newErrors.amount = `Amount must be at least GH₵${minimumAmount}`;
       } else if (parseFloat(stepData.amount) > 10000) {
         newErrors.amount = 'Amount cannot exceed GH₵10,000';
       }
@@ -181,9 +200,9 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                   <Input
                     type="number"
                     id="amount"
-                    min="0.01"
+                    min={minimumAmount}
                     step="0.01"
-                    placeholder="0.00"
+                    placeholder={`Minimum GH₵${minimumAmount}`}
                     value={stepData.amount}
                     onChange={(e) => updateStepData('amount', e.target.value)}
                     className={errors.amount ? 'border-red-500' : ''}
@@ -212,7 +231,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
                     <FaCheck className="h-4 w-4 mt-0.5 flex-shrink-0 text-[#142850]" />
                     <div className="ml-3">
                       <p className="text-sm">
-                        Your top-up request will be reviewed by an administrator. You'll be notified once it's processed.
+                        Minimum top-up amount is GH₵{minimumAmount}. Your top-up request will be reviewed by an administrator. You'll be notified once it's processed.
                       </p>
                     </div>
                   </div>

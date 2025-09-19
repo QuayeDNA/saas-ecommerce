@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaPowerOff,
@@ -13,6 +13,7 @@ import {
   FaBox,
   FaMobile,
   FaInfoCircle,
+  FaMoneyBillWave,
 } from "react-icons/fa";
 import { Button } from "../../design-system/components/button";
 import { Card } from "../../design-system/components/card";
@@ -22,6 +23,7 @@ import {
   settingsService,
   type SiteSettings,
   type ApiSettings,
+  type WalletSettings,
 } from "../../services/settings.service";
 import { Alert } from "../../design-system/components/alert";
 
@@ -43,6 +45,11 @@ export default function SuperAdminSettingsPage() {
     apiEndpoint: "https://api.telecomsaas.com",
   });
 
+  // Wallet Settings
+  const [walletSettings, setWalletSettings] = useState<WalletSettings>({
+    minimumTopUpAmount: 10,
+  });
+
   // Form States
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,6 +64,20 @@ export default function SuperAdminSettingsPage() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  // Fetch wallet settings on component mount
+  useEffect(() => {
+    const fetchWalletSettings = async () => {
+      try {
+        const settings = await settingsService.getWalletSettings();
+        setWalletSettings(settings);
+      } catch (error) {
+        console.error('Failed to fetch wallet settings:', error);
+      }
+    };
+
+    fetchWalletSettings();
+  }, []);
 
   const handleSiteToggle = async () => {
     setLoading(true);
@@ -83,6 +104,9 @@ export default function SuperAdminSettingsPage() {
           break;
         case "API":
           await settingsService.updateApiSettings(apiSettings);
+          break;
+        case "Wallet":
+          await settingsService.updateWalletSettings(walletSettings);
           break;
       }
       setMessage({
@@ -487,6 +511,79 @@ export default function SuperAdminSettingsPage() {
                   >
                     {apiSettings.airtelTigoApiKey ? "Active" : "Inactive"}
                   </Badge>
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Wallet Settings */}
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FaMoneyBillWave className="text-green-600" />
+              <h2 className="text-lg font-semibold text-gray-900">
+                Wallet Settings
+              </h2>
+            </div>
+            {editingSection === "wallet" ? (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => handleSaveSettings("Wallet")}
+                  disabled={loading}
+                >
+                  <FaSave className="w-3 h-3 mr-1" />
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setEditingSection(null)}
+                >
+                  <FaTimes className="w-3 h-3 mr-1" />
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setEditingSection("wallet")}
+              >
+                <FaEdit className="w-3 h-3 mr-1" />
+                Edit
+              </Button>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {editingSection === "wallet" ? (
+              <div className="space-y-3">
+                <Input
+                  label="Minimum Top-Up Amount (GH₵)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={walletSettings.minimumTopUpAmount}
+                  onChange={(e) =>
+                    setWalletSettings((prev) => ({
+                      ...prev,
+                      minimumTopUpAmount: parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                  placeholder="10.00"
+                />
+                <p className="text-sm text-gray-600">
+                  This is the minimum amount users can request for wallet top-ups.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Minimum Top-Up Amount</span>
+                  <span className="font-medium">GH₵{walletSettings.minimumTopUpAmount}</span>
                 </div>
               </div>
             )}
