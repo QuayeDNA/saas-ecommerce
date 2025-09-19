@@ -153,7 +153,9 @@ class SettingsService {
     return response.data;
   }
 
-  async updateWalletSettings(settings: WalletSettings): Promise<WalletSettings> {
+  async updateWalletSettings(
+    settings: WalletSettings
+  ): Promise<WalletSettings> {
     const response = await apiClient.put("/api/settings/wallet", settings);
     return response.data;
   }

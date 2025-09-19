@@ -72,7 +72,7 @@ export default function SuperAdminSettingsPage() {
         const settings = await settingsService.getWalletSettings();
         setWalletSettings(settings);
       } catch (error) {
-        console.error('Failed to fetch wallet settings:', error);
+        console.error("Failed to fetch wallet settings:", error);
       }
     };
 
@@ -576,14 +576,17 @@ export default function SuperAdminSettingsPage() {
                   placeholder="10.00"
                 />
                 <p className="text-sm text-gray-600">
-                  This is the minimum amount users can request for wallet top-ups.
+                  This is the minimum amount users can request for wallet
+                  top-ups.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Minimum Top-Up Amount</span>
-                  <span className="font-medium">GH₵{walletSettings.minimumTopUpAmount}</span>
+                  <span className="font-medium">
+                    GH₵{walletSettings.minimumTopUpAmount}
+                  </span>
                 </div>
               </div>
             )}
