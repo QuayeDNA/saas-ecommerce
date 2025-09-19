@@ -118,6 +118,14 @@ export default defineConfig({
               },
             },
           },
+          // Exclude API routes from service worker caching to prevent 404s
+          {
+            urlPattern: /\/api\//,
+            handler: "NetworkOnly",
+            options: {
+              cacheName: "api-bypass",
+            },
+          },
         ],
       },
       devOptions: {
