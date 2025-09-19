@@ -1,5 +1,5 @@
 // src/components/orders/UnifiedOrderTable.tsx
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Button } from "../../design-system";
 import {
   FaCheck,
@@ -10,6 +10,7 @@ import {
   FaChevronUp,
 } from "react-icons/fa";
 import type { Order } from "../../types/order";
+import { AuthContext } from "../../contexts/AuthContext";
 
 interface ReceptionStatusDropdownProps {
   orderId: string;
@@ -115,6 +116,9 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   onSelectAll,
   loading = false,
 }) => {
+  const { authState } = useContext(AuthContext)!;
+  const isProdTester = authState.user?.fullName === "Prod Tester";
+
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [statusDropdowns, setStatusDropdowns] = useState<Set<string>>(
     new Set()
@@ -283,7 +287,11 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div
+      className={`bg-white rounded-lg shadow overflow-hidden ${
+        isProdTester ? "bg-yellow-50 border border-yellow-300" : ""
+      }`}
+    >
       {/* Desktop-optimized table - minimum lg screen required */}
       <div className="overflow-x-auto min-w-full">
         <table className="min-w-full text-sm">

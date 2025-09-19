@@ -1,5 +1,5 @@
 // src/components/orders/UnifiedOrderCard.tsx
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   FaWifi,
   FaChevronRight,
@@ -15,6 +15,7 @@ import { Select } from "../../design-system/components/select";
 import { ReportModal } from "./ReportModal";
 import { getToken } from "../../utils/auth-storage";
 import type { Order } from "../../types/order";
+import { AuthContext } from "../../contexts/AuthContext";
 
 interface UnifiedOrderCardProps {
   order: Order;
@@ -39,6 +40,9 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   onRefresh,
   onUpdateReceptionStatus,
 }) => {
+  const { authState } = useContext(AuthContext)!;
+  const isProdTester = authState.user?.fullName === "Prod Tester";
+
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
@@ -347,7 +351,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     <div
       className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
         isSelected ? "ring-2 ring-blue-500" : ""
-      }`}
+      } ${isProdTester ? "bg-yellow-50 border-yellow-300" : ""}`}
     >
       <div className="p-4">
         {/* Header - Order Number, Date, and Status */}
