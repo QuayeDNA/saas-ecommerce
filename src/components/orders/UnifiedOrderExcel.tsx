@@ -1,5 +1,5 @@
 // src/components/orders/UnifiedOrderExcel.tsx
-import React, { useMemo, useState, useContext } from "react";
+import React, { useMemo, useState } from "react";
 import { DataGrid } from "react-data-grid";
 import type { Order } from "../../types/order";
 import { Badge, Dialog, Alert } from "../../design-system";
@@ -12,7 +12,6 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { useOrder } from "../../contexts/OrderContext";
-import { AuthContext } from "../../contexts/AuthContext";
 
 interface UnifiedOrderExcelProps {
   orders: Order[];
@@ -155,8 +154,6 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
   loading = false,
 }) => {
   const { bulkProcessOrders } = useOrder();
-  const { authState } = useContext(AuthContext)!;
-  const isProdTester = authState.user?.fullName === "Prod Tester";
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -393,19 +390,9 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
   }
 
   return (
-    <div
-      className="space-y-3 sm:space-y-4 w-full h-full flex flex-col"
-      style={isProdTester ? { backgroundColor: "#fefce8" } : {}}
-    >
+    <div className="space-y-3 sm:space-y-4 w-full h-full flex flex-col">
       {/* Excel Header */}
-      <div
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white p-3 sm:p-4 rounded-lg border border-gray-200 gap-3 sm:gap-0"
-        style={
-          isProdTester
-            ? { backgroundColor: "#fefce8", borderColor: "#fbbf24" }
-            : {}
-        }
-      >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white p-3 sm:p-4 rounded-lg border border-gray-200 gap-3 sm:gap-0">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="flex items-center gap-2">
             <FaFileExcel className="text-green-600 text-lg sm:text-xl flex-shrink-0" />

@@ -16,6 +16,7 @@ import { ReportModal } from "./ReportModal";
 import type { Order } from "../../types/order";
 import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../utils/api-client";
+import { PROD_TESTER_USER_ID } from "../../utils/constants";
 
 interface UnifiedOrderCardProps {
   order: Order;
@@ -42,6 +43,15 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 }) => {
   const { authState } = useContext(AuthContext)!;
   const isProdTester = authState.user?.fullName === "Prod Tester";
+
+  // Get the createdBy user ID for prod tester identification
+  const createdById =
+    typeof order.createdBy === "string"
+      ? order.createdBy
+      : (order.createdBy as { _id: string })?._id;
+
+  // Check if this order was created by the prod tester (using user ID)
+  const isProdTesterOrder = createdById === PROD_TESTER_USER_ID || isProdTester;
 
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -330,13 +340,8 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   return (
     <div
       className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
-        isSelected ? "ring-2 ring-blue-500" : ""
+        isProdTesterOrder ? "ring-2 ring-yellow-400 bg-yellow-50" : ""
       }`}
-      style={
-        isProdTester
-          ? { backgroundColor: "#fefce8", borderColor: "#fbbf24" }
-          : {}
-      }
     >
       <div className="p-4">
         {/* Header - Order Number, Date, and Status */}

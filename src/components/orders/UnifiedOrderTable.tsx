@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import type { Order } from "../../types/order";
 import { AuthContext } from "../../contexts/AuthContext";
+import { PROD_TESTER_USER_ID } from "../../utils/constants";
 
 interface ReceptionStatusDropdownProps {
   orderId: string;
@@ -118,6 +119,15 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
 }) => {
   const { authState } = useContext(AuthContext)!;
   const isProdTester = authState.user?.fullName === "Prod Tester";
+
+  // Helper function to check if an order was created by prod tester
+  const isOrderByProdTester = (order: Order) => {
+    const createdById =
+      typeof order.createdBy === "string"
+        ? order.createdBy
+        : (order.createdBy as { _id: string })?._id;
+    return createdById === PROD_TESTER_USER_ID || isProdTester;
+  };
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [statusDropdowns, setStatusDropdowns] = useState<Set<string>>(
@@ -287,14 +297,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   ];
 
   return (
-    <div
-      className="bg-white rounded-lg shadow overflow-hidden"
-      style={
-        isProdTester
-          ? { backgroundColor: "#fefce8", border: "1px solid #fbbf24" }
-          : {}
-      }
-    >
+    <div className="bg-white rounded-lg shadow overflow-hidden">
       {/* Desktop-optimized table - minimum lg screen required */}
       <div className="overflow-x-auto min-w-full">
         <table className="min-w-full text-sm">
@@ -363,7 +366,13 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
             ) : (
               orders.map((order) => (
                 <React.Fragment key={order._id}>
-                  <tr className="hover:bg-gray-50">
+                  <tr
+                    className={`hover:bg-gray-50 ${
+                      isOrderByProdTester(order)
+                        ? "bg-yellow-50 border-l-4 border-yellow-400"
+                        : ""
+                    }`}
+                  >
                     {isAdmin && onSelect && (
                       <td className="px-6 py-4">
                         <input

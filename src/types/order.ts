@@ -113,8 +113,8 @@ export interface Order {
   processingStartedAt?: Date;
   processingCompletedAt?: Date;
   tenantId: string;
-  createdBy: string;
-  processedBy?: string;
+  createdBy: string | { _id: string; fullName: string; email: string };
+  processedBy?: string | { _id: string; fullName: string; email: string };
   notes?: string;
   tags?: string[];
   priority: "low" | "normal" | "high" | "urgent";
