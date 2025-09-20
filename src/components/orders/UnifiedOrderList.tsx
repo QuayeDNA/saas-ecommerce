@@ -823,7 +823,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               }}
               showInfo={true}
               showPerPageSelector={true}
-              perPageOptions={[20, 30, 50, 100]}
+              perPageOptions={[20, 50, 100, 200, 300, 500]}
               size="sm"
             />
           </CardBody>

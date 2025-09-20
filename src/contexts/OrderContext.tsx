@@ -161,7 +161,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     total: 0,
     page: 1,
     pages: 0,
-    limit: 20,
+    limit: 100,
   });
   const [filters, setFilters] = useState<OrderFilters>({});
   const [analytics, setAnalytics] = useState<OrderAnalytics | null>(null);
@@ -179,7 +179,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     total: 0,
     page: 1,
     pages: 0,
-    limit: 20,
+    limit: 100,
   });
 
   const { authState } = useAuth();
