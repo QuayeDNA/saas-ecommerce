@@ -22,7 +22,6 @@ import {
   FaTimes,
   FaClock,
   FaChartBar,
-  FaDownload,
   FaSync,
   FaExclamationTriangle,
 } from "react-icons/fa";
@@ -54,7 +53,13 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     error,
     pagination,
     filters,
+    // Reported orders
+    reportedOrders,
+    reportedLoading,
+    reportedError,
+    reportedPagination,
     fetchOrders,
+    fetchReportedOrders,
     updateOrderStatus,
     updateReceptionStatus,
     cancelOrder,
@@ -94,6 +99,13 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   // Ref to track if component is mounted
   const isMountedRef = useRef(true);
+
+  // Helper variables to use the correct data based on active tab
+  const currentOrders = activeTab === "reported" ? reportedOrders : orders;
+  const currentLoading = activeTab === "reported" ? reportedLoading : loading;
+  const currentError = activeTab === "reported" ? reportedError : error;
+  const currentPagination =
+    activeTab === "reported" ? reportedPagination : pagination;
 
   // Fetch providers for super admin filter
   const fetchProviders = useCallback(async () => {
@@ -202,18 +214,32 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   // Auto-search effect for instant filtering
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      const newFilters: OrderFilters = {
-        search: searchTerm,
-        status: statusFilter || undefined,
-        orderType: orderTypeFilter || undefined,
-        paymentStatus: paymentStatusFilter || undefined,
-        provider: providerFilter || undefined,
-        startDate: dateRange.startDate || undefined,
-        endDate: dateRange.endDate || undefined,
-        reported: activeTab === "reported" ? true : undefined,
-      };
-      setFilters(newFilters);
-      fetchOrders(newFilters);
+      if (activeTab === "reported") {
+        // For reported orders, use the reported orders endpoint
+        const newFilters = {
+          search: searchTerm,
+          status: statusFilter || undefined,
+          orderType: orderTypeFilter || undefined,
+          paymentStatus: paymentStatusFilter || undefined,
+          provider: providerFilter || undefined,
+          startDate: dateRange.startDate || undefined,
+          endDate: dateRange.endDate || undefined,
+        };
+        fetchReportedOrders(newFilters);
+      } else {
+        // For all orders, use the regular orders endpoint
+        const newFilters: OrderFilters = {
+          search: searchTerm,
+          status: statusFilter || undefined,
+          orderType: orderTypeFilter || undefined,
+          paymentStatus: paymentStatusFilter || undefined,
+          provider: providerFilter || undefined,
+          startDate: dateRange.startDate || undefined,
+          endDate: dateRange.endDate || undefined,
+        };
+        setFilters(newFilters);
+        fetchOrders(newFilters);
+      }
     }, 300); // Debounce for 300ms
 
     return () => clearTimeout(timeoutId);
@@ -227,6 +253,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     activeTab, // Add activeTab to dependencies
     setFilters,
     fetchOrders,
+    fetchReportedOrders,
   ]);
   // Auto-switch to cards view on mobile/tablet screens
   useEffect(() => {
@@ -336,12 +363,12 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   };
 
   const handleSelectAll = useCallback(() => {
-    if (selectedOrders.length === orders.length) {
+    if (selectedOrders.length === currentOrders.length) {
       setSelectedOrders([]);
     } else {
-      setSelectedOrders(orders.map((o: Order) => o._id || ""));
+      setSelectedOrders(currentOrders.map((o: Order) => o._id || ""));
     }
-  }, [selectedOrders.length, orders]);
+  }, [selectedOrders.length, currentOrders]);
 
   const handleSelectOrder = useCallback((orderId: string) => {
     setSelectedOrders((prev) =>
@@ -431,15 +458,21 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     showDateRange: true,
     onSearch: handleSearch,
     onClearFilters: handleClearFilters,
-    isLoading: loading,
+    isLoading: currentLoading,
   };
 
-  if (error) {
+  if (currentError) {
     return (
       <Card>
         <CardBody>
           <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800">Error: {error}</p>
+            <p className="text-red-800">
+              Error:{" "}
+              {activeTab === "reported"
+                ? "Failed to load reported orders"
+                : "Failed to load orders"}{" "}
+              - {currentError}
+            </p>
           </div>
         </CardBody>
       </Card>
@@ -482,12 +515,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 <FaSync className="mr-2" />
                 Refresh
               </Button>
-              {(isAdmin || isAgent) && (
-                <Button variant="outline">
-                  <FaDownload className="mr-2" />
-                  Export
-                </Button>
-              )}
             </div>
           </div>
         </CardBody>
@@ -679,9 +706,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 }`}
               >
                 All Orders
-                <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                  {orders.length}
-                </span>
               </button>
               <button
                 onClick={() => setActiveTab("reported")}
@@ -692,25 +716,26 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 }`}
               >
                 Reported Orders
-                <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
-                  {orders.filter((order) => order.reported).length}
-                </span>
               </button>
             </div>
           </CardBody>
         </Card>
       )}
       {/* Orders Display */}
-      {loading ? (
+      {currentLoading ? (
         <Card>
           <CardBody>
             <div className="flex justify-center items-center p-8">
               <Spinner />
-              <span className="ml-3 text-gray-600">Loading orders...</span>
+              <span className="ml-3 text-gray-600">
+                {activeTab === "reported"
+                  ? "Loading reported orders..."
+                  : "Loading orders..."}
+              </span>
             </div>
           </CardBody>
         </Card>
-      ) : orders.length === 0 ? (
+      ) : currentOrders.length === 0 ? (
         <Card>
           <CardBody>
             <div className="text-center py-8">
@@ -736,7 +761,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         </Card>
       ) : viewMode === "cards" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {orders.map((order: Order) => (
+          {currentOrders.map((order: Order) => (
             <UnifiedOrderCard
               key={order._id}
               order={order}
@@ -746,7 +771,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               onCancel={handleCancelOrder}
               onSelect={handleSelectOrder}
               isSelected={selectedOrders.includes(order._id || "")}
-              onRefresh={() => fetchOrders(filters)}
+              onRefresh={() =>
+                activeTab === "reported"
+                  ? fetchReportedOrders()
+                  : fetchOrders(filters)
+              }
               onUpdateReceptionStatus={handleReceptionStatusUpdate}
             />
           ))}
@@ -754,7 +783,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       ) : viewMode === "table" ? (
         <div className="hidden lg:block">
           <UnifiedOrderTable
-            orders={orders}
+            orders={currentOrders}
             isAdmin={isAdmin}
             currentUserId={authState.user?._id}
             onUpdateStatus={handleStatusUpdate}
@@ -763,25 +792,35 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             onSelect={handleSelectOrder}
             selectedOrders={selectedOrders}
             onSelectAll={handleSelectAll}
-            loading={loading}
+            loading={currentLoading}
           />
         </div>
       ) : (
-        <UnifiedOrderExcel orders={orders} loading={loading} />
+        <UnifiedOrderExcel orders={currentOrders} loading={currentLoading} />
       )}{" "}
       {/* Pagination */}
-      {pagination.pages > 1 && (
+      {currentPagination.pages > 1 && (
         <Card>
           <CardBody>
             <Pagination
-              currentPage={pagination.page}
-              totalPages={pagination.pages}
-              totalItems={pagination.total}
-              itemsPerPage={pagination.limit}
-              onPageChange={(page) => fetchOrders(filters, { page })}
-              onItemsPerPageChange={(limit) =>
-                fetchOrders(filters, { page: 1, limit })
-              }
+              currentPage={currentPagination.page}
+              totalPages={currentPagination.pages}
+              totalItems={currentPagination.total}
+              itemsPerPage={currentPagination.limit}
+              onPageChange={(page) => {
+                if (activeTab === "reported") {
+                  fetchReportedOrders({}, { page });
+                } else {
+                  fetchOrders(filters, { page });
+                }
+              }}
+              onItemsPerPageChange={(limit) => {
+                if (activeTab === "reported") {
+                  fetchReportedOrders({}, { page: 1, limit });
+                } else {
+                  fetchOrders(filters, { page: 1, limit });
+                }
+              }}
               showInfo={true}
               showPerPageSelector={true}
               perPageOptions={[20, 30, 50, 100]}
@@ -836,7 +875,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 Selected Orders:
               </h4>
               <div className="space-y-1">
-                {orders
+                {currentOrders
                   .filter((order: Order) =>
                     selectedOrders.includes(order._id || "")
                   )

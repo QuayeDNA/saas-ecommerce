@@ -44,6 +44,16 @@ interface OrderContextType {
     limit: number;
   };
   filters: OrderFilters;
+  // Reported orders state
+  reportedOrders: Order[];
+  reportedLoading: boolean;
+  reportedError: string | null;
+  reportedPagination: {
+    total: number;
+    page: number;
+    pages: number;
+    limit: number;
+  };
   analytics: OrderAnalytics | null;
   monthlyRevenue: {
     monthlyRevenue: number;
@@ -54,6 +64,10 @@ interface OrderContextType {
   // Actions
   fetchOrders: (
     filters?: OrderFilters,
+    pagination?: Partial<OrderPagination>
+  ) => Promise<void>;
+  fetchReportedOrders: (
+    filters?: Omit<OrderFilters, "reported">,
     pagination?: Partial<OrderPagination>
   ) => Promise<void>;
   createSingleOrder: (
@@ -157,6 +171,17 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     month: string;
   } | null>(null);
 
+  // Reported orders state
+  const [reportedOrders, setReportedOrders] = useState<Order[]>([]);
+  const [reportedLoading, setReportedLoading] = useState(false);
+  const [reportedError, setReportedError] = useState<string | null>(null);
+  const [reportedPagination, setReportedPagination] = useState({
+    total: 0,
+    page: 1,
+    pages: 0,
+    limit: 20,
+  });
+
   const { authState } = useAuth();
 
   // Initialize the provider
@@ -185,6 +210,35 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
         // Toast notification removed - handled by component
       } finally {
         setLoading(false);
+      }
+    },
+    []
+  );
+
+  const fetchReportedOrders = useCallback(
+    async (
+      newFilters: Omit<OrderFilters, "reported"> = {},
+      newPagination: Partial<OrderPagination> = {}
+    ) => {
+      setReportedLoading(true);
+      setReportedError(null);
+
+      try {
+        const response = await orderService.getReportedOrders(
+          newFilters,
+          newPagination
+        );
+        setReportedOrders(response.orders);
+        setReportedPagination(response.pagination);
+      } catch (err: unknown) {
+        const message = extractErrorMessage(
+          err,
+          "Failed to fetch reported orders"
+        );
+        setReportedError(message);
+        // Toast notification removed - handled by component
+      } finally {
+        setReportedLoading(false);
       }
     },
     []
@@ -491,9 +545,15 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       error,
       pagination,
       filters,
+      // Reported orders
+      reportedOrders,
+      reportedLoading,
+      reportedError,
+      reportedPagination,
       analytics,
       monthlyRevenue,
       fetchOrders,
+      fetchReportedOrders,
       createSingleOrder,
       // @ts-expect-error: createBulkOrder returns a value, but context type expects void.
       // This is intentional to allow consumers to use the returned data.
@@ -519,9 +579,15 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       error,
       pagination,
       filters,
+      // Reported orders
+      reportedOrders,
+      reportedLoading,
+      reportedError,
+      reportedPagination,
       analytics,
       monthlyRevenue,
       fetchOrders,
+      fetchReportedOrders,
       createSingleOrder,
       createBulkOrder,
       processOrderItem,
@@ -559,9 +625,15 @@ export const useOrder = () => {
       error: null,
       pagination: { total: 0, page: 1, pages: 0, limit: 20 },
       filters: {},
+      // Reported orders
+      reportedOrders: [],
+      reportedLoading: false,
+      reportedError: null,
+      reportedPagination: { total: 0, page: 1, pages: 0, limit: 20 },
       analytics: null,
       monthlyRevenue: null,
       fetchOrders: async () => {},
+      fetchReportedOrders: async () => {},
       createSingleOrder: async () => {},
       createBulkOrder: async () => {},
       processOrderItem: async () => {},

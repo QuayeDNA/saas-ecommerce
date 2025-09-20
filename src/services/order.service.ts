@@ -90,6 +90,16 @@ class OrderService {
     return response.data;
   }
 
+  // Get reported orders with filtering and pagination
+  async getReportedOrders(
+    filters: Omit<OrderFilters, "reported"> = {},
+    pagination: Partial<OrderPagination> = {}
+  ): Promise<OrderResponse> {
+    const params = { ...filters, ...pagination };
+    const response = await apiClient.get("/api/orders/reported", { params });
+    return response.data;
+  }
+
   // Get single order
   async getOrder(id: string): Promise<Order> {
     const response = await apiClient.get(`/api/orders/${id}`);
@@ -182,7 +192,7 @@ class OrderService {
   }
 
   // Get agent analytics for dashboard
-  async getAgentAnalytics(timeframe = '30d'): Promise<{
+  async getAgentAnalytics(timeframe = "30d"): Promise<{
     totalOrders: number;
     completedOrders: number;
     totalRevenue: number;
@@ -225,7 +235,10 @@ class OrderService {
       overallTotalSales: analytics.revenue?.total || 0,
       monthlyRevenue: analytics.revenue?.total || 0,
       monthlyOrderCount: analytics.orders?.total || 0,
-      month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+      month: new Date().toLocaleString("default", {
+        month: "long",
+        year: "numeric",
+      }),
       monthlyCommission: analytics.commissions?.earned || 0,
       statusCounts: {
         completed: analytics.orders?.completed || 0,
@@ -248,7 +261,6 @@ class OrderService {
     orderCount: number;
     month: string;
   }> {
-
     const response = await apiClient.get(
       "/api/orders/analytics/monthly-revenue"
     );
@@ -261,9 +273,14 @@ class OrderService {
     orderCount: number;
     date: string;
   }> {
-  // DEBUG: log the exact path we're about to request (helps find stale bundles)
-  console.debug('[orderService] getDailySpending -> requesting', '/api/orders/analytics/daily-spending');
-  const response = await apiClient.get('/api/orders/analytics/daily-spending');
+    // DEBUG: log the exact path we're about to request (helps find stale bundles)
+    console.debug(
+      "[orderService] getDailySpending -> requesting",
+      "/api/orders/analytics/daily-spending"
+    );
+    const response = await apiClient.get(
+      "/api/orders/analytics/daily-spending"
+    );
     return response.data.data;
   }
 
