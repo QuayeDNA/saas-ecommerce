@@ -145,15 +145,15 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   const getReceptionStatusColor = (receptionStatus: string) => {
     switch (receptionStatus) {
       case "received":
-        return "bg-green-100 text-green-800";
+        return "bg-green-600/90 text-white";
       case "not_received":
-        return "bg-red-100 text-red-800";
+        return "bg-red-500 text-white";
       case "checking":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-blue-400 text-white";
       case "resolved":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-500 text-white";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-500 text-gray-800";
     }
   };
 
@@ -362,61 +362,46 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
           {/* Status Badge */}
           <div className="flex-shrink-0 ml-3">
-            <div className="flex flex-col gap-1">
-              <div className="relative">
-                {isAdmin ? (
-                  <button
-                    onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                      order.status
-                    )} hover:bg-opacity-80 transition-colors status-dropdown`}
-                  >
-                    <span>{order.status}</span>
-                    <FaChevronRight className="text-xs ml-1" />
-                  </button>
-                ) : (
-                  <div
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                      order.status
-                    )}`}
-                  >
-                    <span>{order.status}</span>
-                  </div>
-                )}
+            <div className="relative">
+              {isAdmin ? (
+                <button
+                  onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                    order.status
+                  )} hover:bg-opacity-80 transition-colors status-dropdown`}
+                >
+                  <span>{order.status}</span>
+                  <FaChevronRight className="text-xs ml-1" />
+                </button>
+              ) : (
+                <div
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                    order.status
+                  )}`}
+                >
+                  <span>{order.status}</span>
+                </div>
+              )}
 
-                {isAdmin && statusDropdownOpen && (
-                  <div className="absolute z-10 mt-1 right-0 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown min-w-32">
-                    <div className="py-1 flex flex-col">
-                      {statusOptions.map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => handleStatusChange(option.value)}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${
-                            option.value === order.status
-                              ? "bg-blue-50 text-blue-700"
-                              : "text-gray-700"
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
+              {isAdmin && statusDropdownOpen && (
+                <div className="absolute z-10 mt-1 right-0 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown min-w-32">
+                  <div className="py-1 flex flex-col">
+                    {statusOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleStatusChange(option.value)}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${
+                          option.value === order.status
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
                   </div>
-                )}
-              </div>
-
-              {/* Reception Status - Show for completed orders */}
-              {order.status === "completed" &&
-                order.receptionStatus &&
-                shouldShowReceptionStatusDisplay(order) && (
-                  <div
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getReceptionStatusColor(
-                      order.receptionStatus
-                    )}`}
-                  >
-                    <span>{order.receptionStatus.replace("_", " ")}</span>
-                  </div>
-                )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -538,6 +523,21 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                   size="sm"
                   className="w-40"
                 />
+              </div>
+            </div>
+          )}
+
+        {/* Reception Status Badge - Bottom Right */}
+        {order.status === "completed" &&
+          order.receptionStatus &&
+          shouldShowReceptionStatusDisplay(order) && (
+            <div className="flex justify-end mt-3">
+              <div
+                className={`inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-sm font-medium ${getReceptionStatusColor(
+                  order.receptionStatus
+                )}`}
+              >
+                <span>{order.receptionStatus.replace("_", " ")}</span>
               </div>
             </div>
           )}
