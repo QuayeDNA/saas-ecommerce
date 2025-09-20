@@ -1,11 +1,5 @@
 // src/components/orders/UnifiedOrderList.tsx
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useOrder } from "../../hooks/use-order";
 import { useAuth } from "../../hooks/use-auth";
 import { providerService } from "../../services/provider.service";
@@ -216,6 +210,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         provider: providerFilter || undefined,
         startDate: dateRange.startDate || undefined,
         endDate: dateRange.endDate || undefined,
+        reported: activeTab === "reported" ? true : undefined,
       };
       setFilters(newFilters);
       fetchOrders(newFilters);
@@ -229,6 +224,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     paymentStatusFilter,
     providerFilter,
     dateRange,
+    activeTab, // Add activeTab to dependencies
     setFilters,
     fetchOrders,
   ]);
@@ -339,45 +335,13 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     setPendingBulkAction(null);
   };
 
-  // Calculate filtered orders based on active tab and user role
-  const filteredOrders = useMemo(() => {
-    let filtered = orders;
-
-    if (activeTab === "reported") {
-      // Show only reported orders
-      filtered = orders.filter((order) => order.reported === true);
-
-      // For agents, only show orders they created
-      if (isAgent && !isAdmin && authState.user?._id) {
-        filtered = filtered.filter((order) => {
-          const createdById =
-            typeof order.createdBy === "string"
-              ? order.createdBy
-              : (order.createdBy as { _id: string })?._id;
-          return createdById === authState.user?._id;
-        });
-      }
-    } else if (isAgent && !isAdmin && authState.user?._id) {
-      // For agents in "all" tab, only show orders they created
-      filtered = orders.filter((order) => {
-        const createdById =
-          typeof order.createdBy === "string"
-            ? order.createdBy
-            : (order.createdBy as { _id: string })?._id;
-        return createdById === authState.user?._id;
-      });
-    }
-
-    return filtered;
-  }, [orders, activeTab, isAgent, isAdmin, authState.user?._id]);
-
   const handleSelectAll = useCallback(() => {
-    if (selectedOrders.length === filteredOrders.length) {
+    if (selectedOrders.length === orders.length) {
       setSelectedOrders([]);
     } else {
-      setSelectedOrders(filteredOrders.map((o: Order) => o._id || ""));
+      setSelectedOrders(orders.map((o: Order) => o._id || ""));
     }
-  }, [selectedOrders.length, filteredOrders]);
+  }, [selectedOrders.length, orders]);
 
   const handleSelectOrder = useCallback((orderId: string) => {
     setSelectedOrders((prev) =>
@@ -632,15 +596,15 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   <input
                     type="checkbox"
                     checked={
-                      selectedOrders.length === filteredOrders.length &&
-                      filteredOrders.length > 0
+                      selectedOrders.length === orders.length &&
+                      orders.length > 0
                     }
                     onChange={() => {}} // Handled by button click
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     readOnly
                   />
                   <span className="text-xs sm:text-sm">
-                    {selectedOrders.length === filteredOrders.length
+                    {selectedOrders.length === orders.length
                       ? "Deselect All"
                       : "Select All"}
                   </span>
@@ -746,7 +710,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             </div>
           </CardBody>
         </Card>
-      ) : filteredOrders.length === 0 ? (
+      ) : orders.length === 0 ? (
         <Card>
           <CardBody>
             <div className="text-center py-8">
@@ -772,7 +736,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         </Card>
       ) : viewMode === "cards" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredOrders.map((order: Order) => (
+          {orders.map((order: Order) => (
             <UnifiedOrderCard
               key={order._id}
               order={order}
@@ -790,7 +754,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       ) : viewMode === "table" ? (
         <div className="hidden lg:block">
           <UnifiedOrderTable
-            orders={filteredOrders}
+            orders={orders}
             isAdmin={isAdmin}
             currentUserId={authState.user?._id}
             onUpdateStatus={handleStatusUpdate}
@@ -803,7 +767,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           />
         </div>
       ) : (
-        <UnifiedOrderExcel orders={filteredOrders} loading={loading} />
+        <UnifiedOrderExcel orders={orders} loading={loading} />
       )}{" "}
       {/* Pagination */}
       {pagination.pages > 1 && (
@@ -872,7 +836,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 Selected Orders:
               </h4>
               <div className="space-y-1">
-                {filteredOrders
+                {orders
                   .filter((order: Order) =>
                     selectedOrders.includes(order._id || "")
                   )
