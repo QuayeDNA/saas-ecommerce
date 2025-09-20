@@ -1,5 +1,11 @@
 // src/components/orders/UnifiedOrderList.tsx
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useOrder } from "../../hooks/use-order";
 import { useAuth } from "../../hooks/use-auth";
 import { providerService } from "../../services/provider.service";
@@ -76,6 +82,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [pendingBulkAction, setPendingBulkAction] = useState<
     "cancel" | "process" | "complete" | null
   >(null);
+
+  // Tab state for filtering orders
+  const [activeTab, setActiveTab] = useState<"all" | "reported">("all");
 
   // Draft orders handler state
   const [showDraftHandler, setShowDraftHandler] = useState(false);
@@ -330,13 +339,45 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     setPendingBulkAction(null);
   };
 
+  // Calculate filtered orders based on active tab and user role
+  const filteredOrders = useMemo(() => {
+    let filtered = orders;
+
+    if (activeTab === "reported") {
+      // Show only reported orders
+      filtered = orders.filter((order) => order.reported === true);
+
+      // For agents, only show orders they created
+      if (isAgent && !isAdmin && authState.user?._id) {
+        filtered = filtered.filter((order) => {
+          const createdById =
+            typeof order.createdBy === "string"
+              ? order.createdBy
+              : (order.createdBy as { _id: string })?._id;
+          return createdById === authState.user?._id;
+        });
+      }
+    } else if (isAgent && !isAdmin && authState.user?._id) {
+      // For agents in "all" tab, only show orders they created
+      filtered = orders.filter((order) => {
+        const createdById =
+          typeof order.createdBy === "string"
+            ? order.createdBy
+            : (order.createdBy as { _id: string })?._id;
+        return createdById === authState.user?._id;
+      });
+    }
+
+    return filtered;
+  }, [orders, activeTab, isAgent, isAdmin, authState.user?._id]);
+
   const handleSelectAll = useCallback(() => {
-    if (selectedOrders.length === orders.length) {
+    if (selectedOrders.length === filteredOrders.length) {
       setSelectedOrders([]);
     } else {
-      setSelectedOrders(orders.map((o: Order) => o._id || ""));
+      setSelectedOrders(filteredOrders.map((o: Order) => o._id || ""));
     }
-  }, [selectedOrders.length, orders]);
+  }, [selectedOrders.length, filteredOrders]);
 
   const handleSelectOrder = useCallback((orderId: string) => {
     setSelectedOrders((prev) =>
@@ -487,7 +528,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </div>
         </CardBody>
       </Card>
-
       {/* Analytics Section - Only show for admin and agents */}
       {(isAdmin || isAgent) && (
         <OrderAnalytics
@@ -498,7 +538,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           isAgent={isAgent}
         />
       )}
-
       {/* Draft Orders Notification - Only show for agents when there are draft orders */}
       {(isAgent || !isAdmin) && hasDraftOrders && (
         <Card className="border-yellow-400 bg-yellow-50">
@@ -533,10 +572,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </CardBody>
         </Card>
       )}
-
       {/* Search and Filters */}
       <SearchAndFilter {...searchAndFilterConfig} />
-
       {/* View Mode Toggle */}
       <Card>
         <CardBody>
@@ -595,15 +632,15 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   <input
                     type="checkbox"
                     checked={
-                      selectedOrders.length === orders.length &&
-                      orders.length > 0
+                      selectedOrders.length === filteredOrders.length &&
+                      filteredOrders.length > 0
                     }
                     onChange={() => {}} // Handled by button click
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     readOnly
                   />
                   <span className="text-xs sm:text-sm">
-                    {selectedOrders.length === orders.length
+                    {selectedOrders.length === filteredOrders.length
                       ? "Deselect All"
                       : "Select All"}
                   </span>
@@ -618,7 +655,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </div>
         </CardBody>
       </Card>
-
       {/* Bulk Actions - Admin and Agent */}
       {selectedOrders.length > 0 && (isAdmin || isAgent) && (
         <Card>
@@ -665,7 +701,41 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </CardBody>
         </Card>
       )}
-
+      {/* Order Tabs - Show for both agents and super admins */}
+      {(isAdmin || isAgent) && (
+        <Card>
+          <CardBody>
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab("all")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "all"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                All Orders
+                <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                  {orders.length}
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab("reported")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "reported"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Reported Orders
+                <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
+                  {orders.filter((order) => order.reported).length}
+                </span>
+              </button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
       {/* Orders Display */}
       {loading ? (
         <Card>
@@ -676,7 +746,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             </div>
           </CardBody>
         </Card>
-      ) : orders.length === 0 ? (
+      ) : filteredOrders.length === 0 ? (
         <Card>
           <CardBody>
             <div className="text-center py-8">
@@ -684,10 +754,16 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 <FaChartBar className="h-8 w-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No orders found
+                {activeTab === "reported"
+                  ? "No reported orders found"
+                  : "No orders found"}
               </h3>
               <p className="text-gray-600">
-                {isAdmin
+                {activeTab === "reported"
+                  ? isAdmin
+                    ? "No orders have been reported yet."
+                    : "You haven't reported any orders yet."
+                  : isAdmin
                   ? "No orders match your current filters."
                   : "You haven't placed any orders yet."}
               </p>
@@ -696,7 +772,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         </Card>
       ) : viewMode === "cards" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {orders.map((order) => (
+          {filteredOrders.map((order: Order) => (
             <UnifiedOrderCard
               key={order._id}
               order={order}
@@ -714,7 +790,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       ) : viewMode === "table" ? (
         <div className="hidden lg:block">
           <UnifiedOrderTable
-            orders={orders}
+            orders={filteredOrders}
             isAdmin={isAdmin}
             currentUserId={authState.user?._id}
             onUpdateStatus={handleStatusUpdate}
@@ -727,9 +803,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           />
         </div>
       ) : (
-        <UnifiedOrderExcel orders={orders} loading={loading} />
-      )}
-
+        <UnifiedOrderExcel orders={filteredOrders} loading={loading} />
+      )}{" "}
       {/* Pagination */}
       {pagination.pages > 1 && (
         <Card>
@@ -751,7 +826,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </CardBody>
         </Card>
       )}
-
       {/* Bulk Action Confirmation Dialog */}
       <Dialog
         isOpen={showBulkConfirmDialog}
@@ -798,10 +872,12 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 Selected Orders:
               </h4>
               <div className="space-y-1">
-                {orders
-                  .filter((order) => selectedOrders.includes(order._id || ""))
+                {filteredOrders
+                  .filter((order: Order) =>
+                    selectedOrders.includes(order._id || "")
+                  )
                   .slice(0, 3)
-                  .map((order) => (
+                  .map((order: Order) => (
                     <div key={order._id} className="text-sm text-gray-600">
                       {order.orderNumber} - {order.status}
                     </div>
@@ -836,7 +912,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </div>
         </DialogFooter>
       </Dialog>
-
       {/* Draft Orders Handler Modal */}
       <DraftOrdersHandler
         isOpen={showDraftHandler}
