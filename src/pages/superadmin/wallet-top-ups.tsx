@@ -9,6 +9,8 @@ import {
   FaMinus,
   FaClock,
   FaUsers,
+  FaCheck,
+  FaTimes,
 } from "react-icons/fa";
 import { useToast } from "../../design-system/components/toast";
 import { Button } from "../../design-system/components/button";
@@ -344,10 +346,34 @@ export default function WalletTopUpsPage() {
       // Refresh data
       fetchUsers();
       fetchAnalytics();
+      fetchPendingRequests();
     } catch (err) {
       throw new Error(
         err instanceof Error ? err.message : "Transaction failed"
       );
+    }
+  };
+
+  const handleProcessRequest = async (
+    transactionId: string,
+    approve: boolean
+  ) => {
+    try {
+      await walletService.processTopUpRequest(transactionId, approve);
+
+      if (approve) {
+        addToast("Top-up request approved successfully", "success", 4000);
+      } else {
+        addToast("Top-up request rejected", "warning", 4000);
+      }
+
+      await fetchPendingRequests();
+      await fetchAnalytics();
+      await fetchUsers();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to process request";
+      addToast(errorMessage, "error", 5000);
     }
   };
 
@@ -486,6 +512,102 @@ export default function WalletTopUpsPage() {
                 <FaWallet className="text-purple-600 text-xl" />
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Requests */}
+      {pendingRequests.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold mb-4">
+            Pending Top-Up Requests
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Requested
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {pendingRequests.map((request) => {
+                  const user =
+                    typeof request.user === "object" ? request.user : null;
+                  return (
+                    <tr key={request._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {user?.fullName || "Unknown User"}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {user?.agentCode ||
+                            (typeof request.user === "string"
+                              ? request.user
+                              : "No ID")}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                        {formatCurrency(request.amount)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                        {request.description}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(request.createdAt).toLocaleDateString(
+                          "en-GB",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleProcessRequest(request._id, true)
+                            }
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <FaCheck className="mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              handleProcessRequest(request._id, false)
+                            }
+                            className="border-red-300 text-red-600 hover:bg-red-50"
+                          >
+                            <FaTimes className="mr-1" />
+                            Reject
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
