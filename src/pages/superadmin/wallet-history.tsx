@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from "react";
 import {
   FaSearch,
@@ -394,114 +395,119 @@ export default function WalletHistoryPage() {
       </div>
 
       {/* Description Modal */}
-      <Modal
-        isOpen={descriptionModalOpen}
-        onClose={handleCloseDescriptionModal}
-        title="Transaction Details"
-        className="max-h-[90vh] overflow-hidden"
-      >
-        {selectedTransaction && (
-          <div className="space-y-6 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
-            {/* Transaction Info */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-3">
-                Transaction Information
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-gray-700">Date:</span>
-                  <p className="text-gray-900">
-                    {formatDate(selectedTransaction.createdAt)}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Type:</span>
-                  <p
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${getTransactionTypeColor(
-                      selectedTransaction.type
-                    )}`}
-                  >
-                    {selectedTransaction.type.toUpperCase()}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Amount:</span>
-                  <p
-                    className={`font-medium ml-2 ${
-                      selectedTransaction.type === "credit"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {selectedTransaction.type === "credit" ? "+" : "-"}
-                    {formatCurrency(selectedTransaction.amount)}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">
-                    Transaction ID:
-                  </span>
-                  <p className="text-gray-900 font-mono text-xs">
-                    {selectedTransaction._id}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* User Info */}
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-3">
-                User Information
-              </h4>
-              <div className="text-sm">
-                <div className="mb-2">
-                  <span className="font-medium text-gray-700">Name:</span>
-                  <p className="text-gray-900">
-                    {getUserDisplayName(selectedTransaction.user)}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Agent Code:</span>
-                  <p className="text-gray-900 font-mono text-xs">
-                    {getUserIdentifier(selectedTransaction.user)}
-                  </p>
+      <div className="max-h-[90vh] overflow-hidden">
+        <Modal
+          isOpen={descriptionModalOpen}
+          onClose={handleCloseDescriptionModal}
+          title="Transaction Details"
+        >
+          {selectedTransaction && (
+            <div className="space-y-6 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
+              {/* Transaction Info */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Transaction Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Date:</span>
+                    <p className="text-gray-900">
+                      {formatDate(selectedTransaction.createdAt)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Type:</span>
+                    <p
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${getTransactionTypeColor(
+                        selectedTransaction.type
+                      )}`}
+                    >
+                      {selectedTransaction.type.toUpperCase()}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Amount:</span>
+                    <p
+                      className={`font-medium ml-2 ${
+                        selectedTransaction.type === "credit"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {selectedTransaction.type === "credit" ? "+" : "-"}
+                      {formatCurrency(selectedTransaction.amount)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">
+                      Transaction ID:
+                    </span>
+                    <p className="text-gray-900 font-mono text-xs">
+                      {selectedTransaction._id}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Admin Info */}
-            {selectedTransaction.approvedBy && (
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-3">Processed By</h4>
+              {/* User Info */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">
+                  User Information
+                </h4>
                 <div className="text-sm">
-                  <span className="font-medium text-gray-700">Admin:</span>
-                  <p className="text-gray-900">
-                    {getUserDisplayName(selectedTransaction.approvedBy)}
-                  </p>
+                  <div className="mb-2">
+                    <span className="font-medium text-gray-700">Name:</span>
+                    <p className="text-gray-900">
+                      {getUserDisplayName(selectedTransaction.user)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">
+                      Agent Code:
+                    </span>
+                    <p className="text-gray-900 font-mono text-xs">
+                      {getUserIdentifier(selectedTransaction.user)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Full Description */}
-            <div className="bg-white border border-gray-200 p-4 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-3">
-                Full Description
-              </h4>
-              <div className="text-sm text-gray-700 whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
-                {selectedTransaction.description}
+              {/* Admin Info */}
+              {selectedTransaction.approvedBy && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    Processed By
+                  </h4>
+                  <div className="text-sm">
+                    <span className="font-medium text-gray-700">Admin:</span>
+                    <p className="text-gray-900">
+                      {getUserDisplayName(selectedTransaction.approvedBy)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Full Description */}
+              <div className="bg-white border border-gray-200 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Full Description
+                </h4>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
+                  {selectedTransaction.description}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end pt-4 border-t sticky bottom-0 bg-white">
+                <Button onClick={handleCloseDescriptionModal}>
+                  <FaTimes className="mr-2" />
+                  Close
+                </Button>
               </div>
             </div>
-
-            {/* Actions */}
-            <div className="flex justify-end pt-4 border-t sticky bottom-0 bg-white">
-              <Button onClick={handleCloseDescriptionModal}>
-                <FaTimes className="mr-2" />
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+          )}
+        </Modal>
+      </div>
     </div>
   );
 }
