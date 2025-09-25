@@ -30,3 +30,7 @@ dev-dist
 *.njsproj
 *.sln
 *.sw?
+
+# Service worker files (generated)
+sw.js
+sw.js.map
