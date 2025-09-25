@@ -11,6 +11,12 @@ const UserDetailsPage = lazy(() => import("../pages/superadmin/user-details"));
 const ProvidersPage = lazy(() => import("../pages/superadmin/providers"));
 const OrdersPage = lazy(() => import("../pages/superadmin/orders"));
 const WalletPage = lazy(() => import("../pages/superadmin/wallet"));
+const WalletTopUpsPage = lazy(
+  () => import("../pages/superadmin/wallet-top-ups")
+);
+const WalletHistoryPage = lazy(
+  () => import("../pages/superadmin/wallet-history")
+);
 const SettingsPage = lazy(() => import("../pages/superadmin/settings"));
 const PackagesPage = lazy(() => import("../pages/superadmin/packages"));
 const BundleManagementPage = lazy(() =>
@@ -78,11 +84,32 @@ const superadminRoutes: RouteObject = {
         },
         {
           path: "wallet",
-          element: (
-            <Suspense fallback={<PageLoader />}>
-              <WalletPage />
-            </Suspense>
-          ),
+          children: [
+            {
+              index: true,
+              element: (
+                <Suspense fallback={<PageLoader />}>
+                  <WalletPage />
+                </Suspense>
+              ),
+            },
+            {
+              path: "top-ups",
+              element: (
+                <Suspense fallback={<PageLoader />}>
+                  <WalletTopUpsPage />
+                </Suspense>
+              ),
+            },
+            {
+              path: "history",
+              element: (
+                <Suspense fallback={<PageLoader />}>
+                  <WalletHistoryPage />
+                </Suspense>
+              ),
+            },
+          ],
         },
         {
           path: "settings",

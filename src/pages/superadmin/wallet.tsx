@@ -193,6 +193,26 @@ export default function SuperAdminWalletPage() {
     []
   );
 
+  // State for admin transactions
+  const [adminTransactions, setAdminTransactions] = useState<
+    WalletTransaction[]
+  >([]);
+  const [adminTransactionsLoading, setAdminTransactionsLoading] =
+    useState(false);
+  const [adminTransactionsPagination, setAdminTransactionsPagination] =
+    useState({
+      total: 0,
+      page: 1,
+      limit: 20,
+      pages: 0,
+    });
+  const [adminTransactionFilters, setAdminTransactionFilters] = useState({
+    type: "",
+    startDate: "",
+    endDate: "",
+    userId: "",
+  });
+
   // WebSocket handlers
   const handleWalletUpdate = useCallback(
     (data: { type: string; userId?: string; balance?: number }) => {
@@ -304,10 +324,34 @@ export default function SuperAdminWalletPage() {
     statusFilter,
   ]);
 
+  const fetchAdminTransactions = useCallback(
+    async (page = 1) => {
+      setAdminTransactionsLoading(true);
+      try {
+        const response = await walletService.getAdminTransactions(
+          page,
+          adminTransactionsPagination.limit,
+          (adminTransactionFilters.type as "credit" | "debit") || undefined,
+          adminTransactionFilters.startDate || undefined,
+          adminTransactionFilters.endDate || undefined,
+          adminTransactionFilters.userId || undefined
+        );
+        setAdminTransactions(response.transactions);
+        setAdminTransactionsPagination(response.pagination);
+      } catch {
+        addToast("Failed to fetch admin transactions", "error", 4000);
+      } finally {
+        setAdminTransactionsLoading(false);
+      }
+    },
+    [adminTransactionsPagination.limit, adminTransactionFilters, addToast]
+  );
+
   useEffect(() => {
     fetchUsers();
     fetchAnalytics();
     fetchPendingRequests();
+    fetchAdminTransactions();
 
     // Connect to WebSocket for real-time updates
     websocketService.connect("super_admin");
@@ -322,7 +366,7 @@ export default function SuperAdminWalletPage() {
         handleWalletUpdate as (data: unknown) => void
       );
     };
-  }, [handleWalletUpdate]);
+  }, [handleWalletUpdate, fetchAdminTransactions]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -742,6 +786,235 @@ export default function SuperAdminWalletPage() {
           )}
         </div>
       )}
+
+      {/* Admin Transactions */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Admin Transactions
+            </h3>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => fetchAdminTransactions(1)}
+                disabled={adminTransactionsLoading}
+              >
+                <FaDownload className="mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <Select
+                label="Type"
+                value={adminTransactionFilters.type}
+                onChange={(value) =>
+                  setAdminTransactionFilters((prev) => ({
+                    ...prev,
+                    type: value,
+                  }))
+                }
+                options={[
+                  { value: "", label: "All Types" },
+                  { value: "credit", label: "Credits" },
+                  { value: "debit", label: "Debits" },
+                ]}
+              />
+            </div>
+            <div>
+              <Input
+                label="Start Date"
+                type="date"
+                value={adminTransactionFilters.startDate}
+                onChange={(e) =>
+                  setAdminTransactionFilters((prev) => ({
+                    ...prev,
+                    startDate: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Input
+                label="End Date"
+                type="date"
+                value={adminTransactionFilters.endDate}
+                onChange={(e) =>
+                  setAdminTransactionFilters((prev) => ({
+                    ...prev,
+                    endDate: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Input
+                label="User ID"
+                value={adminTransactionFilters.userId}
+                onChange={(e) =>
+                  setAdminTransactionFilters((prev) => ({
+                    ...prev,
+                    userId: e.target.value,
+                  }))
+                }
+                placeholder="Filter by user ID"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => fetchAdminTransactions(1)}
+                disabled={adminTransactionsLoading}
+              >
+                <FaFilter className="mr-2" />
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          {adminTransactionsLoading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Loading transactions...</p>
+            </div>
+          ) : adminTransactions.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              No admin transactions found
+            </div>
+          ) : (
+            <table className="min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Reference
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {adminTransactions.map((transaction) => (
+                  <tr key={transaction._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDate(transaction.createdAt)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {typeof transaction.user === "object" &&
+                            transaction.user?.fullName
+                              ? transaction.user.fullName
+                              : "Unknown User"}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {typeof transaction.user === "object" &&
+                            transaction.user?.email
+                              ? transaction.user.email
+                              : typeof transaction.user === "object"
+                              ? transaction.user?._id
+                              : transaction.user}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          transaction.type === "credit"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {transaction.type === "credit" ? (
+                          <FaPlus className="mr-1" />
+                        ) : (
+                          <FaMinus className="mr-1" />
+                        )}
+                        {transaction.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {formatCurrency(transaction.amount)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                      {transaction.description}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                      {transaction.reference}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {adminTransactionsPagination.pages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Showing{" "}
+              {(adminTransactionsPagination.page - 1) *
+                adminTransactionsPagination.limit +
+                1}{" "}
+              to{" "}
+              {Math.min(
+                adminTransactionsPagination.page *
+                  adminTransactionsPagination.limit,
+                adminTransactionsPagination.total
+              )}{" "}
+              of {adminTransactionsPagination.total} transactions
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={adminTransactionsPagination.page === 1}
+                onClick={() =>
+                  fetchAdminTransactions(adminTransactionsPagination.page - 1)
+                }
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={
+                  adminTransactionsPagination.page ===
+                  adminTransactionsPagination.pages
+                }
+                onClick={() =>
+                  fetchAdminTransactions(adminTransactionsPagination.page + 1)
+                }
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">

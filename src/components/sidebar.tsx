@@ -14,6 +14,8 @@ import {
   FaBuilding,
   FaClipboardList,
   FaMoneyBillWave,
+  FaCreditCard,
+  FaHistory,
 } from "react-icons/fa";
 import { Home, Plus, LogOut, ChevronRight, Check } from "lucide-react";
 import { useState } from "react";
@@ -160,6 +162,18 @@ const getSuperAdminNavItems = (): NavItem[] => [
     label: "Wallet",
     path: "/superadmin/wallet",
     icon: <FaWallet />,
+    children: [
+      {
+        label: "Top-ups",
+        path: "/superadmin/wallet/top-ups",
+        icon: <FaCreditCard />,
+      },
+      {
+        label: "Transaction History",
+        path: "/superadmin/wallet/history",
+        icon: <FaHistory />,
+      },
+    ],
   },
   {
     label: "Settings",
@@ -176,7 +190,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const { authState, logout } = useAuth();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(
-    new Set(["packages"])
+    new Set(["packages", "wallet"])
   );
 
   // Toggle expanded state for nav items with children
@@ -236,10 +250,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         location.pathname === "/admin/dashboard/"
       );
     }
-    if (path === "/superadmin") {
+
+    // Handle wallet nested routes - parent is active if any child is active
+    if (path === "/superadmin/wallet") {
       return (
-        location.pathname === "/superadmin" ||
-        location.pathname === "/superadmin/"
+        location.pathname === "/superadmin/wallet" ||
+        location.pathname === "/superadmin/wallet/" ||
+        location.pathname.startsWith("/superadmin/wallet/")
       );
     }
 

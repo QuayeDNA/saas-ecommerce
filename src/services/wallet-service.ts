@@ -196,4 +196,48 @@ export const walletService = {
 
     return response.data.analytics;
   },
+
+  /**
+   * Admin: Get all wallet transactions performed by admin
+   * @param page Page number
+   * @param limit Items per page
+   * @param type Transaction type filter
+   * @param startDate Start date filter
+   * @param endDate End date filter
+   * @param userId User ID filter
+   * @returns Paginated admin transaction history
+   */
+  getAdminTransactions: async (
+    page = 1,
+    limit = 20,
+    type?: "credit" | "debit",
+    startDate?: string,
+    endDate?: string,
+    userId?: string
+  ): Promise<TransactionHistoryResponse> => {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+
+    if (type) params.append("type", type);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    if (userId) params.append("userId", userId);
+
+    const response = await apiClient.get<{
+      success: boolean;
+      transactions: WalletTransaction[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    }>(`/api/wallet/admin-transactions?${params.toString()}`);
+
+    return {
+      transactions: response.data.transactions,
+      pagination: response.data.pagination,
+    };
+  },
 };
