@@ -554,10 +554,7 @@ export default function WalletTopUpsPage() {
                           {user?.fullName || "Unknown User"}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {user?.agentCode ||
-                            (typeof request.user === "string"
-                              ? request.user
-                              : "No ID")}
+                          {user?.agentCode || user?._id || "No ID"}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
