@@ -379,10 +379,13 @@ export default function SuperAdminCommissionsPage() {
   const filteredCommissions = commissions.filter((commission) => {
     // Text search filter
     const matchesSearch =
-      commission.agentId.fullName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      commission.agentId.email.toLowerCase().includes(searchTerm.toLowerCase());
+      commission.agentId?.fullName
+        ?.toLowerCase()
+        ?.includes(searchTerm.toLowerCase()) ||
+      commission.agentId?.email
+        ?.toLowerCase()
+        ?.includes(searchTerm.toLowerCase()) ||
+      false; // Default to false if agentId is not populated
 
     // Status filter
     const matchesStatus =
@@ -633,10 +636,10 @@ export default function SuperAdminCommissionsPage() {
                       />
                       <div>
                         <h3 className="font-medium text-gray-900">
-                          {commission.agentId.fullName}
+                          {commission.agentId?.fullName || "Unknown Agent"}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {commission.agentId.email}
+                          {commission.agentId?.email || "No email"}
                         </p>
                       </div>
                     </div>
@@ -835,26 +838,26 @@ export default function SuperAdminCommissionsPage() {
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-gray-900">
-                            {commission.agentId.fullName}
+                            {commission.agentId?.fullName || "Unknown Agent"}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {commission.agentId.email}
+                            {commission.agentId?.email || "No email"}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <Badge
                           colorScheme={
-                            commission.agentId.userType === "super_dealer"
+                            commission.agentId?.userType === "super_dealer"
                               ? "info"
-                              : commission.agentId.userType === "dealer"
+                              : commission.agentId?.userType === "dealer"
                               ? "success"
-                              : commission.agentId.userType === "super_agent"
+                              : commission.agentId?.userType === "super_agent"
                               ? "warning"
                               : "default"
                           }
                         >
-                          {commission.agentId.userType
+                          {commission.agentId?.userType
                             ?.replace("_", " ")
                             .toUpperCase() || "AGENT"}
                         </Badge>
@@ -1086,7 +1089,7 @@ export default function SuperAdminCommissionsPage() {
                   <div className="space-y-1 text-sm">
                     <p>
                       <span className="font-medium">Agent:</span>{" "}
-                      {selectedCommission.agentId.fullName}
+                      {selectedCommission.agentId?.fullName || "Unknown Agent"}
                     </p>
                     <p>
                       <span className="font-medium">Amount:</span>{" "}
@@ -1291,13 +1294,13 @@ export default function SuperAdminCommissionsPage() {
                   <div className="space-y-2 text-sm">
                     <p>
                       <span className="font-medium">Name:</span>{" "}
-                      {viewingCommission.agentId.fullName}
+                      {viewingCommission.agentId?.fullName || "Unknown Agent"}
                     </p>
                     <p>
                       <span className="font-medium">Email:</span>{" "}
-                      {viewingCommission.agentId.email}
+                      {viewingCommission.agentId?.email || "No email"}
                     </p>
-                    {viewingCommission.agentId.businessName && (
+                    {viewingCommission.agentId?.businessName && (
                       <p>
                         <span className="font-medium">Business:</span>{" "}
                         {viewingCommission.agentId.businessName}
