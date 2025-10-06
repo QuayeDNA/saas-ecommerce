@@ -18,7 +18,7 @@ import {
   type RejectCommissionData,
   type RejectMultipleCommissionsData,
   type GenerateMonthlyCommissionsData,
-  type MonthlyGenerationResult,
+  type MonthlyGenerationResponse,
   type MultiplePaymentResult,
 } from "../services/commission.service";
 import { websocketService } from "../services/websocket.service";
@@ -68,7 +68,7 @@ interface CommissionContextType {
   ) => Promise<MultiplePaymentResult>;
   generateMonthlyCommissions: (
     data?: GenerateMonthlyCommissionsData
-  ) => Promise<MonthlyGenerationResult>;
+  ) => Promise<MonthlyGenerationResponse>;
   updateCommissionSettings: (
     settings: Partial<CommissionSettings>
   ) => Promise<void>;
