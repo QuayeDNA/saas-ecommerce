@@ -100,6 +100,8 @@ export interface Order {
     | "failed";
   receptionStatus?: "not_received" | "received" | "checking" | "resolved";
   reported?: boolean;
+  reportedAt?: Date;
+  resolvedAt?: Date;
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
   paymentMethod: "cash" | "card" | "mobile_money" | "bank_transfer" | "wallet";
   paymentReference?: string;
@@ -127,6 +129,7 @@ export interface OrderFilters {
   status?: string;
   orderType?: string;
   paymentStatus?: string;
+  receptionStatus?: string;
   startDate?: string;
   endDate?: string;
   search?: string;

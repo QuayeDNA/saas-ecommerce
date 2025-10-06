@@ -82,6 +82,10 @@ interface OrderContextType {
     orderIds: string[],
     action: "processing" | "completed"
   ) => Promise<void>;
+  bulkUpdateReceptionStatus: (
+    orderIds: string[],
+    receptionStatus: "not_received" | "received" | "checking" | "resolved"
+  ) => Promise<void>;
   cancelOrder: (orderId: string, reason?: string) => Promise<void>;
   updateOrderStatus: (
     orderId: string,
@@ -402,6 +406,28 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     [fetchOrders, filters]
   );
 
+  const bulkUpdateReceptionStatus = useCallback(
+    async (
+      orderIds: string[],
+      receptionStatus: "not_received" | "received" | "checking" | "resolved"
+    ) => {
+      try {
+        await orderService.bulkUpdateReceptionStatus(orderIds, receptionStatus);
+        // Toast notification removed - handled by component
+        await fetchReportedOrders();
+      } catch (err: unknown) {
+        const message = extractErrorMessage(
+          err,
+          `Failed to bulk update reception status`
+        );
+        setError(message);
+        // Toast notification removed - handled by component
+        throw new Error(message);
+      }
+    },
+    [fetchReportedOrders]
+  );
+
   const cancelOrder = useCallback(
     async (orderId: string, reason?: string) => {
       try {
@@ -561,6 +587,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       processOrderItem,
       processBulkOrder,
       bulkProcessOrders,
+      bulkUpdateReceptionStatus,
       cancelOrder,
       updateOrderStatus,
       updateReceptionStatus,
@@ -593,6 +620,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       processOrderItem,
       processBulkOrder,
       bulkProcessOrders,
+      bulkUpdateReceptionStatus,
       cancelOrder,
       updateOrderStatus,
       updateReceptionStatus,
@@ -639,6 +667,7 @@ export const useOrder = () => {
       processOrderItem: async () => {},
       processBulkOrder: async () => {},
       bulkProcessOrders: async () => {},
+      bulkUpdateReceptionStatus: async () => {},
       cancelOrder: async () => {},
       updateOrderStatus: async () => {},
       updateReceptionStatus: async () => {},

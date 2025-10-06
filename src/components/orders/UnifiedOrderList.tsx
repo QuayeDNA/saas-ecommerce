@@ -65,12 +65,15 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     cancelOrder,
     setFilters,
     bulkProcessOrders,
+    bulkUpdateReceptionStatus,
   } = useOrder();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("");
+  const [receptionStatusFilter, setReceptionStatusFilter] =
+    useState<string>("");
   const [providerFilter, setProviderFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
@@ -80,6 +83,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [showBulkConfirmDialog, setShowBulkConfirmDialog] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<
     "cancel" | "process" | "complete" | null
+  >(null);
+  const [showReceptionStatusDialog, setShowReceptionStatusDialog] =
+    useState(false);
+  const [pendingReceptionStatus, setPendingReceptionStatus] = useState<
+    string | null
   >(null);
 
   // Tab state for filtering orders
@@ -221,6 +229,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           status: statusFilter || undefined,
           orderType: orderTypeFilter || undefined,
           paymentStatus: paymentStatusFilter || undefined,
+          receptionStatus: receptionStatusFilter || undefined,
           provider: providerFilter || undefined,
           startDate: dateRange.startDate || undefined,
           endDate: dateRange.endDate || undefined,
@@ -248,6 +257,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     statusFilter,
     orderTypeFilter,
     paymentStatusFilter,
+    receptionStatusFilter,
     providerFilter,
     dateRange,
     activeTab, // Add activeTab to dependencies
@@ -282,6 +292,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     setStatusFilter("");
     setOrderTypeFilter("");
     setPaymentStatusFilter("");
+    setReceptionStatusFilter("");
     setProviderFilter("");
     setDateRange({ startDate: "", endDate: "" });
     setFilters({});
@@ -325,6 +336,43 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
     setPendingBulkAction(action);
     setShowBulkConfirmDialog(true);
+  };
+
+  const handleBulkReceptionStatus = (receptionStatus: string) => {
+    if (selectedOrders.length === 0) return;
+
+    setPendingReceptionStatus(receptionStatus);
+    setShowReceptionStatusDialog(true);
+  };
+
+  const confirmBulkReceptionStatus = async () => {
+    if (!pendingReceptionStatus || selectedOrders.length === 0) return;
+
+    try {
+      await bulkUpdateReceptionStatus(
+        selectedOrders,
+        pendingReceptionStatus as
+          | "not_received"
+          | "received"
+          | "checking"
+          | "resolved"
+      );
+      addToast(
+        `Successfully updated reception status for ${selectedOrders.length} order(s)`,
+        "success"
+      );
+      setSelectedOrders([]);
+    } catch {
+      addToast("Failed to update reception status", "error");
+    } finally {
+      setShowReceptionStatusDialog(false);
+      setPendingReceptionStatus(null);
+    }
+  };
+
+  const cancelReceptionStatusUpdate = () => {
+    setShowReceptionStatusDialog(false);
+    setPendingReceptionStatus(null);
   };
 
   const confirmBulkAction = async () => {
@@ -423,6 +471,21 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         label: "Order Type",
         placeholder: "All Types",
       },
+      ...(activeTab === "reported"
+        ? {
+            receptionStatus: {
+              value: receptionStatusFilter,
+              options: [
+                { value: "not_received", label: "Not Received" },
+                { value: "received", label: "Received" },
+                { value: "checking", label: "Checking" },
+                { value: "resolved", label: "Resolved" },
+              ],
+              label: "Reception Status",
+              placeholder: "All Reception Status",
+            },
+          }
+        : {}),
       ...(isAdmin
         ? {
             provider: {
@@ -447,6 +510,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         setStatusFilter(value);
       } else if (filterKey === "orderType") {
         setOrderTypeFilter(value);
+      } else if (filterKey === "receptionStatus") {
+        setReceptionStatusFilter(value);
       } else if (filterKey === "provider") {
         setProviderFilter(value);
       }
@@ -647,44 +712,96 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         </CardBody>
       </Card>
       {/* Bulk Actions - Admin and Agent */}
-      {selectedOrders.length > 0 && (isAdmin || isAgent) && (
+      {selectedOrders.length > 0 &&
+        (isAdmin || isAgent) &&
+        activeTab !== "reported" && (
+          <Card>
+            <CardBody>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <span className="text-sm text-blue-800 font-medium">
+                    {selectedOrders.length} order(s) selected for bulk
+                    processing
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkAction("process")}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <FaClock className="mr-1" />
+                      <span className="hidden sm:inline">Start Processing</span>
+                      <span className="sm:hidden">Process</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkAction("complete")}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <FaCheck className="mr-1" />
+                      <span className="hidden sm:inline">
+                        Mark as Completed
+                      </span>
+                      <span className="sm:hidden">Complete</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => handleBulkAction("cancel")}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <FaTimes className="mr-1" />
+                      <span className="hidden sm:inline">Cancel Orders</span>
+                      <span className="sm:hidden">Cancel</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+      {/* Bulk Reception Status Actions - Super Admin on Reported Tab */}
+      {selectedOrders.length > 0 && isAdmin && activeTab === "reported" && (
         <Card>
           <CardBody>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <span className="text-sm text-blue-800 font-medium">
-                  {selectedOrders.length} order(s) selected for bulk processing
+                <span className="text-sm text-purple-800 font-medium">
+                  {selectedOrders.length} order(s) selected for reception status
+                  update
                 </span>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleBulkAction("process")}
-                    className="flex-1 sm:flex-none"
+                    onClick={() => handleBulkReceptionStatus("received")}
+                    className="flex-1 sm:flex-none border-green-300 text-green-700 hover:bg-green-50"
                   >
-                    <FaClock className="mr-1" />
-                    <span className="hidden sm:inline">Start Processing</span>
-                    <span className="sm:hidden">Process</span>
+                    <FaCheck className="mr-1" />
+                    <span className="hidden sm:inline">Mark Received</span>
+                    <span className="sm:hidden">Received</span>
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleBulkAction("complete")}
-                    className="flex-1 sm:flex-none"
+                    onClick={() => handleBulkReceptionStatus("checking")}
+                    className="flex-1 sm:flex-none border-yellow-300 text-yellow-700 hover:bg-yellow-50"
                   >
-                    <FaCheck className="mr-1" />
-                    <span className="hidden sm:inline">Mark as Completed</span>
-                    <span className="sm:hidden">Complete</span>
+                    <FaClock className="mr-1" />
+                    <span className="hidden sm:inline">Mark Checking</span>
+                    <span className="sm:hidden">Checking</span>
                   </Button>
                   <Button
                     size="sm"
-                    variant="danger"
-                    onClick={() => handleBulkAction("cancel")}
-                    className="flex-1 sm:flex-none"
+                    variant="outline"
+                    onClick={() => handleBulkReceptionStatus("resolved")}
+                    className="flex-1 sm:flex-none border-blue-300 text-blue-700 hover:bg-blue-50"
                   >
-                    <FaTimes className="mr-1" />
-                    <span className="hidden sm:inline">Cancel Orders</span>
-                    <span className="sm:hidden">Cancel</span>
+                    <FaCheck className="mr-1" />
+                    <span className="hidden sm:inline">Mark Resolved</span>
+                    <span className="sm:hidden">Resolved</span>
                   </Button>
                 </div>
               </div>
@@ -911,6 +1028,89 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               {pendingBulkAction === "cancel" && "Cancel Orders"}
               {pendingBulkAction === "process" && "Process Orders"}
               {pendingBulkAction === "complete" && "Complete Orders"}
+            </Button>
+          </div>
+        </DialogFooter>
+      </Dialog>
+      {/* Reception Status Update Confirmation Dialog */}
+      <Dialog
+        isOpen={showReceptionStatusDialog}
+        onClose={cancelReceptionStatusUpdate}
+        size="md"
+      >
+        <DialogHeader>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Confirm Reception Status Update
+          </h2>
+        </DialogHeader>
+        <DialogBody>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              {pendingReceptionStatus === "received" && (
+                <FaCheck className="text-green-500 text-xl" />
+              )}
+              {pendingReceptionStatus === "checking" && (
+                <FaClock className="text-yellow-500 text-xl" />
+              )}
+              {pendingReceptionStatus === "resolved" && (
+                <FaCheck className="text-blue-500 text-xl" />
+              )}
+              <div>
+                <h3 className="font-medium text-gray-900">
+                  Update Reception Status to{" "}
+                  {pendingReceptionStatus &&
+                    pendingReceptionStatus.charAt(0).toUpperCase() +
+                      pendingReceptionStatus.slice(1).replace("_", " ")}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Are you sure you want to update the reception status for{" "}
+                  {selectedOrders.length} selected order(s) to "
+                  {pendingReceptionStatus?.replace("_", " ")}"?
+                </p>
+              </div>
+            </div>
+
+            {/* Show selected orders info */}
+            <div className="bg-purple-50 rounded-lg p-3">
+              <h4 className="font-medium text-sm text-purple-700 mb-2">
+                Selected Orders:
+              </h4>
+              <div className="space-y-1">
+                {currentOrders
+                  .filter((order: Order) =>
+                    selectedOrders.includes(order._id || "")
+                  )
+                  .slice(0, 3)
+                  .map((order: Order) => (
+                    <div key={order._id} className="text-sm text-gray-600">
+                      {order.orderNumber} - Current:{" "}
+                      {order.receptionStatus || "N/A"}
+                    </div>
+                  ))}
+                {selectedOrders.length > 3 && (
+                  <div className="text-sm text-gray-500">
+                    ...and {selectedOrders.length - 3} more
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="secondary"
+              onClick={cancelReceptionStatusUpdate}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmBulkReceptionStatus}
+              className="flex-1"
+              variant="primary"
+            >
+              Update Status
             </Button>
           </div>
         </DialogFooter>

@@ -160,6 +160,26 @@ class OrderService {
     return response.data.results;
   }
 
+  // Bulk update reception status for reported orders
+  async bulkUpdateReceptionStatus(
+    orderIds: string[],
+    receptionStatus: "not_received" | "received" | "checking" | "resolved"
+  ): Promise<{
+    successful: Array<{
+      orderId: string;
+      orderNumber: string;
+      newReceptionStatus: string;
+    }>;
+    failed: Array<{ orderId: string; reason: string }>;
+    total: number;
+  }> {
+    const response = await apiClient.post("/api/orders/bulk-reception-status", {
+      orderIds,
+      receptionStatus,
+    });
+    return response.data.results;
+  }
+
   // Check wallet balance before processing
   async checkWalletBalance(): Promise<{
     balance: number;

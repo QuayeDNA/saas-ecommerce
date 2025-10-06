@@ -9,6 +9,10 @@ import {
   FaCheck,
   FaPlay,
   FaTimes,
+  FaInfoCircle,
+  FaCalendarAlt,
+  FaTrash,
+  FaRedo,
 } from "react-icons/fa";
 import {
   Card,
@@ -26,6 +30,7 @@ import {
 } from "../../design-system";
 import { SearchAndFilter } from "../../components/common/SearchAndFilter";
 import { useCommissions } from "../../hooks/use-commissions";
+import { commissionService } from "../../services/commission.service";
 import {
   type CommissionRecord,
   type MonthlyGenerationResult,
@@ -82,7 +87,11 @@ export default function SuperAdminCommissionsPage() {
     useState<MonthlyGenerationResult | null>(null);
   const [showGenerationResult, setShowGenerationResult] = useState(false);
 
-  const toast = useToast();
+  // Expire Commissions State
+  const [isExpiringCommissions, setIsExpiringCommissions] = useState(false);
+  const [showInfoCards, setShowInfoCards] = useState(true);
+
+  const { addToast } = useToast();
 
   // Mobile detection
   useEffect(() => {
@@ -184,7 +193,7 @@ export default function SuperAdminCommissionsPage() {
     );
 
     if (paidCommissions.length > 0) {
-      toast.addToast(
+      addToast(
         `Cannot pay ${paidCommissions.length} commission(s) that are already paid`,
         "error"
       );
@@ -197,7 +206,7 @@ export default function SuperAdminCommissionsPage() {
         paymentReference: paymentReference || undefined,
       });
 
-      toast.addToast(
+      addToast(
         `Successfully paid ${result.summary.successful} of ${result.summary.total} commissions`,
         "success"
       );
@@ -208,7 +217,7 @@ export default function SuperAdminCommissionsPage() {
       loadAllData();
     } catch (error) {
       console.error("Failed to process commission payments:", error);
-      toast.addToast("Failed to process commission payments", "error");
+      addToast("Failed to process commission payments", "error");
     }
   };
 
@@ -227,7 +236,7 @@ export default function SuperAdminCommissionsPage() {
 
     // Check if commission is already paid
     if (selectedCommission.status === "paid") {
-      toast.addToast("This commission has already been paid", "error");
+      addToast("This commission has already been paid", "error");
       return;
     }
 
@@ -236,7 +245,7 @@ export default function SuperAdminCommissionsPage() {
         paymentReference: singlePaymentReference || undefined,
       });
 
-      toast.addToast(
+      addToast(
         `Successfully paid commission of ${formatCurrency(
           selectedCommission.amount
         )} to ${selectedCommission.agentId.fullName}`,
@@ -248,7 +257,7 @@ export default function SuperAdminCommissionsPage() {
       setSinglePaymentReference("");
     } catch (error) {
       console.error("Failed to process commission payment:", error);
-      toast.addToast("Failed to process commission payment", "error");
+      addToast("Failed to process commission payment", "error");
     }
   };
 
@@ -263,12 +272,12 @@ export default function SuperAdminCommissionsPage() {
 
     // Check if commission is already paid or rejected
     if (selectedCommission.status === "paid") {
-      toast.addToast("Cannot reject a paid commission", "error");
+      addToast("Cannot reject a paid commission", "error");
       return;
     }
 
     if (selectedCommission.status === "rejected") {
-      toast.addToast("This commission has already been rejected", "error");
+      addToast("This commission has already been rejected", "error");
       return;
     }
 
@@ -277,7 +286,7 @@ export default function SuperAdminCommissionsPage() {
         rejectionReason: singleRejectionReason || undefined,
       });
 
-      toast.addToast(
+      addToast(
         `Successfully rejected commission of ${formatCurrency(
           selectedCommission.amount
         )} for ${selectedCommission.agentId.fullName}`,
@@ -289,7 +298,7 @@ export default function SuperAdminCommissionsPage() {
       setSingleRejectionReason("");
     } catch (error) {
       console.error("Failed to reject commission:", error);
-      toast.addToast("Failed to reject commission", "error");
+      addToast("Failed to reject commission", "error");
     }
   };
 
@@ -302,7 +311,7 @@ export default function SuperAdminCommissionsPage() {
         rejectionReason: rejectionReason || undefined,
       });
 
-      toast.addToast(
+      addToast(
         `Successfully rejected ${selectedCommissions.length} commissions`,
         "success"
       );
@@ -312,7 +321,7 @@ export default function SuperAdminCommissionsPage() {
       setRejectionReason("");
     } catch (error) {
       console.error("Failed to reject commissions:", error);
-      toast.addToast("Failed to reject commissions", "error");
+      addToast("Failed to reject commissions", "error");
     }
   };
 
@@ -323,10 +332,10 @@ export default function SuperAdminCommissionsPage() {
       await updateCommissionSettings(localSettings);
       setShowSettingsDialog(false);
       setLocalSettings(null);
-      toast.addToast("Commission settings updated successfully", "success");
+      addToast("Commission settings updated successfully", "success");
     } catch (error) {
       console.error("Failed to update commission settings:", error);
-      toast.addToast("Failed to update commission settings", "error");
+      addToast("Failed to update commission settings", "error");
     }
   };
 
@@ -338,19 +347,59 @@ export default function SuperAdminCommissionsPage() {
         targetMonth: generationMonth,
       });
 
-      setGenerationResult(result);
+      // Check if this is a warning about existing commissions
+      if (
+        result.warning &&
+        typeof result.data === "object" &&
+        result.data !== null &&
+        "existingRecords" in result.data
+      ) {
+        addToast(
+          result.message || "Commissions already exist for this period",
+          "warning"
+        );
+        setShowGenerateDialog(false);
+        return;
+      }
+
+      // For successful generation, result.data should be MonthlyGenerationResult
+      const generationData = result.data as unknown as MonthlyGenerationResult;
+      setGenerationResult(generationData);
       setShowGenerateDialog(false);
       setShowGenerationResult(true);
 
-      toast.addToast(
-        `Commission generation completed: ${result.summary.created} created, ${result.summary.exists} existing`,
+      addToast(
+        `Successfully generated ${generationData.summary.created} commission records`,
         "success"
       );
     } catch (error) {
       console.error("Failed to generate commissions:", error);
-      toast.addToast("Failed to generate commissions", "error");
+      addToast("Failed to generate commissions", "error");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Expire Old Commissions Method
+  const handleExpireOldCommissions = async () => {
+    setIsExpiringCommissions(true);
+    try {
+      const result = await commissionService.expireOldCommissions();
+
+      if (result.success) {
+        addToast(
+          `Successfully expired ${result.data.expiredCount} commission(s) totaling GH₵${result.data.totalAmount}`,
+          "success"
+        );
+        loadAllData(); // Refresh data
+      } else {
+        addToast("Failed to expire commissions", "error");
+      }
+    } catch (error) {
+      console.error("Failed to expire commissions:", error);
+      addToast("Failed to expire old commissions", "error");
+    } finally {
+      setIsExpiringCommissions(false);
     }
   };
 
@@ -415,15 +464,39 @@ export default function SuperAdminCommissionsPage() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="relative group">
+            <Button
+              variant="primary"
+              leftIcon={<FaRedo className="text-sm" />}
+              onClick={() => setShowGenerateDialog(true)}
+              className="flex items-center justify-center w-full sm:w-auto"
+              size="sm"
+              title="Recalculate commissions if needed - System auto-generates monthly on the 1st"
+            >
+              <span className="sm:hidden">Recalculate</span>
+              <span className="hidden sm:inline">Recalculate Commissions</span>
+            </Button>
+          </div>
           <Button
-            variant="primary"
-            leftIcon={<FaPlay className="text-sm" />}
-            onClick={() => setShowGenerateDialog(true)}
+            variant="secondary"
+            leftIcon={<FaTrash className="text-sm" />}
+            onClick={handleExpireOldCommissions}
+            disabled={isExpiringCommissions}
             className="flex items-center justify-center w-full sm:w-auto"
             size="sm"
+            title="Manually expire commissions older than 30 days"
           >
-            <span className="sm:hidden">Generate</span>
-            <span className="hidden sm:inline">Generate Commissions</span>
+            {isExpiringCommissions ? (
+              <>
+                <Spinner size="sm" className="mr-2" />
+                <span>Expiring...</span>
+              </>
+            ) : (
+              <>
+                <span className="sm:hidden">Expire Old</span>
+                <span className="hidden sm:inline">Expire Old Commissions</span>
+              </>
+            )}
           </Button>
           <Button
             variant="outline"
@@ -551,6 +624,133 @@ export default function SuperAdminCommissionsPage() {
             </CardBody>
           </Card>
         </div>
+      )}
+
+      {/* Info Cards - How Commission System Works */}
+      {showInfoCards && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-4 sm:p-6 space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <FaInfoCircle className="text-blue-600 text-xl flex-shrink-0" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                How the Commission System Works
+              </h3>
+            </div>
+            <button
+              onClick={() => setShowInfoCards(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              title="Hide info cards"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Automatic Generation Card */}
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
+              <div className="flex items-center gap-2 mb-2">
+                <FaCalendarAlt className="text-green-600" />
+                <h4 className="font-semibold text-gray-900">
+                  Automatic Generation
+                </h4>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Commissions are <strong>automatically generated</strong> on the{" "}
+                <strong>1st of every month at 2:00 AM</strong> for the previous
+                month's completed orders. You don't need to manually generate
+                them.
+              </p>
+            </div>
+
+            {/* Commission Rates Card */}
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
+              <div className="flex items-center gap-2 mb-2">
+                <FaCalculator className="text-purple-600" />
+                <h4 className="font-semibold text-gray-900">
+                  Commission Rates
+                </h4>
+              </div>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p>
+                  • <strong>Agent:</strong> {settings?.agentCommission || 5}%
+                </p>
+                <p>
+                  • <strong>Super Agent:</strong>{" "}
+                  {settings?.superAgentCommission || 7.5}%
+                </p>
+                <p>
+                  • <strong>Dealer:</strong> {settings?.dealerCommission || 10}%
+                </p>
+                <p>
+                  • <strong>Super Dealer:</strong>{" "}
+                  {settings?.superDealerCommission || 12.5}%
+                </p>
+              </div>
+            </div>
+
+            {/* Expiry Policy Card */}
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
+              <div className="flex items-center gap-2 mb-2">
+                <FaClock className="text-orange-600" />
+                <h4 className="font-semibold text-gray-900">
+                  30-Day Expiry Policy
+                </h4>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Pending commissions{" "}
+                <strong>automatically expire after 30 days</strong>. The system
+                runs a cleanup job on the <strong>1st of every month</strong> to
+                expire old pending commissions.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
+            <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              <FaInfoCircle className="text-blue-600" />
+              What the Buttons Do
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
+              <div>
+                <strong className="text-blue-600">
+                  Recalculate Commissions:
+                </strong>{" "}
+                Use this only if you need to force regeneration for a specific
+                month (e.g., if rates were updated). Normal operation doesn't
+                require this.
+              </div>
+              <div>
+                <strong className="text-orange-600">
+                  Expire Old Commissions:
+                </strong>{" "}
+                Manually trigger the expiry process to expire pending
+                commissions older than 30 days. Useful for testing or immediate
+                cleanup.
+              </div>
+              <div>
+                <strong className="text-gray-600">Settings:</strong> Update
+                commission rates for each agent tier. Changes apply to new
+                commissions only.
+              </div>
+              <div>
+                <strong className="text-green-600">Pay / Reject:</strong>{" "}
+                Process pending commissions by either paying agents or rejecting
+                invalid ones.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Show Info Cards Button (when hidden) */}
+      {!showInfoCards && (
+        <button
+          onClick={() => setShowInfoCards(true)}
+          className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-2 transition-colors"
+        >
+          <FaInfoCircle />
+          <span>Show Commission System Info</span>
+        </button>
       )}
 
       {/* Filters */}

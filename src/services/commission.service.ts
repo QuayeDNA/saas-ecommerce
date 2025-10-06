@@ -127,6 +127,9 @@ export interface MultiplePaymentResult {
 }
 
 export interface MonthlyGenerationResult {
+  warning: boolean;
+  data: string;
+  message: string;
   results: Array<{
     agentId: string;
     status: "created" | "exists" | "error" | "success";
@@ -139,6 +142,13 @@ export interface MonthlyGenerationResult {
     exists: number;
     errors: number;
   };
+}
+
+export interface MonthlyGenerationResponse {
+  success: boolean;
+  warning?: boolean;
+  message?: string;
+  data: MonthlyGenerationResult | { existingRecords: boolean };
 }
 
 class CommissionService {
@@ -306,12 +316,12 @@ class CommissionService {
    */
   async generateMonthlyCommissions(
     data: GenerateMonthlyCommissionsData = {}
-  ): Promise<MonthlyGenerationResult> {
+  ): Promise<MonthlyGenerationResponse> {
     const response = await apiClient.post(
       "/api/commissions/generate-monthly",
       data
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -321,6 +331,24 @@ class CommissionService {
   async getCommissionStatistics(): Promise<CommissionStatistics> {
     const response = await apiClient.get("/api/commissions/statistics");
     return response.data.data;
+  }
+
+  /**
+   * Expire old commissions (super admin only)
+   * Manually triggers the commission expiry job
+   * @returns Promise with expiry results
+   */
+  async expireOldCommissions(): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      expiredCount: number;
+      totalAmount: string;
+      duration: string;
+    };
+  }> {
+    const response = await apiClient.post("/api/commissions/expire-old");
+    return response.data;
   }
 }
 
