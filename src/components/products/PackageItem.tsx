@@ -65,16 +65,26 @@ export const PackageItem: React.FC<PackageItemProps> = ({
         <div className="text-sm">
           <span className="text-gray-500">Data:</span>
           <span className="text-gray-900 font-medium ml-1">
-            {item.dataVolume < 1
-              ? `${(item.dataVolume * 1000).toFixed(0)} MB`
-              : `${item.dataVolume.toFixed(1)} GB`}
+            {item.dataVolume !== undefined ? (
+              item.dataVolume < 1
+                ? `${(item.dataVolume * 1000).toFixed(0)} MB`
+                : `${item.dataVolume.toFixed(1)} GB`
+            ) : (
+              <span className="text-blue-600">AFA Registration Service</span>
+            )}
           </span>
         </div>
 
         <div className="text-sm">
-          <span className="text-gray-500">Validity:</span>
+          <span className="text-gray-500">
+            {item.validity !== undefined ? 'Validity:' : 'Type:'}
+          </span>
           <span className="text-gray-900 font-medium ml-1">
-            {item.validity} {item.validity === 1 ? "day" : "days"}
+            {item.validity !== undefined ? (
+              `${item.validity} ${item.validity === 1 ? "day" : "days"}`
+            ) : (
+              <span className="text-green-600">Registration Service</span>
+            )}
           </span>
         </div>
       </div>

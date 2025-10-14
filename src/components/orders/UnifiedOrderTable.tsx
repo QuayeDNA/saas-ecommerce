@@ -247,6 +247,25 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     }
   };
 
+  // Check if order is AFA
+  const isAfaOrder = (order: Order) => {
+    return order.items && order.items.length > 0 && 
+           order.items[0].packageDetails?.provider === 'AFA';
+  };
+
+  // Extract Ghana Card number from notes
+  const extractGhanaCardFromNotes = (notes: string | undefined) => {
+    if (!notes) return null;
+    const match = notes.match(/Ghana Card:\s*([A-Z0-9-]+)/i);
+    return match ? match[1] : null;
+  };
+
+  // Get display info for AFA orders
+  const getAfaOrderInfo = (order: Order) => {
+    const ghanaCardNumber = order.customerInfo?.ghanaCardNumber || extractGhanaCardFromNotes(order.notes);
+    return ghanaCardNumber || "AFA Registration Service";
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-GH", {
       style: "currency",
@@ -415,7 +434,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                         {getOrderProvider(order)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {getOrderVolume(order)}
+                        {isAfaOrder(order) ? getAfaOrderInfo(order) : getOrderVolume(order)}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">

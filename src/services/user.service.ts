@@ -2,6 +2,7 @@
 import { apiClient } from "../utils/api-client";
 
 import type { UserType } from "../types/auth";
+import type { Bundle } from "../types/package";
 
 export interface User {
   _id: string;
@@ -40,7 +41,8 @@ export interface ChangePasswordData {
 export interface AfaRegistrationData {
   fullName: string;
   phone: string;
-  userType: "agent" | "subscriber";
+  bundleId: string; // Selected AFA bundle
+  ghanaCardNumber?: string; // Optional Ghana Card number
 }
 
 export interface AfaRegistration {
@@ -49,6 +51,8 @@ export interface AfaRegistration {
   status: string;
   customerName: string;
   customerPhone: string;
+  bundleName?: string;
+  requiresGhanaCard?: boolean;
 }
 
 export interface AfaOrder {
@@ -57,6 +61,7 @@ export interface AfaOrder {
   customerInfo: {
     name: string;
     phone: string;
+    ghanaCardNumber?: string;
   };
   total: number;
   status: string;
@@ -294,6 +299,10 @@ export const userService = {
   },
   async getAfaRegistration(): Promise<AfaRegistrationResponse> {
     const resp = await apiClient.get("/api/users/afa-registration");
+    return resp.data;
+  },
+  async getAfaBundles(): Promise<{ bundles: Bundle[] }> {
+    const resp = await apiClient.get("/api/users/afa-bundles");
     return resp.data;
   },
   async getUsers(params: FetchUsersParams = {}): Promise<UsersResponse> {

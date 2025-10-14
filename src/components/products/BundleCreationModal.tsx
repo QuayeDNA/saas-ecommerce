@@ -25,6 +25,7 @@ interface BundleCreationModalProps {
   initialData?: Bundle | null;
   packageId?: string;
   providerId?: string;
+  providerCode?: string;
 }
 
 type CreationStep = 'select' | 'single' | 'bulk';
@@ -35,7 +36,8 @@ export const BundleCreationModal: React.FC<BundleCreationModalProps> = ({
   onSubmit,
   initialData,
   packageId,
-  providerId
+  providerId,
+  providerCode
 }) => {
   const [currentStep, setCurrentStep] = useState<CreationStep>('select');
   const [showSingleForm, setShowSingleForm] = useState(false);
@@ -245,6 +247,7 @@ export const BundleCreationModal: React.FC<BundleCreationModalProps> = ({
         initialData={initialData}
         packageId={packageId}
         providerId={providerId}
+        providerCode={providerCode}
       />
     </>
   );

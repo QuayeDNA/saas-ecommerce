@@ -24,6 +24,7 @@ interface UserContextValue {
     data: AfaRegistrationData
   ) => Promise<AfaRegistration>;
   getAfaRegistration: () => Promise<AfaRegistrationResponse | null>;
+  getAfaBundles: () => Promise<{ bundles: import("../types/package").Bundle[] }>;
 
   // User management
   getUsers: (params?: {
@@ -154,6 +155,20 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       }
     }, [handleError]);
 
+  const getAfaBundles = useCallback(async (): Promise<{ bundles: import("../types/package").Bundle[] }> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await userService.getAfaBundles();
+      return response;
+    } catch (error) {
+      handleError(error, "get AFA bundles");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [handleError]);
+
   const getUsers = useCallback(
     async (params?: {
       page?: number;
@@ -265,6 +280,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       getProfile,
       submitAfaRegistration,
       getAfaRegistration,
+      getAfaBundles,
       getUsers,
       getUserById,
       getUserStats,
@@ -280,6 +296,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       getProfile,
       submitAfaRegistration,
       getAfaRegistration,
+      getAfaBundles,
       getUsers,
       getUserById,
       getUserStats,

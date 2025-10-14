@@ -24,6 +24,7 @@ import {
   FaChartBar,
   FaSync,
   FaExclamationTriangle,
+  FaCheckSquare,
 } from "react-icons/fa";
 import type { Order, OrderFilters } from "../../types/order";
 import type { Provider } from "../../types/package";
@@ -33,6 +34,7 @@ import { UnifiedOrderExcel } from "./UnifiedOrderExcel";
 import { OrderAnalytics } from "./OrderAnalytics";
 import { SearchAndFilter } from "../common/SearchAndFilter";
 import { DraftOrdersHandler } from "./DraftOrdersHandler";
+import { SmartSelectDialog } from "./SmartSelectDialog";
 
 interface UnifiedOrderListProps {
   isAdmin: boolean;
@@ -95,6 +97,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   // Draft orders handler state
   const [showDraftHandler, setShowDraftHandler] = useState(false);
+
+  // Smart select dialog state
+  const [showSmartSelectDialog, setShowSmartSelectDialog] = useState(false);
 
   // Analytics state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -411,12 +416,35 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   };
 
   const handleSelectAll = useCallback(() => {
-    if (selectedOrders.length === currentOrders.length) {
-      setSelectedOrders([]);
-    } else {
-      setSelectedOrders(currentOrders.map((o: Order) => o._id || ""));
-    }
-  }, [selectedOrders.length, currentOrders]);
+    // Open smart select dialog instead of selecting all
+    setShowSmartSelectDialog(true);
+  }, []);
+
+  const handleSelectByStatus = useCallback(
+    (statuses: string[]) => {
+      const ordersToSelect = currentOrders.filter((order: Order) =>
+        statuses.includes(order.status)
+      );
+      setSelectedOrders(ordersToSelect.map((o: Order) => o._id || ""));
+    },
+    [currentOrders]
+  );
+
+  const handleSelectByReceptionStatus = useCallback(
+    (receptionStatuses: string[]) => {
+      const ordersToSelect = currentOrders.filter((order: Order) =>
+        order.reported && 
+        order.receptionStatus && 
+        receptionStatuses.includes(order.receptionStatus)
+      );
+      setSelectedOrders(ordersToSelect.map((o: Order) => o._id || ""));
+    },
+    [currentOrders]
+  );
+
+  const handleDeselectAll = useCallback(() => {
+    setSelectedOrders([]);
+  }, []);
 
   const handleSelectOrder = useCallback((orderId: string) => {
     setSelectedOrders((prev) =>
@@ -679,28 +707,28 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             {/* Select All Button - Only show in cards view and for admin */}
             {viewMode === "cards" && isAdmin && orders.length > 0 && (
               <div className="flex items-center justify-between gap-3 w-full sm:w-auto">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectAll}
-                  className="flex items-center gap-2 flex-1 sm:flex-none justify-center"
-                >
-                  <input
-                    type="checkbox"
-                    checked={
-                      selectedOrders.length === orders.length &&
-                      orders.length > 0
-                    }
-                    onChange={() => {}} // Handled by button click
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    readOnly
-                  />
-                  <span className="text-xs sm:text-sm">
-                    {selectedOrders.length === orders.length
-                      ? "Deselect All"
-                      : "Select All"}
-                  </span>
-                </Button>
+                <div className="flex gap-2 flex-1 sm:flex-none">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    className="flex items-center gap-2 flex-1 sm:flex-none justify-center"
+                  >
+                    <FaCheckSquare className="text-blue-600" />
+                    <span className="text-xs sm:text-sm">Smart Select</span>
+                  </Button>
+                  {selectedOrders.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeselectAll}
+                      className="flex items-center gap-2 flex-1 sm:flex-none justify-center"
+                    >
+                      <FaTimes className="text-gray-600" />
+                      <span className="text-xs sm:text-sm">Deselect All</span>
+                    </Button>
+                  )}
+                </div>
                 {selectedOrders.length > 0 && (
                   <span className="text-xs sm:text-sm text-gray-600 flex-shrink-0">
                     {selectedOrders.length} selected
@@ -1119,6 +1147,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       <DraftOrdersHandler
         isOpen={showDraftHandler}
         onClose={handleCloseDraftHandler}
+      />
+
+      {/* Smart Select Dialog */}
+      <SmartSelectDialog
+        isOpen={showSmartSelectDialog}
+        onClose={() => setShowSmartSelectDialog(false)}
+        orders={currentOrders}
+        onSelectByStatus={handleSelectByStatus}
+        onSelectByReceptionStatus={handleSelectByReceptionStatus}
+        onSwitchToExcel={() => setViewMode("excel")}
+        currentViewMode={viewMode}
       />
     </div>
   );

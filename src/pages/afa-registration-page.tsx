@@ -8,18 +8,21 @@ import {
   Alert,
   Badge,
   Container,
+  Select,
 } from "../design-system";
 import { useNavigate } from "react-router-dom";
 import type { AfaOrder } from "../services/user.service";
+import type { Bundle } from "../types/package";
 import { providerService } from "../services/provider.service";
 
 export const AfaRegistrationPage: React.FC = () => {
-  const { submitAfaRegistration, getAfaRegistration, isLoading } = useUser();
+  const { submitAfaRegistration, getAfaRegistration, getAfaBundles, isLoading } = useUser();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
-    userType: "agent" as "agent" | "subscriber",
+    bundleId: "",
+    ghanaCardNumber: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -27,15 +30,26 @@ export const AfaRegistrationPage: React.FC = () => {
   const [showOrders, setShowOrders] = useState(false);
   const [afaProviderActive, setAfaProviderActive] = useState(true);
   const [checkingProvider, setCheckingProvider] = useState(true);
+  const [afaBundles, setAfaBundles] = useState<Bundle[]>([]);
+  const [loadingBundles, setLoadingBundles] = useState(false);
 
   useEffect(() => {
-    // Load AFA orders and check provider status
+    // Load AFA bundles, orders and check provider status
     const loadData = async () => {
       setCheckingProvider(true);
+      setLoadingBundles(true);
       try {
-        // Check AFA provider status using the more reliable method
+        // Check AFA provider status
         const afaProvider = await providerService.getProviderByCode("afa");
         setAfaProviderActive(afaProvider?.isActive ?? false);
+
+        if (afaProvider?.isActive) {
+          // Load AFA bundles
+          const bundlesResult = await getAfaBundles();
+          if (bundlesResult.bundles) {
+            setAfaBundles(bundlesResult.bundles);
+          }
+        }
 
         // Load AFA orders
         const result = await getAfaRegistration();
@@ -44,19 +58,33 @@ export const AfaRegistrationPage: React.FC = () => {
         }
       } catch (err) {
         console.error("Failed to load data:", err);
-        setAfaProviderActive(false); // Default to inactive if we can't check
+        setAfaProviderActive(false);
       } finally {
         setCheckingProvider(false);
+        setLoadingBundles(false);
       }
     };
 
     loadData();
-  }, [getAfaRegistration]);
+  }, [getAfaRegistration, getAfaBundles]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+
+    // Validate bundle selection
+    if (!formData.bundleId) {
+      setError("Please select an AFA registration bundle");
+      return;
+    }
+
+    // Check if Ghana Card is required for selected bundle
+    const selectedBundle = afaBundles.find(b => b._id === formData.bundleId);
+    if (selectedBundle?.requiresGhanaCard && !formData.ghanaCardNumber) {
+      setError("Ghana Card number is required for this bundle");
+      return;
+    }
 
     // Double-check AFA provider status before submitting
     try {
@@ -107,10 +135,14 @@ export const AfaRegistrationPage: React.FC = () => {
     }));
   };
 
-  const handleUserTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBundleChange = (bundleId: string) => {
     setFormData((prev) => ({
       ...prev,
-      userType: e.target.value as "agent" | "subscriber",
+      bundleId,
+      // Clear Ghana Card if not required for new bundle
+      ghanaCardNumber: afaBundles.find(b => b._id === bundleId)?.requiresGhanaCard
+        ? prev.ghanaCardNumber
+        : "",
     }));
   };
 
@@ -245,44 +277,80 @@ export const AfaRegistrationPage: React.FC = () => {
                       />
                     </div>
 
-                    {/* Registration Type Toggle */}
+                    {/* Bundle Selection */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Registration Type
+                      <label
+                        htmlFor="bundleId"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        AFA Registration Bundle
                       </label>
-                      <div className="flex items-center gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="userType"
-                            value="agent"
-                            checked={formData.userType === "agent"}
-                            onChange={handleUserTypeChange}
-                            className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                            disabled={
-                              isLoading ||
-                              checkingProvider ||
-                              !afaProviderActive
-                            }
-                          />
-                          <span className="text-sm font-medium">
-                            Agent (GH¢3)
-                          </span>
-                        </label>
-                        {/* <label className="flex items-center gap-2 cursor-pointer">
-                           <input
-                             type="radio"
-                             name="userType"
-                             value="subscriber"
-                             checked={formData.userType === 'subscriber'}
-                             onChange={handleUserTypeChange}
-                             className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                             disabled={isLoading}
-                           />
-                           <span className="text-sm font-medium">Subscriber (GH¢5.5)</span>
-                         </label> */}
-                      </div>
+                      <Select
+                        value={formData.bundleId}
+                        onChange={handleBundleChange}
+                        options={[
+                          { value: "", label: loadingBundles ? "Loading bundles..." : "Select a bundle" },
+                          ...afaBundles.map(bundle => ({
+                            value: bundle._id || "",
+                            label: `${bundle.name} - GH¢${bundle.price}${bundle.requiresGhanaCard ? " (Requires Ghana Card)" : ""}`
+                          }))
+                        ]}
+                        disabled={
+                          isLoading || checkingProvider || !afaProviderActive || loadingBundles
+                        }
+                        className="w-full"
+                      />
+                      {formData.bundleId && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          {(() => {
+                            const selectedBundle = afaBundles.find(b => b._id === formData.bundleId);
+                            return selectedBundle ? (
+                              <div>
+                                <p>{selectedBundle.description}</p>
+                                {selectedBundle.features && selectedBundle.features.length > 0 && (
+                                  <ul className="mt-1 list-disc list-inside">
+                                    {selectedBundle.features.map((feature: string, index: number) => (
+                                      <li key={index}>{feature}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            ) : null;
+                          })()}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Ghana Card Number Field (conditional) */}
+                    {(() => {
+                      const selectedBundle = afaBundles.find(b => b._id === formData.bundleId);
+                      return selectedBundle?.requiresGhanaCard ? (
+                        <div>
+                          <label
+                            htmlFor="ghanaCardNumber"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                          >
+                            Ghana Card Number <span className="text-red-500">*</span>
+                          </label>
+                          <Input
+                            type="text"
+                            id="ghanaCardNumber"
+                            name="ghanaCardNumber"
+                            value={formData.ghanaCardNumber}
+                            onChange={handleInputChange}
+                            placeholder="Enter Ghana Card number (e.g., GHA-1234567890-1)"
+                            required
+                            disabled={
+                              isLoading || checkingProvider || !afaProviderActive
+                            }
+                            className="w-full"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            Format: GHA-XXXXXXXXXX-X (e.g., GHA-1234567890-1)
+                          </p>
+                        </div>
+                      ) : null;
+                    })()}
 
                     {/* Submit Button */}
                     <div className="pt-4 sm:pt-6">

@@ -66,10 +66,10 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   const [orderSummary, setOrderSummary] = useState<{
     bundle: {
       name: string;
-      dataVolume: number;
-      dataUnit: string;
-      validity: number;
-      validityUnit: string;
+      dataVolume?: number;
+      dataUnit?: string;
+      validity?: number;
+      validityUnit?: string;
       price: number;
       currency: string;
     };
@@ -206,10 +206,13 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
             : bundle.packageId,
         packageItemId: bundle._id || "",
         customerPhone: customerPhone.replace(/^\+?233/, "0"),
-        bundleSize: {
-          value: bundle.dataVolume,
-          unit: bundle.dataUnit as "MB" | "GB",
-        },
+        // Only include bundleSize for non-AFA bundles
+        ...(bundle.dataVolume && bundle.dataUnit ? {
+          bundleSize: {
+            value: bundle.dataVolume,
+            unit: bundle.dataUnit as "MB" | "GB",
+          }
+        } : {}),
         quantity: 1,
       };
 
@@ -232,10 +235,13 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
               : bundle.packageId,
           packageItemId: bundle._id || "",
           customerPhone: customerPhone.replace(/^\+?233/, "0"),
-          bundleSize: {
-            value: bundle.dataVolume,
-            unit: bundle.dataUnit as "MB" | "GB",
-          },
+          // Only include bundleSize for non-AFA bundles
+          ...(bundle.dataVolume && bundle.dataUnit ? {
+            bundleSize: {
+              value: bundle.dataVolume,
+              unit: bundle.dataUnit as "MB" | "GB",
+            }
+          } : {}),
           quantity: 1,
         };
 

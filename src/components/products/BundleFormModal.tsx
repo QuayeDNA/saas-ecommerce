@@ -11,6 +11,7 @@ interface BundleFormModalProps {
   initialData?: Bundle | null;
   packageId?: string;
   providerId?: string;
+  providerCode?: string;
 }
 
 const defaultBundle: Partial<Bundle> = {
@@ -26,6 +27,8 @@ const defaultBundle: Partial<Bundle> = {
   isActive: true,
   tags: [],
   category: 'custom',
+  requiresGhanaCard: false,
+  afaRequirements: [],
 };
 
 export const BundleFormModal: React.FC<BundleFormModalProps> = ({
@@ -35,10 +38,12 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
   initialData,
   packageId,
   providerId,
+  providerCode,
 }) => {
   const [formData, setFormData] = useState<Partial<Bundle>>(defaultBundle);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isAfaBundle = providerCode === 'AFA';
 
   useEffect(() => {
     if (open) {
@@ -82,15 +87,19 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
       if (!formData.name?.trim()) {
         throw new Error('Bundle name is required');
       }
-      if (!formData.dataVolume || formData.dataVolume <= 0) {
-        throw new Error('Data volume must be greater than 0');
-      }
       
-      // Validate validity - allow 'unlimited' or numbers > 0
-      if (formData.validityUnit === 'unlimited') {
-        formData.validity = 'unlimited';
-      } else if (!formData.validity || (typeof formData.validity === 'number' && formData.validity <= 0)) {
-        throw new Error('Validity must be greater than 0');
+      // Only validate data volume for non-AFA bundles
+      if (!isAfaBundle) {
+        if (!formData.dataVolume || formData.dataVolume <= 0) {
+          throw new Error('Data volume must be greater than 0');
+        }
+        
+        // Validate validity - allow 'unlimited' or numbers > 0
+        if (formData.validityUnit === 'unlimited') {
+          formData.validity = 'unlimited';
+        } else if (!formData.validity || (typeof formData.validity === 'number' && formData.validity <= 0)) {
+          throw new Error('Validity must be greater than 0');
+        }
       }
       
       if (!formData.price || formData.price < 0) {
@@ -122,6 +131,7 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
               <FaCube className="text-blue-600 text-xl" />
               <h2 className="text-xl font-bold text-gray-900">
                 {initialData ? 'Edit Bundle' : 'Create Bundle'}
+                {isAfaBundle && <span className="text-blue-600 ml-2">(AFA Registration)</span>}
               </h2>
             </div>
             <button
@@ -193,92 +203,96 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
               </div>
             </div>
 
-            {/* Data Configuration */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Data Configuration</h3>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Data Volume *
-                  </label>
-                  <Input
-                    type="number"
-                    value={formData.dataVolume || ''}
-                    onChange={(e) => handleInputChange('dataVolume', Number(e.target.value))}
-                    placeholder="0"
-                    min="0"
-                    step="0.01"
-                    required
-                    disabled={loading}
-                  />
-                </div>
+            {/* Data Configuration - Only show for non-AFA bundles */}
+            {!isAfaBundle && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Data Configuration</h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Data Volume *
+                    </label>
+                    <Input
+                      type="number"
+                      value={formData.dataVolume || ''}
+                      onChange={(e) => handleInputChange('dataVolume', Number(e.target.value))}
+                      placeholder="0"
+                      min="0"
+                      step="0.01"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Data Unit
-                  </label>
-                  <select
-                    value={formData.dataUnit || 'MB'}
-                    onChange={(e) => handleInputChange('dataUnit', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={loading}
-                  >
-                    <option value="MB">MB</option>
-                    <option value="GB">GB</option>
-                    <option value="TB">TB</option>
-                  </select>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Data Unit
+                    </label>
+                    <select
+                      value={formData.dataUnit || 'MB'}
+                      onChange={(e) => handleInputChange('dataUnit', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={loading}
+                    >
+                      <option value="MB">MB</option>
+                      <option value="GB">GB</option>
+                      <option value="TB">TB</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Validity Configuration */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Validity Configuration</h3>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Validity Duration *
-                  </label>
-                  <Input
-                    type="number"
-                    value={formData.validityUnit === 'unlimited' ? '' : (formData.validity || '')}
-                    onChange={(e) => handleInputChange('validity', Number(e.target.value))}
-                    placeholder={formData.validityUnit === 'unlimited' ? 'Unlimited' : '1'}
-                    min="1"
-                    required={formData.validityUnit !== 'unlimited'}
-                    disabled={loading || formData.validityUnit === 'unlimited'}
-                  />
-                </div>
+            {/* Validity Configuration - Only show for non-AFA bundles */}
+            {!isAfaBundle && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Validity Configuration</h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Validity Duration *
+                    </label>
+                    <Input
+                      type="number"
+                      value={formData.validityUnit === 'unlimited' ? '' : (formData.validity || '')}
+                      onChange={(e) => handleInputChange('validity', Number(e.target.value))}
+                      placeholder={formData.validityUnit === 'unlimited' ? 'Unlimited' : '1'}
+                      min="1"
+                      required={formData.validityUnit !== 'unlimited'}
+                      disabled={loading || formData.validityUnit === 'unlimited'}
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Validity Unit
-                  </label>
-                  <select
-                    value={formData.validityUnit || 'days'}
-                    onChange={(e) => {
-                      const newUnit = e.target.value;
-                      handleInputChange('validityUnit', newUnit);
-                      if (newUnit === 'unlimited') {
-                        handleInputChange('validity', 'unlimited');
-                      } else if (formData.validity === 'unlimited') {
-                        handleInputChange('validity', 1);
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={loading}
-                  >
-                    <option value="hours">Hours</option>
-                    <option value="days">Days</option>
-                    <option value="weeks">Weeks</option>
-                    <option value="months">Months</option>
-                    <option value="unlimited">Unlimited</option>
-                  </select>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Validity Unit
+                    </label>
+                    <select
+                      value={formData.validityUnit || 'days'}
+                      onChange={(e) => {
+                        const newUnit = e.target.value;
+                        handleInputChange('validityUnit', newUnit);
+                        if (newUnit === 'unlimited') {
+                          handleInputChange('validity', 'unlimited');
+                        } else if (formData.validity === 'unlimited') {
+                          handleInputChange('validity', 1);
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={loading}
+                    >
+                      <option value="hours">Hours</option>
+                      <option value="days">Days</option>
+                      <option value="weeks">Weeks</option>
+                      <option value="months">Months</option>
+                      <option value="unlimited">Unlimited</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Pricing */}
             <div className="space-y-4">
@@ -334,6 +348,47 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
                 </label>
               </div>
             </div>
+
+            {/* AFA-Specific Fields */}
+            {isAfaBundle && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">AFA Registration Requirements</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Configure the requirements for this AFA registration service. This is not a data bundle but a registration service.
+                </p>
+                
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="requiresGhanaCard"
+                    checked={formData.requiresGhanaCard || false}
+                    onChange={(e) => handleInputChange('requiresGhanaCard', e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    disabled={loading}
+                  />
+                  <label htmlFor="requiresGhanaCard" className="ml-2 block text-sm text-gray-900">
+                    Require Ghana Card Number for registration
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Additional Registration Requirements
+                  </label>
+                  <textarea
+                    value={(formData.afaRequirements || []).join('\n')}
+                    onChange={(e) => handleInputChange('afaRequirements', e.target.value.split('\n').filter(req => req.trim()))}
+                    placeholder="Enter additional requirements for AFA registration (one per line)&#10;Example:&#10;- Valid ID card&#10;- Proof of address&#10;- Business registration certificate"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    List any additional documents or information required for this AFA registration (one per line)
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Package and Provider Info (Read-only) */}
             {(packageId || providerId) && (

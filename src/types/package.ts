@@ -21,10 +21,11 @@ export interface Bundle {
   _id?: string;
   name: string;
   description?: string;
-  dataVolume: number;
-  dataUnit: "MB" | "GB" | "TB";
-  validity: number | "unlimited";
-  validityUnit: "hours" | "days" | "weeks" | "months" | "unlimited";
+  // Data fields are optional for AFA bundles (services)
+  dataVolume?: number;
+  dataUnit?: "MB" | "GB" | "TB";
+  validity?: number | "unlimited";
+  validityUnit?: "hours" | "days" | "weeks" | "months" | "unlimited";
   price: number;
   currency: string;
   features: string[];
@@ -32,6 +33,10 @@ export interface Bundle {
   bundleCode?: string;
   category?: string;
   tags: string[];
+
+  // AFA-specific fields
+  requiresGhanaCard?: boolean;
+  afaRequirements?: string[];
 
   // User type-based pricing
   pricingTiers?: {
@@ -189,10 +194,11 @@ export interface PackageAnalytics {
 export interface CreateBundleData {
   name: string;
   description?: string;
-  dataVolume: number;
-  dataUnit: "MB" | "GB" | "TB";
-  validity: number | "unlimited";
-  validityUnit: "hours" | "days" | "weeks" | "months" | "unlimited";
+  // Data fields are optional for AFA bundles (services)
+  dataVolume?: number;
+  dataUnit?: "MB" | "GB" | "TB";
+  validity?: number | "unlimited";
+  validityUnit?: "hours" | "days" | "weeks" | "months" | "unlimited";
   price: number;
   currency?: string;
   features?: string[];
@@ -203,6 +209,16 @@ export interface CreateBundleData {
   packageId: string;
   providerId?: string;
   providerCode?: string;
+  // AFA-specific fields
+  requiresGhanaCard?: boolean;
+  afaRequirements?: string[];
+  pricingTiers?: {
+    agent?: number;
+    super_agent?: number;
+    dealer?: number;
+    super_dealer?: number;
+    default?: number;
+  };
 }
 
 export interface UpdateBundleData extends Partial<CreateBundleData> {

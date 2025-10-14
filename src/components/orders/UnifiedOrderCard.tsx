@@ -176,6 +176,33 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     }
   };
 
+  // Check if order is AFA
+  const isAfaOrder = (order: Order) => {
+    return order.items && order.items.length > 0 && 
+           order.items[0].packageDetails?.provider === 'AFA';
+  };
+
+  // Extract Ghana Card number from notes
+  const extractGhanaCardFromNotes = (notes: string | undefined) => {
+    if (!notes) return null;
+    const match = notes.match(/Ghana Card:\s*([A-Z0-9-]+)/i);
+    return match ? match[1] : null;
+  };
+
+  // Get display info for AFA orders
+  const getAfaOrderInfo = (order: Order) => {
+    const ghanaCardNumber = order.customerInfo?.ghanaCardNumber || extractGhanaCardFromNotes(order.notes);
+    return {
+      label: ghanaCardNumber ? "Ghana Card:" : "Service:",
+      value: ghanaCardNumber || "AFA Registration Service"
+    };
+  };
+
+  // Get customer name for AFA orders
+  const getAfaCustomerName = (order: Order) => {
+    return order.customerInfo?.name || "N/A";
+  };
+
   // Get provider from order items
   const getOrderProvider = (order: Order) => {
     if (order.items && order.items.length > 0) {
@@ -265,12 +292,12 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     // Check if order is already reported
     if (order.reported) return false;
 
-    // Check if order is older than 3 days
+    // Check if order is older than 1 hour
     const orderDate = new Date(order.createdAt);
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
 
-    if (orderDate < threeDaysAgo) return false;
+    if (orderDate < oneHourAgo) return false;
 
     // Only the order creator can report
     if (currentUserId) {
@@ -288,8 +315,17 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     // Only show reception status editor for reported orders
     if (!order.reported) return false;
 
-    // If the order is not resolved, always show the editor
-    if (order.receptionStatus !== "resolved") return true;
+    // If the order is not resolved, check if it's been more than 2 days since reporting
+    if (order.receptionStatus !== "resolved") {
+      // For not_received/checking status, hide after 2 days
+      if (order.reportedAt) {
+        const reportedDate = new Date(order.reportedAt);
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        return reportedDate >= twoDaysAgo;
+      }
+      return true; // Show if no reportedAt (legacy)
+    }
 
     // If the order is resolved, check if it's been more than 3 days since resolution
     // For now, we'll use the order's updatedAt or createdAt as a proxy
@@ -306,8 +342,17 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     // Only show reception status display for completed orders with reception status
     if (order.status !== "completed" || !order.receptionStatus) return false;
 
-    // If the order is not resolved, always show the display
-    if (order.receptionStatus !== "resolved") return true;
+    // If the order is not resolved, check if it's been more than 2 days since reporting
+    if (order.receptionStatus !== "resolved") {
+      // For not_received/checking status, hide after 2 days
+      if (order.reportedAt) {
+        const reportedDate = new Date(order.reportedAt);
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        return reportedDate >= twoDaysAgo;
+      }
+      return true; // Show if no reportedAt (legacy)
+    }
 
     // If the order is resolved, check if it's been more than 3 days since resolution
     const resolvedDate = new Date(order.updatedAt || order.createdAt);
@@ -435,13 +480,28 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
             </span>
           </div>
 
-          {/* Volume */}
+          {/* Customer Name (for AFA orders) */}
+          {isAfaOrder(order) && (
+            <div className="flex items-center gap-2 text-sm">
+              <FaUser className="text-gray-400 w-4 h-4 flex-shrink-0" />
+              <span className="text-gray-700 font-medium min-w-0 w-16">
+                Name:
+              </span>
+              <span className="text-gray-900 truncate">
+                {getAfaCustomerName(order)}
+              </span>
+            </div>
+          )}
+
+          {/* Volume or AFA Service Info */}
           <div className="flex items-center gap-2 text-sm">
             <FaDatabase className="text-gray-400 w-4 h-4 flex-shrink-0" />
             <span className="text-gray-700 font-medium min-w-0 w-16">
-              Volume:
+              {isAfaOrder(order) ? getAfaOrderInfo(order).label : "Volume:"}
             </span>
-            <span className="text-gray-900">{getOrderVolume(order)}</span>
+            <span className="text-gray-900">
+              {isAfaOrder(order) ? getAfaOrderInfo(order).value : getOrderVolume(order)}
+            </span>
           </div>
 
           {/* Total */}

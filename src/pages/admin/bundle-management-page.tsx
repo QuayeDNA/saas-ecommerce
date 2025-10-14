@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { bundleService } from "../../services/bundle.service";
 import { packageService } from "../../services/package.service";
-import type { Bundle, Package } from "../../types/package";
+import type { Bundle, Package, CreateBundleData } from "../../types/package";
 import { SearchAndFilter } from "../../components/common";
 import {
   FaCube,
@@ -163,8 +163,8 @@ export const BundleManagementPage: React.FC = () => {
         (bundle) =>
           bundle.name.toLowerCase().includes(searchTerm) ||
           bundle.description?.toLowerCase().includes(searchTerm) ||
-          bundle.dataVolume.toString().includes(searchTerm) ||
-          bundle.dataUnit.toLowerCase().includes(searchTerm)
+          (bundle.dataVolume && bundle.dataVolume.toString().includes(searchTerm)) ||
+          (bundle.dataUnit && bundle.dataUnit.toLowerCase().includes(searchTerm))
       );
     }
 
@@ -287,28 +287,9 @@ export const BundleManagementPage: React.FC = () => {
           providerIdValue = providerObj._id || providerObj.id;
         }
 
-        const finalUpdateData: {
-          name: string;
-          description?: string;
-          dataVolume: number;
-          dataUnit: "MB" | "GB" | "TB";
-          validity: number | "unlimited";
-          validityUnit: "hours" | "days" | "weeks" | "months" | "unlimited";
-          price: number;
-          currency: string;
-          features: string[];
-          isActive: boolean;
-          bundleCode?: string;
-          category?: string;
-          tags: string[];
-          providerId?: string;
-        } = {
+        const finalUpdateData: Partial<Bundle> = {
           name: data.name,
           description: data.description,
-          dataVolume: data.dataVolume,
-          dataUnit: data.dataUnit,
-          validity: data.validity,
-          validityUnit: data.validityUnit,
           price: data.price,
           currency: data.currency,
           features: data.features,
@@ -317,6 +298,21 @@ export const BundleManagementPage: React.FC = () => {
           category: data.category,
           tags: data.tags,
         };
+
+        // Only include data fields for non-AFA bundles
+        const isAfaBundle = pkg?.provider === 'AFA';
+        if (!isAfaBundle) {
+          finalUpdateData.dataVolume = data.dataVolume;
+          finalUpdateData.dataUnit = data.dataUnit;
+          finalUpdateData.validity = data.validity;
+          finalUpdateData.validityUnit = data.validityUnit;
+        }
+
+        // Include AFA-specific fields if applicable
+        if (isAfaBundle) {
+          finalUpdateData.requiresGhanaCard = data.requiresGhanaCard;
+          finalUpdateData.afaRequirements = data.afaRequirements;
+        }
 
         // Only add providerId if we have a valid value
         if (providerIdValue) {
@@ -331,13 +327,9 @@ export const BundleManagementPage: React.FC = () => {
           throw new Error("Package provider information is missing");
         }
 
-        await bundleService.createBundle({
+        const createData: CreateBundleData = {
           name: data.name,
           description: data.description,
-          dataVolume: data.dataVolume,
-          dataUnit: data.dataUnit,
-          validity: data.validity,
-          validityUnit: data.validityUnit,
           price: data.price,
           currency: data.currency,
           features: data.features,
@@ -347,7 +339,24 @@ export const BundleManagementPage: React.FC = () => {
           tags: data.tags,
           packageId: packageId || "",
           providerCode: pkg.provider, // Only send providerCode for creation
-        });
+        };
+
+        // Only include data fields for non-AFA bundles
+        const isAfaBundle = pkg?.provider === 'AFA';
+        if (!isAfaBundle) {
+          createData.dataVolume = data.dataVolume;
+          createData.dataUnit = data.dataUnit;
+          createData.validity = data.validity;
+          createData.validityUnit = data.validityUnit;
+        }
+
+        // Include AFA-specific fields if applicable
+        if (isAfaBundle) {
+          createData.requiresGhanaCard = data.requiresGhanaCard;
+          createData.afaRequirements = data.afaRequirements;
+        }
+
+        await bundleService.createBundle(createData);
         addToast("Bundle created successfully", "success");
       }
       setShowFormModal(false);
@@ -694,26 +703,57 @@ export const BundleManagementPage: React.FC = () => {
 
                       {/* Bundle Details */}
                       <div className="space-y-2 mb-3">
-                        {/* Data Volume */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">Data:</span>
-                          <span className="text-xs font-medium text-gray-900">
-                            {bundle.dataVolume} {bundle.dataUnit}
-                          </span>
-                        </div>
+                        {pkg?.provider === 'AFA' ? (
+                          // AFA-specific details
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">Type:</span>
+                              <span className="text-xs font-medium text-gray-900">
+                                AFA Registration Service
+                              </span>
+                            </div>
+                            {bundle.requiresGhanaCard && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-500">Ghana Card:</span>
+                                <span className="text-xs font-medium text-green-600">
+                                  Required
+                                </span>
+                              </div>
+                            )}
+                            {bundle.afaRequirements && bundle.afaRequirements.length > 0 && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-500">Requirements:</span>
+                                <span className="text-xs font-medium text-gray-900">
+                                  {bundle.afaRequirements.length} item{bundle.afaRequirements.length !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          // Regular bundle details
+                          <>
+                            {/* Data Volume */}
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">Data:</span>
+                              <span className="text-xs font-medium text-gray-900">
+                                {bundle.dataVolume} {bundle.dataUnit}
+                              </span>
+                            </div>
 
-                        {/* Validity */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">
-                            Validity:
-                          </span>
-                          <span className="text-xs font-medium text-gray-900">
-                            {bundle.validity === "unlimited" ||
-                            bundle.validityUnit === "unlimited"
-                              ? "Unlimited"
-                              : `${bundle.validity} ${bundle.validityUnit}`}
-                          </span>
-                        </div>
+                            {/* Validity */}
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">
+                                Validity:
+                              </span>
+                              <span className="text-xs font-medium text-gray-900">
+                                {bundle.validity === "unlimited" ||
+                                bundle.validityUnit === "unlimited"
+                                  ? "Unlimited"
+                                  : `${bundle.validity} ${bundle.validityUnit}`}
+                              </span>
+                            </div>
+                          </>
+                        )}
 
                         {/* Price */}
                         <div className="flex items-center justify-between">
@@ -807,6 +847,7 @@ export const BundleManagementPage: React.FC = () => {
         initialData={editBundle}
         packageId={packageId}
         providerId={pkg?.provider}
+        providerCode={pkg?.provider}
       />
 
       {/* Delete Confirmation Modal */}

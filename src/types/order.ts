@@ -84,6 +84,7 @@ export interface Order {
     name?: string;
     email?: string;
     phone?: string;
+    ghanaCardNumber?: string;
   };
   items: OrderItem[];
   subtotal: number;

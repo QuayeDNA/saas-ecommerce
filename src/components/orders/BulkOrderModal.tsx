@@ -174,11 +174,11 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       }
       const gbVolume = parseFloat(gbValue);
       if (isNaN(gbVolume)) continue;
-      // Find matching bundle (always in GB)
+      // Find matching bundle (always in GB) - skip AFA bundles which don't have dataVolume
       const foundBundle = availableBundles.find(
         (bundle) =>
           bundle.dataVolume === gbVolume &&
-          bundle.dataUnit.toUpperCase() === "GB"
+          bundle.dataUnit?.toUpperCase() === "GB"
       );
       items.push({
         customerPhone: phoneNum,
