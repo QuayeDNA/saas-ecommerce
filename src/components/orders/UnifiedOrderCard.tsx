@@ -327,15 +327,14 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
       return true; // Show if no reportedAt (legacy)
     }
 
-    // If the order is resolved, check if it's been more than 3 days since resolution
-    // For now, we'll use the order's updatedAt or createdAt as a proxy
-    // In a real implementation, you'd want a specific field for when the status was set to resolved
-    const resolvedDate = new Date(order.updatedAt || order.createdAt);
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    // If the order is resolved, check if it's been more than 1 hour since resolution
+    // Use resolvedAt if available, otherwise fall back to updatedAt
+    const resolvedDate = new Date(order.resolvedAt || order.updatedAt || order.createdAt);
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
 
-    // Hide the editor if it's been more than 3 days since resolution
-    return resolvedDate >= threeDaysAgo;
+    // Hide the editor if it's been more than 1 hour since resolution
+    return resolvedDate >= oneHourAgo;
   };
 
   const shouldShowReceptionStatusDisplay = (order: Order) => {
@@ -354,13 +353,13 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
       return true; // Show if no reportedAt (legacy)
     }
 
-    // If the order is resolved, check if it's been more than 3 days since resolution
-    const resolvedDate = new Date(order.updatedAt || order.createdAt);
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    // If the order is resolved, check if it's been more than 1 hour since resolution
+    const resolvedDate = new Date(order.resolvedAt || order.updatedAt || order.createdAt);
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
 
-    // Hide the display if it's been more than 3 days since resolution
-    return resolvedDate >= threeDaysAgo;
+    // Hide the display if it's been more than 1 hour since resolution
+    return resolvedDate >= oneHourAgo;
   };
 
   const handleReportSubmit = async () => {
