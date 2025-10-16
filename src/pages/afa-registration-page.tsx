@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useUser } from "../hooks";
 import {
   Button,
@@ -14,10 +14,13 @@ import { useNavigate } from "react-router-dom";
 import type { AfaOrder } from "../services/user.service";
 import type { Bundle } from "../types/package";
 import { providerService } from "../services/provider.service";
+import { AuthContext } from "../contexts/AuthContext";
 
 export const AfaRegistrationPage: React.FC = () => {
   const { submitAfaRegistration, getAfaRegistration, getAfaBundles, isLoading } = useUser();
   const navigate = useNavigate();
+  const { authState } = useContext(AuthContext)!;
+  const currentUser = authState.user;
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -32,6 +35,8 @@ export const AfaRegistrationPage: React.FC = () => {
   const [checkingProvider, setCheckingProvider] = useState(true);
   const [afaPlans, setAfaPlans] = useState<Bundle[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
+  const [validatingGhanaCard, setValidatingGhanaCard] = useState(false);
+  const [ghanaCardValid, setGhanaCardValid] = useState<boolean | null>(null);
 
   useEffect(() => {
     // Load AFA plans, orders and check provider status
@@ -95,6 +100,18 @@ export const AfaRegistrationPage: React.FC = () => {
       return;
     }
 
+    // Validate Ghana Card format if provided
+    if (formData.ghanaCardNumber && !validateGhanaCardFormat(formData.ghanaCardNumber)) {
+      setError("Invalid Ghana Card format. Format should be GHA-XXXXXXXXX-X");
+      return;
+    }
+
+    // Validate Ghana Card with API if provided
+    if (formData.ghanaCardNumber && ghanaCardValid === false) {
+      setError("Ghana Card validation failed. Please check the number and try again.");
+      return;
+    }
+
     // Double-check AFA provider status before submitting
     try {
       const afaProvider = await providerService.getProviderByCode("afa");
@@ -144,6 +161,24 @@ export const AfaRegistrationPage: React.FC = () => {
     }));
   };
 
+  const handleGhanaCardBlur = async () => {
+    if (formData.ghanaCardNumber && !validateGhanaCardFormat(formData.ghanaCardNumber)) {
+      setGhanaCardValid(false);
+      setError("Invalid Ghana Card format. Format should be GHA-XXXXXXXXX-X");
+      return;
+    }
+
+    if (formData.ghanaCardNumber) {
+      const isValid = await validateGhanaCardWithAPI(formData.ghanaCardNumber);
+      setGhanaCardValid(isValid);
+      if (!isValid) {
+        setError("Ghana Card validation failed. Please check the number and try again.");
+      } else {
+        setError(null); // Clear error if valid
+      }
+    }
+  };
+
   const handleBundleChange = (bundleId: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -153,6 +188,27 @@ export const AfaRegistrationPage: React.FC = () => {
         ? prev.ghanaCardNumber
         : "",
     }));
+  };
+
+  const getPriceForUser = (plan: Bundle): number => {
+    if (!currentUser?.userType || !plan.pricingTiers) {
+      return plan.price; // Fallback to default price
+    }
+
+    const userType = currentUser.userType;
+    const tierPrice = plan.pricingTiers[userType as keyof typeof plan.pricingTiers];
+
+    return tierPrice ?? plan.pricingTiers.default ?? plan.price;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-GH", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -168,14 +224,43 @@ export const AfaRegistrationPage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-GH", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const validateGhanaCardFormat = (cardNumber: string): boolean => {
+    // Ghana Card format: GHA-XXXXXXXXX-X (9 digits in middle, 1 at end)
+    const ghanaCardRegex = /^[A-Z]{3}-?\d{9}-?\d$/i;
+    return ghanaCardRegex.test(cardNumber);
+  };
+
+  const validateGhanaCardWithAPI = async (cardNumber: string): Promise<boolean> => {
+    try {
+      setValidatingGhanaCard(true);
+      // For now, we'll use a mock API call - replace with actual API integration
+      // Example API: SourceID.tech Ghana Card Verification API
+      const response = await fetch('/api/verify-ghana-card', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add API key if needed
+        },
+        body: JSON.stringify({
+          cardNumber: cardNumber.toUpperCase(),
+          country: 'GHA'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.isValid === true;
+      }
+
+      // If API fails, fall back to format validation
+      return validateGhanaCardFormat(cardNumber);
+    } catch (error) {
+      console.error('Ghana Card API validation failed:', error);
+      // Fall back to format validation if API is unavailable
+      return validateGhanaCardFormat(cardNumber);
+    } finally {
+      setValidatingGhanaCard(false);
+    }
   };
 
   return (
@@ -301,7 +386,7 @@ export const AfaRegistrationPage: React.FC = () => {
                           { value: "", label: loadingPlans ? "Loading plans..." : "Select a plan" },
                           ...afaPlans.map(plan => ({
                             value: plan._id || "",
-                            label: `${plan.name} - GH¢${plan.price}${plan.requiresGhanaCard ? " (Requires Ghana Card)" : ""}`
+                            label: `${plan.name} - GH¢${getPriceForUser(plan)}${plan.requiresGhanaCard ? " (Requires Ghana Card)" : ""}`
                           }))
                         ]}
                         disabled={
@@ -347,15 +432,25 @@ export const AfaRegistrationPage: React.FC = () => {
                             name="ghanaCardNumber"
                             value={formData.ghanaCardNumber}
                             onChange={handleInputChange}
-                            placeholder="Enter Ghana Card number (e.g., GHA-1234567890-1)"
+                            onBlur={handleGhanaCardBlur}
+                            placeholder="Enter Ghana Card number (e.g., GHA-123456789-0)"
                             required
                             disabled={
-                              isLoading || checkingProvider || !afaProviderActive
+                              isLoading || checkingProvider || !afaProviderActive || validatingGhanaCard
                             }
-                            className="w-full"
+                            className={`w-full ${ghanaCardValid === false ? 'border-red-500' : ghanaCardValid === true ? 'border-green-500' : ''}`}
                           />
+                          {validatingGhanaCard && (
+                            <p className="mt-1 text-xs text-blue-600">Validating Ghana Card...</p>
+                          )}
+                          {ghanaCardValid === true && (
+                            <p className="mt-1 text-xs text-green-600">✓ Ghana Card validated</p>
+                          )}
+                          {ghanaCardValid === false && (
+                            <p className="mt-1 text-xs text-red-600">✗ Invalid Ghana Card number</p>
+                          )}
                           <p className="mt-1 text-xs text-gray-500">
-                            Format: GHA-XXXXXXXXXX-X (e.g., GHA-1234567890-1)
+                            Format: GHA-XXXXXXXXX-X (9 digits in middle, 1 at end)
                           </p>
                         </div>
                       ) : null;
