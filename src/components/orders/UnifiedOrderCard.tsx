@@ -283,9 +283,6 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   };
 
   const canUserReportOrder = (order: Order) => {
-    // Only business users can report (not admins)
-    if (isAdmin) return false;
-
     // Only completed orders can be reported
     if (order.status !== "completed") return false;
 
@@ -299,7 +296,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
     if (orderDate < oneHourAgo) return false;
 
-    // Only the order creator can report
+    // Business users can only report their own orders
     if (currentUserId) {
       const createdById =
         typeof order.createdBy === "string"
