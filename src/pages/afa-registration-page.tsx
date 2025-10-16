@@ -30,24 +30,33 @@ export const AfaRegistrationPage: React.FC = () => {
   const [showOrders, setShowOrders] = useState(false);
   const [afaProviderActive, setAfaProviderActive] = useState(true);
   const [checkingProvider, setCheckingProvider] = useState(true);
-  const [afaBundles, setAfaBundles] = useState<Bundle[]>([]);
-  const [loadingBundles, setLoadingBundles] = useState(false);
+  const [afaPlans, setAfaPlans] = useState<Bundle[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
 
   useEffect(() => {
-    // Load AFA bundles, orders and check provider status
+    // Load AFA plans, orders and check provider status
     const loadData = async () => {
       setCheckingProvider(true);
-      setLoadingBundles(true);
+      setLoadingPlans(true);
       try {
         // Check AFA provider status
         const afaProvider = await providerService.getProviderByCode("afa");
         setAfaProviderActive(afaProvider?.isActive ?? false);
 
         if (afaProvider?.isActive) {
-          // Load AFA bundles
+          // Load AFA plans
           const bundlesResult = await getAfaBundles();
           if (bundlesResult.bundles) {
-            setAfaBundles(bundlesResult.bundles);
+            setAfaPlans(bundlesResult.bundles);
+            // Auto-select if only one plan available
+            if (bundlesResult.bundles.length === 1) {
+              setFormData(prev => ({
+                ...prev,
+                bundleId: bundlesResult.bundles[0]._id || "",
+                // Clear Ghana Card if not required for the auto-selected plan
+                ghanaCardNumber: bundlesResult.bundles[0].requiresGhanaCard ? prev.ghanaCardNumber : "",
+              }));
+            }
           }
         }
 
@@ -61,7 +70,7 @@ export const AfaRegistrationPage: React.FC = () => {
         setAfaProviderActive(false);
       } finally {
         setCheckingProvider(false);
-        setLoadingBundles(false);
+        setLoadingPlans(false);
       }
     };
 
@@ -73,16 +82,16 @@ export const AfaRegistrationPage: React.FC = () => {
     setError(null);
     setSuccess(false);
 
-    // Validate bundle selection
+    // Validate plan selection
     if (!formData.bundleId) {
-      setError("Please select an AFA registration bundle");
+      setError("Please select an AFA registration plan");
       return;
     }
 
-    // Check if Ghana Card is required for selected bundle
-    const selectedBundle = afaBundles.find(b => b._id === formData.bundleId);
-    if (selectedBundle?.requiresGhanaCard && !formData.ghanaCardNumber) {
-      setError("Ghana Card number is required for this bundle");
+    // Check if Ghana Card is required for selected plan
+    const selectedPlan = afaPlans.find(b => b._id === formData.bundleId);
+    if (selectedPlan?.requiresGhanaCard && !formData.ghanaCardNumber) {
+      setError("Ghana Card number is required for this plan");
       return;
     }
 
@@ -139,8 +148,8 @@ export const AfaRegistrationPage: React.FC = () => {
     setFormData((prev) => ({
       ...prev,
       bundleId,
-      // Clear Ghana Card if not required for new bundle
-      ghanaCardNumber: afaBundles.find(b => b._id === bundleId)?.requiresGhanaCard
+      // Clear Ghana Card if not required for new plan
+      ghanaCardNumber: afaPlans.find(b => b._id === bundleId)?.requiresGhanaCard
         ? prev.ghanaCardNumber
         : "",
     }));
@@ -283,33 +292,33 @@ export const AfaRegistrationPage: React.FC = () => {
                         htmlFor="bundleId"
                         className="block text-sm font-medium text-gray-700 mb-2"
                       >
-                        AFA Registration Bundle
+                        AFA Registration Plan
                       </label>
                       <Select
                         value={formData.bundleId}
                         onChange={handleBundleChange}
                         options={[
-                          { value: "", label: loadingBundles ? "Loading bundles..." : "Select a bundle" },
-                          ...afaBundles.map(bundle => ({
-                            value: bundle._id || "",
-                            label: `${bundle.name} - GH¢${bundle.price}${bundle.requiresGhanaCard ? " (Requires Ghana Card)" : ""}`
+                          { value: "", label: loadingPlans ? "Loading plans..." : "Select a plan" },
+                          ...afaPlans.map(plan => ({
+                            value: plan._id || "",
+                            label: `${plan.name} - GH¢${plan.price}${plan.requiresGhanaCard ? " (Requires Ghana Card)" : ""}`
                           }))
                         ]}
                         disabled={
-                          isLoading || checkingProvider || !afaProviderActive || loadingBundles
+                          isLoading || checkingProvider || !afaProviderActive || loadingPlans
                         }
                         className="w-full"
                       />
                       {formData.bundleId && (
                         <div className="mt-2 text-sm text-gray-600">
                           {(() => {
-                            const selectedBundle = afaBundles.find(b => b._id === formData.bundleId);
-                            return selectedBundle ? (
+                            const selectedPlan = afaPlans.find(b => b._id === formData.bundleId);
+                            return selectedPlan ? (
                               <div>
-                                <p>{selectedBundle.description}</p>
-                                {selectedBundle.features && selectedBundle.features.length > 0 && (
+                                <p>{selectedPlan.description}</p>
+                                {selectedPlan.features && selectedPlan.features.length > 0 && (
                                   <ul className="mt-1 list-disc list-inside">
-                                    {selectedBundle.features.map((feature: string, index: number) => (
+                                    {selectedPlan.features.map((feature: string, index: number) => (
                                       <li key={index}>{feature}</li>
                                     ))}
                                   </ul>
@@ -323,8 +332,8 @@ export const AfaRegistrationPage: React.FC = () => {
 
                     {/* Ghana Card Number Field (conditional) */}
                     {(() => {
-                      const selectedBundle = afaBundles.find(b => b._id === formData.bundleId);
-                      return selectedBundle?.requiresGhanaCard ? (
+                      const selectedPlan = afaPlans.find(b => b._id === formData.bundleId);
+                      return selectedPlan?.requiresGhanaCard ? (
                         <div>
                           <label
                             htmlFor="ghanaCardNumber"
