@@ -44,7 +44,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
 
   // Processing dialog state
   const [showProcessDialog, setShowProcessDialog] = useState(false);
-  const [processingType, setProcessingType] = useState<"afa" | "data" | null>(null);
+  const [processingType, setProcessingType] = useState<"afa" | "data" | "mtn" | "telecel" | "at" | null>(null);
   const [batchSize, setBatchSize] = useState(10);
   const [statusUpdate, setStatusUpdate] = useState<"none" | "processing" | "completed">("processing");
   
@@ -129,20 +129,40 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
     setShowProcessDialog(true);
   };
 
-  // Handle opening process dialog for Data orders
-  const handleCopyProcessDataOrders = () => {
-    if (selectedDataOrders.length === 0) {
-      showAlert("warning", "No data orders selected.");
+  // Handle opening process dialog for MTN Data orders
+  const handleCopyProcessMTNOrders = () => {
+    if (selectedMTNOrders.length === 0) {
+      showAlert("warning", "No MTN orders selected.");
       return;
     }
-    setProcessingType("data");
+    setProcessingType("mtn");
+    setShowProcessDialog(true);
+  };
+
+  // Handle opening process dialog for TELECEL Data orders
+  const handleCopyProcessTelecelOrders = () => {
+    if (selectedTelecelOrders.length === 0) {
+      showAlert("warning", "No TELECEL orders selected.");
+      return;
+    }
+    setProcessingType("telecel");
+    setShowProcessDialog(true);
+  };
+
+  // Handle opening process dialog for AT (AirtelTigo) Data orders
+  const handleCopyProcessATOrders = () => {
+    if (selectedATOrders.length === 0) {
+      showAlert("warning", "No AT orders selected.");
+      return;
+    }
+    setProcessingType("at");
     setShowProcessDialog(true);
   };
 
   // Process orders with batch size and status update
   const processOrders = async (
     orders: Order[],
-    type: "afa" | "data",
+    type: "afa" | "data" | "mtn" | "telecel" | "at",
     copyOnly: boolean = false
   ) => {
     try {
@@ -154,10 +174,16 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
         .map((order) => (type === "afa" ? formatAFAOrder(order) : formatDataOrder(order)))
         .join("\n");
 
+      // Determine provider name for display
+      const providerName = type === "afa" ? "AFA" : 
+                          type === "mtn" ? "MTN" :
+                          type === "telecel" ? "TELECEL" :
+                          type === "at" ? "AT" : "Data";
+
       // Copy to clipboard
       try {
         await navigator.clipboard.writeText(formattedData);
-        showAlert("success", `Copied ${orders.length} ${type.toUpperCase()} orders to clipboard!`);
+        showAlert("success", `Copied ${orders.length} ${providerName} orders to clipboard!`);
       } catch {
         // Fallback for older browsers
         const textArea = document.createElement("textarea");
@@ -250,6 +276,31 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
       (order) =>
         selectedOrderIds.includes(order._id || "") &&
         order.items[0]?.packageDetails?.provider !== "AFA"
+    );
+  }, [orders, selectedOrderIds]);
+
+  // Provider-specific data orders
+  const selectedMTNOrders = useMemo(() => {
+    return orders.filter(
+      (order) =>
+        selectedOrderIds.includes(order._id || "") &&
+        order.items[0]?.packageDetails?.provider === "MTN"
+    );
+  }, [orders, selectedOrderIds]);
+
+  const selectedTelecelOrders = useMemo(() => {
+    return orders.filter(
+      (order) =>
+        selectedOrderIds.includes(order._id || "") &&
+        order.items[0]?.packageDetails?.provider === "TELECEL"
+    );
+  }, [orders, selectedOrderIds]);
+
+  const selectedATOrders = useMemo(() => {
+    return orders.filter(
+      (order) =>
+        selectedOrderIds.includes(order._id || "") &&
+        order.items[0]?.packageDetails?.provider === "AT"
     );
   }, [orders, selectedOrderIds]);
 
@@ -549,17 +600,46 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
             <span>Copy/Process AFA Orders ({selectedAFAOrders.length})</span>
           </button>
           
+          {/* MTN Button */}
           <button
-            onClick={handleCopyProcessDataOrders}
-            disabled={isProcessing || selectedDataOrders.length === 0}
+            onClick={handleCopyProcessMTNOrders}
+            disabled={isProcessing || selectedMTNOrders.length === 0}
             className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
-              isProcessing || selectedDataOrders.length === 0
+              isProcessing || selectedMTNOrders.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-yellow-500 hover:bg-yellow-600"
+            } text-white`}
+          >
+            <FaCopy className="text-xs sm:text-sm" />
+            <span>Copy/Process MTN ({selectedMTNOrders.length})</span>
+          </button>
+
+          {/* TELECEL Button */}
+          <button
+            onClick={handleCopyProcessTelecelOrders}
+            disabled={isProcessing || selectedTelecelOrders.length === 0}
+            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
+              isProcessing || selectedTelecelOrders.length === 0
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
           >
             <FaCopy className="text-xs sm:text-sm" />
-            <span>Copy/Process Data Orders ({selectedDataOrders.length})</span>
+            <span>Copy/Process TELECEL ({selectedTelecelOrders.length})</span>
+          </button>
+
+          {/* AT (AirtelTigo) Button */}
+          <button
+            onClick={handleCopyProcessATOrders}
+            disabled={isProcessing || selectedATOrders.length === 0}
+            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
+              isProcessing || selectedATOrders.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700"
+            } text-white`}
+          >
+            <FaCopy className="text-xs sm:text-sm" />
+            <span>Copy/Process AT ({selectedATOrders.length})</span>
           </button>
 
           <button
@@ -640,11 +720,20 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Process {processingType === "afa" ? "AFA" : "Data"} Orders
+                Process {processingType === "afa" ? "AFA" : 
+                        processingType === "mtn" ? "MTN" :
+                        processingType === "telecel" ? "TELECEL" :
+                        processingType === "at" ? "AT" : "Data"} Orders
               </h3>
               <p className="text-sm text-gray-600">
                 {processingType === "afa"
                   ? `Selected: ${selectedAFAOrders.length} AFA orders`
+                  : processingType === "mtn"
+                  ? `Selected: ${selectedMTNOrders.length} MTN orders`
+                  : processingType === "telecel"
+                  ? `Selected: ${selectedTelecelOrders.length} TELECEL orders`
+                  : processingType === "at"
+                  ? `Selected: ${selectedATOrders.length} AT orders`
                   : `Selected: ${selectedDataOrders.length} Data orders`}
               </p>
             </div>
@@ -662,16 +751,43 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
                       .slice(0, 3)
                       .map(formatAFAOrder)
                       .join("\n")
+                  : processingType === "mtn"
+                  ? selectedMTNOrders
+                      .slice(0, 3)
+                      .map(formatDataOrder)
+                      .join("\n")
+                  : processingType === "telecel"
+                  ? selectedTelecelOrders
+                      .slice(0, 3)
+                      .map(formatDataOrder)
+                      .join("\n")
+                  : processingType === "at"
+                  ? selectedATOrders
+                      .slice(0, 3)
+                      .map(formatDataOrder)
+                      .join("\n")
                   : selectedDataOrders
                       .slice(0, 3)
                       .map(formatDataOrder)
                       .join("\n")}
                 {(processingType === "afa"
                   ? selectedAFAOrders.length
+                  : processingType === "mtn"
+                  ? selectedMTNOrders.length
+                  : processingType === "telecel"
+                  ? selectedTelecelOrders.length
+                  : processingType === "at"
+                  ? selectedATOrders.length
                   : selectedDataOrders.length) > 3 &&
                   `\n... and ${
                     (processingType === "afa"
                       ? selectedAFAOrders.length
+                      : processingType === "mtn"
+                      ? selectedMTNOrders.length
+                      : processingType === "telecel"
+                      ? selectedTelecelOrders.length
+                      : processingType === "at"
+                      ? selectedATOrders.length
                       : selectedDataOrders.length) - 3
                   } more`}
               </pre>
@@ -752,7 +868,11 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
             <button
               onClick={() =>
                 processOrders(
-                  processingType === "afa" ? selectedAFAOrders : selectedDataOrders,
+                  processingType === "afa" ? selectedAFAOrders :
+                  processingType === "mtn" ? selectedMTNOrders :
+                  processingType === "telecel" ? selectedTelecelOrders :
+                  processingType === "at" ? selectedATOrders :
+                  selectedDataOrders,
                   processingType!,
                   true
                 )
@@ -764,7 +884,11 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
             <button
               onClick={() =>
                 processOrders(
-                  processingType === "afa" ? selectedAFAOrders : selectedDataOrders,
+                  processingType === "afa" ? selectedAFAOrders :
+                  processingType === "mtn" ? selectedMTNOrders :
+                  processingType === "telecel" ? selectedTelecelOrders :
+                  processingType === "at" ? selectedATOrders :
+                  selectedDataOrders,
                   processingType!,
                   false
                 )

@@ -289,12 +289,12 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     // Check if order is already reported
     if (order.reported) return false;
 
-    // Check if order is older than 1 hour
+    // Check if order is older than 2 hours
     const orderDate = new Date(order.createdAt);
-    const oneHourAgo = new Date();
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+    const twoHoursAgo = new Date();
+    twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
 
-    if (orderDate < oneHourAgo) return false;
+    if (orderDate < twoHoursAgo) return false;
 
     // Business users can only report their own orders
     if (currentUserId) {
@@ -312,51 +312,51 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     // Only show reception status editor for reported orders
     if (!order.reported) return false;
 
-    // If the order is not resolved, check if it's been more than 2 days since reporting
+    // If the order is not resolved, check if it's been more than 24 hours since reporting
     if (order.receptionStatus !== "resolved") {
-      // For not_received/checking status, hide after 2 days
+      // For not_received/checking status, hide after 24 hours
       if (order.reportedAt) {
         const reportedDate = new Date(order.reportedAt);
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-        return reportedDate >= twoDaysAgo;
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+        return reportedDate >= twentyFourHoursAgo;
       }
       return true; // Show if no reportedAt (legacy)
     }
 
-    // If the order is resolved, check if it's been more than 1 hour since resolution
+    // If the order is resolved, check if it's been more than 10 minutes since resolution
     // Use resolvedAt if available, otherwise fall back to updatedAt
     const resolvedDate = new Date(order.resolvedAt || order.updatedAt || order.createdAt);
-    const oneHourAgo = new Date();
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+    const tenMinutesAgo = new Date();
+    tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
 
-    // Hide the editor if it's been more than 1 hour since resolution
-    return resolvedDate >= oneHourAgo;
+    // Hide the editor if it's been more than 10 minutes since resolution
+    return resolvedDate >= tenMinutesAgo;
   };
 
   const shouldShowReceptionStatusDisplay = (order: Order) => {
     // Only show reception status display for completed orders with reception status
     if (order.status !== "completed" || !order.receptionStatus) return false;
 
-    // If the order is not resolved, check if it's been more than 2 days since reporting
+    // If the order is not resolved, check if it's been more than 24 hours since reporting
     if (order.receptionStatus !== "resolved") {
-      // For not_received/checking status, hide after 2 days
+      // For not_received/checking status, hide after 24 hours
       if (order.reportedAt) {
         const reportedDate = new Date(order.reportedAt);
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-        return reportedDate >= twoDaysAgo;
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+        return reportedDate >= twentyFourHoursAgo;
       }
       return true; // Show if no reportedAt (legacy)
     }
 
-    // If the order is resolved, check if it's been more than 1 hour since resolution
+    // If the order is resolved, check if it's been more than 10 minutes since resolution
     const resolvedDate = new Date(order.resolvedAt || order.updatedAt || order.createdAt);
-    const oneHourAgo = new Date();
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+    const tenMinutesAgo = new Date();
+    tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
 
-    // Hide the display if it's been more than 1 hour since resolution
-    return resolvedDate >= oneHourAgo;
+    // Hide the display if it's been more than 10 minutes since resolution
+    return resolvedDate >= tenMinutesAgo;
   };
 
   const handleReportSubmit = async () => {
