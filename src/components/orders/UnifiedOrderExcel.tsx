@@ -197,21 +197,30 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
 
       // If not copy-only and status update is requested
       if (!copyOnly && statusUpdate !== "none") {
-        setShowProgressDialog(true);
         const batches = chunkArray(orders, batchSize);
+        
+        // Initialize progress state before showing dialog
         setProcessingProgress({
           current: 0,
           total: orders.length,
           currentBatch: 0,
           totalBatches: batches.length,
         });
+        
+        // Small delay to ensure state is set before showing dialog
+        await new Promise(resolve => setTimeout(resolve, 100));
+        setShowProgressDialog(true);
 
-        // Process each batch
+        // Process each batch with small delays for UI updates
         for (let i = 0; i < batches.length; i++) {
+          // Update current batch number
           setProcessingProgress((prev) => ({
             ...prev,
             currentBatch: i + 1,
           }));
+
+          // Small delay to allow UI to update
+          await new Promise(resolve => setTimeout(resolve, 50));
 
           const orderIds = batches[i]
             .map((order) => order._id || "")
@@ -219,10 +228,14 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
 
           await bulkProcessOrders(orderIds, statusUpdate);
 
+          // Update progress count after batch completion
           setProcessingProgress((prev) => ({
             ...prev,
             current: prev.current + batches[i].length,
           }));
+
+          // Small delay between batches to allow UI to update
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         setShowProgressDialog(false);
@@ -621,7 +634,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
             className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
               isProcessing || selectedTelecelOrders.length === 0
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
+                : "bg-red-600 hover:bg-red-700"
             } text-white`}
           >
             <FaCopy className="text-xs sm:text-sm" />
@@ -635,7 +648,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
             className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
               isProcessing || selectedATOrders.length === 0
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-red-600 hover:bg-red-700"
+                : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
           >
             <FaCopy className="text-xs sm:text-sm" />
