@@ -25,6 +25,7 @@ export interface CommissionRecord {
   totalOrders: number;
   totalRevenue: number;
   commissionRate: number;
+  formattedRate: string;
   amount: number;
   status: "pending" | "paid" | "rejected" | "cancelled";
   isFinal: boolean;
@@ -112,6 +113,7 @@ export interface CommissionMonthlySummary {
   orderCount: number;
   revenue: number;
   commissionRate: number;
+  formattedRate: string;
   paymentStatus:
     | "fully_paid"
     | "partially_paid"

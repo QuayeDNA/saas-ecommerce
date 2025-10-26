@@ -517,7 +517,7 @@ export const WalletPage = () => {
                         {formatCurrency(commission.amount)}
                       </p>
                       <p className="text-xs sm:text-sm text-gray-500">
-                        {(commission.commissionRate * 100).toFixed(1)}% rate
+                        {commission.formattedRate} rate
                       </p>
                     </div>
                   </div>
@@ -798,7 +798,7 @@ export const WalletPage = () => {
                             {formatCurrency(commission.amount)}
                           </p>
                           <p className="text-xs sm:text-sm text-gray-500">
-                            {(commission.commissionRate * 100).toFixed(1)}% rate
+                            {commission.formattedRate} rate
                           </p>
                         </div>
                       </div>
@@ -901,9 +901,7 @@ export const WalletPage = () => {
                             <span>
                               Revenue: {formatCurrency(summary.revenue)}
                             </span>
-                            <span>
-                              Rate: {(summary.commissionRate * 100).toFixed(1)}%
-                            </span>
+                            <span>Rate: {summary.formattedRate}</span>
                             <span>
                               Payment: {summary.paymentPercentage.toFixed(0)}%
                             </span>

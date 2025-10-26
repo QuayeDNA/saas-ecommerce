@@ -1,6 +1,12 @@
-import { FaCheckCircle, FaExclamationCircle, FaTimesCircle, FaClock, FaCalendar } from 'react-icons/fa';
-import { Card, CardBody, CardHeader, Badge } from '../../design-system';
-import type { CommissionMonthlySummary } from '../../services/commission.service';
+import {
+  FaCheckCircle,
+  FaExclamationCircle,
+  FaTimesCircle,
+  FaClock,
+  FaCalendar,
+} from "react-icons/fa";
+import { Card, CardBody, CardHeader, Badge } from "../../design-system";
+import type { CommissionMonthlySummary } from "../../services/commission.service";
 
 interface MonthlyCommissionCardProps {
   summary: CommissionMonthlySummary;
@@ -8,18 +14,22 @@ interface MonthlyCommissionCardProps {
   onClick?: () => void;
 }
 
-export function MonthlyCommissionCard({ summary, formatCurrency, onClick }: MonthlyCommissionCardProps) {
+export function MonthlyCommissionCard({
+  summary,
+  formatCurrency,
+  onClick,
+}: MonthlyCommissionCardProps) {
   const getPaymentStatusIcon = (status: string) => {
     switch (status) {
-      case 'fully_paid':
+      case "fully_paid":
         return <FaCheckCircle className="text-green-600" />;
-      case 'partially_paid':
+      case "partially_paid":
         return <FaExclamationCircle className="text-yellow-600" />;
-      case 'unpaid':
+      case "unpaid":
         return <FaTimesCircle className="text-red-600" />;
-      case 'expired':
+      case "expired":
         return <FaClock className="text-orange-600" />;
-      case 'rejected':
+      case "rejected":
         return <FaTimesCircle className="text-red-600" />;
       default:
         return <FaClock className="text-gray-600" />;
@@ -28,33 +38,33 @@ export function MonthlyCommissionCard({ summary, formatCurrency, onClick }: Mont
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case 'fully_paid':
-        return 'success';
-      case 'partially_paid':
-        return 'warning';
-      case 'unpaid':
-        return 'error';
-      case 'expired':
-        return 'default';
-      case 'rejected':
-        return 'error';
+      case "fully_paid":
+        return "success";
+      case "partially_paid":
+        return "warning";
+      case "unpaid":
+        return "error";
+      case "expired":
+        return "default";
+      case "rejected":
+        return "error";
       default:
-        return 'default';
+        return "default";
     }
   };
 
   const getPaymentStatusText = (status: string) => {
     switch (status) {
-      case 'fully_paid':
-        return 'Fully Paid';
-      case 'partially_paid':
-        return 'Partially Paid';
-      case 'unpaid':
-        return 'Unpaid';
-      case 'expired':
-        return 'Expired';
-      case 'rejected':
-        return 'Rejected';
+      case "fully_paid":
+        return "Fully Paid";
+      case "partially_paid":
+        return "Partially Paid";
+      case "unpaid":
+        return "Unpaid";
+      case "expired":
+        return "Expired";
+      case "rejected":
+        return "Rejected";
       default:
         return status;
     }
@@ -62,17 +72,29 @@ export function MonthlyCommissionCard({ summary, formatCurrency, onClick }: Mont
 
   return (
     <Card
-      className={`hover:shadow-lg transition-shadow ${onClick ? 'cursor-pointer' : ''}`}
+      className={`hover:shadow-lg transition-shadow ${
+        onClick ? "cursor-pointer" : ""
+      }`}
       onClick={onClick}
     >
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
           <FaCalendar className="text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">{summary.monthName}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {summary.monthName}
+          </h3>
         </div>
         <div className="flex items-center gap-2">
           {getPaymentStatusIcon(summary.paymentStatus)}
-          <Badge colorScheme={getPaymentStatusColor(summary.paymentStatus) as 'success' | 'warning' | 'error' | 'default'}>
+          <Badge
+            colorScheme={
+              getPaymentStatusColor(summary.paymentStatus) as
+                | "success"
+                | "warning"
+                | "error"
+                | "default"
+            }
+          >
             {getPaymentStatusText(summary.paymentStatus)}
           </Badge>
         </div>
@@ -83,16 +105,18 @@ export function MonthlyCommissionCard({ summary, formatCurrency, onClick }: Mont
           <div>
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-600">Payment Progress</span>
-              <span className="font-medium text-gray-900">{summary.paymentPercentage}%</span>
+              <span className="font-medium text-gray-900">
+                {summary.paymentPercentage}%
+              </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div
                 className={`h-2.5 rounded-full transition-all ${
                   summary.paymentPercentage === 100
-                    ? 'bg-green-600'
+                    ? "bg-green-600"
                     : summary.paymentPercentage > 0
-                    ? 'bg-yellow-500'
-                    : 'bg-red-500'
+                    ? "bg-yellow-500"
+                    : "bg-red-500"
                 }`}
                 style={{ width: `${summary.paymentPercentage}%` }}
               />
@@ -103,19 +127,27 @@ export function MonthlyCommissionCard({ summary, formatCurrency, onClick }: Mont
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-gray-500 mb-1">Total Earned</p>
-              <p className="text-lg font-bold text-blue-600">{formatCurrency(summary.totalEarned)}</p>
+              <p className="text-lg font-bold text-blue-600">
+                {formatCurrency(summary.totalEarned)}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Total Paid</p>
-              <p className="text-lg font-bold text-green-600">{formatCurrency(summary.totalPaid)}</p>
+              <p className="text-lg font-bold text-green-600">
+                {formatCurrency(summary.totalPaid)}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Pending</p>
-              <p className="text-sm font-medium text-yellow-600">{formatCurrency(summary.totalPending)}</p>
+              <p className="text-sm font-medium text-yellow-600">
+                {formatCurrency(summary.totalPending)}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Orders</p>
-              <p className="text-sm font-medium text-gray-900">{summary.orderCount}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {summary.orderCount}
+              </p>
             </div>
           </div>
 
@@ -126,13 +158,17 @@ export function MonthlyCommissionCard({ summary, formatCurrency, onClick }: Mont
                 {summary.totalRejected > 0 && (
                   <div>
                     <p className="text-xs text-gray-500">Rejected</p>
-                    <p className="font-medium text-red-600">{formatCurrency(summary.totalRejected)}</p>
+                    <p className="font-medium text-red-600">
+                      {formatCurrency(summary.totalRejected)}
+                    </p>
                   </div>
                 )}
                 {summary.totalExpired > 0 && (
                   <div>
                     <p className="text-xs text-gray-500">Expired</p>
-                    <p className="font-medium text-orange-600">{formatCurrency(summary.totalExpired)}</p>
+                    <p className="font-medium text-orange-600">
+                      {formatCurrency(summary.totalExpired)}
+                    </p>
                   </div>
                 )}
               </div>
@@ -143,10 +179,12 @@ export function MonthlyCommissionCard({ summary, formatCurrency, onClick }: Mont
           <div className="pt-4 border-t border-gray-200">
             <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
               <div>
-                <span className="font-medium">Revenue:</span> {formatCurrency(summary.revenue)}
+                <span className="font-medium">Revenue:</span>{" "}
+                {formatCurrency(summary.revenue)}
               </div>
               <div>
-                <span className="font-medium">Rate:</span> {summary.commissionRate.toFixed(1)}%
+                <span className="font-medium">Rate:</span>{" "}
+                {summary.formattedRate}
               </div>
             </div>
           </div>
@@ -181,9 +219,12 @@ export function MonthlyCommissionList({
     return (
       <div className="text-center py-12">
         <FaCalendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-        <h3 className="text-sm font-medium text-gray-900 mb-2">No Historical Data</h3>
+        <h3 className="text-sm font-medium text-gray-900 mb-2">
+          No Historical Data
+        </h3>
         <p className="text-sm text-gray-500">
-          Historical commission summaries will appear here once months are archived.
+          Historical commission summaries will appear here once months are
+          archived.
         </p>
       </div>
     );

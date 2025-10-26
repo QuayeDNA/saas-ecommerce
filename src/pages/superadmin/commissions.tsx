@@ -714,7 +714,7 @@ export default function SuperAdminCommissions() {
                           {formatCurrency(commission.amount)}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {(commission.commissionRate * 100).toFixed(1)}% rate
+                          {commission.formattedRate} rate
                         </p>
                       </div>
                     </td>
@@ -882,7 +882,7 @@ export default function SuperAdminCommissions() {
                     {formatCurrency(commission.amount)}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {(commission.commissionRate * 100).toFixed(1)}% rate
+                    {commission.formattedRate} rate
                   </p>
                 </div>
                 <div>
