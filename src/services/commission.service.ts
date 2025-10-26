@@ -208,6 +208,36 @@ export interface MonthlyGenerationResponse {
   data: MonthlyGenerationResult | { existingRecords: boolean };
 }
 
+export interface DailyGenerationResponse {
+  success: boolean;
+  data: {
+    summary: {
+      totalAgents: number;
+      created: number;
+      updated: number;
+      noCommission: number;
+      errors: number;
+      successRate: string;
+    };
+    results: Array<{
+      agentId: string;
+      agentName: string;
+      status: "created" | "updated" | "no_commission" | "error";
+      record?: {
+        _id: string;
+        amount: number;
+        totalOrders: number;
+        totalRevenue: number;
+      };
+      error?: string;
+      message?: string;
+    }>;
+    day: string;
+    duration: string;
+  };
+  message: string;
+}
+
 class CommissionService {
   /**
    * Get commission settings (super admin only)
@@ -382,15 +412,15 @@ class CommissionService {
   }
 
   /**
-   * Generate monthly commissions for all agents (super admin only)
+   * Generate daily commissions for all agents (super admin only)
    * @param data - Generation parameters
-   * @returns Promise<MonthlyGenerationResult>
+   * @returns Promise<DailyGenerationResponse>
    */
-  async generateMonthlyCommissions(
-    data: GenerateMonthlyCommissionsData = {}
-  ): Promise<MonthlyGenerationResponse> {
+  async generateDailyCommissions(
+    data: { targetDate?: string } = {}
+  ): Promise<DailyGenerationResponse> {
     const response = await apiClient.post(
-      "/api/commissions/generate-monthly",
+      "/api/commissions/generate-daily",
       data
     );
     return response.data;

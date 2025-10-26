@@ -98,8 +98,14 @@ export const WalletPage = () => {
       ]);
 
       // Separate commissions into accumulating and finalized
-      const accumulating = commissionsData.filter((c) => !c.isFinal);
-      const finalized = commissionsData.filter((c) => c.isFinal);
+      // Accumulating: daily commissions (always pending until finalized) + current month non-finalized
+      // Finalized: monthly commissions that have been finalized (isFinal: true)
+      const accumulating = commissionsData.filter(
+        (c) => c.period === "daily" || (c.period === "monthly" && !c.isFinal)
+      );
+      const finalized = commissionsData.filter(
+        (c) => c.period === "monthly" && c.isFinal
+      );
 
       setCurrentMonthAccumulating(accumulating);
       setFinalizedCommissions(finalized);
@@ -462,16 +468,16 @@ export const WalletPage = () => {
       ) : (
         /* Commissions Tab Content */
         <>
-          {/* Current Month Accumulating Commissions */}
+          {/* Current Month Daily Accumulation */}
           {currentMonthAccumulating.length > 0 && (
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow p-4 sm:p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                    Current Month (Accumulating)
+                    This Month's Commission Progress
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-600">
-                    Real-time commission accumulation from completed orders
+                    Daily commission accumulation from completed orders
                   </p>
                 </div>
                 <div className="p-3 bg-white rounded-lg shadow-sm">
@@ -479,56 +485,133 @@ export const WalletPage = () => {
                 </div>
               </div>
 
-              <div className="space-y-3 sm:space-y-4">
-                {currentMonthAccumulating.map((commission) => (
-                  <div
-                    key={commission._id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border border-green-200 rounded-lg bg-white hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 flex-shrink-0">
-                        <FaCoins className="text-green-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            ACCUMULATING
-                          </span>
-                          <span className="text-xs text-gray-500 capitalize">
-                            {commission.period}
-                          </span>
-                        </div>
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">
-                          {commission.totalOrders} orders •{" "}
-                          {formatCurrency(commission.totalRevenue)} revenue
-                        </p>
-                        <p className="text-xs sm:text-sm text-gray-500">
-                          {formatDate(commission.periodStart)} -{" "}
-                          {formatDate(commission.periodEnd).split(",")[0]}
-                        </p>
-                        <p className="text-xs text-green-600 mt-1">
-                          Updated in real-time as orders complete
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1 mt-3 sm:mt-0 sm:ml-4">
-                      <p className="font-semibold text-base sm:text-lg text-green-600">
-                        {formatCurrency(commission.amount)}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-500">
-                        {commission.formattedRate} rate
-                      </p>
-                    </div>
+              {/* Monthly Total Summary */}
+              <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      Month-to-Date Total
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {currentMonthAccumulating.reduce(
+                        (sum, c) => sum + c.totalOrders,
+                        0
+                      )}{" "}
+                      orders processed
+                    </p>
                   </div>
-                ))}
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-green-600">
+                      {formatCurrency(
+                        currentMonthAccumulating.reduce(
+                          (sum, c) => sum + c.amount,
+                          0
+                        )
+                      )}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {formatCurrency(
+                        currentMonthAccumulating.reduce(
+                          (sum, c) => sum + c.totalRevenue,
+                          0
+                        )
+                      )}{" "}
+                      revenue
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Daily Breakdown */}
+              <div className="space-y-2">
+                <h3 className="font-medium text-gray-900 text-sm">
+                  Daily Breakdown
+                </h3>
+                {currentMonthAccumulating
+                  .filter((c) => c.period === "daily")
+                  .sort(
+                    (a, b) =>
+                      new Date(b.periodStart).getTime() -
+                      new Date(a.periodStart).getTime()
+                  )
+                  .map((commission) => (
+                    <div
+                      key={commission._id}
+                      className="flex items-center justify-between p-3 border border-green-200 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 flex-shrink-0">
+                          <FaCoins className="text-green-600 text-sm" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">
+                            {new Date(
+                              commission.periodStart
+                            ).toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {commission.totalOrders} orders •{" "}
+                            {formatCurrency(commission.totalRevenue)} revenue
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="font-semibold text-green-600">
+                          {formatCurrency(commission.amount)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {commission.formattedRate} rate
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                {/* Monthly accumulating record (if exists) */}
+                {currentMonthAccumulating
+                  .filter((c) => c.period === "monthly")
+                  .map((commission) => (
+                    <div
+                      key={commission._id}
+                      className="flex items-center justify-between p-3 border border-blue-200 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 flex-shrink-0">
+                          <FaCalendarAlt className="text-blue-600 text-sm" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">
+                            Monthly Total (Real-time)
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {commission.totalOrders} orders •{" "}
+                            {formatCurrency(commission.totalRevenue)} revenue
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="font-semibold text-blue-600">
+                          {formatCurrency(commission.amount)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {commission.formattedRate} rate
+                        </p>
+                      </div>
+                    </div>
+                  ))}
               </div>
 
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-xs text-blue-800">
                   <FaClock className="inline mr-1" />
-                  These commissions will be finalized at the end of the month
-                  and become payable.
+                  Commissions accumulate daily and will be finalized at the end
+                  of {new Date().toLocaleDateString("en-US", { month: "long" })}
+                  . You'll receive notifications for each day's earnings!
                 </p>
               </div>
             </div>
@@ -644,9 +727,9 @@ export const WalletPage = () => {
                   className="w-full rounded-lg border-gray-300 text-sm"
                 >
                   <option value="all">All Periods</option>
+                  <option value="daily">Daily</option>
                   <option value="monthly">Monthly</option>
                   <option value="weekly">Weekly</option>
-                  <option value="daily">Daily</option>
                 </select>
               </div>
             </div>
