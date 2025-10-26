@@ -27,6 +27,8 @@ export interface CommissionRecord {
   commissionRate: number;
   amount: number;
   status: "pending" | "paid" | "rejected" | "cancelled";
+  isFinal: boolean;
+  finalizedAt?: string;
   paidAt?: string;
   paidBy?: {
     _id: string;
@@ -75,6 +77,58 @@ export interface CommissionStatistics {
   };
 }
 
+export interface CurrentMonthStatistics {
+  currentMonth: {
+    month: string;
+    totalEarned: number;
+    totalPaid: number;
+    totalPending: number;
+    totalRejected: number;
+    pendingCount: number;
+    totalRecords: number;
+    agentCount: number;
+  };
+}
+
+export interface CommissionMonthlySummary {
+  _id: string;
+  month: string; // "2025-01"
+  year: number;
+  monthNumber: number;
+  monthName: string; // "January 2025"
+  agentId: {
+    _id: string;
+    fullName: string;
+    email: string;
+    agentCode?: string;
+    userType?: string;
+  };
+  tenantId: string;
+  totalEarned: number;
+  totalPaid: number;
+  totalPending: number;
+  totalRejected: number;
+  totalExpired: number;
+  orderCount: number;
+  revenue: number;
+  commissionRate: number;
+  paymentStatus:
+    | "fully_paid"
+    | "partially_paid"
+    | "unpaid"
+    | "rejected"
+    | "expired";
+  paymentPercentage: number;
+  recordIds: string[];
+  recordCount: number;
+  isArchived: boolean;
+  archivedAt?: string;
+  archivedBy?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CommissionFilters {
   status?: "pending" | "paid" | "rejected" | "cancelled";
   period?: "monthly" | "weekly" | "daily";
@@ -82,6 +136,7 @@ export interface CommissionFilters {
   endDate?: string;
   agentId?: string;
   month?: string;
+  search?: string;
 }
 
 export interface PayCommissionData {
@@ -199,11 +254,18 @@ class CommissionService {
   /**
    * Get all commissions (super admin only)
    * @param filters - Optional filters
-   * @returns Promise<CommissionRecord[]>
+   * @param page - Page number (default 1)
+   * @param limit - Items per page (default 20)
+   * @returns Promise with data and pagination info
    */
   async getAllCommissions(
-    filters: CommissionFilters = {}
-  ): Promise<CommissionRecord[]> {
+    filters: CommissionFilters = {},
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{
+    data: CommissionRecord[];
+    pagination: { total: number; page: number; pages: number; limit: number };
+  }> {
     const params = new URLSearchParams();
 
     if (filters.status) params.append("status", filters.status);
@@ -212,13 +274,21 @@ class CommissionService {
     if (filters.endDate) params.append("endDate", filters.endDate);
     if (filters.agentId) params.append("agentId", filters.agentId);
     if (filters.month) params.append("month", filters.month);
+    if (filters.search) params.append("search", filters.search);
+
+    // Add pagination params
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
 
     const query = params.toString();
     const baseUrl = "/api/commissions";
     const url = query ? `${baseUrl}?${query}` : baseUrl;
 
     const response = await apiClient.get(url);
-    return response.data.data;
+    return {
+      data: response.data.data,
+      pagination: response.data.pagination,
+    };
   }
 
   /**
@@ -349,6 +419,94 @@ class CommissionService {
   }> {
     const response = await apiClient.post("/api/commissions/expire-old");
     return response.data;
+  }
+
+  /**
+   * Archive commissions for a specific month (super admin only)
+   * @param year - Year to archive
+   * @param month - Month number (1-12)
+   * @returns Promise with archival results
+   */
+  async archiveMonthCommissions(
+    year: number,
+    month: number
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      month: string;
+      monthStr: string;
+      summariesCreated: number;
+      recordsArchived: number;
+      duration: string;
+    };
+  }> {
+    const response = await apiClient.post("/api/commissions/archive-month", {
+      year,
+      month,
+    });
+    return response.data;
+  }
+
+  /**
+   * Get agent's monthly summaries
+   * @param options - Query options
+   * @returns Promise<CommissionMonthlySummary[]>
+   */
+  async getAgentMonthlySummaries(
+    options: {
+      limit?: number;
+      paymentStatus?: string;
+    } = {}
+  ): Promise<CommissionMonthlySummary[]> {
+    const params = new URLSearchParams();
+    if (options.limit) params.append("limit", options.limit.toString());
+    if (options.paymentStatus)
+      params.append("paymentStatus", options.paymentStatus);
+
+    const query = params.toString();
+    const baseUrl = "/api/commissions/monthly-summaries/agent";
+    const url = query ? `${baseUrl}?${query}` : baseUrl;
+
+    const response = await apiClient.get(url);
+    return response.data.data;
+  }
+
+  /**
+   * Get all monthly summaries (super admin only)
+   * @param options - Query options
+   * @returns Promise<CommissionMonthlySummary[]>
+   */
+  async getAllMonthlySummaries(
+    options: {
+      limit?: number;
+      paymentStatus?: string;
+      month?: string;
+    } = {}
+  ): Promise<CommissionMonthlySummary[]> {
+    const params = new URLSearchParams();
+    if (options.limit) params.append("limit", options.limit.toString());
+    if (options.paymentStatus)
+      params.append("paymentStatus", options.paymentStatus);
+    if (options.month) params.append("month", options.month);
+
+    const query = params.toString();
+    const baseUrl = "/api/commissions/monthly-summaries";
+    const url = query ? `${baseUrl}?${query}` : baseUrl;
+
+    const response = await apiClient.get(url);
+    return response.data.data;
+  }
+
+  /**
+   * Get current month statistics
+   * @returns Promise<CurrentMonthStatistics>
+   */
+  async getCurrentMonthStatistics(): Promise<CurrentMonthStatistics> {
+    const response = await apiClient.get(
+      "/api/commissions/current-month-stats"
+    );
+    return response.data.data;
   }
 }
 

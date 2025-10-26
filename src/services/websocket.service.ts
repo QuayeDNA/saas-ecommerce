@@ -195,6 +195,12 @@ class WebSocketService {
           commission: data.commission,
         });
         break;
+      case "commission_updated":
+        this.emit("commission_updated", data.commission);
+        break;
+      case "commission_finalized":
+        this.emit("commission_finalized", data.commission);
+        break;
       default:
         // Unknown WebSocket message type
         break;

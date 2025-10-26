@@ -578,10 +578,10 @@ export const DashboardPage = () => {
           <Card size="sm" className="bg-[#142850] border-[#0f1f3a]">
             <CardBody className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <div className="text-gray-300 text-xs">Total Commissions Earned</div>
+                <div className="text-gray-300 text-xs">Commission Earned This Month</div>
               </div>
-              <div className="text-xl font-bold text-white">₵{(analyticsData.commissions.earned + analyticsData.commissions.paid).toFixed(2)}</div>
-              <div className="text-xs text-gray-300 mt-2">Paid: ₵{analyticsData.commissions.paid.toFixed(2)}</div>
+              <div className="text-xl font-bold text-white">₵{(analyticsData.commissions.earned || 0).toFixed(2)}</div>
+              <div className="text-xs text-gray-300 mt-2">Paid: ₵{(analyticsData.commissions.paid || 0).toFixed(2)}</div>
             </CardBody>
           </Card>
         </div>

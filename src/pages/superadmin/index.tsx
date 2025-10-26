@@ -421,7 +421,7 @@ export default function SuperAdminDashboard() {
       </Card>
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {loadingStats ? (
           <>
             <MetricCardSkeleton />
@@ -435,21 +435,21 @@ export default function SuperAdminDashboard() {
           <>
             {/* Total Users */}
             <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
-              <CardBody className="p-4 sm:p-5 lg:p-6">
-                <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <CardBody className="p-3 sm:p-4 md:p-6">
+                <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Total Users
                     </p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {stats.users.total.toLocaleString()}
                     </p>
-                    <p className="text-xs text-green-400 mt-1 sm:mt-2">
+                    <p className="text-xs text-green-400 mt-1 truncate">
                       +{stats.users.newThisWeek} this week
                     </p>
                   </div>
-                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaUsers className="text-white text-sm sm:text-lg lg:text-xl" />
+                  <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaUsers className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
@@ -457,21 +457,21 @@ export default function SuperAdminDashboard() {
 
             {/* Total Revenue */}
             <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
-              <CardBody className="p-4 sm:p-5 lg:p-6">
-                <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <CardBody className="p-3 sm:p-4 md:p-6">
+                <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Total Revenue
                     </p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {formatCurrency(stats.revenue.total)}
                     </p>
-                    <p className="text-xs text-green-400 mt-1 sm:mt-2">
+                    <p className="text-xs text-green-400 mt-1 truncate">
                       +{formatCurrency(stats.revenue.total)} total
                     </p>
                   </div>
-                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaMoneyBillWave className="text-white text-sm sm:text-lg lg:text-xl" />
+                  <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaMoneyBillWave className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
@@ -479,21 +479,21 @@ export default function SuperAdminDashboard() {
 
             {/* Total Orders */}
             <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
-              <CardBody className="p-4 sm:p-5 lg:p-6">
-                <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <CardBody className="p-3 sm:p-4 md:p-6">
+                <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Total Orders
                     </p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {stats.orders.total.toLocaleString()}
                     </p>
-                    <p className="text-xs text-blue-400 mt-1 sm:mt-2">
+                    <p className="text-xs text-blue-400 mt-1 truncate">
                       {stats.orders.successRate}% success rate
                     </p>
                   </div>
-                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaClipboardList className="text-white text-sm sm:text-lg lg:text-xl" />
+                  <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaClipboardList className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
@@ -501,35 +501,35 @@ export default function SuperAdminDashboard() {
 
             {/* User Types Carousel */}
             <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200 relative overflow-hidden">
-              <CardBody className="p-4 sm:p-5 lg:p-6">
-                <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <CardBody className="p-3 sm:p-4 md:p-6">
+                <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       {userTypeCarousel[carouselIndex].label}
                     </p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {getUserTypeCount(userTypeCarousel[carouselIndex].key)}
                     </p>
                     <p
-                      className={`text-xs mt-1 sm:mt-2 ${userTypeCarousel[carouselIndex].color}`}
+                      className={`text-xs mt-1 truncate ${userTypeCarousel[carouselIndex].color}`}
                     >
                       {getUserTypeCount(userTypeCarousel[carouselIndex].key)}{" "}
                       total
                     </p>
                   </div>
                   <div
-                    className={`p-2.5 sm:p-3 lg:p-4 ${userTypeCarousel[carouselIndex].bgColor} rounded-full flex-shrink-0 flex items-center justify-center`}
+                    className={`p-2 sm:p-2.5 md:p-3 lg:p-4 ${userTypeCarousel[carouselIndex].bgColor} rounded-full flex-shrink-0 flex items-center justify-center`}
                   >
                     {userTypeCarousel[carouselIndex].icon}
                   </div>
                 </div>
                 {/* Carousel Indicators */}
-                <div className="flex justify-center mt-3 space-x-1">
+                <div className="flex justify-center mt-2 sm:mt-3 space-x-1">
                   {userTypeCarousel.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCarouselIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                      className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors duration-200 ${
                         index === carouselIndex ? "bg-white" : "bg-white/30"
                       }`}
                       aria-label={`Go to ${userTypeCarousel[index].label}`}
@@ -541,21 +541,21 @@ export default function SuperAdminDashboard() {
 
             {/* Total Commissions */}
             <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
-              <CardBody className="p-4 sm:p-5 lg:p-6">
-                <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <CardBody className="p-3 sm:p-4 md:p-6">
+                <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Total Commissions
                     </p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {formatCurrency(stats.commissions.totalPaid)}
                     </p>
-                    <p className="text-xs text-yellow-400 mt-1 sm:mt-2">
+                    <p className="text-xs text-yellow-400 mt-1 truncate">
                       {stats.commissions.pendingCount} pending
                     </p>
                   </div>
-                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaMoneyBillWave className="text-white text-sm sm:text-lg lg:text-xl" />
+                  <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaMoneyBillWave className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
@@ -563,21 +563,21 @@ export default function SuperAdminDashboard() {
 
             {/* Active Providers */}
             <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
-              <CardBody className="p-4 sm:p-5 lg:p-6">
-                <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <CardBody className="p-3 sm:p-4 md:p-6">
+                <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Active Providers
                     </p>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {stats.providers.active}
                     </p>
-                    <p className="text-xs text-indigo-400 mt-1 sm:mt-2">
+                    <p className="text-xs text-indigo-400 mt-1 truncate">
                       {stats.providers.newThisMonth} new this month
                     </p>
                   </div>
-                  <div className="p-2.5 sm:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaBuilding className="text-white text-sm sm:text-lg lg:text-xl" />
+                  <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <FaBuilding className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>

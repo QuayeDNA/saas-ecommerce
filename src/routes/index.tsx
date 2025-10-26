@@ -113,11 +113,6 @@ const WalletPage = lazy(() =>
     default: module.WalletPage,
   }))
 );
-const AgentCommissionPage = lazy(() =>
-  import("../pages/agent/commissions").then((module) => ({
-    default: module.default,
-  }))
-);
 
 // =============================================================================
 // LAZY LOADED COMPONENTS - PACKAGE SPECIFIC PAGES
@@ -355,14 +350,6 @@ const agentRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <WalletPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "commissions",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AgentCommissionPage />
               </Suspense>
             ),
           },

@@ -161,20 +161,22 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
 
         const activeFilters = newFilters || filters;
         const response = await commissionService.getAllCommissions(
-          activeFilters
+          activeFilters,
+          page,
+          pagination.limit
         );
 
         if (page === 1) {
-          setCommissions(response);
+          setCommissions(response.data);
         } else {
-          setCommissions((prev) => [...prev, ...response]);
+          setCommissions((prev) => [...prev, ...response.data]);
         }
 
         setPagination((prev) => ({
           ...prev,
-          page,
-          total: response.length,
-          hasMore: response.length === pagination.limit,
+          page: response.pagination.page,
+          total: response.pagination.total,
+          hasMore: response.pagination.page < response.pagination.pages,
         }));
 
         setLastUpdated(new Date());
@@ -476,6 +478,16 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
         const commissionData = data as {
           type: string;
           commission: CommissionRecord;
+          updatedStats?: {
+            month: string;
+            totalEarned: number;
+            totalPaid: number;
+            totalPending: number;
+            totalRejected: number;
+            pendingCount: number;
+            totalRecords: number;
+            agentCount: number;
+          };
         };
 
         if (commissionData.type === "commission_update") {
@@ -494,7 +506,12 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
         if (commissionData.type === "commission_created") {
           // Add new commission to the list
           setCommissions((prev) => [commissionData.commission, ...prev]);
+
+          // Reload statistics to get updated values
+          // The updatedStats from WebSocket contains current month data
+          // but we reload to ensure consistency across the entire stats object
           loadStatistics();
+
           setLastUpdated(new Date());
         }
 
@@ -507,13 +524,14 @@ export const CommissionProvider: React.FC<CommissionProviderProps> = ({
                 : commission
             )
           );
+
+          // Reload statistics to get updated values
           loadStatistics();
+
           setLastUpdated(new Date());
         }
       }
-    };
-
-    // Listen for commission events
+    }; // Listen for commission events
     websocketService.on("commission", handleCommissionUpdate);
 
     // Store cleanup function

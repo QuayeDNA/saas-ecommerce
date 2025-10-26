@@ -1,408 +1,233 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  FaMoneyBillWave,
-  FaUsers,
-  FaCalculator,
-  FaCreditCard,
-  FaEye,
+  FaCoins,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaSync,
   FaClock,
-  FaCheck,
-  FaPlay,
-  FaTimes,
-  FaInfoCircle,
-  FaCalendarAlt,
-  FaTrash,
-  FaRedo,
+  FaUsers,
+  FaCog,
 } from "react-icons/fa";
-import {
-  Card,
-  CardBody,
-  Button,
-  Badge,
-  Input,
-  Table,
-  Dialog,
-  DialogHeader,
-  DialogBody,
-  DialogFooter,
-  Spinner,
-  useToast,
-} from "../../design-system";
+import { Alert, Button, Pagination } from "../../design-system";
 import { SearchAndFilter } from "../../components/common/SearchAndFilter";
-import { useCommissions } from "../../hooks/use-commissions";
-import { commissionService } from "../../services/commission.service";
 import {
+  commissionService,
   type CommissionRecord,
-  type MonthlyGenerationResult,
+  type CurrentMonthStatistics,
   type CommissionSettings,
 } from "../../services/commission.service";
+import { websocketService } from "../../services/websocket.service";
 
-export default function SuperAdminCommissionsPage() {
-  // Use CommissionContext instead of local state
-  const {
-    commissions,
-    statistics,
-    settings,
-    isLoading,
-    filters,
-    setFilters,
-    payCommission,
-    payMultipleCommissions,
-    rejectCommission,
-    rejectMultipleCommissions,
-    generateMonthlyCommissions,
-    updateCommissionSettings,
-    loadAllData,
-  } = useCommissions();
-  const [searchTerm, setSearchTerm] = useState("");
+export default function SuperAdminCommissions() {
+  // State
+  const [commissions, setCommissions] = useState<CommissionRecord[]>([]);
+  const [currentMonthStats, setCurrentMonthStats] =
+    useState<CurrentMonthStatistics | null>(null);
   const [selectedCommissions, setSelectedCommissions] = useState<string[]>([]);
-  const [showPayDialog, setShowPayDialog] = useState(false);
-  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [showPaySingleDialog, setShowPaySingleDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [showRejectSingleDialog, setShowRejectSingleDialog] = useState(false);
-  const [selectedCommission, setSelectedCommission] =
-    useState<CommissionRecord | null>(null);
-  const [viewingCommission, setViewingCommission] =
-    useState<CommissionRecord | null>(null);
-  const [paymentReference, setPaymentReference] = useState("");
-  const [singlePaymentReference, setSinglePaymentReference] = useState("");
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [singleRejectionReason, setSingleRejectionReason] = useState("");
-  const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Local state for settings form
-  const [localSettings, setLocalSettings] = useState<CommissionSettings | null>(
-    null
-  );
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [agentSearch, setAgentSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [periodFilter, setPeriodFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [recordTypeFilter, setRecordTypeFilter] = useState<string>("current"); // "current" or "finalized"
 
-  // Commission Generation State
-  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
-  const [generationMonth, setGenerationMonth] = useState(
-    new Date().toISOString().slice(0, 7)
-  );
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationResult, setGenerationResult] =
-    useState<MonthlyGenerationResult | null>(null);
-  const [showGenerationResult, setShowGenerationResult] = useState(false);
+  // Debounce timer ref
+  const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Expire Commissions State
-  const [isExpiringCommissions, setIsExpiringCommissions] = useState(false);
-  const [showInfoCards, setShowInfoCards] = useState(true);
-
-  const { addToast } = useToast();
-
-  // Mobile detection
+  // Debounce search input (wait 500ms after user stops typing)
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    // Clear previous timer
+    if (searchDebounceTimer.current) {
+      clearTimeout(searchDebounceTimer.current);
+    }
+
+    // Set new timer
+    searchDebounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(agentSearch);
+    }, 500); // 500ms delay
+
+    // Cleanup on unmount or when agentSearch changes
+    return () => {
+      if (searchDebounceTimer.current) {
+        clearTimeout(searchDebounceTimer.current);
+      }
+    };
+  }, [agentSearch]);
+
+  // Server-side Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Modals
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectTarget, setRejectTarget] = useState<{
+    type: "single" | "multiple";
+    id?: string;
+  }>({
+    type: "multiple",
+  });
+
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [commissionSettings, setCommissionSettings] =
+    useState<CommissionSettings | null>(null);
+  const [settingsForm, setSettingsForm] = useState({
+    agentCommission: 0,
+    superAgentCommission: 0,
+    dealerCommission: 0,
+    superDealerCommission: 0,
+    defaultCommissionRate: 0,
+  });
+
+  // Fetch data with server-side pagination and filters
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Build filters object
+      const filters: Record<string, string> = {};
+      if (statusFilter !== "all") filters.status = statusFilter;
+      if (periodFilter !== "all") filters.period = periodFilter;
+      if (monthFilter !== "all") filters.month = monthFilter;
+      if (recordTypeFilter !== "all")
+        filters.isFinal = recordTypeFilter === "finalized" ? "true" : "false";
+      if (debouncedSearch.trim()) filters.search = debouncedSearch.trim();
+
+      // Fetch commissions with pagination
+      const commissionsResponse = await commissionService.getAllCommissions(
+        filters,
+        currentPage,
+        itemsPerPage
+      );
+
+      // Fetch current month stats (only for current month records)
+      const statsData =
+        recordTypeFilter === "current"
+          ? await commissionService.getCurrentMonthStatistics()
+          : null;
+
+      setCommissions(commissionsResponse.data);
+      setTotalPages(commissionsResponse.pagination.pages);
+      setTotalItems(commissionsResponse.pagination.total);
+      setCurrentMonthStats(statsData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch data");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    statusFilter,
+    periodFilter,
+    monthFilter,
+    recordTypeFilter,
+    debouncedSearch,
+    currentPage,
+    itemsPerPage,
+  ]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Reset to page 1 when filters change (including debounced search)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    statusFilter,
+    periodFilter,
+    monthFilter,
+    recordTypeFilter,
+    debouncedSearch,
+  ]);
+
+  // WebSocket listeners for real-time updates
+  useEffect(() => {
+    const handleCommissionUpdate = () => {
+      // Refresh data when commission is updated
+      fetchData();
     };
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  const handleFilterChange = (filterKey: string, value: string) => {
-    if (filterKey === "month") {
-      // Extract the actual month value (remove the index suffix)
-      const monthValue =
-        value === "all"
-          ? ""
-          : value
-          ? value.split("-").slice(0, 2).join("-")
-          : "";
-      const newFilters = { ...filters, month: monthValue || undefined };
-      setFilters(newFilters);
-    } else {
-      const newFilters = { ...filters, [filterKey]: value || undefined };
-      setFilters(newFilters);
-    }
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    loadAllData();
-  };
-
-  const handleClearFilters = () => {
-    setFilters({});
-    setSearchTerm("");
-  };
-
-  const searchAndFilterProps = {
-    searchTerm,
-    onSearchChange: setSearchTerm,
-    searchPlaceholder: "Search agents by name or email...",
-    filters: {
-      status: {
-        value: filters.status || "",
-        options: [
-          { value: "pending", label: "Pending" },
-          { value: "paid", label: "Paid" },
-          { value: "rejected", label: "Rejected" },
-          { value: "cancelled", label: "Cancelled" },
-        ],
-        label: "Status",
-        placeholder: "All Status",
-      },
-      month: {
-        value: filters.month || "",
-        options: [
-          { value: "all", label: "All Months" },
-          ...Array.from({ length: 12 }, (_, i) => {
-            const date = new Date();
-            date.setMonth(date.getMonth() - i);
-            const value = date.toISOString().slice(0, 7); // YYYY-MM format
-            const label = date.toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-            });
-            return { value: `${value}-${i}`, label };
-          }),
-        ],
-        label: "Month",
-        placeholder: "All Months",
-      },
-    },
-    onFilterChange: handleFilterChange,
-    onSearch: handleSearch,
-    onClearFilters: handleClearFilters,
-    showDateRange: true,
-    dateRange: {
-      startDate: filters.startDate || "",
-      endDate: filters.endDate || "",
-    },
-    onDateRangeChange: (startDate: string, endDate: string) => {
-      setFilters({ ...filters, startDate, endDate });
-    },
-    showSearchButton: true,
-    showClearButton: true,
-    isLoading: isLoading,
-  };
-
-  const handlePaySelected = async () => {
-    if (selectedCommissions.length === 0) return;
-
-    // Check if any selected commissions are already paid
-    const paidCommissions = filteredCommissions.filter(
-      (commission) =>
-        selectedCommissions.includes(commission._id) &&
-        commission.status === "paid"
-    );
-
-    if (paidCommissions.length > 0) {
-      addToast(
-        `Cannot pay ${paidCommissions.length} commission(s) that are already paid`,
-        "error"
-      );
-      return;
-    }
-
-    try {
-      const result = await payMultipleCommissions({
-        commissionIds: selectedCommissions,
-        paymentReference: paymentReference || undefined,
-      });
-
-      addToast(
-        `Successfully paid ${result.summary.successful} of ${result.summary.total} commissions`,
-        "success"
-      );
-
-      setShowPayDialog(false);
-      setSelectedCommissions([]);
-      setPaymentReference("");
-      loadAllData();
-    } catch (error) {
-      console.error("Failed to process commission payments:", error);
-      addToast("Failed to process commission payments", "error");
-    }
-  };
-
-  const handlePaySingleCommission = (commission: CommissionRecord) => {
-    setSelectedCommission(commission);
-    setShowPaySingleDialog(true);
-  };
-
-  const handleViewCommission = (commission: CommissionRecord) => {
-    setViewingCommission(commission);
-    setShowViewDialog(true);
-  };
-
-  const handleConfirmSinglePayment = async () => {
-    if (!selectedCommission) return;
-
-    // Check if commission is already paid
-    if (selectedCommission.status === "paid") {
-      addToast("This commission has already been paid", "error");
-      return;
-    }
-
-    try {
-      await payCommission(selectedCommission._id, {
-        paymentReference: singlePaymentReference || undefined,
-      });
-
-      addToast(
-        `Successfully paid commission of ${formatCurrency(
-          selectedCommission.amount
-        )} to ${selectedCommission.agentId.fullName}`,
-        "success"
-      );
-
-      setShowPaySingleDialog(false);
-      setSelectedCommission(null);
-      setSinglePaymentReference("");
-    } catch (error) {
-      console.error("Failed to process commission payment:", error);
-      addToast("Failed to process commission payment", "error");
-    }
-  };
-
-  // Rejection Handlers
-  const handleRejectSingleCommission = (commission: CommissionRecord) => {
-    setSelectedCommission(commission);
-    setShowRejectSingleDialog(true);
-  };
-
-  const handleConfirmSingleRejection = async () => {
-    if (!selectedCommission) return;
-
-    // Check if commission is already paid or rejected
-    if (selectedCommission.status === "paid") {
-      addToast("Cannot reject a paid commission", "error");
-      return;
-    }
-
-    if (selectedCommission.status === "rejected") {
-      addToast("This commission has already been rejected", "error");
-      return;
-    }
-
-    try {
-      await rejectCommission(selectedCommission._id, {
-        rejectionReason: singleRejectionReason || undefined,
-      });
-
-      addToast(
-        `Successfully rejected commission of ${formatCurrency(
-          selectedCommission.amount
-        )} for ${selectedCommission.agentId.fullName}`,
-        "success"
-      );
-
-      setShowRejectSingleDialog(false);
-      setSelectedCommission(null);
-      setSingleRejectionReason("");
-    } catch (error) {
-      console.error("Failed to reject commission:", error);
-      addToast("Failed to reject commission", "error");
-    }
-  };
-
-  const handleConfirmBulkRejection = async () => {
-    if (selectedCommissions.length === 0) return;
-
-    try {
-      await rejectMultipleCommissions({
-        commissionIds: selectedCommissions,
-        rejectionReason: rejectionReason || undefined,
-      });
-
-      addToast(
-        `Successfully rejected ${selectedCommissions.length} commissions`,
-        "success"
-      );
-
-      setShowRejectDialog(false);
-      setSelectedCommissions([]);
-      setRejectionReason("");
-    } catch (error) {
-      console.error("Failed to reject commissions:", error);
-      addToast("Failed to reject commissions", "error");
-    }
-  };
-
-  const handleUpdateSettings = async () => {
-    if (!localSettings) return;
-
-    try {
-      await updateCommissionSettings(localSettings);
-      setShowSettingsDialog(false);
-      setLocalSettings(null);
-      addToast("Commission settings updated successfully", "success");
-    } catch (error) {
-      console.error("Failed to update commission settings:", error);
-      addToast("Failed to update commission settings", "error");
-    }
-  };
-
-  // Commission Generation Methods
-  const handleGenerateCommissions = async () => {
-    setIsGenerating(true);
-    try {
-      const result = await generateMonthlyCommissions({
-        targetMonth: generationMonth,
-      });
-
-      // Check if this is a warning about existing commissions
-      if (
-        result.warning &&
-        typeof result.data === "object" &&
-        result.data !== null &&
-        "existingRecords" in result.data
-      ) {
-        addToast(
-          result.message || "Commissions already exist for this period",
-          "warning"
-        );
-        setShowGenerateDialog(false);
-        return;
+    const handleCommissionFinalized = (data: unknown) => {
+      // Refresh data when commission is finalized
+      fetchData();
+      // Show notification if month data is available
+      const monthData = data as { month?: string };
+      if (monthData.month) {
+        setSuccess(`Commission finalized for ${monthData.month}`);
+        setTimeout(() => setSuccess(null), 5000);
       }
+    };
 
-      // For successful generation, result.data should be MonthlyGenerationResult
-      const generationData = result.data as unknown as MonthlyGenerationResult;
-      setGenerationResult(generationData);
-      setShowGenerateDialog(false);
-      setShowGenerationResult(true);
+    // Add WebSocket listeners
+    websocketService.on("commission_updated", handleCommissionUpdate);
+    websocketService.on("commission_finalized", handleCommissionFinalized);
 
-      addToast(
-        `Successfully generated ${generationData.summary.created} commission records`,
-        "success"
-      );
-    } catch (error) {
-      console.error("Failed to generate commissions:", error);
-      addToast("Failed to generate commissions", "error");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+    // Cleanup listeners on unmount
+    return () => {
+      websocketService.off("commission_updated", handleCommissionUpdate);
+      websocketService.off("commission_finalized", handleCommissionFinalized);
+    };
+  }, [fetchData]);
 
-  // Expire Old Commissions Method
-  const handleExpireOldCommissions = async () => {
-    setIsExpiringCommissions(true);
+  // Load commission settings
+  const loadCommissionSettings = async () => {
     try {
-      const result = await commissionService.expireOldCommissions();
-
-      if (result.success) {
-        addToast(
-          `Successfully expired ${result.data.expiredCount} commission(s) totaling GH₵${result.data.totalAmount}`,
-          "success"
-        );
-        loadAllData(); // Refresh data
-      } else {
-        addToast("Failed to expire commissions", "error");
-      }
-    } catch (error) {
-      console.error("Failed to expire commissions:", error);
-      addToast("Failed to expire old commissions", "error");
-    } finally {
-      setIsExpiringCommissions(false);
+      const settings = await commissionService.getCommissionSettings();
+      setCommissionSettings(settings);
+      setSettingsForm({
+        agentCommission: settings.agentCommission,
+        superAgentCommission: settings.superAgentCommission,
+        dealerCommission: settings.dealerCommission,
+        superDealerCommission: settings.superDealerCommission,
+        defaultCommissionRate: settings.defaultCommissionRate,
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load commission settings"
+      );
     }
   };
 
+  // All commissions from server - no client-side filtering needed
+  const displayedCommissions = commissions;
+
+  // Generate month filter options (last 12 months)
+  const generateMonthOptions = () => {
+    const months = [];
+    const currentDate = new Date();
+
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - i,
+        1
+      );
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const value = `${year}-${month}`;
+      const label = date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+
+      months.push({ value, label });
+    }
+
+    return months;
+  };
+
+  const monthOptions = generateMonthOptions();
+
+  // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-GH", {
       style: "currency",
@@ -410,1391 +235,981 @@ export default function SuperAdminCommissionsPage() {
     }).format(amount);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "success";
-      case "pending":
-        return "warning";
-      case "rejected":
-        return "error";
-      case "cancelled":
-        return "error";
-      default:
-        return "default";
+  // Format date
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // Toggle selection
+  const toggleSelection = (id: string) => {
+    setSelectedCommissions((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCommissions.length === displayedCommissions.length) {
+      setSelectedCommissions([]);
+    } else {
+      setSelectedCommissions(displayedCommissions.map((c) => c._id));
     }
   };
 
-  const filteredCommissions = commissions.filter((commission) => {
-    // Text search filter
-    const matchesSearch =
-      commission.agentId?.fullName
-        ?.toLowerCase()
-        ?.includes(searchTerm.toLowerCase()) ||
-      commission.agentId?.email
-        ?.toLowerCase()
-        ?.includes(searchTerm.toLowerCase()) ||
-      false; // Default to false if agentId is not populated
+  // Pay commission(s)
+  const handlePay = async (id?: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (id) {
+        await commissionService.payCommission(id);
+        setSuccess("Commission paid successfully!");
+      } else if (selectedCommissions.length > 0) {
+        await commissionService.payMultipleCommissions({
+          commissionIds: selectedCommissions,
+        });
+        setSuccess(`${selectedCommissions.length} commission(s) paid!`);
+        setSelectedCommissions([]);
+      }
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to pay");
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => setSuccess(null), 5000);
+    }
+  };
 
-    // Status filter
-    const matchesStatus =
-      !filters.status || commission.status === filters.status;
+  // Reject commission(s)
+  const handleReject = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (rejectTarget.type === "single" && rejectTarget.id) {
+        await commissionService.rejectCommission(rejectTarget.id, {
+          rejectionReason,
+        });
+        setSuccess("Commission rejected!");
+      } else if (selectedCommissions.length > 0) {
+        await commissionService.rejectMultipleCommissions({
+          commissionIds: selectedCommissions,
+          rejectionReason,
+        });
+        setSuccess(`${selectedCommissions.length} commission(s) rejected!`);
+        setSelectedCommissions([]);
+      }
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reject");
+    } finally {
+      setIsLoading(false);
+      setShowRejectModal(false);
+      setRejectionReason("");
+      setTimeout(() => setSuccess(null), 5000);
+    }
+  };
 
-    return matchesSearch && matchesStatus;
-  });
+  // Update commission settings
+  const handleUpdateSettings = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Validate rates are between 0 and 100
+      const rates = Object.entries(settingsForm);
+      for (const [key, value] of rates) {
+        if (value < 0 || value > 100) {
+          setError(
+            `${key.replace(/([A-Z])/g, " $1").trim()} must be between 0 and 100`
+          );
+          setIsLoading(false);
+          return;
+        }
+      }
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+      await commissionService.updateCommissionSettings(settingsForm);
+      setSuccess("Commission settings updated successfully!");
+      setShowSettingsModal(false);
+      await loadCommissionSettings();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update settings"
+      );
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => setSuccess(null), 5000);
+    }
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Commission Management
-          </h1>
-          <p className="text-sm text-gray-600 mt-1 sm:hidden">
-            Manage agent commissions and payments
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Commission Management
+        </h1>
+        <p className="text-gray-600">Manage agent commissions and payments</p>
+      </div>
+
+      {/* Alerts */}
+      {error && (
+        <Alert status="error" title="Error" className="mb-4">
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert status="success" title="Success" className="mb-4">
+          {success}
+        </Alert>
+      )}
+
+      {/* Stats Cards */}
+      {currentMonthStats && recordTypeFilter === "current" && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-green-100 rounded-lg flex-shrink-0">
+                <FaCoins className="text-green-600 text-base sm:text-lg md:text-xl" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
+                  Current Month Earnings
+                </p>
+                <p className="text-base sm:text-xl md:text-2xl font-bold text-green-600 truncate">
+                  {formatCurrency(currentMonthStats.currentMonth.totalEarned)}
+                </p>
+                <p className="text-xs text-gray-500">Accumulating</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                <FaCheckCircle className="text-blue-600 text-base sm:text-lg md:text-xl" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
+                  Paid This Month
+                </p>
+                <p className="text-base sm:text-xl md:text-2xl font-bold text-blue-600 truncate">
+                  {formatCurrency(currentMonthStats.currentMonth.totalPaid)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-yellow-100 rounded-lg flex-shrink-0">
+                <FaClock className="text-yellow-600 text-base sm:text-lg md:text-xl" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
+                  Pending Payment ({currentMonthStats.currentMonth.pendingCount}
+                  )
+                </p>
+                <p className="text-base sm:text-xl md:text-2xl font-bold text-yellow-600 truncate">
+                  {formatCurrency(currentMonthStats.currentMonth.totalPending)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-purple-100 rounded-lg flex-shrink-0">
+                <FaUsers className="text-purple-600 text-base sm:text-lg md:text-xl" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
+                  Active Agents
+                </p>
+                <p className="text-base sm:text-xl md:text-2xl font-bold text-purple-600 truncate">
+                  {currentMonthStats.currentMonth.agentCount}
+                </p>
+                <p className="text-xs text-gray-500">This month</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Finalized Records Info */}
+      {recordTypeFilter === "finalized" && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <FaClock className="text-blue-600" />
+            <h3 className="text-sm font-semibold text-blue-800">
+              Finalized Records
+            </h3>
+          </div>
+          <p className="text-sm text-blue-700">
+            Showing commissions from previous months that have been finalized.
+            These records are ready for payment processing.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-          <div className="relative group">
-            <Button
-              variant="primary"
-              leftIcon={<FaRedo className="text-sm" />}
-              onClick={() => setShowGenerateDialog(true)}
-              className="flex items-center justify-center w-full sm:w-auto"
-              size="sm"
-              title="Recalculate commissions if needed - System auto-generates monthly on the 1st"
+      )}
+
+      {/* Actions */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
+          {/* Record Type Filter */}
+          <div className="flex items-center gap-2 pr-3 border-r border-gray-300">
+            <label className="text-sm text-gray-700 font-medium">View:</label>
+            <select
+              value={recordTypeFilter}
+              onChange={(e) => setRecordTypeFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <span className="sm:hidden">Recalculate</span>
-              <span className="hidden sm:inline">Recalculate Commissions</span>
-            </Button>
+              <option value="current">Current Month (Accumulating)</option>
+              <option value="finalized">Finalized Records</option>
+            </select>
           </div>
+
+          {/* Select All Checkbox */}
+          <div className="flex items-center gap-2 pr-3 border-r border-gray-300">
+            <input
+              type="checkbox"
+              id="select-all"
+              checked={
+                displayedCommissions.length > 0 &&
+                selectedCommissions.length === displayedCommissions.length
+              }
+              onChange={toggleSelectAll}
+              disabled={displayedCommissions.length === 0}
+              className="rounded border-gray-300"
+            />
+            <label
+              htmlFor="select-all"
+              className="text-sm text-gray-700 cursor-pointer select-none"
+            >
+              Select All on Page ({displayedCommissions.length})
+            </label>
+          </div>
+
           <Button
-            variant="secondary"
-            leftIcon={<FaTrash className="text-sm" />}
-            onClick={handleExpireOldCommissions}
-            disabled={isExpiringCommissions}
-            className="flex items-center justify-center w-full sm:w-auto"
+            onClick={() => {
+              loadCommissionSettings();
+              setShowSettingsModal(true);
+            }}
+            disabled={isLoading}
             size="sm"
-            title="Manually expire commissions older than 30 days"
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-sm sm:text-base px-3 sm:px-4"
           >
-            {isExpiringCommissions ? (
+            <FaCog className="text-sm sm:text-base" />
+            <span className="hidden sm:inline">Commission Rates</span>
+            <span className="sm:hidden">Rates</span>
+          </Button>
+
+          <Button
+            onClick={fetchData}
+            disabled={isLoading}
+            size="sm"
+            className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-sm sm:text-base px-3 sm:px-4"
+          >
+            <FaSync
+              className={`text-sm sm:text-base ${
+                isLoading ? "animate-spin" : ""
+              }`}
+            />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+
+          {selectedCommissions.length > 0 &&
+            recordTypeFilter === "finalized" && (
               <>
-                <Spinner size="sm" className="mr-2" />
-                <span>Expiring...</span>
-              </>
-            ) : (
-              <>
-                <span className="sm:hidden">Expire Old</span>
-                <span className="hidden sm:inline">Expire Old Commissions</span>
+                <Button
+                  onClick={() => handlePay()}
+                  disabled={isLoading}
+                  size="sm"
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-sm sm:text-base px-3 sm:px-4"
+                >
+                  <FaCheckCircle className="text-sm sm:text-base" />
+                  Pay ({selectedCommissions.length})
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setRejectTarget({ type: "multiple" });
+                    setShowRejectModal(true);
+                  }}
+                  disabled={isLoading}
+                  size="sm"
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-sm sm:text-base px-3 sm:px-4"
+                >
+                  <FaTimesCircle className="text-sm sm:text-base" />
+                  Reject ({selectedCommissions.length})
+                </Button>
               </>
             )}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setLocalSettings(settings ? { ...settings } : null);
-              setShowSettingsDialog(true);
-            }}
-            className="flex items-center justify-center w-full sm:w-auto"
-            leftIcon={<FaCalculator className="text-sm" />}
-            size="sm"
-          >
-            Settings
-          </Button>
-          {selectedCommissions.length > 0 && (
-            <>
-              <Button
-                leftIcon={<FaCreditCard className="text-sm" />}
-                onClick={() => setShowPayDialog(true)}
-                className="flex items-center justify-center gap-2 w-full sm:w-auto bg-green-600 hover:bg-green-700"
-                size="sm"
-              >
-                Pay ({selectedCommissions.length})
-              </Button>
-              <Button
-                onClick={() => setShowRejectDialog(true)}
-                className="flex items-center justify-center gap-2 w-full sm:w-auto bg-red-600 hover:bg-red-700"
-                leftIcon={<FaTimes className="text-sm" />}
-                size="sm"
-              >
-                Reject ({selectedCommissions.length})
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      {statistics && (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-          <Card>
-            <CardBody className="p-3 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
-                    Total Paid
-                  </p>
-                  <p className="text-lg sm:text-2xl font-bold text-green-600 truncate">
-                    {formatCurrency(statistics.totalPaid)}
-                  </p>
-                </div>
-                <FaMoneyBillWave className="text-green-500 text-lg sm:text-2xl flex-shrink-0 ml-2" />
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardBody className="p-3 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
-                    Pending Amount
-                  </p>
-                  <p className="text-lg sm:text-2xl font-bold text-yellow-600 truncate">
-                    {formatCurrency(statistics.totalPending)}
-                  </p>
-                </div>
-                <FaClock className="text-yellow-500 text-lg sm:text-2xl flex-shrink-0 ml-2" />
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardBody className="p-3 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
-                    Pending Count
-                  </p>
-                  <p className="text-lg sm:text-2xl font-bold text-blue-600 truncate">
-                    {statistics.pendingCount}
-                  </p>
-                </div>
-                <FaUsers className="text-blue-500 text-lg sm:text-2xl flex-shrink-0 ml-2" />
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardBody className="p-3 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
-                    This Month
-                  </p>
-                  <p className="text-lg sm:text-2xl font-bold text-purple-600 truncate">
-                    {formatCurrency(
-                      (statistics.thisMonth?.totalPaid || 0) +
-                        (statistics.thisMonth?.totalPending || 0)
-                    )}
-                  </p>
-                  <div className="hidden sm:block">
-                    <p className="text-xs text-gray-500 mt-1">
-                      Paid:{" "}
-                      {formatCurrency(statistics.thisMonth?.totalPaid || 0)} |
-                      Pending:{" "}
-                      {formatCurrency(statistics.thisMonth?.totalPending || 0)}
-                    </p>
-                  </div>
-                  {/* Mobile version - simplified */}
-                  <div className="sm:hidden mt-1">
-                    <p className="text-xs text-gray-500">
-                      P:{" "}
-                      {formatCurrency(
-                        statistics.thisMonth?.totalPaid || 0
-                      ).replace("₵", "")}{" "}
-                      | Pen:{" "}
-                      {formatCurrency(
-                        statistics.thisMonth?.totalPending || 0
-                      ).replace("₵", "")}
-                    </p>
-                  </div>
-                </div>
-                <FaCalculator className="text-purple-500 text-lg sm:text-2xl flex-shrink-0 ml-2" />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Info Cards - How Commission System Works */}
-      {showInfoCards && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-4 sm:p-6 space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <FaInfoCircle className="text-blue-600 text-xl flex-shrink-0" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                How the Commission System Works
-              </h3>
-            </div>
-            <button
-              onClick={() => setShowInfoCards(false)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              title="Hide info cards"
-            >
-              <FaTimes />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Automatic Generation Card */}
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
-              <div className="flex items-center gap-2 mb-2">
-                <FaCalendarAlt className="text-green-600" />
-                <h4 className="font-semibold text-gray-900">
-                  Automatic Generation
-                </h4>
-              </div>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Commissions are <strong>automatically generated</strong> on the{" "}
-                <strong>1st of every month at 2:00 AM</strong> for the previous
-                month's completed orders. You don't need to manually generate
-                them.
-              </p>
-            </div>
-
-            {/* Commission Rates Card */}
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
-              <div className="flex items-center gap-2 mb-2">
-                <FaCalculator className="text-purple-600" />
-                <h4 className="font-semibold text-gray-900">
-                  Commission Rates
-                </h4>
-              </div>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>
-                  • <strong>Agent:</strong> {settings?.agentCommission || 5}%
-                </p>
-                <p>
-                  • <strong>Super Agent:</strong>{" "}
-                  {settings?.superAgentCommission || 7.5}%
-                </p>
-                <p>
-                  • <strong>Dealer:</strong> {settings?.dealerCommission || 10}%
-                </p>
-                <p>
-                  • <strong>Super Dealer:</strong>{" "}
-                  {settings?.superDealerCommission || 12.5}%
-                </p>
-              </div>
-            </div>
-
-            {/* Expiry Policy Card */}
-            <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
-              <div className="flex items-center gap-2 mb-2">
-                <FaClock className="text-orange-600" />
-                <h4 className="font-semibold text-gray-900">
-                  30-Day Expiry Policy
-                </h4>
-              </div>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Pending commissions{" "}
-                <strong>automatically expire after 30 days</strong>. The system
-                runs a cleanup job on the <strong>1st of every month</strong> to
-                expire old pending commissions.
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
-            <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-              <FaInfoCircle className="text-blue-600" />
-              What the Buttons Do
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
-              <div>
-                <strong className="text-blue-600">
-                  Recalculate Commissions:
-                </strong>{" "}
-                Use this only if you need to force regeneration for a specific
-                month (e.g., if rates were updated). Normal operation doesn't
-                require this.
-              </div>
-              <div>
-                <strong className="text-orange-600">
-                  Expire Old Commissions:
-                </strong>{" "}
-                Manually trigger the expiry process to expire pending
-                commissions older than 30 days. Useful for testing or immediate
-                cleanup.
-              </div>
-              <div>
-                <strong className="text-gray-600">Settings:</strong> Update
-                commission rates for each agent tier. Changes apply to new
-                commissions only.
-              </div>
-              <div>
-                <strong className="text-green-600">Pay / Reject:</strong>{" "}
-                Process pending commissions by either paying agents or rejecting
-                invalid ones.
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Show Info Cards Button (when hidden) */}
-      {!showInfoCards && (
-        <button
-          onClick={() => setShowInfoCards(true)}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-2 transition-colors"
-        >
-          <FaInfoCircle />
-          <span>Show Commission System Info</span>
-        </button>
-      )}
-
       {/* Filters */}
-      <SearchAndFilter {...searchAndFilterProps} />
+      <SearchAndFilter
+        searchTerm={agentSearch}
+        onSearchChange={setAgentSearch}
+        searchPlaceholder="Search by agent name, email, business, or code..."
+        filters={{
+          status: {
+            value: statusFilter,
+            options: [
+              { value: "pending", label: "Pending" },
+              { value: "paid", label: "Paid" },
+              { value: "rejected", label: "Rejected" },
+              { value: "cancelled", label: "Cancelled" },
+            ],
+            label: "Status",
+            placeholder: "All Statuses",
+          },
+          period: {
+            value: periodFilter,
+            options: [
+              { value: "monthly", label: "Monthly" },
+              { value: "weekly", label: "Weekly" },
+              { value: "daily", label: "Daily" },
+            ],
+            label: "Period",
+            placeholder: "All Periods",
+          },
+          month: {
+            value: monthFilter,
+            options: monthOptions,
+            label: "Month",
+            placeholder: "All Months",
+          },
+        }}
+        onFilterChange={(filterKey, value) => {
+          if (filterKey === "status") setStatusFilter(value);
+          if (filterKey === "period") setPeriodFilter(value);
+          if (filterKey === "month") setMonthFilter(value);
+        }}
+        onSearch={(e) => {
+          e.preventDefault();
+          fetchData();
+        }}
+        onClearFilters={() => {
+          setAgentSearch("");
+          setStatusFilter("all");
+          setPeriodFilter("all");
+          setMonthFilter("all");
+        }}
+        isLoading={isLoading}
+        className="mb-6"
+      />
 
-      {/* Commissions Display - Mobile Cards or Desktop Table */}
-      {isMobile ? (
-        /* Mobile Card Layout */
-        <div className="space-y-4">
-          {filteredCommissions.length === 0 ? (
-            <Card>
-              <CardBody className="text-center py-12">
-                <div className="flex flex-col items-center">
-                  <FaMoneyBillWave className="text-gray-400 text-4xl mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {commissions.length === 0
-                      ? "No Commissions Found"
-                      : searchTerm ||
-                        filters.status ||
-                        filters.month ||
-                        filters.startDate ||
-                        filters.endDate
-                      ? "No Commissions Match Your Search"
-                      : `No ${filters.status || "Pending"} Commissions`}
-                  </h3>
-                  <p className="text-gray-500 mb-4">
-                    {commissions.length === 0
-                      ? "There are no commission records available at this time."
-                      : searchTerm ||
-                        filters.status ||
-                        filters.month ||
-                        filters.startDate ||
-                        filters.endDate
-                      ? "Try adjusting your search criteria or filters to find what you're looking for."
-                      : `There are currently no ${
-                          filters.status || "pending"
-                        } commission records.`}
-                  </p>
-                  {(searchTerm ||
-                    filters.status ||
-                    filters.month ||
-                    filters.startDate ||
-                    filters.endDate) && (
-                    <Button
-                      variant="outline"
-                      onClick={handleClearFilters}
-                      className="flex items-center"
-                      leftIcon={<FaCalculator className="text-sm" />}
-                    >
-                      Clear Filters
-                    </Button>
-                  )}
-                </div>
-              </CardBody>
-            </Card>
-          ) : (
-            filteredCommissions.map((commission) => (
-              <Card
-                key={commission._id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardBody>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
+      {/* Results Summary */}
+      <div className="mb-4 text-sm text-gray-600">
+        Showing {displayedCommissions.length} of {totalItems} commissions
+      </div>
+
+      {/* Table - Desktop View */}
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={
+                      displayedCommissions.length > 0 &&
+                      selectedCommissions.length === displayedCommissions.length
+                    }
+                    onChange={toggleSelectAll}
+                    className="rounded border-gray-300"
+                  />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Agent
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Period
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Orders / Revenue
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Rate / Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Status {recordTypeFilter === "finalized" && "/ Finalized"}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center">
+                    <FaSync className="animate-spin inline-block text-blue-600 text-2xl mb-2" />
+                    <p className="text-gray-600">Loading...</p>
+                  </td>
+                </tr>
+              ) : displayedCommissions.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-12 text-center text-gray-500"
+                  >
+                    <FaCoins className="text-4xl mx-auto mb-4 text-gray-300" />
+                    <p>No commissions found</p>
+                  </td>
+                </tr>
+              ) : (
+                displayedCommissions.map((commission) => (
+                  <tr key={commission._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
                       <input
                         type="checkbox"
                         checked={selectedCommissions.includes(commission._id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedCommissions([
-                              ...selectedCommissions,
-                              commission._id,
-                            ]);
-                          } else {
-                            setSelectedCommissions(
-                              selectedCommissions.filter(
-                                (id) => id !== commission._id
-                              )
-                            );
-                          }
-                        }}
+                        onChange={() => toggleSelection(commission._id)}
                         className="rounded border-gray-300"
                       />
+                    </td>
+                    <td className="px-6 py-4">
                       <div>
-                        <h3 className="font-medium text-gray-900">
-                          {commission.agentId?.fullName || "Unknown Agent"}
-                        </h3>
+                        <p className="font-medium text-gray-900">
+                          {commission.agentId.fullName}
+                        </p>
                         <p className="text-sm text-gray-500">
-                          {commission.agentId?.email || "No email"}
+                          {commission.agentId.email}
+                        </p>
+                        {commission.agentId.businessName && (
+                          <p className="text-xs text-gray-400">
+                            {commission.agentId.businessName}
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 capitalize">
+                          {commission.period}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formatDate(commission.periodStart)} -{" "}
+                          {formatDate(commission.periodEnd)}
                         </p>
                       </div>
-                    </div>
-                    <Badge colorScheme={getStatusColor(commission.status)}>
-                      {commission.status}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-3">
-                    <div>
-                      <p className="text-xs text-gray-500">Period</p>
-                      <p className="text-sm font-medium">
-                        {new Date(commission.periodStart).toLocaleDateString()}{" "}
-                        - {new Date(commission.periodEnd).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Orders</p>
-                      <p className="text-sm font-medium">
-                        {commission.totalOrders}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Revenue</p>
-                      <p className="text-sm font-medium">
-                        {formatCurrency(commission.totalRevenue)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Commission</p>
-                      <p className="text-sm font-medium text-green-600">
-                        {formatCurrency(commission.amount)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewCommission(commission)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      <FaEye className="text-sm mr-1" />
-                      View
-                    </Button>
-                    {commission.status === "pending" && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePaySingleCommission(commission)}
-                          className="text-green-600 hover:text-green-700"
-                        >
-                          <FaCheck className="text-sm mr-1" />
-                          Pay
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleRejectSingleCommission(commission)
-                          }
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <FaTimes className="text-sm mr-1" />
-                          Reject
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </CardBody>
-              </Card>
-            ))
-          )}
-        </div>
-      ) : (
-        /* Desktop Table Layout */
-        <Card>
-          <CardBody className="p-0">
-            {filteredCommissions.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="flex flex-col items-center">
-                  <FaMoneyBillWave className="text-gray-400 text-4xl mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {commissions.length === 0
-                      ? "No Commissions Found"
-                      : searchTerm ||
-                        filters.status ||
-                        filters.month ||
-                        filters.startDate ||
-                        filters.endDate
-                      ? "No Commissions Match Your Search"
-                      : `No ${filters.status || "Pending"} Commissions`}
-                  </h3>
-                  <p className="text-gray-500 mb-4">
-                    {commissions.length === 0
-                      ? "There are no commission records available at this time."
-                      : searchTerm ||
-                        filters.status ||
-                        filters.month ||
-                        filters.startDate ||
-                        filters.endDate
-                      ? "Try adjusting your search criteria or filters to find what you're looking for."
-                      : `There are currently no ${
-                          filters.status || "pending"
-                        } commission records.`}
-                  </p>
-                  {(searchTerm ||
-                    filters.status ||
-                    filters.month ||
-                    filters.startDate ||
-                    filters.endDate) && (
-                    <Button
-                      variant="outline"
-                      onClick={handleClearFilters}
-                      className="flex items-center gap-2"
-                    >
-                      <FaCalculator className="text-sm" />
-                      Clear Filters
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <Table>
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left">
-                      <input
-                        type="checkbox"
-                        checked={
-                          selectedCommissions.length ===
-                          filteredCommissions.length
-                        }
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedCommissions(
-                              filteredCommissions.map((c) => c._id)
-                            );
-                          } else {
-                            setSelectedCommissions([]);
-                          }
-                        }}
-                      />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Agent
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      User Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Period
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Orders
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Revenue
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Commission
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredCommissions.map((commission) => (
-                    <tr key={commission._id}>
-                      <td className="px-6 py-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedCommissions.includes(commission._id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedCommissions([
-                                ...selectedCommissions,
-                                commission._id,
-                              ]);
-                            } else {
-                              setSelectedCommissions(
-                                selectedCommissions.filter(
-                                  (id) => id !== commission._id
-                                )
-                              );
-                            }
-                          }}
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {commission.agentId?.fullName || "Unknown Agent"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-sm text-gray-900">
+                          {commission.totalOrders} orders
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {formatCurrency(commission.totalRevenue)}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-sm font-semibold text-green-600">
+                          {formatCurrency(commission.amount)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {(commission.commissionRate * 100).toFixed(1)}% rate
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          commission.status === "paid"
+                            ? "bg-green-100 text-green-800"
+                            : commission.status === "pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : commission.status === "rejected"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {commission.status}
+                      </span>
+                      {recordTypeFilter === "finalized" &&
+                        commission.finalizedAt && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Finalized:{" "}
+                            {new Date(
+                              commission.finalizedAt
+                            ).toLocaleDateString("en-GB")}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {commission.agentId?.email || "No email"}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <Badge
-                          colorScheme={
-                            commission.agentId?.userType === "super_dealer"
-                              ? "info"
-                              : commission.agentId?.userType === "dealer"
-                              ? "success"
-                              : commission.agentId?.userType === "super_agent"
-                              ? "warning"
-                              : "default"
-                          }
-                        >
-                          {commission.agentId?.userType
-                            ?.replace("_", " ")
-                            .toUpperCase() || "AGENT"}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {new Date(commission.periodStart).toLocaleDateString()}{" "}
-                        - {new Date(commission.periodEnd).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {commission.totalOrders}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {formatCurrency(commission.totalRevenue)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {formatCurrency(commission.amount)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge colorScheme={getStatusColor(commission.status)}>
-                          {commission.status}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewCommission(commission)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <FaEye className="text-sm" />
-                          </Button>
-                          {commission.status === "pending" && (
+                        )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        {recordTypeFilter === "finalized" &&
+                          commission.status === "pending" && (
                             <>
                               <Button
-                                variant="outline"
+                                onClick={() => handlePay(commission._id)}
+                                disabled={isLoading}
                                 size="sm"
-                                onClick={() =>
-                                  handlePaySingleCommission(commission)
-                                }
-                                className="text-green-600 hover:text-green-700"
+                                className="bg-green-600 hover:bg-green-700"
                               >
-                                <FaCheck className="text-sm" />
+                                Pay
                               </Button>
                               <Button
-                                variant="outline"
+                                onClick={() => {
+                                  setRejectTarget({
+                                    type: "single",
+                                    id: commission._id,
+                                  });
+                                  setShowRejectModal(true);
+                                }}
+                                disabled={isLoading}
                                 size="sm"
-                                onClick={() =>
-                                  handleRejectSingleCommission(commission)
-                                }
-                                className="text-red-600 hover:text-red-700"
+                                className="bg-red-600 hover:bg-red-700"
                               >
-                                <FaTimes className="text-sm" />
+                                Reject
                               </Button>
                             </>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            )}
-          </CardBody>
-        </Card>
-      )}
+                        {recordTypeFilter === "current" && (
+                          <span className="text-xs text-gray-500 italic">
+                            Accumulating...
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      {/* Pay Multiple Dialog */}
-      <Dialog isOpen={showPayDialog} onClose={() => setShowPayDialog(false)}>
-        <DialogHeader>Pay Selected Commissions</DialogHeader>
-        <DialogBody>
-          <div className="space-y-4">
-            <p>
-              Are you sure you want to pay {selectedCommissions.length}{" "}
-              commission(s)?
-            </p>
-            <Input
-              label="Payment Reference (Optional)"
-              value={paymentReference}
-              onChange={(e) => setPaymentReference(e.target.value)}
-              placeholder="Enter payment reference"
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+              totalItems={totalItems}
             />
           </div>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowPayDialog(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handlePaySelected}>Pay Commissions</Button>
-        </DialogFooter>
-      </Dialog>
+        )}
+      </div>
 
-      {/* Settings Dialog */}
-      <Dialog
-        isOpen={showSettingsDialog}
-        onClose={() => setShowSettingsDialog(false)}
-      >
-        <DialogHeader>Commission Settings</DialogHeader>
-        <DialogBody>
-          {settings && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Agent Commission Rate (%)"
-                  type="number"
-                  value={
-                    localSettings?.agentCommission ?? settings.agentCommission
-                  }
-                  onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings!,
-                      agentCommission: parseFloat(e.target.value),
-                    })
-                  }
-                  min="0"
-                  max="100"
-                  step="0.1"
-                />
-                <Input
-                  label="Super Agent Commission Rate (%)"
-                  type="number"
-                  value={
-                    localSettings?.superAgentCommission ??
-                    settings.superAgentCommission
-                  }
-                  onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings!,
-                      superAgentCommission: parseFloat(e.target.value),
-                    })
-                  }
-                  min="0"
-                  max="100"
-                  step="0.1"
-                />
-                <Input
-                  label="Dealer Commission Rate (%)"
-                  type="number"
-                  value={
-                    localSettings?.dealerCommission ?? settings.dealerCommission
-                  }
-                  onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings!,
-                      dealerCommission: parseFloat(e.target.value),
-                    })
-                  }
-                  min="0"
-                  max="100"
-                  step="0.1"
-                />
-                <Input
-                  label="Super Dealer Commission Rate (%)"
-                  type="number"
-                  value={
-                    localSettings?.superDealerCommission ??
-                    settings.superDealerCommission
-                  }
-                  onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings!,
-                      superDealerCommission: parseFloat(e.target.value),
-                    })
-                  }
-                  min="0"
-                  max="100"
-                  step="0.1"
-                />
-                <Input
-                  label="Default Commission Rate (%)"
-                  type="number"
-                  value={
-                    localSettings?.defaultCommissionRate ??
-                    settings.defaultCommissionRate
-                  }
-                  onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings!,
-                      defaultCommissionRate: parseFloat(e.target.value),
-                    })
-                  }
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  className="md:col-span-2"
-                />
-                <div className="md:col-span-2 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-800">
-                    <strong>Default Rate:</strong> This rate will be applied to
-                    all user types that don't have a specific commission rate
-                    set. Currently set to{" "}
-                    <span className="font-semibold">
-                      {localSettings?.defaultCommissionRate ??
-                        settings.defaultCommissionRate}
-                      %
-                    </span>
-                    .
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setShowSettingsDialog(false)}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleUpdateSettings}>Save Settings</Button>
-        </DialogFooter>
-      </Dialog>
-
-      {/* Pay Single Commission Dialog */}
-      <Dialog
-        isOpen={showPaySingleDialog}
-        onClose={() => setShowPaySingleDialog(false)}
-      >
-        <DialogHeader>Pay Commission</DialogHeader>
-        <DialogBody>
-          <div className="space-y-4">
-            {selectedCommission && (
-              <>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    Commission Details
-                  </h4>
-                  <div className="space-y-1 text-sm">
-                    <p>
-                      <span className="font-medium">Agent:</span>{" "}
-                      {selectedCommission.agentId?.fullName || "Unknown Agent"}
-                    </p>
-                    <p>
-                      <span className="font-medium">Amount:</span>{" "}
-                      {formatCurrency(selectedCommission.amount)}
-                    </p>
-                    <p>
-                      <span className="font-medium">Period:</span>{" "}
-                      {new Date(
-                        selectedCommission.periodStart
-                      ).toLocaleDateString()}{" "}
-                      -{" "}
-                      {new Date(
-                        selectedCommission.periodEnd
-                      ).toLocaleDateString()}
-                    </p>
-                    <p>
-                      <span className="font-medium">Orders:</span>{" "}
-                      {selectedCommission.totalOrders}
-                    </p>
-                  </div>
-                </div>
-                <Input
-                  label="Payment Reference (Optional)"
-                  value={singlePaymentReference}
-                  onChange={(e) => setSinglePaymentReference(e.target.value)}
-                  placeholder="Enter payment reference"
-                />
-              </>
-            )}
+      {/* Card View - Mobile */}
+      <div className="md:hidden space-y-4">
+        {isLoading ? (
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <FaSync className="animate-spin inline-block text-blue-600 text-2xl mb-2" />
+            <p className="text-gray-600">Loading...</p>
           </div>
-        </DialogBody>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setShowPaySingleDialog(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmSinglePayment}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <FaCheck className="text-sm mr-2" />
-            Confirm Payment
-          </Button>
-        </DialogFooter>
-      </Dialog>
-
-      {/* Reject Single Commission Dialog */}
-      <Dialog
-        isOpen={showRejectSingleDialog}
-        onClose={() => setShowRejectSingleDialog(false)}
-      >
-        <DialogHeader>Reject Commission</DialogHeader>
-        <DialogBody>
-          <div className="space-y-4">
-            {selectedCommission && (
-              <>
-                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                  <h4 className="font-medium text-red-900 mb-2">
-                    Commission Details
-                  </h4>
-                  <div className="space-y-1 text-sm">
-                    <p>
-                      <span className="font-medium">Agent:</span>{" "}
-                      {selectedCommission.agentId.fullName}
-                    </p>
-                    <p>
-                      <span className="font-medium">Amount:</span>{" "}
-                      {formatCurrency(selectedCommission.amount)}
-                    </p>
-                    <p>
-                      <span className="font-medium">Period:</span>{" "}
-                      {new Date(
-                        selectedCommission.periodStart
-                      ).toLocaleDateString()}{" "}
-                      -{" "}
-                      {new Date(
-                        selectedCommission.periodEnd
-                      ).toLocaleDateString()}
-                    </p>
-                    <p>
-                      <span className="font-medium">Orders:</span>{" "}
-                      {selectedCommission.totalOrders}
-                    </p>
-                  </div>
-                </div>
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <p className="text-yellow-800 text-sm">
-                    <strong>Warning:</strong> Rejecting this commission will
-                    prevent it from being paid and notify the agent. This action
-                    cannot be undone.
-                  </p>
-                </div>
-                <div>
-                  <label
-                    htmlFor="single-rejection-reason"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Rejection Reason (Optional)
-                  </label>
-                  <textarea
-                    id="single-rejection-reason"
-                    value={singleRejectionReason}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      setSingleRejectionReason(e.target.value)
-                    }
-                    placeholder="Optionally provide a reason for rejecting this commission..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+        ) : displayedCommissions.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <FaCoins className="text-4xl mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-500">No commissions found</p>
+          </div>
+        ) : (
+          displayedCommissions.map((commission) => (
+            <div
+              key={commission._id}
+              className="bg-white rounded-lg shadow p-4 space-y-3"
+            >
+              {/* Header with checkbox and status */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3 flex-1">
+                  <input
+                    type="checkbox"
+                    checked={selectedCommissions.includes(commission._id)}
+                    onChange={() => toggleSelection(commission._id)}
+                    className="rounded border-gray-300 mt-1"
                   />
-                </div>
-              </>
-            )}
-          </div>
-        </DialogBody>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setShowRejectSingleDialog(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmSingleRejection}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            <FaTimes className="text-sm mr-2" />
-            Reject Commission
-          </Button>
-        </DialogFooter>
-      </Dialog>
-
-      {/* Reject Multiple Commissions Dialog */}
-      <Dialog
-        isOpen={showRejectDialog}
-        onClose={() => setShowRejectDialog(false)}
-      >
-        <DialogHeader>Reject Selected Commissions</DialogHeader>
-        <DialogBody>
-          <div className="space-y-4">
-            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-              <h4 className="font-medium text-red-900 mb-2">Bulk Rejection</h4>
-              <p className="text-red-800 text-sm">
-                You are about to reject{" "}
-                <strong>{selectedCommissions.length}</strong> commission(s).
-                This action cannot be undone.
-              </p>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-              <p className="text-yellow-800 text-sm">
-                <strong>Warning:</strong> All selected commissions will be
-                marked as rejected and the agents will be notified. Only pending
-                commissions can be rejected.
-              </p>
-            </div>
-            <div>
-              <label
-                htmlFor="bulk-rejection-reason"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Rejection Reason (Optional)
-              </label>
-              <textarea
-                id="bulk-rejection-reason"
-                value={rejectionReason}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                  setRejectionReason(e.target.value)
-                }
-                placeholder="Optionally provide a reason for rejecting these commissions..."
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              />
-            </div>
-          </div>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmBulkRejection}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            <FaTimes className="text-sm mr-2" />
-            Reject {selectedCommissions.length} Commissions
-          </Button>
-        </DialogFooter>
-      </Dialog>
-
-      {/* View Commission Dialog */}
-      <Dialog isOpen={showViewDialog} onClose={() => setShowViewDialog(false)}>
-        <DialogHeader>Commission Details</DialogHeader>
-        <DialogBody>
-          <div className="space-y-4">
-            {viewingCommission && (
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">
-                    Agent Information
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      <span className="font-medium">Name:</span>{" "}
-                      {viewingCommission.agentId?.fullName || "Unknown Agent"}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">
+                      {commission.agentId.fullName}
                     </p>
-                    <p>
-                      <span className="font-medium">Email:</span>{" "}
-                      {viewingCommission.agentId?.email || "No email"}
+                    <p className="text-sm text-gray-500 truncate">
+                      {commission.agentId.email}
                     </p>
-                    {viewingCommission.agentId?.businessName && (
-                      <p>
-                        <span className="font-medium">Business:</span>{" "}
-                        {viewingCommission.agentId.businessName}
+                    {commission.agentId.businessName && (
+                      <p className="text-xs text-gray-400 truncate">
+                        {commission.agentId.businessName}
                       </p>
                     )}
                   </div>
                 </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">
-                    Commission Information
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="font-medium">Period</p>
-                      <p>
-                        {new Date(
-                          viewingCommission.periodStart
-                        ).toLocaleDateString()}{" "}
-                        -{" "}
-                        {new Date(
-                          viewingCommission.periodEnd
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Status</p>
-                      <Badge
-                        colorScheme={getStatusColor(viewingCommission.status)}
-                      >
-                        {viewingCommission.status}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="font-medium">Total Orders</p>
-                      <p>{viewingCommission.totalOrders}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Commission Rate</p>
-                      <p>{viewingCommission.commissionRate.toFixed(1)}%</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Total Revenue</p>
-                      <p>{formatCurrency(viewingCommission.totalRevenue)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Commission Amount</p>
-                      <p className="text-green-600 font-semibold">
-                        {formatCurrency(viewingCommission.amount)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {viewingCommission.status === "paid" &&
-                  viewingCommission.paidAt && (
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-green-900 mb-2">
-                        Payment Information
-                      </h4>
-                      <div className="space-y-1 text-sm text-green-800">
-                        <p>
-                          <span className="font-medium">Paid At:</span>{" "}
-                          {new Date(viewingCommission.paidAt).toLocaleString()}
-                        </p>
-                        {viewingCommission.paidBy && (
-                          <p>
-                            <span className="font-medium">Paid By:</span>{" "}
-                            {viewingCommission.paidBy.fullName}
-                          </p>
-                        )}
-                        {viewingCommission.paymentReference && (
-                          <p>
-                            <span className="font-medium">Reference:</span>{" "}
-                            {viewingCommission.paymentReference}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                {viewingCommission.status === "rejected" &&
-                  viewingCommission.rejectedAt && (
-                    <div className="bg-red-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-red-900 mb-2">
-                        Rejection Information
-                      </h4>
-                      <div className="space-y-1 text-sm text-red-800">
-                        <p>
-                          <span className="font-medium">Rejected At:</span>{" "}
-                          {new Date(
-                            viewingCommission.rejectedAt
-                          ).toLocaleString()}
-                        </p>
-                        {viewingCommission.rejectedBy && (
-                          <p>
-                            <span className="font-medium">Rejected By:</span>{" "}
-                            {viewingCommission.rejectedBy.fullName}
-                          </p>
-                        )}
-                        {viewingCommission.rejectionReason && (
-                          <div className="mt-2">
-                            <p className="font-medium">Reason:</p>
-                            <p className="text-sm mt-1">
-                              {viewingCommission.rejectionReason}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                {viewingCommission.notes && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">Notes</h4>
-                    <p className="text-sm text-blue-800">
-                      {viewingCommission.notes}
-                    </p>
+                <span
+                  className={`flex-shrink-0 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    commission.status === "paid"
+                      ? "bg-green-100 text-green-800"
+                      : commission.status === "pending"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : commission.status === "rejected"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {commission.status}
+                </span>
+                {recordTypeFilter === "finalized" && commission.finalizedAt && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Finalized:{" "}
+                    {new Date(commission.finalizedAt).toLocaleDateString(
+                      "en-GB"
+                    )}
                   </div>
                 )}
               </div>
-            )}
+
+              {/* Commission Details */}
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Period</p>
+                  <p className="text-sm font-medium text-gray-900 capitalize">
+                    {commission.period}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatDate(commission.periodStart)} -{" "}
+                    {formatDate(commission.periodEnd)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Commission</p>
+                  <p className="text-sm font-bold text-green-600">
+                    {formatCurrency(commission.amount)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(commission.commissionRate * 100).toFixed(1)}% rate
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Orders</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {commission.totalOrders} orders
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Revenue</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {formatCurrency(commission.totalRevenue)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              {recordTypeFilter === "finalized" &&
+                commission.status === "pending" && (
+                  <div className="flex gap-2 pt-3 border-t border-gray-100">
+                    <Button
+                      onClick={() => handlePay(commission._id)}
+                      disabled={isLoading}
+                      size="sm"
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-sm py-2"
+                    >
+                      <FaCheckCircle className="mr-1" />
+                      Pay
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setRejectTarget({
+                          type: "single",
+                          id: commission._id,
+                        });
+                        setShowRejectModal(true);
+                      }}
+                      disabled={isLoading}
+                      size="sm"
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-sm py-2"
+                    >
+                      <FaTimesCircle className="mr-1" />
+                      Reject
+                    </Button>
+                  </div>
+                )}
+              {recordTypeFilter === "current" && (
+                <div className="pt-3 border-t border-gray-100">
+                  <p className="text-xs text-gray-500 italic text-center">
+                    Commission accumulating in real-time
+                  </p>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+
+        {/* Mobile Pagination */}
+        {totalPages > 1 && (
+          <div className="bg-white rounded-lg shadow p-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+              totalItems={totalItems}
+            />
           </div>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowViewDialog(false)}>
-            Close
-          </Button>
-          {viewingCommission?.status === "pending" && (
-            <>
+        )}
+      </div>
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              Reject Commission{rejectTarget.type === "multiple" ? "s" : ""}
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              {rejectTarget.type === "single"
+                ? "Provide a reason for rejecting this commission:"
+                : `Provide a reason for rejecting ${selectedCommissions.length} commission(s):`}
+            </p>
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2 mb-4"
+              rows={4}
+              placeholder="Enter rejection reason..."
+            />
+            <div className="flex gap-3 justify-end">
               <Button
                 onClick={() => {
-                  setShowViewDialog(false);
-                  handlePaySingleCommission(viewingCommission);
+                  setShowRejectModal(false);
+                  setRejectionReason("");
                 }}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-gray-600 hover:bg-gray-700"
               >
-                <FaCheck className="text-sm mr-2" />
-                Pay Commission
+                Cancel
               </Button>
               <Button
-                onClick={() => {
-                  setShowViewDialog(false);
-                  handleRejectSingleCommission(viewingCommission);
-                }}
+                onClick={handleReject}
+                disabled={isLoading}
                 className="bg-red-600 hover:bg-red-700"
               >
-                <FaTimes className="text-sm mr-2" />
-                Reject Commission
+                Reject
               </Button>
-            </>
-          )}
-        </DialogFooter>
-      </Dialog>
-
-      {/* Generate Commissions Dialog */}
-      <Dialog
-        isOpen={showGenerateDialog}
-        onClose={() => setShowGenerateDialog(false)}
-      >
-        <DialogHeader>Generate Monthly Commissions</DialogHeader>
-        <DialogBody>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Month
-              </label>
-              <Input
-                type="month"
-                value={generationMonth}
-                onChange={(e) => setGenerationMonth(e.target.value)}
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Commissions will be generated for all agents who had completed
-                orders in the selected month.
-              </p>
             </div>
           </div>
-        </DialogBody>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setShowGenerateDialog(false)}
-            disabled={isGenerating}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleGenerateCommissions}
-            disabled={isGenerating}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isGenerating ? (
-              <>
-                <Spinner size="sm" className="mr-2" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <FaPlay className="text-sm mr-2" />
-                Generate Commissions
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </Dialog>
+        </div>
+      )}
 
-      {/* Generation Result Dialog */}
-      <Dialog
-        isOpen={showGenerationResult}
-        onClose={() => setShowGenerationResult(false)}
-      >
-        <DialogHeader>Commission Generation Results</DialogHeader>
-        <DialogBody>
-          {generationResult && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {generationResult.summary.created}
-                  </div>
-                  <div className="text-sm text-blue-800">Created</div>
-                </div>
-                <div className="bg-yellow-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">
-                    {generationResult.summary.exists}
-                  </div>
-                  <div className="text-sm text-yellow-800">Already Exist</div>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-gray-600">
-                    {generationResult.results.filter(
-                      (r: { status: string }) =>
-                        r.status === "success" || r.status === "created"
-                    ).length - generationResult.summary.created}
-                  </div>
-                  <div className="text-sm text-gray-800">No Commission</div>
-                </div>
-                <div className="bg-red-50 p-3 rounded-lg">
-                  <div className="text-2xl font-bold text-red-600">
-                    {generationResult.summary.errors}
-                  </div>
-                  <div className="text-sm text-red-800">Errors</div>
-                </div>
+      {/* Commission Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <FaCog className="text-purple-600" />
+              Commission Rate Settings
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Set commission rates for all business user types. Rates are
+              expressed as percentages (0-100).
+            </p>
+
+            <div className="space-y-4 mb-6">
+              {/* Agent Commission */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Agent Commission Rate (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={settingsForm.agentCommission}
+                  onChange={(e) =>
+                    setSettingsForm({
+                      ...settingsForm,
+                      agentCommission: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., 5.0"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Commission rate for regular agents
+                </p>
               </div>
 
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-2">
-                  Processing Summary
-                </h4>
-                <div className="text-sm text-gray-600">
-                  <p>
-                    Total agents processed: {generationResult.summary.total}
-                  </p>
-                  <p>
-                    Success rate:{" "}
-                    {generationResult.summary.total > 0
-                      ? Math.round(
-                          (generationResult.summary.created /
-                            generationResult.summary.total) *
-                            100
-                        )
-                      : 0}
-                    %
-                  </p>
-                  {generationResult.results.every(
-                    (r: { status: string }) => r.status === "exists"
-                  ) && (
-                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                      <p className="text-yellow-800 text-sm">
-                        <strong>Note:</strong> All commissions for this month
-                        have already been generated. The system prevents
-                        duplicate commission records for the same period.
-                      </p>
-                    </div>
-                  )}
-                </div>
+              {/* Super Agent Commission */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Super Agent Commission Rate (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={settingsForm.superAgentCommission}
+                  onChange={(e) =>
+                    setSettingsForm({
+                      ...settingsForm,
+                      superAgentCommission: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., 7.5"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Commission rate for super agents
+                </p>
+              </div>
+
+              {/* Dealer Commission */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dealer Commission Rate (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={settingsForm.dealerCommission}
+                  onChange={(e) =>
+                    setSettingsForm({
+                      ...settingsForm,
+                      dealerCommission: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., 10.0"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Commission rate for dealers
+                </p>
+              </div>
+
+              {/* Super Dealer Commission */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Super Dealer Commission Rate (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={settingsForm.superDealerCommission}
+                  onChange={(e) =>
+                    setSettingsForm({
+                      ...settingsForm,
+                      superDealerCommission: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., 12.5"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Commission rate for super dealers
+                </p>
+              </div>
+
+              {/* Default Commission Rate */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Default Commission Rate (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={settingsForm.defaultCommissionRate}
+                  onChange={(e) =>
+                    setSettingsForm({
+                      ...settingsForm,
+                      defaultCommissionRate: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="e.g., 3.0"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Fallback commission rate for users without a specific rate
+                </p>
               </div>
             </div>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <Button
-            onClick={() => setShowGenerationResult(false)}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Close
-          </Button>
-        </DialogFooter>
-      </Dialog>
 
-      {/* Message */}
-      {/* Toast notifications are now used instead of Alert component */}
+            {/* Current Settings Display */}
+            {commissionSettings && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                  Current Settings
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <p className="text-gray-600">Agent</p>
+                    <p className="font-semibold text-gray-900">
+                      {commissionSettings.agentCommission}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Super Agent</p>
+                    <p className="font-semibold text-gray-900">
+                      {commissionSettings.superAgentCommission}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Dealer</p>
+                    <p className="font-semibold text-gray-900">
+                      {commissionSettings.dealerCommission}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Super Dealer</p>
+                    <p className="font-semibold text-gray-900">
+                      {commissionSettings.superDealerCommission}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Default</p>
+                    <p className="font-semibold text-gray-900">
+                      {commissionSettings.defaultCommissionRate}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={() => {
+                  setShowSettingsModal(false);
+                  if (commissionSettings) {
+                    setSettingsForm({
+                      agentCommission: commissionSettings.agentCommission,
+                      superAgentCommission:
+                        commissionSettings.superAgentCommission,
+                      dealerCommission: commissionSettings.dealerCommission,
+                      superDealerCommission:
+                        commissionSettings.superDealerCommission,
+                      defaultCommissionRate:
+                        commissionSettings.defaultCommissionRate,
+                    });
+                  }
+                }}
+                className="bg-gray-600 hover:bg-gray-700"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdateSettings}
+                disabled={isLoading}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {isLoading ? "Updating..." : "Update Settings"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

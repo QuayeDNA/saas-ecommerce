@@ -22,6 +22,7 @@ export { Dialog } from './components/dialog';
 export { DialogHeader } from './components/dialog-header';
 export { DialogBody } from './components/dialog-body';
 export { DialogFooter } from './components/dialog-footer';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './components/tabs';
 
 // New components
 export { Spinner } from './components/spinner';
