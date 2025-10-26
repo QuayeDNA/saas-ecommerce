@@ -427,6 +427,21 @@ class CommissionService {
   }
 
   /**
+   * Generate monthly commissions for all agents (super admin only)
+   * @param data - Generation parameters
+   * @returns Promise<MonthlyGenerationResponse>
+   */
+  async generateMonthlyCommissions(
+    data: GenerateMonthlyCommissionsData = {}
+  ): Promise<MonthlyGenerationResponse> {
+    const response = await apiClient.post(
+      "/api/commissions/generate-monthly",
+      data
+    );
+    return response.data;
+  }
+
+  /**
    * Get commission statistics (business users)
    * @returns Promise<CommissionStatistics>
    */
