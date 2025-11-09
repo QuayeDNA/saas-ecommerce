@@ -82,14 +82,14 @@ const quickLinks = [
 // Skeleton loading components
 const MetricCardSkeleton = () => (
   <Card className="animate-pulse bg-[#142850] border-[#0f1f3a]">
-    <CardBody className="p-4 sm:p-5 lg:p-6">
-      <div className="flex items-center justify-between gap-3 sm:gap-4">
+    <CardBody className="p-3 sm:p-4 md:p-6">
+      <div className="flex items-center justify-between gap-2 sm:gap-3">
         <div className="flex-1 min-w-0">
-          <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
-          <div className="h-8 bg-gray-300 rounded w-16 mb-1"></div>
-          <div className="h-3 bg-gray-300 rounded w-20"></div>
+          <div className="h-3 sm:h-4 bg-gray-300 rounded w-16 sm:w-24 mb-1 sm:mb-2"></div>
+          <div className="h-5 sm:h-6 md:h-8 bg-gray-300 rounded w-12 sm:w-16 mb-1"></div>
+          <div className="h-2 sm:h-3 bg-gray-300 rounded w-14 sm:w-20"></div>
         </div>
-        <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+        <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gray-300 rounded-full flex-shrink-0"></div>
       </div>
     </CardBody>
   </Card>
@@ -438,18 +438,18 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
+                    <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Total Users
                     </p>
-                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
+                    <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {stats.users.total.toLocaleString()}
                     </p>
-                    <p className="text-xs text-green-400 mt-1 truncate">
+                    <p className="text-[9px] xs:text-xs text-green-400 mt-0.5 sm:mt-1 truncate">
                       +{stats.users.newThisWeek} this week
                     </p>
                   </div>
                   <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaUsers className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
+                    <FaUsers className="text-white text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
@@ -460,18 +460,18 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
+                    <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Total Revenue
                     </p>
-                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
+                    <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {formatCurrency(stats.revenue.total)}
                     </p>
-                    <p className="text-xs text-green-400 mt-1 truncate">
+                    <p className="text-[9px] xs:text-xs text-green-400 mt-0.5 sm:mt-1 truncate">
                       +{formatCurrency(stats.revenue.total)} total
                     </p>
                   </div>
                   <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaMoneyBillWave className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
+                    <FaMoneyBillWave className="text-white text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
@@ -482,18 +482,18 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
+                    <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Total Orders
                     </p>
-                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
+                    <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {stats.orders.total.toLocaleString()}
                     </p>
-                    <p className="text-xs text-blue-400 mt-1 truncate">
+                    <p className="text-[9px] xs:text-xs text-blue-400 mt-0.5 sm:mt-1 truncate">
                       {stats.orders.successRate}% success rate
                     </p>
                   </div>
                   <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaClipboardList className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
+                    <FaClipboardList className="text-white text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
@@ -504,14 +504,14 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
+                    <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       {userTypeCarousel[carouselIndex].label}
                     </p>
-                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
+                    <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {getUserTypeCount(userTypeCarousel[carouselIndex].key)}
                     </p>
                     <p
-                      className={`text-xs mt-1 truncate ${userTypeCarousel[carouselIndex].color}`}
+                      className={`text-[9px] xs:text-xs mt-0.5 sm:mt-1 truncate ${userTypeCarousel[carouselIndex].color}`}
                     >
                       {getUserTypeCount(userTypeCarousel[carouselIndex].key)}{" "}
                       total
@@ -544,18 +544,18 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
+                    <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Total Commissions
                     </p>
-                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
+                    <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {formatCurrency(stats.commissions.totalPaid)}
                     </p>
-                    <p className="text-xs text-yellow-400 mt-1 truncate">
+                    <p className="text-[9px] xs:text-xs text-yellow-400 mt-0.5 sm:mt-1 truncate">
                       {stats.commissions.pendingCount} pending
                     </p>
                   </div>
                   <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaMoneyBillWave className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
+                    <FaMoneyBillWave className="text-white text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
@@ -566,18 +566,18 @@ export default function SuperAdminDashboard() {
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
+                    <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
                       Active Providers
                     </p>
-                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
+                    <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
                       {stats.providers.active}
                     </p>
-                    <p className="text-xs text-indigo-400 mt-1 truncate">
+                    <p className="text-[9px] xs:text-xs text-indigo-400 mt-0.5 sm:mt-1 truncate">
                       {stats.providers.newThisMonth} new this month
                     </p>
                   </div>
                   <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaBuilding className="text-white text-sm sm:text-base md:text-lg lg:text-xl" />
+                    <FaBuilding className="text-white text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl" />
                   </div>
                 </div>
               </CardBody>
