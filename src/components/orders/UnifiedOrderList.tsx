@@ -1,5 +1,6 @@
 // src/components/orders/UnifiedOrderList.tsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useOrder } from "../../hooks/use-order";
 import { useAuth } from "../../hooks/use-auth";
 import { providerService } from "../../services/provider.service";
@@ -49,6 +50,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 }) => {
   const { authState } = useAuth();
   const { addToast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     orders,
     loading,
@@ -112,6 +114,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   // Ref to track if component is mounted
   const isMountedRef = useRef(true);
+
+  // Handle search parameter from URL (e.g., when navigating from user details)
+  useEffect(() => {
+    const searchFromUrl = searchParams.get("search");
+    if (searchFromUrl) {
+      setSearchTerm(searchFromUrl);
+      // Clear the search param from URL after setting it
+      setSearchParams({}, { replace: true });
+      addToast(`Searching for order: ${searchFromUrl}`, "info");
+    }
+  }, [searchParams, setSearchParams, addToast]);
 
   // Helper variables to use the correct data based on active tab
   const currentOrders = activeTab === "reported" ? reportedOrders : orders;
@@ -432,10 +445,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   const handleSelectByReceptionStatus = useCallback(
     (receptionStatuses: string[]) => {
-      const ordersToSelect = currentOrders.filter((order: Order) =>
-        order.reported && 
-        order.receptionStatus && 
-        receptionStatuses.includes(order.receptionStatus)
+      const ordersToSelect = currentOrders.filter(
+        (order: Order) =>
+          order.reported &&
+          order.receptionStatus &&
+          receptionStatuses.includes(order.receptionStatus)
       );
       setSelectedOrders(ordersToSelect.map((o: Order) => o._id || ""));
     },
@@ -1148,7 +1162,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         isOpen={showDraftHandler}
         onClose={handleCloseDraftHandler}
       />
-
       {/* Smart Select Dialog */}
       <SmartSelectDialog
         isOpen={showSmartSelectDialog}

@@ -291,11 +291,19 @@ export default function SuperAdminUserDetailsPage() {
 
   const handleViewOrder = (orderId: string) => {
     try {
-      // Navigate to the correct order details page
-      window.open(`/orders/${orderId}`, "_blank");
-      addToast("Opening order details", "info");
+      // Find the order to get its order number
+      const order = orders.find((o) => o._id === orderId);
+      if (order && order.orderNumber) {
+        // Navigate to orders page with order number as search parameter
+        navigate(
+          `/superadmin/orders?search=${encodeURIComponent(order.orderNumber)}`
+        );
+        addToast("Navigating to order", "info");
+      } else {
+        addToast("Order not found", "error");
+      }
     } catch {
-      addToast("Failed to open order details", "error");
+      addToast("Failed to navigate to order", "error");
     }
   };
 

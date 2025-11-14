@@ -33,6 +33,7 @@ import {
 } from "../../design-system";
 import { BundleCreationModal } from "../../components/products/BundleCreationModal";
 import { PricingManagementModal } from "../../components/products/PricingManagementModal";
+import { BulkPricingManagementModal } from "../../components/products/BulkPricingManagementModal";
 import { useToast } from "../../design-system/components/toast";
 import { getProviderColors } from "../../utils/provider-colors";
 
@@ -77,6 +78,7 @@ export const BundleManagementPage: React.FC = () => {
   const [deleteBundle, setDeleteBundle] = useState<Bundle | null>(null);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [pricingBundle, setPricingBundle] = useState<Bundle | null>(null);
+  const [showBulkPricingModal, setShowBulkPricingModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -163,8 +165,10 @@ export const BundleManagementPage: React.FC = () => {
         (bundle) =>
           bundle.name.toLowerCase().includes(searchTerm) ||
           bundle.description?.toLowerCase().includes(searchTerm) ||
-          (bundle.dataVolume && bundle.dataVolume.toString().includes(searchTerm)) ||
-          (bundle.dataUnit && bundle.dataUnit.toLowerCase().includes(searchTerm))
+          (bundle.dataVolume &&
+            bundle.dataVolume.toString().includes(searchTerm)) ||
+          (bundle.dataUnit &&
+            bundle.dataUnit.toLowerCase().includes(searchTerm))
       );
     }
 
@@ -275,6 +279,20 @@ export const BundleManagementPage: React.FC = () => {
     addToast("Pricing updated successfully", "success");
   };
 
+  const handleBulkPricing = () => {
+    if (bundles.length === 0) {
+      addToast("No bundles available for pricing management", "warning");
+      return;
+    }
+    setShowBulkPricingModal(true);
+  };
+
+  const handleBulkPricingUpdated = async () => {
+    await fetchBundles();
+    setShowBulkPricingModal(false);
+    addToast("Bulk pricing updated successfully", "success");
+  };
+
   const handleFormSubmit = async (data: Bundle) => {
     setActionLoading(true);
     setActionError(null);
@@ -300,7 +318,7 @@ export const BundleManagementPage: React.FC = () => {
         };
 
         // Only include data fields for non-AFA bundles
-        const isAfaBundle = pkg?.provider === 'AFA';
+        const isAfaBundle = pkg?.provider === "AFA";
         if (!isAfaBundle) {
           finalUpdateData.dataVolume = data.dataVolume;
           finalUpdateData.dataUnit = data.dataUnit;
@@ -342,7 +360,7 @@ export const BundleManagementPage: React.FC = () => {
         };
 
         // Only include data fields for non-AFA bundles
-        const isAfaBundle = pkg?.provider === 'AFA';
+        const isAfaBundle = pkg?.provider === "AFA";
         if (!isAfaBundle) {
           createData.dataVolume = data.dataVolume;
           createData.dataUnit = data.dataUnit;
@@ -473,6 +491,16 @@ export const BundleManagementPage: React.FC = () => {
                 <FaRedo className="mr-2" />
                 Refresh
               </Button>
+              <Button
+                variant="outline"
+                onClick={handleBulkPricing}
+                disabled={loading || bundles.length === 0}
+                size="sm"
+                className="bg-green-50 text-green-700 border-green-300 hover:bg-green-100"
+              >
+                <FaDollarSign className="mr-2" />
+                Bulk Pricing
+              </Button>
               <Button variant="outline" size="sm">
                 <FaDownload className="mr-2" />
                 Export
@@ -593,6 +621,38 @@ export const BundleManagementPage: React.FC = () => {
         </Card>
       </div>
 
+      {/* Bulk Pricing Info Banner */}
+      {bundles.length > 0 && (
+        <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+          <CardBody>
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                <FaDollarSign className="text-green-600 text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                  💡 Bulk Pricing Management Available
+                </h3>
+                <p className="text-xs text-gray-700 mb-2">
+                  Manage pricing for all {bundles.length} bundles across
+                  multiple user types (Customer, Agent, Super Agent, Dealer,
+                  Super Dealer) in one place. Click "Bulk Pricing" to open the
+                  management table.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={handleBulkPricing}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <FaDollarSign className="mr-2" />
+                  Open Bulk Pricing Manager
+                </Button>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       {/* Search and Filters */}
       <SearchAndFilter
         searchTerm={search}
@@ -703,38 +763,50 @@ export const BundleManagementPage: React.FC = () => {
 
                       {/* Bundle Details */}
                       <div className="space-y-2 mb-3">
-                        {pkg?.provider === 'AFA' ? (
+                        {pkg?.provider === "AFA" ? (
                           // AFA-specific details
                           <>
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">Type:</span>
+                              <span className="text-xs text-gray-500">
+                                Type:
+                              </span>
                               <span className="text-xs font-medium text-gray-900">
                                 AFA Registration Service
                               </span>
                             </div>
                             {bundle.requiresGhanaCard && (
                               <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500">Ghana Card:</span>
+                                <span className="text-xs text-gray-500">
+                                  Ghana Card:
+                                </span>
                                 <span className="text-xs font-medium text-green-600">
                                   Required
                                 </span>
                               </div>
                             )}
-                            {bundle.afaRequirements && bundle.afaRequirements.length > 0 && (
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500">Requirements:</span>
-                                <span className="text-xs font-medium text-gray-900">
-                                  {bundle.afaRequirements.length} item{bundle.afaRequirements.length !== 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            )}
+                            {bundle.afaRequirements &&
+                              bundle.afaRequirements.length > 0 && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-gray-500">
+                                    Requirements:
+                                  </span>
+                                  <span className="text-xs font-medium text-gray-900">
+                                    {bundle.afaRequirements.length} item
+                                    {bundle.afaRequirements.length !== 1
+                                      ? "s"
+                                      : ""}
+                                  </span>
+                                </div>
+                              )}
                           </>
                         ) : (
                           // Regular bundle details
                           <>
                             {/* Data Volume */}
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">Data:</span>
+                              <span className="text-xs text-gray-500">
+                                Data:
+                              </span>
                               <span className="text-xs font-medium text-gray-900">
                                 {bundle.dataVolume} {bundle.dataUnit}
                               </span>
@@ -900,6 +972,18 @@ export const BundleManagementPage: React.FC = () => {
             setPricingBundle(null);
           }}
           onPricingUpdated={handlePricingUpdated}
+        />
+      )}
+
+      {/* Bulk Pricing Management Modal */}
+      {showBulkPricingModal && (
+        <BulkPricingManagementModal
+          packageId={packageId!}
+          packageName={pkg?.name || "Package"}
+          bundles={bundles}
+          isOpen={showBulkPricingModal}
+          onClose={() => setShowBulkPricingModal(false)}
+          onPricingUpdated={handleBulkPricingUpdated}
         />
       )}
     </div>
