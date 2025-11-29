@@ -1,5 +1,5 @@
 // src/components/orders/UnifiedOrderCard.tsx
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import {
   FaWifi,
   FaChevronRight,
@@ -14,9 +14,7 @@ import { Button } from "../../design-system";
 import { Select } from "../../design-system/components/select";
 import { ReportModal } from "./ReportModal";
 import type { Order } from "../../types/order";
-import { AuthContext } from "../../contexts/AuthContext";
 import { apiClient } from "../../utils/api-client";
-import { PROD_TESTER_USER_ID } from "../../utils/constants";
 
 interface UnifiedOrderCardProps {
   order: Order;
@@ -41,18 +39,6 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   onRefresh,
   onUpdateReceptionStatus,
 }) => {
-  const { authState } = useContext(AuthContext)!;
-  const isProdTester = authState.user?.fullName === "Prod Tester";
-
-  // Get the createdBy user ID for prod tester identification
-  const createdById =
-    typeof order.createdBy === "string"
-      ? order.createdBy
-      : (order.createdBy as { _id: string })?._id;
-
-  // Check if this order was created by the prod tester (using user ID)
-  const isProdTesterOrder = createdById === PROD_TESTER_USER_ID || isProdTester;
-
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
@@ -178,8 +164,11 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
   // Check if order is AFA
   const isAfaOrder = (order: Order) => {
-    return order.items && order.items.length > 0 && 
-           order.items[0].packageDetails?.provider === 'AFA';
+    return (
+      order.items &&
+      order.items.length > 0 &&
+      order.items[0].packageDetails?.provider === "AFA"
+    );
   };
 
   // Extract Ghana Card number from notes
@@ -191,10 +180,12 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
   // Get display info for AFA orders
   const getAfaOrderInfo = (order: Order) => {
-    const ghanaCardNumber = order.customerInfo?.ghanaCardNumber || extractGhanaCardFromNotes(order.notes);
+    const ghanaCardNumber =
+      order.customerInfo?.ghanaCardNumber ||
+      extractGhanaCardFromNotes(order.notes);
     return {
       label: ghanaCardNumber ? "Ghana Card:" : "Service:",
-      value: ghanaCardNumber || "AFA Registration Service"
+      value: ghanaCardNumber || "AFA Registration Service",
     };
   };
 
@@ -326,7 +317,9 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
     // If the order is resolved, check if it's been more than 10 minutes since resolution
     // Use resolvedAt if available, otherwise fall back to updatedAt
-    const resolvedDate = new Date(order.resolvedAt || order.updatedAt || order.createdAt);
+    const resolvedDate = new Date(
+      order.resolvedAt || order.updatedAt || order.createdAt
+    );
     const tenMinutesAgo = new Date();
     tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
 
@@ -351,7 +344,9 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     }
 
     // If the order is resolved, check if it's been more than 10 minutes since resolution
-    const resolvedDate = new Date(order.resolvedAt || order.updatedAt || order.createdAt);
+    const resolvedDate = new Date(
+      order.resolvedAt || order.updatedAt || order.createdAt
+    );
     const tenMinutesAgo = new Date();
     tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
 
@@ -379,11 +374,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   };
 
   return (
-    <div
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
-        isProdTesterOrder ? "ring-2 ring-yellow-400 bg-yellow-50" : ""
-      }`}
-    >
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
       <div className="p-4">
         {/* Header - Order Number, Date, and Status */}
         <div className="flex items-start justify-between mb-3">
@@ -496,7 +487,9 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
               {isAfaOrder(order) ? getAfaOrderInfo(order).label : "Volume:"}
             </span>
             <span className="text-gray-900">
-              {isAfaOrder(order) ? getAfaOrderInfo(order).value : getOrderVolume(order)}
+              {isAfaOrder(order)
+                ? getAfaOrderInfo(order).value
+                : getOrderVolume(order)}
             </span>
           </div>
 
