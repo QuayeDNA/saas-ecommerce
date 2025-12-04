@@ -252,7 +252,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
 
             {/* Pending Request Error */}
             {!checkingPending && hasPendingRequest && (
-              <Alert variant="destructive" className="mb-4">
+              <Alert variant="solid" status="error" className="mb-4">
                 You already have a pending top-up request. Please wait for it to
                 be processed before making a new request.
               </Alert>
@@ -260,7 +260,7 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
 
             {/* Submission Error */}
             {!checkingPending && !hasPendingRequest && error && (
-              <Alert variant="destructive" className="mb-4">
+              <Alert variant="solid" status="error" className="mb-4">
                 {error}
               </Alert>
             )}
