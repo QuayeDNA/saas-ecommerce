@@ -95,7 +95,38 @@ export default defineConfig({
       filename: "sw.js",
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // Clean old caches on activation
+        cleanupOutdatedCaches: true,
+        // Skip waiting to activate new service worker immediately
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
+          // HTML pages - always fetch fresh from network
+          {
+            urlPattern: /\.html$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "html-cache",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60, // 1 hour only
+              },
+              networkTimeoutSeconds: 5,
+            },
+          },
+          // JS and CSS - Network first for latest features
+          {
+            urlPattern: /\.(?:js|css)$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "assets-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day
+              },
+              networkTimeoutSeconds: 5,
+            },
+          },
           {
             urlPattern: /^https:\/\/api\./i,
             handler: "NetworkFirst",
@@ -165,6 +196,10 @@ export default defineConfig({
           http: ["axios", "js-cookie"],
           ui: ["@tanstack/react-query"],
         },
+        // Add hash to filenames for cache busting
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash].[ext]",
       },
     },
     // Compress assets

@@ -253,8 +253,12 @@ export const WalletPage = () => {
 
       // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(null), 5000);
-    } catch {
-      // Failed to submit top-up request
+    } catch (err) {
+      // Error is handled in the hook, but we can show it in the modal
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to submit top-up request";
+      // The error will be displayed in the modal through the hook's error state
+      console.error("Top-up request error:", errorMessage);
     } finally {
       setIsSubmittingRequest(false);
     }
@@ -1006,6 +1010,7 @@ export const WalletPage = () => {
         onClose={() => setShowTopUpModal(false)}
         onSubmit={handleTopUpRequest}
         isSubmitting={isSubmittingRequest}
+        error={error}
       />
     </div>
   );

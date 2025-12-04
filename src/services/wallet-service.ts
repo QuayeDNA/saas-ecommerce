@@ -69,6 +69,19 @@ export const walletService = {
   },
 
   /**
+   * Check if user has a pending top-up request
+   * @returns Boolean indicating if user has pending top-up request
+   */
+  checkPendingTopUpRequest: async (): Promise<boolean> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      hasPendingRequest: boolean;
+    }>("/api/wallet/check-pending-topup");
+
+    return response.data.hasPendingRequest;
+  },
+
+  /**
    * Request a wallet top-up
    * @param amount Amount to request
    * @param description Reason for the top-up
