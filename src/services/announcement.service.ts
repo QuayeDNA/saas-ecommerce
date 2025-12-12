@@ -43,8 +43,6 @@ export const announcementService = {
   ): Promise<Announcement[]> {
     const params = new URLSearchParams();
     if (filters?.status) params.append("status", filters.status);
-    if (filters?.targetAudience)
-      params.append("targetAudience", filters.targetAudience);
     if (filters?.type) params.append("type", filters.type);
 
     const queryString = params.toString();
