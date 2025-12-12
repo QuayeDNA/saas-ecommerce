@@ -7,9 +7,11 @@ import "./design-system/theme.css";
 import { AppProvider } from "./providers/app-provider";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { CommissionProvider } from "./contexts/CommissionContext";
+import { AnnouncementProvider } from "./contexts/AnnouncementContext";
 import { NetworkStatusIndicator } from "./components/network-status-indicator";
 import { MaintenanceBanner } from "./components/maintenance-banner";
 import { InstallPrompt } from "./components/install-prompt";
+import { AnnouncementPopupHandler } from "./components/announcements/announcement-popup-handler";
 
 function App() {
   const routeElement = useRoutes(routes);
@@ -56,12 +58,15 @@ function App() {
           <AppProvider>
             <CommissionProvider>
               <NotificationProvider>
-                <div className="min-h-screen flex flex-col">
-                  <MaintenanceBanner />
-                  <div className="flex-1">{routeElement}</div>
-                  <NetworkStatusIndicator />
-                  <InstallPrompt />
-                </div>
+                <AnnouncementProvider>
+                  <div className="min-h-screen flex flex-col">
+                    <MaintenanceBanner />
+                    <div className="flex-1">{routeElement}</div>
+                    <NetworkStatusIndicator />
+                    <InstallPrompt />
+                    <AnnouncementPopupHandler />
+                  </div>
+                </AnnouncementProvider>
               </NotificationProvider>
             </CommissionProvider>
           </AppProvider>

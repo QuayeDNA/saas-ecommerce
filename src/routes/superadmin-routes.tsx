@@ -25,6 +25,9 @@ const BundleManagementPage = lazy(() =>
   }))
 );
 const CommissionsPage = lazy(() => import("../pages/superadmin/commissions"));
+const AnnouncementsPage = lazy(
+  () => import("../pages/superadmin/announcements")
+);
 
 const superadminRoutes: RouteObject = {
   path: "/superadmin",
@@ -132,6 +135,14 @@ const superadminRoutes: RouteObject = {
           element: (
             <Suspense fallback={<PageLoader />}>
               <CommissionsPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: "announcements",
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <AnnouncementsPage />
             </Suspense>
           ),
         },

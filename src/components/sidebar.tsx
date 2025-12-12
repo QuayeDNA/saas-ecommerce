@@ -16,6 +16,7 @@ import {
   FaMoneyBillWave,
   FaCreditCard,
   FaHistory,
+  FaBullhorn,
 } from "react-icons/fa";
 import { Home, Plus, LogOut, ChevronRight, Check } from "lucide-react";
 import { useState } from "react";
@@ -157,6 +158,11 @@ const getSuperAdminNavItems = (): NavItem[] => [
     label: "Commissions",
     path: "/superadmin/commissions",
     icon: <FaMoneyBillWave />,
+  },
+  {
+    label: "Announcements",
+    path: "/superadmin/announcements",
+    icon: <FaBullhorn />,
   },
   {
     label: "Wallet",
