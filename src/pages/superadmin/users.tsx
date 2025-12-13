@@ -225,37 +225,62 @@ export default function SuperAdminUsersPage() {
     {
       key: "agents",
       label: "Agents",
-      icon: <FaStore className="text-blue-600 text-lg sm:text-xl" />,
-      bgColor: "bg-blue-100",
-      textColor: "text-blue-600",
+      icon: (
+        <FaStore
+          className="text-lg sm:text-xl"
+          style={{ color: "var(--color-primary-600)" }}
+        />
+      ),
+      bgColor: "bg-primary-100",
+      textColor: "text-primary-600",
     },
     {
       key: "super_agents",
       label: "Super Agents",
-      icon: <FaUserShield className="text-indigo-600 text-lg sm:text-xl" />,
-      bgColor: "bg-indigo-100",
-      textColor: "text-indigo-600",
+      icon: (
+        <FaUserShield
+          className="text-lg sm:text-xl"
+          style={{ color: "var(--color-primary-600)" }}
+        />
+      ),
+      bgColor: "bg-primary-100",
+      textColor: "text-primary-600",
     },
     {
       key: "dealers",
       label: "Dealers",
-      icon: <FaUserTie className="text-green-600 text-lg sm:text-xl" />,
-      bgColor: "bg-green-100",
-      textColor: "text-green-600",
+      icon: (
+        <FaUserTie
+          className="text-lg sm:text-xl"
+          style={{ color: "var(--color-primary-600)" }}
+        />
+      ),
+      bgColor: "bg-primary-100",
+      textColor: "text-primary-600",
     },
     {
       key: "super_dealers",
       label: "Super Dealers",
-      icon: <FaUserTie className="text-emerald-600 text-lg sm:text-xl" />,
-      bgColor: "bg-emerald-100",
-      textColor: "text-emerald-600",
+      icon: (
+        <FaUserTie
+          className="text-lg sm:text-xl"
+          style={{ color: "var(--color-primary-600)" }}
+        />
+      ),
+      bgColor: "bg-primary-100",
+      textColor: "text-primary-600",
     },
     {
       key: "super_admins",
       label: "Super Admins",
-      icon: <FaCrown className="text-purple-600 text-lg sm:text-xl" />,
-      bgColor: "bg-purple-100",
-      textColor: "text-purple-600",
+      icon: (
+        <FaCrown
+          className="text-lg sm:text-xl"
+          style={{ color: "var(--color-primary-600)" }}
+        />
+      ),
+      bgColor: "bg-primary-100",
+      textColor: "text-primary-600",
     },
   ];
 

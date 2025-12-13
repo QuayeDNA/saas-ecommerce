@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useInstallPrompt } from "../hooks/use-install-prompt";
 import { Button } from "../design-system/components/button";
 import { Modal } from "../design-system/components/modal";
-import { X, Download, Smartphone } from "lucide-react";
+import { Download, Smartphone } from "lucide-react";
 
 interface InstallPromptProps {
   trigger?: "auto" | "manual";
@@ -66,10 +66,16 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({
   return (
     <Modal isOpen={showModal} onClose={handleDismiss}>
       <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start mb-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Smartphone className="w-6 h-6 text-blue-600" />
+            <div
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: "var(--color-primary-50)" }}
+            >
+              <Smartphone
+                className="w-6 h-6"
+                style={{ color: "var(--color-primary-600)" }}
+              />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
@@ -80,12 +86,6 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={handleDismiss}
-            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         <div className="mb-6">
@@ -112,7 +112,9 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({
         <div className="flex space-x-3">
           <Button
             onClick={handleInstall}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+            variant="primary"
+            useThemeColor
+            className="flex-1"
           >
             <Download className="w-4 h-4 mr-2" />
             Install App

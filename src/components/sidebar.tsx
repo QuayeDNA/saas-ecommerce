@@ -290,9 +290,25 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               onClick={() => toggleExpanded(item.path)}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-md text-sm transition-all duration-200 ${
                 hasActiveChildItem
-                  ? "bg-[#0ea5e9] text-white shadow-md"
-                  : "text-gray-300 hover:bg-[#1e3a5f] hover:text-white"
+                  ? "text-white shadow-md"
+                  : "text-gray-300 hover:text-white"
               } ${level > 0 ? "ml-4" : ""}`}
+              style={{
+                backgroundColor: hasActiveChildItem
+                  ? "var(--color-secondary-500)"
+                  : "transparent",
+              }}
+              onMouseEnter={(e) => {
+                if (!hasActiveChildItem) {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--color-primary-600)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!hasActiveChildItem) {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }
+              }}
             >
               <div className="flex items-center">
                 <span
@@ -324,9 +340,26 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             to={item.path}
             className={`flex items-center px-3 py-3 rounded-md text-sm transition-all duration-200 ${
               isActive
-                ? "bg-[#0ea5e9] text-white shadow-md"
-                : "text-gray-300 hover:bg-[#1e3a5f] hover:text-white"
+                ? "text-white shadow-md"
+                : "text-gray-300 hover:text-white"
             } ${level > 0 ? "ml-6" : ""}`}
+            style={
+              {
+                backgroundColor: isActive
+                  ? "var(--color-secondary-500)"
+                  : "transparent",
+                "--hover-bg": "var(--color-primary-600)",
+              } as React.CSSProperties
+            }
+            onMouseEnter={(e) =>
+              !isActive &&
+              (e.currentTarget.style.backgroundColor =
+                "var(--color-primary-600)")
+            }
+            onMouseLeave={(e) =>
+              !isActive &&
+              (e.currentTarget.style.backgroundColor = "transparent")
+            }
             onClick={() => onClose()}
           >
             <span
@@ -356,12 +389,16 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     <>
       {/* Sidebar - slide in on mobile, fixed on desktop */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#142850] text-white transform transition-all duration-300 ease-in-out flex flex-col ${
+        className={`fixed inset-y-0 left-0 z-30 w-64 text-white transform transition-all duration-300 ease-in-out flex flex-col ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}
+        style={{ backgroundColor: "var(--color-primary-500)" }}
       >
         {/* Logo and close button */}
-        <div className="flex items-center justify-between px-4 py-5 bg-[#0f1f3a] shadow-md">
+        <div
+          className="flex items-center justify-between px-4 py-5 shadow-md"
+          style={{ backgroundColor: "var(--color-primary-600)" }}
+        >
           <div className="flex items-center min-w-0 flex-1">
             <BryteLinksSvgIcon className="w-10 h-10 mr-1 flex-shrink-0" />
             <div className="text-lg sm:text-xl font-bold truncate text-white">
@@ -370,7 +407,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           </div>
           <button
             aria-label="Close sidebar"
-            className="text-gray-300 hover:text-white md:hidden focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] focus:ring-opacity-50 rounded-md p-1 flex-shrink-0"
+            className="text-gray-300 hover:text-white md:hidden focus:outline-none focus:ring-2 focus:ring-opacity-50 rounded-md p-1 flex-shrink-0"
+            style={
+              {
+                "--tw-ring-color": "var(--color-secondary-500)",
+              } as React.CSSProperties
+            }
             onClick={onClose}
           >
             <svg
@@ -405,10 +447,19 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {/* User info section */}
         <div className="mt-auto">
           {/* User profile */}
-          <div className="p-4 border-t border-[#1e3a5f]">
+          <div
+            className="p-4 border-t"
+            style={{ borderColor: "var(--color-primary-700)" }}
+          >
             <div className="flex items-center space-x-3 mb-3">
               <div className="flex-shrink-0 relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom right, var(--color-secondary-500), var(--color-secondary-600))",
+                  }}
+                >
                   {authState.user?.fullName.charAt(0)}
                   {authState.user?.fullName.split(" ")[1]?.charAt(0) ?? ""}
                 </div>
@@ -452,7 +503,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           </div>
 
           {/* App version */}
-          <div className="p-3 border-t border-[#1e3a5f] text-center">
+          <div
+            className="p-3 border-t text-center"
+            style={{ borderColor: "var(--color-primary-700)" }}
+          >
             <div className="text-xs text-gray-400 truncate">{getAppName()}</div>
             <div className="text-xs text-gray-300 font-semibold">v1.0.0</div>
           </div>

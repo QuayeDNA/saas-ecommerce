@@ -1,26 +1,42 @@
-import { forwardRef } from 'react';
-import type { ReactNode, ButtonHTMLAttributes } from 'react';
-import { useTheme } from '../../hooks/use-theme';
-import { Loader2 } from 'lucide-react';
+import { forwardRef } from "react";
+import type { ReactNode, ButtonHTMLAttributes } from "react";
+import { useTheme } from "../../hooks/use-theme";
+import { Loader2 } from "lucide-react";
 
 // Button variants
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'accent' | 'danger' | 'success' | 'warning' | 'info';
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "link"
+  | "accent"
+  | "danger"
+  | "success"
+  | "warning"
+  | "info";
 
 // Button sizes
-type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+type ButtonSize = "xs" | "sm" | "md" | "lg" | "xl";
 
 // Button color schemes (beyond the variant)
-type ButtonColorScheme = 'default' | 'success' | 'warning' | 'error' | 'info' | 'danger';
+type ButtonColorScheme =
+  | "default"
+  | "success"
+  | "warning"
+  | "error"
+  | "info"
+  | "danger";
 
 /**
  * Button component props
- * 
+ *
  * Usage with icons:
  * - Icon-only: <Button iconOnly leftIcon={<PlusIcon />} aria-label="Add item" />
  * - Left icon: <Button leftIcon={<UserIcon />}>Profile</Button>
  * - Right icon: <Button rightIcon={<ArrowRightIcon />}>Next</Button>
  * - Loading: <Button isLoading loadingText="Processing...">Submit</Button>
- * 
+ *
  * Both Lucide React icons and React Icons are supported:
  * - Lucide: import { Home } from 'lucide-react'
  * - React Icons: import { FaHome } from 'react-icons/fa'
@@ -45,16 +61,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
       children,
-      variant = 'primary',
-      size = 'md',
-      colorScheme = 'default',
+      variant = "primary",
+      size = "md",
+      colorScheme = "default",
       fullWidth = false,
       isLoading = false,
       leftIcon,
       rightIcon,
-      className = '',
+      className = "",
       disabled = false,
-      type = 'button',
+      type = "button",
       rounded = false,
       useThemeColor = true,
       iconOnly = false,
@@ -62,79 +78,115 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ...props
     },
     ref
-  ) => {    
+  ) => {
     // Access theme
     const { primaryColor } = useTheme();
-    
+
     // Size styles for regular buttons
     const sizeClasses = {
-      xs: 'text-xs px-2 py-1 h-6',
-      sm: 'text-sm px-3 py-1.5 h-8',
-      md: 'text-sm px-4 py-2 h-10',
-      lg: 'text-base px-5 py-2.5 h-12',
-      xl: 'text-lg px-6 py-3 h-14',
+      xs: "text-xs px-2 py-1 h-6",
+      sm: "text-sm px-3 py-1.5 h-8",
+      md: "text-sm px-4 py-2 h-10",
+      lg: "text-base px-5 py-2.5 h-12",
+      xl: "text-lg px-6 py-3 h-14",
     };
-    
+
     // Size styles for icon-only buttons (equal width and height)
     const iconOnlySizeClasses = {
-      xs: 'p-1 min-h-6 h-6 w-6',
-      sm: 'p-1.5 min-h-8 h-8 w-8',
-      md: 'p-2 min-h-10 h-10 w-10',
-      lg: 'p-2.5 min-h-12 h-12 w-12',
-      xl: 'p-3 min-h-14 h-14 w-14',
+      xs: "p-1 min-h-6 h-6 w-6",
+      sm: "p-1.5 min-h-8 h-8 w-8",
+      md: "p-2 min-h-10 h-10 w-10",
+      lg: "p-2.5 min-h-12 h-12 w-12",
+      xl: "p-3 min-h-14 h-14 w-14",
     };
 
     // Helper function to get theme-based color classes
     const getThemeColorClasses = () => {
       // Map theme colors to tailwind classes with new primary color #142850
       switch (primaryColor) {
-        case 'blue':
+        case "blue":
           return {
-            solid: 'bg-[#142850] text-white hover:bg-[#1e3a5f] active:bg-[#0f1f3a] shadow-sm',
-            outline: 'bg-transparent border border-[#142850] text-[#142850] hover:bg-[#f0f4f8] active:bg-[#d9e2ec]',
-            ghost: 'bg-transparent text-[#142850] hover:bg-[#f0f4f8] active:bg-[#d9e2ec]',
-            link: 'bg-transparent text-[#142850] hover:text-[#1e3a5f] hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-[#142850]'
+            solid: "text-white shadow-sm",
+            outline: "bg-transparent border",
+            ghost: "bg-transparent",
+            link: "bg-transparent hover:underline p-0 h-auto",
+            focusRing: "focus:ring-2 focus:ring-offset-2",
           };
-        case 'purple':
+        case "black":
           return {
-            solid: 'bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 shadow-sm',
-            outline: 'bg-transparent border border-purple-500 text-purple-700 hover:bg-purple-50 active:bg-purple-100',
-            ghost: 'bg-transparent text-purple-700 hover:bg-purple-50 active:bg-purple-100',
-            link: 'bg-transparent text-purple-600 hover:text-purple-700 hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-purple-500'
+            solid:
+              "bg-black text-white hover:bg-gray-800 active:bg-gray-900 shadow-sm",
+            outline:
+              "bg-transparent border border-black text-black hover:bg-gray-50 active:bg-gray-100",
+            ghost:
+              "bg-transparent text-black hover:bg-gray-50 active:bg-gray-100",
+            link: "bg-transparent text-black hover:text-gray-800 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-gray-500",
           };
-        case 'green':
+        case "teal":
           return {
-            solid: 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-sm',
-            outline: 'bg-transparent border border-green-500 text-green-700 hover:bg-green-50 active:bg-green-100',
-            ghost: 'bg-transparent text-green-700 hover:bg-green-50 active:bg-green-100',
-            link: 'bg-transparent text-green-600 hover:text-green-700 hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-green-500'
+            solid:
+              "bg-teal-600 text-white hover:bg-teal-700 active:bg-teal-800 shadow-sm",
+            outline:
+              "bg-transparent border border-teal-500 text-teal-700 hover:bg-teal-50 active:bg-teal-100",
+            ghost:
+              "bg-transparent text-teal-700 hover:bg-teal-50 active:bg-teal-100",
+            link: "bg-transparent text-teal-600 hover:text-teal-700 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-teal-500",
           };
-        case 'orange':
+        case "purple":
           return {
-            solid: 'bg-orange-600 text-white hover:bg-orange-700 active:bg-orange-800 shadow-sm',
-            outline: 'bg-transparent border border-orange-500 text-orange-700 hover:bg-orange-50 active:bg-orange-100',
-            ghost: 'bg-transparent text-orange-700 hover:bg-orange-50 active:bg-orange-100',
-            link: 'bg-transparent text-orange-600 hover:text-orange-700 hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-orange-500'
+            solid:
+              "bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 shadow-sm",
+            outline:
+              "bg-transparent border border-purple-500 text-purple-700 hover:bg-purple-50 active:bg-purple-100",
+            ghost:
+              "bg-transparent text-purple-700 hover:bg-purple-50 active:bg-purple-100",
+            link: "bg-transparent text-purple-600 hover:text-purple-700 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-purple-500",
           };
-        case 'red':
+        case "green":
           return {
-            solid: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm',
-            outline: 'bg-transparent border border-red-500 text-red-700 hover:bg-red-50 active:bg-red-100',
-            ghost: 'bg-transparent text-red-700 hover:bg-red-50 active:bg-red-100',
-            link: 'bg-transparent text-red-600 hover:text-red-700 hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-red-500'
+            solid:
+              "bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-sm",
+            outline:
+              "bg-transparent border border-green-500 text-green-700 hover:bg-green-50 active:bg-green-100",
+            ghost:
+              "bg-transparent text-green-700 hover:bg-green-50 active:bg-green-100",
+            link: "bg-transparent text-green-600 hover:text-green-700 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-green-500",
+          };
+        case "orange":
+          return {
+            solid:
+              "bg-orange-600 text-white hover:bg-orange-700 active:bg-orange-800 shadow-sm",
+            outline:
+              "bg-transparent border border-orange-500 text-orange-700 hover:bg-orange-50 active:bg-orange-100",
+            ghost:
+              "bg-transparent text-orange-700 hover:bg-orange-50 active:bg-orange-100",
+            link: "bg-transparent text-orange-600 hover:text-orange-700 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-orange-500",
+          };
+        case "red":
+          return {
+            solid:
+              "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm",
+            outline:
+              "bg-transparent border border-red-500 text-red-700 hover:bg-red-50 active:bg-red-100",
+            ghost:
+              "bg-transparent text-red-700 hover:bg-red-50 active:bg-red-100",
+            link: "bg-transparent text-red-600 hover:text-red-700 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-red-500",
           };
         default:
-          return getSemanticColorClasses('info');
+          return getSemanticColorClasses("info");
       }
     };
-    
+
     // Helper functions for semantic color classes
-    const getSemanticColorClasses = (scheme: ButtonColorScheme): {
+    const getSemanticColorClasses = (
+      scheme: ButtonColorScheme
+    ): {
       solid: string;
       outline: string;
       ghost: string;
@@ -142,106 +194,137 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       focusRing: string;
     } => {
       switch (scheme) {
-        case 'success':
+        case "success":
           return {
-            solid: 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-sm',
-            outline: 'bg-transparent border border-green-500 text-green-700 hover:bg-green-50 active:bg-green-100',
-            ghost: 'bg-transparent text-green-700 hover:bg-green-50 active:bg-green-100',
-            link: 'bg-transparent text-green-600 hover:text-green-700 hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-green-500'
+            solid:
+              "bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-sm",
+            outline:
+              "bg-transparent border border-green-500 text-green-700 hover:bg-green-50 active:bg-green-100",
+            ghost:
+              "bg-transparent text-green-700 hover:bg-green-50 active:bg-green-100",
+            link: "bg-transparent text-green-600 hover:text-green-700 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-green-500",
           };
-        case 'warning':
+        case "warning":
           return {
-            solid: 'bg-yellow-500 text-white hover:bg-yellow-600 active:bg-yellow-700 shadow-sm',
-            outline: 'bg-transparent border border-yellow-500 text-yellow-700 hover:bg-yellow-50 active:bg-yellow-100',
-            ghost: 'bg-transparent text-yellow-700 hover:bg-yellow-50 active:bg-yellow-100',
-            link: 'bg-transparent text-yellow-600 hover:text-yellow-700 hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-yellow-500'
+            solid:
+              "bg-yellow-500 text-white hover:bg-yellow-600 active:bg-yellow-700 shadow-sm",
+            outline:
+              "bg-transparent border border-yellow-500 text-yellow-700 hover:bg-yellow-50 active:bg-yellow-100",
+            ghost:
+              "bg-transparent text-yellow-700 hover:bg-yellow-50 active:bg-yellow-100",
+            link: "bg-transparent text-yellow-600 hover:text-yellow-700 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-yellow-500",
           };
-        case 'error':
+        case "error":
           return {
-            solid: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm',
-            outline: 'bg-transparent border border-red-500 text-red-700 hover:bg-red-50 active:bg-red-100',
-            ghost: 'bg-transparent text-red-700 hover:bg-red-50 active:bg-red-100',
-            link: 'bg-transparent text-red-600 hover:text-red-700 hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-red-500'
+            solid:
+              "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm",
+            outline:
+              "bg-transparent border border-red-500 text-red-700 hover:bg-red-50 active:bg-red-100",
+            ghost:
+              "bg-transparent text-red-700 hover:bg-red-50 active:bg-red-100",
+            link: "bg-transparent text-red-600 hover:text-red-700 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-red-500",
           };
-        case 'info':
+        case "info":
           return {
-            solid: 'bg-[#0ea5e9] text-white hover:bg-[#0284c7] active:bg-[#0369a1] shadow-sm',
-            outline: 'bg-transparent border border-[#0ea5e9] text-[#0ea5e9] hover:bg-[#f0f9ff] active:bg-[#e0f2fe]',
-            ghost: 'bg-transparent text-[#0ea5e9] hover:bg-[#f0f9ff] active:bg-[#e0f2fe]',
-            link: 'bg-transparent text-[#0ea5e9] hover:text-[#0284c7] hover:underline p-0 h-auto',
-            focusRing: 'focus:ring-[#0ea5e9]'
+            solid: "text-white shadow-sm",
+            outline: "bg-transparent border",
+            ghost: "bg-transparent",
+            link: "bg-transparent text-[#0ea5e9] hover:text-[#0284c7] hover:underline p-0 h-auto",
+            focusRing: "focus:ring-[#0ea5e9]",
           };
-        case 'default':
+        case "default":
         default:
           return getThemeColorClasses();
       }
     };
-    
+
     // Get appropriate color classes
     const getColorClasses = () => {
       // If using default colorScheme and theme colors are enabled, use theme's primary color
-      if (colorScheme === 'default' && useThemeColor) {
+      if (colorScheme === "default" && useThemeColor) {
         return getThemeColorClasses();
       }
-      
+
       // Otherwise use semantic colors
       return getSemanticColorClasses(colorScheme);
     };
-    
+
     // Get base variant styles based on color scheme
     const getVariantClasses = () => {
       // Get color palette based on colorScheme
       const colors = getColorClasses();
-      
+
       // Return classes based on variant
       switch (variant) {
-        case 'primary':
+        case "primary":
           return colors.solid;
-          
-        case 'secondary':
-          return 'bg-gray-600 text-white hover:bg-gray-700 active:bg-gray-800 shadow-sm';
-          
-        case 'accent':
+
+        case "secondary":
+          return "bg-gray-600 text-white hover:bg-gray-700 active:bg-gray-800 shadow-sm";
+
+        case "accent":
           // Use the secondary blue color as accent
-          return 'bg-[#0ea5e9] text-white hover:bg-[#0284c7] active:bg-[#0369a1] shadow-sm';
-          
-        case 'outline':
+          return "text-white shadow-sm";
+
+        case "outline":
           return colors.outline;
-          
-        case 'ghost':
+
+        case "ghost":
           return colors.ghost;
-          
-        case 'link':
+
+        case "link":
           return colors.link;
-          
+
         default:
           return colors.solid;
       }
     };
-    
+
     // Focus ring color based on variant and color scheme
     const getFocusRingClass = () => {
-      if (variant === 'link') return 'focus:outline-none';
-      
+      if (variant === "link") return "focus:outline-none";
+
       const colors = getColorClasses();
       return `focus:outline-none focus:ring-2 focus:ring-offset-2 ${colors.focusRing}`;
     };
-    
+
     // Combine all classes
     const buttonClasses = [
-      'inline-flex items-center justify-center',
-      rounded ? 'rounded-full' : 'rounded-md',
+      "inline-flex items-center justify-center",
+      rounded ? "rounded-full" : "rounded-md",
       getFocusRingClass(),
-      'transition-all duration-200',
+      "transition-all duration-200",
       iconOnly ? iconOnlySizeClasses[size] : sizeClasses[size],
       getVariantClasses(),
-      fullWidth ? 'w-full' : '',
-      (disabled || isLoading) ? 'opacity-60 cursor-not-allowed' : '',
+      fullWidth ? "w-full" : "",
+      disabled || isLoading ? "opacity-60 cursor-not-allowed" : "",
       className,
-    ].join(' ');
+    ].join(" ");
+
+    // Get inline styles for theme colors
+    const getThemeStyles = (): React.CSSProperties => {
+      if (!useThemeColor || colorScheme !== "default") return {};
+
+      const baseStyles: React.CSSProperties = {};
+
+      if (variant === "primary") {
+        baseStyles.backgroundColor = "var(--color-primary-500)";
+        baseStyles.color = "white";
+      } else if (variant === "accent") {
+        baseStyles.backgroundColor = "var(--color-secondary-500)";
+        baseStyles.color = "white";
+      } else if (variant === "outline") {
+        baseStyles.borderColor = "var(--color-primary-500)";
+        baseStyles.color = "var(--color-primary-500)";
+      } else if (variant === "ghost" || variant === "link") {
+        baseStyles.color = "var(--color-primary-500)";
+      }
+
+      return baseStyles;
+    };
 
     // Return the button component
     return (
@@ -249,7 +332,48 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={buttonClasses}
+        style={{ ...getThemeStyles(), ...props.style }}
         disabled={disabled || isLoading}
+        onMouseEnter={(e) => {
+          if (
+            useThemeColor &&
+            colorScheme === "default" &&
+            !disabled &&
+            !isLoading
+          ) {
+            if (variant === "primary") {
+              e.currentTarget.style.backgroundColor =
+                "var(--color-primary-600)";
+            } else if (variant === "accent") {
+              e.currentTarget.style.backgroundColor =
+                "var(--color-secondary-600)";
+            } else if (variant === "outline") {
+              e.currentTarget.style.backgroundColor = "var(--color-primary-50)";
+            } else if (variant === "ghost") {
+              e.currentTarget.style.backgroundColor = "var(--color-primary-50)";
+            }
+          }
+          props.onMouseEnter?.(e);
+        }}
+        onMouseLeave={(e) => {
+          if (
+            useThemeColor &&
+            colorScheme === "default" &&
+            !disabled &&
+            !isLoading
+          ) {
+            if (variant === "primary") {
+              e.currentTarget.style.backgroundColor =
+                "var(--color-primary-500)";
+            } else if (variant === "accent") {
+              e.currentTarget.style.backgroundColor =
+                "var(--color-secondary-500)";
+            } else if (variant === "outline" || variant === "ghost") {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }
+          }
+          props.onMouseLeave?.(e);
+        }}
         {...props}
       >
         {isLoading ? (
@@ -260,17 +384,19 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ) : (
           <>
             {leftIcon && (
-              <span className={`flex items-center ${children ? 'mr-2' : ''}`}>
+              <span className={`flex items-center ${children ? "mr-2" : ""}`}>
                 {leftIcon}
               </span>
             )}
             {children && (
-              <span className={`flex items-center ${iconOnly ? 'sr-only' : ''}`}>
+              <span
+                className={`flex items-center ${iconOnly ? "sr-only" : ""}`}
+              >
                 {children}
               </span>
             )}
             {rightIcon && (
-              <span className={`flex items-center ${children ? 'ml-2' : ''}`}>
+              <span className={`flex items-center ${children ? "ml-2" : ""}`}>
                 {rightIcon}
               </span>
             )}
@@ -281,4 +407,4 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   }
 );
 
-Button.displayName = 'Button';
+Button.displayName = "Button";

@@ -122,19 +122,19 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-[#006400] text-gray-200";
+        return "bg-green-700 text-gray-200";
       case "processing":
-        return "bg-[#00008B] text-gray-200";
+        return "bg-blue-700 text-gray-200";
       case "failed":
-        return "bg-[#8B0000] text-gray-200";
+        return "bg-red-700 text-gray-200";
       case "cancelled":
-        return "bg-[#8B0000] text-gray-200";
+        return "bg-red-700 text-gray-200";
       case "pending":
-        return "bg-[#B8860B] text-gray-200";
+        return "bg-yellow-700 text-gray-200";
       case "confirmed":
-        return "bg-[#800080] text-gray-200";
+        return "bg-purple-700 text-gray-200";
       default:
-        return "bg-[#696969] text-gray-200";
+        return "bg-gray-700 text-gray-200";
     }
   };
 

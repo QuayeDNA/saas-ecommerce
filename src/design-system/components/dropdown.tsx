@@ -1,5 +1,12 @@
-import { forwardRef, useState, useRef, useEffect, type ReactNode, type HTMLAttributes } from 'react';
-import { useTheme } from '../../hooks/use-theme';
+import {
+  forwardRef,
+  useState,
+  useRef,
+  useEffect,
+  type ReactNode,
+  type HTMLAttributes,
+} from "react";
+import { useTheme } from "../../hooks/use-theme";
 
 // ============================================================================
 // DROPDOWN COMPONENT
@@ -14,13 +21,20 @@ interface DropdownOption {
 }
 
 // Dropdown sizes
-type DropdownSize = 'xs' | 'sm' | 'md' | 'lg';
+type DropdownSize = "xs" | "sm" | "md" | "lg";
 
 // Dropdown color schemes
-type DropdownColorScheme = 'default' | 'success' | 'error' | 'warning' | 'info' | 'gray';
+type DropdownColorScheme =
+  | "default"
+  | "success"
+  | "error"
+  | "warning"
+  | "info"
+  | "gray";
 
 // Dropdown props interface
-interface DropdownProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
+interface DropdownProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, "onChange"> {
   options: DropdownOption[];
   value?: string | number;
   placeholder?: string;
@@ -43,13 +57,13 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
     {
       options,
       value,
-      placeholder = 'Select an option...',
-      size = 'md',
-      colorScheme = 'default',
+      placeholder = "Select an option...",
+      size = "md",
+      colorScheme = "default",
       isDisabled = false,
       isInvalid = false,
       fullWidth = false,
-      className = '',
+      className = "",
       useThemeColor = true,
       onChange,
       label,
@@ -68,76 +82,92 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
     // Size classes
     const sizeClasses = {
       trigger: {
-        xs: 'text-xs h-7 px-2',
-        sm: 'text-sm h-8 px-3',
-        md: 'text-sm h-10 px-4',
-        lg: 'text-base h-12 px-4',
+        xs: "text-xs h-7 px-2",
+        sm: "text-sm h-8 px-3",
+        md: "text-sm h-10 px-4",
+        lg: "text-base h-12 px-4",
       },
       label: {
-        xs: 'text-xs',
-        sm: 'text-xs',
-        md: 'text-sm',
-        lg: 'text-sm',
+        xs: "text-xs",
+        sm: "text-xs",
+        md: "text-sm",
+        lg: "text-sm",
       },
       helperText: {
-        xs: 'text-xs',
-        sm: 'text-xs',
-        md: 'text-xs',
-        lg: 'text-sm',
+        xs: "text-xs",
+        sm: "text-xs",
+        md: "text-xs",
+        lg: "text-sm",
       },
       option: {
-        xs: 'text-xs px-2 py-1',
-        sm: 'text-sm px-3 py-2',
-        md: 'text-sm px-4 py-2',
-        lg: 'text-base px-4 py-3',
+        xs: "text-xs px-2 py-1",
+        sm: "text-sm px-3 py-2",
+        md: "text-sm px-4 py-2",
+        lg: "text-base px-4 py-3",
       },
     };
 
     // Get theme color classes
     const getThemeColorClasses = () => {
       switch (primaryColor) {
-        case 'blue':
+        case "blue":
           return {
-            border: 'border-blue-500',
-            ring: 'ring ring-blue-200',
-            focus: 'focus:border-blue-500 focus:ring-blue-100',
-            optionHover: 'hover:bg-blue-50',
-            optionSelected: 'bg-blue-100 text-blue-900',
+            border: "border-blue-500",
+            ring: "ring ring-blue-200",
+            focus: "focus:border-blue-500 focus:ring-blue-100",
+            optionHover: "hover:bg-blue-50",
+            optionSelected: "bg-blue-100 text-blue-900",
           };
-        case 'purple':
+        case "black":
           return {
-            border: 'border-purple-500',
-            ring: 'ring ring-purple-200',
-            focus: 'focus:border-purple-500 focus:ring-purple-100',
-            optionHover: 'hover:bg-purple-50',
-            optionSelected: 'bg-purple-100 text-purple-900',
+            border: "border-gray-900",
+            ring: "ring ring-gray-300",
+            focus: "focus:border-black focus:ring-gray-200",
+            optionHover: "hover:bg-gray-50",
+            optionSelected: "bg-gray-100 text-gray-900",
           };
-        case 'green':
+        case "teal":
           return {
-            border: 'border-green-500',
-            ring: 'ring ring-green-200',
-            focus: 'focus:border-green-500 focus:ring-green-100',
-            optionHover: 'hover:bg-green-50',
-            optionSelected: 'bg-green-100 text-green-900',
+            border: "border-teal-500",
+            ring: "ring ring-teal-200",
+            focus: "focus:border-teal-500 focus:ring-teal-100",
+            optionHover: "hover:bg-teal-50",
+            optionSelected: "bg-teal-100 text-teal-900",
           };
-        case 'orange':
+        case "purple":
           return {
-            border: 'border-orange-500',
-            ring: 'ring ring-orange-200',
-            focus: 'focus:border-orange-500 focus:ring-orange-100',
-            optionHover: 'hover:bg-orange-50',
-            optionSelected: 'bg-orange-100 text-orange-900',
+            border: "border-purple-500",
+            ring: "ring ring-purple-200",
+            focus: "focus:border-purple-500 focus:ring-purple-100",
+            optionHover: "hover:bg-purple-50",
+            optionSelected: "bg-purple-100 text-purple-900",
           };
-        case 'red':
+        case "green":
           return {
-            border: 'border-red-500',
-            ring: 'ring ring-red-200',
-            focus: 'focus:border-red-500 focus:ring-red-100',
-            optionHover: 'hover:bg-red-50',
-            optionSelected: 'bg-red-100 text-red-900',
+            border: "border-green-500",
+            ring: "ring ring-green-200",
+            focus: "focus:border-green-500 focus:ring-green-100",
+            optionHover: "hover:bg-green-50",
+            optionSelected: "bg-green-100 text-green-900",
+          };
+        case "orange":
+          return {
+            border: "border-orange-500",
+            ring: "ring ring-orange-200",
+            focus: "focus:border-orange-500 focus:ring-orange-100",
+            optionHover: "hover:bg-orange-50",
+            optionSelected: "bg-orange-100 text-orange-900",
+          };
+        case "red":
+          return {
+            border: "border-red-500",
+            ring: "ring ring-red-200",
+            focus: "focus:border-red-500 focus:ring-red-100",
+            optionHover: "hover:bg-red-50",
+            optionSelected: "bg-red-100 text-red-900",
           };
         default:
-          return getSemanticColorClasses('info');
+          return getSemanticColorClasses("info");
       }
     };
 
@@ -151,47 +181,47 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       optionSelected: string;
     } => {
       switch (scheme) {
-        case 'success':
+        case "success":
           return {
-            border: 'border-green-500',
-            ring: 'ring ring-green-200',
-            focus: 'focus:border-green-500 focus:ring-green-100',
-            optionHover: 'hover:bg-green-50',
-            optionSelected: 'bg-green-100 text-green-900',
+            border: "border-green-500",
+            ring: "ring ring-green-200",
+            focus: "focus:border-green-500 focus:ring-green-100",
+            optionHover: "hover:bg-green-50",
+            optionSelected: "bg-green-100 text-green-900",
           };
-        case 'error':
+        case "error":
           return {
-            border: 'border-red-500',
-            ring: 'ring ring-red-200',
-            focus: 'focus:border-red-500 focus:ring-red-100',
-            optionHover: 'hover:bg-red-50',
-            optionSelected: 'bg-red-100 text-red-900',
+            border: "border-red-500",
+            ring: "ring ring-red-200",
+            focus: "focus:border-red-500 focus:ring-red-100",
+            optionHover: "hover:bg-red-50",
+            optionSelected: "bg-red-100 text-red-900",
           };
-        case 'warning':
+        case "warning":
           return {
-            border: 'border-yellow-500',
-            ring: 'ring ring-yellow-200',
-            focus: 'focus:border-yellow-500 focus:ring-yellow-100',
-            optionHover: 'hover:bg-yellow-50',
-            optionSelected: 'bg-yellow-100 text-yellow-900',
+            border: "border-yellow-500",
+            ring: "ring ring-yellow-200",
+            focus: "focus:border-yellow-500 focus:ring-yellow-100",
+            optionHover: "hover:bg-yellow-50",
+            optionSelected: "bg-yellow-100 text-yellow-900",
           };
-        case 'info':
+        case "info":
           return {
-            border: 'border-blue-500',
-            ring: 'ring ring-blue-200',
-            focus: 'focus:border-blue-500 focus:ring-blue-100',
-            optionHover: 'hover:bg-blue-50',
-            optionSelected: 'bg-blue-100 text-blue-900',
+            border: "border-blue-500",
+            ring: "ring ring-blue-200",
+            focus: "focus:border-blue-500 focus:ring-blue-100",
+            optionHover: "hover:bg-blue-50",
+            optionSelected: "bg-blue-100 text-blue-900",
           };
-        case 'gray':
+        case "gray":
           return {
-            border: 'border-gray-500',
-            ring: 'ring ring-gray-200',
-            focus: 'focus:border-gray-500 focus:ring-gray-100',
-            optionHover: 'hover:bg-gray-50',
-            optionSelected: 'bg-gray-100 text-gray-900',
+            border: "border-gray-500",
+            ring: "ring ring-gray-200",
+            focus: "focus:border-gray-500 focus:ring-gray-100",
+            optionHover: "hover:bg-gray-50",
+            optionSelected: "bg-gray-100 text-gray-900",
           };
-        case 'default':
+        case "default":
         default:
           return getThemeColorClasses();
       }
@@ -200,15 +230,15 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
     const getColorClasses = () => {
       if (isInvalid) {
         return {
-          border: 'border-red-500',
-          ring: 'ring ring-red-200',
-          focus: 'focus:border-red-500 focus:ring-red-100',
-          optionHover: 'hover:bg-red-50',
-          optionSelected: 'bg-red-100 text-red-900',
+          border: "border-red-500",
+          ring: "ring ring-red-200",
+          focus: "focus:border-red-500 focus:ring-red-100",
+          optionHover: "hover:bg-red-50",
+          optionSelected: "bg-red-100 text-red-900",
         };
       }
 
-      if (colorScheme === 'default' && useThemeColor) {
+      if (colorScheme === "default" && useThemeColor) {
         return getThemeColorClasses();
       }
 
@@ -218,19 +248,27 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
     // Close dropdown when clicking outside
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        if (
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target as Node)
+        ) {
           setIsOpen(false);
         }
       };
 
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     // Keyboard navigation
     const handleKeyDown = (event: React.KeyboardEvent) => {
       if (!isOpen) {
-        if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+        if (
+          event.key === "Enter" ||
+          event.key === " " ||
+          event.key === "ArrowDown"
+        ) {
           event.preventDefault();
           setIsOpen(true);
           setFocusedIndex(0);
@@ -239,19 +277,21 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       }
 
       switch (event.key) {
-        case 'Escape':
+        case "Escape":
           setIsOpen(false);
           setFocusedIndex(-1);
           break;
-        case 'ArrowDown':
+        case "ArrowDown":
           event.preventDefault();
-          setFocusedIndex(prev => (prev < options.length - 1 ? prev + 1 : prev));
+          setFocusedIndex((prev) =>
+            prev < options.length - 1 ? prev + 1 : prev
+          );
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           event.preventDefault();
-          setFocusedIndex(prev => (prev > 0 ? prev - 1 : prev));
+          setFocusedIndex((prev) => (prev > 0 ? prev - 1 : prev));
           break;
-        case 'Enter':
+        case "Enter":
           event.preventDefault();
           if (focusedIndex >= 0 && !options[focusedIndex]?.disabled) {
             handleOptionSelect(options[focusedIndex].value);
@@ -266,24 +306,27 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
       setFocusedIndex(-1);
     };
 
-    const selectedOption = options.find(opt => opt.value === value);
+    const selectedOption = options.find((opt) => opt.value === value);
     const colors = getColorClasses();
 
     const triggerClasses = [
-      'relative flex items-center justify-between w-full',
-      'border border-gray-300 bg-white rounded-lg cursor-pointer',
-      'transition duration-200',
+      "relative flex items-center justify-between w-full",
+      "border border-gray-300 bg-white rounded-lg cursor-pointer",
+      "transition duration-200",
       sizeClasses.trigger[size],
-      isOpen ? `${colors.border} ${colors.ring}` : 'hover:border-gray-400',
-      isInvalid ? 'border-red-500 text-red-900' : 'text-gray-900',
-      isDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : '',
+      isOpen ? `${colors.border} ${colors.ring}` : "hover:border-gray-400",
+      isInvalid ? "border-red-500 text-red-900" : "text-gray-900",
+      isDisabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "",
       className,
-    ].join(' ');
+    ].join(" ");
 
     const uniqueId = `dropdown-${Math.random().toString(36).slice(2, 11)}`;
 
     return (
-      <div className={`relative ${fullWidth ? 'w-full' : ''}`} ref={dropdownRef}>
+      <div
+        className={`relative ${fullWidth ? "w-full" : ""}`}
+        ref={dropdownRef}
+      >
         {/* Label */}
         {label && (
           <label
@@ -308,10 +351,12 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
           aria-haspopup="listbox"
           {...props}
         >
-          <span className={selectedOption ? 'text-gray-900' : 'text-gray-500'}>
+          <span className={selectedOption ? "text-gray-900" : "text-gray-500"}>
             {selectedOption ? (
               <div className="flex items-center">
-                {selectedOption.icon && <span className="mr-2">{selectedOption.icon}</span>}
+                {selectedOption.icon && (
+                  <span className="mr-2">{selectedOption.icon}</span>
+                )}
                 {selectedOption.label}
               </div>
             ) : (
@@ -320,13 +365,18 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
           </span>
           <svg
             className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-              isOpen ? 'transform rotate-180' : ''
+              isOpen ? "transform rotate-180" : ""
             }`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </div>
 
@@ -337,14 +387,18 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
               <div
                 key={option.value}
                 className={[
-                  'cursor-pointer transition-colors duration-150',
+                  "cursor-pointer transition-colors duration-150",
                   sizeClasses.option[size],
-                  option.disabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-900',
+                  option.disabled
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-gray-900",
                   !option.disabled && colors.optionHover,
-                  option.value === value ? colors.optionSelected : '',
-                  index === focusedIndex ? 'bg-gray-100' : '',
-                ].join(' ')}
-                onClick={() => !option.disabled && handleOptionSelect(option.value)}
+                  option.value === value ? colors.optionSelected : "",
+                  index === focusedIndex ? "bg-gray-100" : "",
+                ].join(" ")}
+                onClick={() =>
+                  !option.disabled && handleOptionSelect(option.value)
+                }
                 role="option"
                 aria-selected={option.value === value}
               >
@@ -372,4 +426,4 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
   }
 );
 
-Dropdown.displayName = 'Dropdown';
+Dropdown.displayName = "Dropdown";

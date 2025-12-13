@@ -1,15 +1,27 @@
-import { forwardRef } from 'react';
-import type { ReactNode, HTMLAttributes, TableHTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react';
-import { useTheme } from '../../hooks/use-theme';
+import { forwardRef } from "react";
+import type {
+  ReactNode,
+  HTMLAttributes,
+  TableHTMLAttributes,
+  TdHTMLAttributes,
+  ThHTMLAttributes,
+} from "react";
+import { useTheme } from "../../hooks/use-theme";
 
 // Table variants
-type TableVariant = 'simple' | 'striped' | 'bordered';
+type TableVariant = "simple" | "striped" | "bordered";
 
 // Table sizes
-type TableSize = 'sm' | 'md' | 'lg';
+type TableSize = "sm" | "md" | "lg";
 
 // Table color schemes
-type TableColorScheme = 'default' | 'success' | 'warning' | 'error' | 'info' | 'gray';
+type TableColorScheme =
+  | "default"
+  | "success"
+  | "warning"
+  | "error"
+  | "info"
+  | "gray";
 
 // Base table props
 interface TableProps extends TableHTMLAttributes<HTMLTableElement> {
@@ -48,7 +60,7 @@ interface TableHeaderCellProps extends ThHTMLAttributes<HTMLTableCellElement> {
   children: ReactNode;
   className?: string;
   sortable?: boolean;
-  sortDirection?: 'asc' | 'desc' | null;
+  sortDirection?: "asc" | "desc" | null;
   onSort?: () => void;
 }
 
@@ -70,12 +82,12 @@ export const Table = forwardRef<HTMLTableElement, TableProps>(
   (
     {
       children,
-      variant = 'simple',
-      size = 'md',
-      colorScheme = 'default',
+      variant = "simple",
+      size = "md",
+      colorScheme = "default",
       fullWidth = true,
       stickyHeader = false,
-      className = '',
+      className = "",
       useThemeColor = true,
       ...props
     },
@@ -85,65 +97,85 @@ export const Table = forwardRef<HTMLTableElement, TableProps>(
 
     // Size classes
     const sizeClasses = {
-      sm: 'text-xs',
-      md: 'text-sm',
-      lg: 'text-base',
+      sm: "text-xs",
+      md: "text-sm",
+      lg: "text-base",
     };
 
     // Helper function to get theme-based color classes
     const getThemeColorClasses = () => {
       switch (primaryColor) {
-        case 'blue':
+        case "blue":
           return {
-            border: 'border-blue-200',
-            headerBg: 'bg-blue-50',
-            headerText: 'text-blue-900',
-            stripedBg: 'even:bg-blue-25',
-            selectedBg: 'bg-blue-100',
-            hoverBg: 'hover:bg-blue-50',
+            border: "border-blue-200",
+            headerBg: "bg-blue-50",
+            headerText: "text-blue-900",
+            stripedBg: "even:bg-blue-25",
+            selectedBg: "bg-blue-100",
+            hoverBg: "hover:bg-blue-50",
           };
-        case 'purple':
+        case "black":
           return {
-            border: 'border-purple-200',
-            headerBg: 'bg-purple-50',
-            headerText: 'text-purple-900',
-            stripedBg: 'even:bg-purple-25',
-            selectedBg: 'bg-purple-100',
-            hoverBg: 'hover:bg-purple-50',
+            border: "border-gray-300",
+            headerBg: "bg-gray-100",
+            headerText: "text-gray-900",
+            stripedBg: "even:bg-gray-50",
+            selectedBg: "bg-gray-200",
+            hoverBg: "hover:bg-gray-100",
           };
-        case 'green':
+        case "teal":
           return {
-            border: 'border-green-200',
-            headerBg: 'bg-green-50',
-            headerText: 'text-green-900',
-            stripedBg: 'even:bg-green-25',
-            selectedBg: 'bg-green-100',
-            hoverBg: 'hover:bg-green-50',
+            border: "border-teal-200",
+            headerBg: "bg-teal-50",
+            headerText: "text-teal-900",
+            stripedBg: "even:bg-teal-25",
+            selectedBg: "bg-teal-100",
+            hoverBg: "hover:bg-teal-50",
           };
-        case 'orange':
+        case "purple":
           return {
-            border: 'border-orange-200',
-            headerBg: 'bg-orange-50',
-            headerText: 'text-orange-900',
-            stripedBg: 'even:bg-orange-25',
-            selectedBg: 'bg-orange-100',
-            hoverBg: 'hover:bg-orange-50',
+            border: "border-purple-200",
+            headerBg: "bg-purple-50",
+            headerText: "text-purple-900",
+            stripedBg: "even:bg-purple-25",
+            selectedBg: "bg-purple-100",
+            hoverBg: "hover:bg-purple-50",
           };
-        case 'red':
+        case "green":
           return {
-            border: 'border-red-200',
-            headerBg: 'bg-red-50',
-            headerText: 'text-red-900',
-            stripedBg: 'even:bg-red-25',
-            selectedBg: 'bg-red-100',
-            hoverBg: 'hover:bg-red-50',
+            border: "border-green-200",
+            headerBg: "bg-green-50",
+            headerText: "text-green-900",
+            stripedBg: "even:bg-green-25",
+            selectedBg: "bg-green-100",
+            hoverBg: "hover:bg-green-50",
+          };
+        case "orange":
+          return {
+            border: "border-orange-200",
+            headerBg: "bg-orange-50",
+            headerText: "text-orange-900",
+            stripedBg: "even:bg-orange-25",
+            selectedBg: "bg-orange-100",
+            hoverBg: "hover:bg-orange-50",
+          };
+        case "red":
+          return {
+            border: "border-red-200",
+            headerBg: "bg-red-50",
+            headerText: "text-red-900",
+            stripedBg: "even:bg-red-25",
+            selectedBg: "bg-red-100",
+            hoverBg: "hover:bg-red-50",
           };
         default:
-          return getSemanticColorClasses('info');
+          return getSemanticColorClasses("info");
       }
     };
 
-    const getSemanticColorClasses = (scheme: TableColorScheme): {
+    const getSemanticColorClasses = (
+      scheme: TableColorScheme
+    ): {
       border: string;
       headerBg: string;
       headerText: string;
@@ -152,52 +184,52 @@ export const Table = forwardRef<HTMLTableElement, TableProps>(
       hoverBg: string;
     } => {
       switch (scheme) {
-        case 'success':
+        case "success":
           return {
-            border: 'border-green-200',
-            headerBg: 'bg-green-50',
-            headerText: 'text-green-900',
-            stripedBg: 'even:bg-green-25',
-            selectedBg: 'bg-green-100',
-            hoverBg: 'hover:bg-green-50',
+            border: "border-green-200",
+            headerBg: "bg-green-50",
+            headerText: "text-green-900",
+            stripedBg: "even:bg-green-25",
+            selectedBg: "bg-green-100",
+            hoverBg: "hover:bg-green-50",
           };
-        case 'warning':
+        case "warning":
           return {
-            border: 'border-yellow-200',
-            headerBg: 'bg-yellow-50',
-            headerText: 'text-yellow-900',
-            stripedBg: 'even:bg-yellow-25',
-            selectedBg: 'bg-yellow-100',
-            hoverBg: 'hover:bg-yellow-50',
+            border: "border-yellow-200",
+            headerBg: "bg-yellow-50",
+            headerText: "text-yellow-900",
+            stripedBg: "even:bg-yellow-25",
+            selectedBg: "bg-yellow-100",
+            hoverBg: "hover:bg-yellow-50",
           };
-        case 'error':
+        case "error":
           return {
-            border: 'border-red-200',
-            headerBg: 'bg-red-50',
-            headerText: 'text-red-900',
-            stripedBg: 'even:bg-red-25',
-            selectedBg: 'bg-red-100',
-            hoverBg: 'hover:bg-red-50',
+            border: "border-red-200",
+            headerBg: "bg-red-50",
+            headerText: "text-red-900",
+            stripedBg: "even:bg-red-25",
+            selectedBg: "bg-red-100",
+            hoverBg: "hover:bg-red-50",
           };
-        case 'info':
+        case "info":
           return {
-            border: 'border-blue-200',
-            headerBg: 'bg-blue-50',
-            headerText: 'text-blue-900',
-            stripedBg: 'even:bg-blue-25',
-            selectedBg: 'bg-blue-100',
-            hoverBg: 'hover:bg-blue-50',
+            border: "border-blue-200",
+            headerBg: "bg-blue-50",
+            headerText: "text-blue-900",
+            stripedBg: "even:bg-blue-25",
+            selectedBg: "bg-blue-100",
+            hoverBg: "hover:bg-blue-50",
           };
-        case 'gray':
+        case "gray":
           return {
-            border: 'border-gray-200',
-            headerBg: 'bg-gray-50',
-            headerText: 'text-gray-900',
-            stripedBg: 'even:bg-gray-25',
-            selectedBg: 'bg-gray-100',
-            hoverBg: 'hover:bg-gray-50',
+            border: "border-gray-200",
+            headerBg: "bg-gray-50",
+            headerText: "text-gray-900",
+            stripedBg: "even:bg-gray-25",
+            selectedBg: "bg-gray-100",
+            hoverBg: "hover:bg-gray-50",
           };
-        case 'default':
+        case "default":
         default:
           return getThemeColorClasses();
       }
@@ -205,7 +237,7 @@ export const Table = forwardRef<HTMLTableElement, TableProps>(
 
     // Get color classes
     const getColorClasses = () => {
-      if (colorScheme === 'default' && useThemeColor) {
+      if (colorScheme === "default" && useThemeColor) {
         return getThemeColorClasses();
       }
       return getSemanticColorClasses(colorScheme);
@@ -214,29 +246,29 @@ export const Table = forwardRef<HTMLTableElement, TableProps>(
     // Variant classes
     const getVariantClasses = () => {
       const colors = getColorClasses();
-      
+
       switch (variant) {
-        case 'simple':
-          return 'border-collapse';
-        case 'striped':
+        case "simple":
+          return "border-collapse";
+        case "striped":
           return `border-collapse [&_tbody_tr:nth-child(even)]:bg-gray-50`;
-        case 'bordered':
+        case "bordered":
           return `border-collapse border ${colors.border}`;
         default:
-          return 'border-collapse';
+          return "border-collapse";
       }
     };
 
     const tableClasses = [
-      'table-auto',
+      "table-auto",
       sizeClasses[size],
       getVariantClasses(),
-      fullWidth ? 'w-full' : '',
+      fullWidth ? "w-full" : "",
       className,
-    ].join(' ');
+    ].join(" ");
 
     return (
-      <div className={stickyHeader ? 'overflow-auto' : ''}>
+      <div className={stickyHeader ? "overflow-auto" : ""}>
         <table ref={ref} className={tableClasses} {...props}>
           {children}
         </table>
@@ -246,19 +278,20 @@ export const Table = forwardRef<HTMLTableElement, TableProps>(
 );
 
 // Table Header component
-export const TableHeader = forwardRef<HTMLTableSectionElement, TableHeaderProps>(
-  ({ children, className = '', ...props }, ref) => {
-    return (
-      <thead ref={ref} className={`${className}`} {...props}>
-        {children}
-      </thead>
-    );
-  }
-);
+export const TableHeader = forwardRef<
+  HTMLTableSectionElement,
+  TableHeaderProps
+>(({ children, className = "", ...props }, ref) => {
+  return (
+    <thead ref={ref} className={`${className}`} {...props}>
+      {children}
+    </thead>
+  );
+});
 
 // Table Body component
 export const TableBody = forwardRef<HTMLTableSectionElement, TableBodyProps>(
-  ({ children, className = '', ...props }, ref) => {
+  ({ children, className = "", ...props }, ref) => {
     return (
       <tbody ref={ref} className={`${className}`} {...props}>
         {children}
@@ -272,7 +305,7 @@ export const TableRow = forwardRef<HTMLTableRowElement, TableRowProps>(
   (
     {
       children,
-      className = '',
+      className = "",
       isSelected = false,
       isHoverable = true,
       ...props
@@ -280,12 +313,12 @@ export const TableRow = forwardRef<HTMLTableRowElement, TableRowProps>(
     ref
   ) => {
     const rowClasses = [
-      'border-b border-gray-200',
-      isHoverable ? 'hover:bg-gray-50' : '',
-      isSelected ? 'bg-blue-100' : '',
-      'transition-colors duration-150',
+      "border-b border-gray-200",
+      isHoverable ? "hover:bg-gray-50" : "",
+      isSelected ? "bg-blue-100" : "",
+      "transition-colors duration-150",
       className,
-    ].join(' ');
+    ].join(" ");
 
     return (
       <tr ref={ref} className={rowClasses} {...props}>
@@ -296,11 +329,14 @@ export const TableRow = forwardRef<HTMLTableRowElement, TableRowProps>(
 );
 
 // Table Header Cell component
-export const TableHeaderCell = forwardRef<HTMLTableCellElement, TableHeaderCellProps>(
+export const TableHeaderCell = forwardRef<
+  HTMLTableCellElement,
+  TableHeaderCellProps
+>(
   (
     {
       children,
-      className = '',
+      className = "",
       sortable = false,
       sortDirection = null,
       onSort,
@@ -312,29 +348,33 @@ export const TableHeaderCell = forwardRef<HTMLTableCellElement, TableHeaderCellP
 
     const getThemeColors = () => {
       switch (primaryColor) {
-        case 'blue':
-          return 'bg-blue-50 text-blue-900';
-        case 'purple':
-          return 'bg-purple-50 text-purple-900';
-        case 'green':
-          return 'bg-green-50 text-green-900';
-        case 'orange':
-          return 'bg-orange-50 text-orange-900';
-        case 'red':
-          return 'bg-red-50 text-red-900';
+        case "blue":
+          return "bg-blue-50 text-blue-900";
+        case "black":
+          return "bg-gray-100 text-gray-900";
+        case "teal":
+          return "bg-teal-50 text-teal-900";
+        case "purple":
+          return "bg-purple-50 text-purple-900";
+        case "green":
+          return "bg-green-50 text-green-900";
+        case "orange":
+          return "bg-orange-50 text-orange-900";
+        case "red":
+          return "bg-red-50 text-red-900";
         default:
-          return 'bg-gray-50 text-gray-900';
+          return "bg-gray-50 text-gray-900";
       }
     };
 
     const headerClasses = [
-      'px-4 py-3',
-      'text-left text-xs font-medium uppercase tracking-wider',
+      "px-4 py-3",
+      "text-left text-xs font-medium uppercase tracking-wider",
       getThemeColors(),
-      'border-b border-gray-200',
-      sortable ? 'cursor-pointer hover:bg-opacity-80 select-none' : '',
+      "border-b border-gray-200",
+      sortable ? "cursor-pointer hover:bg-opacity-80 select-none" : "",
       className,
-    ].join(' ');
+    ].join(" ");
 
     const handleClick = () => {
       if (sortable && onSort) {
@@ -349,21 +389,41 @@ export const TableHeaderCell = forwardRef<HTMLTableCellElement, TableHeaderCellP
           {sortable && (
             <span className="ml-1">
               {(() => {
-                if (sortDirection === 'asc') {
+                if (sortDirection === "asc") {
                   return (
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                    <svg
+                      className="w-3 h-3"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   );
-                } else if (sortDirection === 'desc') {
+                } else if (sortDirection === "desc") {
                   return (
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    <svg
+                      className="w-3 h-3"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   );
                 } else {
                   return (
-                    <svg className="w-3 h-3 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className="w-3 h-3 opacity-50"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path d="M5 12l5-5 5 5H5z" />
                     </svg>
                   );
@@ -379,22 +439,14 @@ export const TableHeaderCell = forwardRef<HTMLTableCellElement, TableHeaderCellP
 
 // Table Cell component
 export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(
-  (
-    {
-      children,
-      className = '',
-      numeric = false,
-      ...props
-    },
-    ref
-  ) => {
+  ({ children, className = "", numeric = false, ...props }, ref) => {
     const cellClasses = [
-      'px-4 py-3',
-      'text-sm text-gray-900',
-      'border-b border-gray-200',
-      numeric ? 'text-right font-mono' : 'text-left',
+      "px-4 py-3",
+      "text-sm text-gray-900",
+      "border-b border-gray-200",
+      numeric ? "text-right font-mono" : "text-left",
       className,
-    ].join(' ');
+    ].join(" ");
 
     return (
       <td ref={ref} className={cellClasses} {...props}>
@@ -405,25 +457,26 @@ export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(
 );
 
 // Table Caption component
-export const TableCaption = forwardRef<HTMLTableCaptionElement, TableCaptionProps>(
-  ({ children, className = '', ...props }, ref) => {
-    return (
-      <caption
-        ref={ref}
-        className={`text-sm text-gray-500 text-left py-2 ${className}`}
-        {...props}
-      >
-        {children}
-      </caption>
-    );
-  }
-);
+export const TableCaption = forwardRef<
+  HTMLTableCaptionElement,
+  TableCaptionProps
+>(({ children, className = "", ...props }, ref) => {
+  return (
+    <caption
+      ref={ref}
+      className={`text-sm text-gray-500 text-left py-2 ${className}`}
+      {...props}
+    >
+      {children}
+    </caption>
+  );
+});
 
 // Set display names
-Table.displayName = 'Table';
-TableHeader.displayName = 'TableHeader';
-TableBody.displayName = 'TableBody';
-TableRow.displayName = 'TableRow';
-TableHeaderCell.displayName = 'TableHeaderCell';
-TableCell.displayName = 'TableCell';
-TableCaption.displayName = 'TableCaption';
+Table.displayName = "Table";
+TableHeader.displayName = "TableHeader";
+TableBody.displayName = "TableBody";
+TableRow.displayName = "TableRow";
+TableHeaderCell.displayName = "TableHeaderCell";
+TableCell.displayName = "TableCell";
+TableCaption.displayName = "TableCaption";

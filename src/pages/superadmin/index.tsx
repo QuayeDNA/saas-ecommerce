@@ -50,7 +50,12 @@ const quickLinks = [
   {
     to: "/superadmin/users",
     label: "Manage Users",
-    icon: <FaUsers className="text-blue-600 text-xl sm:text-2xl" />,
+    icon: (
+      <FaUsers
+        className="text-xl sm:text-2xl"
+        style={{ color: "var(--color-primary-600)" }}
+      />
+    ),
   },
   {
     to: "/superadmin/providers",
@@ -81,7 +86,13 @@ const quickLinks = [
 
 // Skeleton loading components
 const MetricCardSkeleton = () => (
-  <Card className="animate-pulse bg-[#142850] border-[#0f1f3a]">
+  <Card
+    className="animate-pulse"
+    style={{
+      backgroundColor: "var(--color-primary-500)",
+      borderColor: "var(--color-primary-600)",
+    }}
+  >
     <CardBody className="p-3 sm:p-4 md:p-6">
       <div className="flex items-center justify-between gap-2 sm:gap-3">
         <div className="flex-1 min-w-0">
@@ -134,8 +145,8 @@ export default function SuperAdminDashboard() {
       key: "agents",
       label: "Active Agents",
       icon: <FaUserTie className="text-white text-sm sm:text-lg lg:text-xl" />,
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/20",
+      color: "text-gray-300",
+      bgColor: "bg-secondary-500/20",
     },
     {
       key: "super_agents",
@@ -143,8 +154,8 @@ export default function SuperAdminDashboard() {
       icon: (
         <FaUserShield className="text-white text-sm sm:text-lg lg:text-xl" />
       ),
-      color: "text-purple-400",
-      bgColor: "bg-purple-500/20",
+      color: "text-gray-300",
+      bgColor: "bg-secondary-500/20",
     },
     {
       key: "dealers",
@@ -152,22 +163,22 @@ export default function SuperAdminDashboard() {
       icon: (
         <FaUserCheck className="text-white text-sm sm:text-lg lg:text-xl" />
       ),
-      color: "text-green-400",
-      bgColor: "bg-green-500/20",
+      color: "text-gray-300",
+      bgColor: "bg-secondary-500/20",
     },
     {
       key: "super_dealers",
       label: "Super Dealers",
       icon: <FaUserCog className="text-white text-sm sm:text-lg lg:text-xl" />,
-      color: "text-orange-400",
-      bgColor: "bg-orange-500/20",
+      color: "text-gray-300",
+      bgColor: "bg-secondary-500/20",
     },
     {
       key: "super_admins",
       label: "Super Admins",
       icon: <FaCrown className="text-white text-sm sm:text-lg lg:text-xl" />,
-      color: "text-yellow-400",
-      bgColor: "bg-yellow-500/20",
+      color: "text-gray-300",
+      bgColor: "bg-secondary-500/20",
     },
   ];
 
@@ -434,7 +445,13 @@ export default function SuperAdminDashboard() {
         ) : stats ? (
           <>
             {/* Total Users */}
-            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+            <Card
+              className="transition-colors duration-200"
+              style={{
+                backgroundColor: "var(--color-primary-500)",
+                borderColor: "var(--color-primary-600)",
+              }}
+            >
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
@@ -456,7 +473,13 @@ export default function SuperAdminDashboard() {
             </Card>
 
             {/* Total Revenue */}
-            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+            <Card
+              className="transition-colors duration-200"
+              style={{
+                backgroundColor: "var(--color-primary-500)",
+                borderColor: "var(--color-primary-600)",
+              }}
+            >
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
@@ -478,7 +501,13 @@ export default function SuperAdminDashboard() {
             </Card>
 
             {/* Total Orders */}
-            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+            <Card
+              className="transition-colors duration-200"
+              style={{
+                backgroundColor: "var(--color-primary-500)",
+                borderColor: "var(--color-primary-600)",
+              }}
+            >
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
@@ -500,7 +529,13 @@ export default function SuperAdminDashboard() {
             </Card>
 
             {/* User Types Carousel */}
-            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200 relative overflow-hidden">
+            <Card
+              className="transition-colors duration-200 relative overflow-hidden"
+              style={{
+                backgroundColor: "var(--color-primary-500)",
+                borderColor: "var(--color-primary-600)",
+              }}
+            >
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
@@ -540,7 +575,13 @@ export default function SuperAdminDashboard() {
             </Card>
 
             {/* Total Commissions */}
-            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+            <Card
+              className="transition-colors duration-200"
+              style={{
+                backgroundColor: "var(--color-primary-500)",
+                borderColor: "var(--color-primary-600)",
+              }}
+            >
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
@@ -562,7 +603,13 @@ export default function SuperAdminDashboard() {
             </Card>
 
             {/* Active Providers */}
-            <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+            <Card
+              className="transition-colors duration-200"
+              style={{
+                backgroundColor: "var(--color-primary-500)",
+                borderColor: "var(--color-primary-600)",
+              }}
+            >
               <CardBody className="p-3 sm:p-4 md:p-6">
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
@@ -619,7 +666,7 @@ export default function SuperAdminDashboard() {
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <FaChartLine className="text-blue-600" />
+                <FaChartLine style={{ color: "var(--color-primary-600)" }} />
                 Activity Over Time (Last 30 Days)
               </h3>
             </CardHeader>
@@ -712,7 +759,7 @@ export default function SuperAdminDashboard() {
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <FaUsers className="text-blue-600" />
+                <FaUsers style={{ color: "var(--color-primary-600)" }} />
                 User Statistics
               </h3>
             </CardHeader>
@@ -846,7 +893,7 @@ export default function SuperAdminDashboard() {
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <FaBuilding className="text-blue-600" />
+                <FaBuilding style={{ color: "var(--color-primary-600)" }} />
                 Provider Statistics
               </h3>
             </CardHeader>

@@ -105,7 +105,7 @@ const ReceptionCarouselCard: React.FC<{
       value: receptionCounts?.resolved || 0,
       subtitle: "Successfully resolved",
       icon: <FaCheckCircle />,
-      color: "text-blue-600",
+      color: "text-gray-300",
     },
   ];
 
@@ -120,7 +120,19 @@ const ReceptionCarouselCard: React.FC<{
   }, [setCarouselIndex, receptionItems.length]);
 
   return (
-    <Card className="bg-[#142850] border-[#0f1f3a] hover:bg-[#1a2f5a] transition-colors duration-200">
+    <Card
+      className="transition-colors duration-200"
+      style={{
+        backgroundColor: "var(--color-primary-500)",
+        borderColor: "var(--color-primary-700)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = "var(--color-primary-600)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = "var(--color-primary-500)";
+      }}
+    >
       <CardBody>
         <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4">
           <div className="flex-1 min-w-0">

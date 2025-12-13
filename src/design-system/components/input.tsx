@@ -1,18 +1,25 @@
-import { forwardRef, useState } from 'react';
-import type { ReactNode, InputHTMLAttributes } from 'react';
-import { useTheme } from '../../hooks/use-theme';
+import { forwardRef, useState } from "react";
+import type { ReactNode, InputHTMLAttributes } from "react";
+import { useTheme } from "../../hooks/use-theme";
 
 // Input sizes
-type InputSize = 'xs' | 'sm' | 'md' | 'lg';
+type InputSize = "xs" | "sm" | "md" | "lg";
 
 // Input variants
-type InputVariant = 'outline' | 'filled' | 'flushed';
+type InputVariant = "outline" | "filled" | "flushed";
 
 // Input color schemes - use 'default' to use theme primary color
-type InputColorScheme = 'default' | 'success' | 'error' | 'warning' | 'info' | 'gray';
+type InputColorScheme =
+  | "default"
+  | "success"
+  | "error"
+  | "warning"
+  | "info"
+  | "gray";
 
 // Input props interface
-interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+interface InputProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   size?: InputSize;
   variant?: InputVariant;
   colorScheme?: InputColorScheme;
@@ -31,9 +38,9 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     {
-      size = 'md',
-      variant = 'outline',
-      colorScheme = 'default',
+      size = "md",
+      variant = "outline",
+      colorScheme = "default",
       isInvalid = false,
       isDisabled = false,
       leftIcon,
@@ -42,139 +49,153 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       helperText,
       errorText,
       fullWidth = false,
-      className = '',
+      className = "",
       required = false,
       useThemeColor = true,
       id,
-      type = 'text',
+      type = "text",
       ...props
     },
     ref
   ) => {
     // Get the primary color from the theme context
     const { primaryColor } = useTheme();
-    
+
     // Focus state for enhanced focus styles
     const [isFocused, setIsFocused] = useState(false);
 
     // Size classes for different elements
     const sizeClasses = {
       input: {
-        xs: 'text-xs h-7 px-2',
-        sm: 'text-sm h-8 px-3',
-        md: 'text-sm h-10 px-4',
-        lg: 'text-base h-12 px-4',
+        xs: "text-xs h-7 px-2",
+        sm: "text-sm h-8 px-3",
+        md: "text-sm h-10 px-4",
+        lg: "text-base h-12 px-4",
       },
       label: {
-        xs: 'text-xs',
-        sm: 'text-xs',
-        md: 'text-sm',
-        lg: 'text-sm',
+        xs: "text-xs",
+        sm: "text-xs",
+        md: "text-sm",
+        lg: "text-sm",
       },
       helperText: {
-        xs: 'text-xs',
-        sm: 'text-xs',
-        md: 'text-xs',
-        lg: 'text-sm',
+        xs: "text-xs",
+        sm: "text-xs",
+        md: "text-xs",
+        lg: "text-sm",
       },
       iconSize: {
-        xs: 'w-3.5 h-3.5',
-        sm: 'w-4 h-4',
-        md: 'w-5 h-5',
-        lg: 'w-5 h-5',
+        xs: "w-3.5 h-3.5",
+        sm: "w-4 h-4",
+        md: "w-5 h-5",
+        lg: "w-5 h-5",
       },
       iconPadding: {
-        xs: leftIcon ? 'pl-7' : 'pl-2',
-        sm: leftIcon ? 'pl-9' : 'pl-3',
-        md: leftIcon ? 'pl-11' : 'pl-4',
-        lg: leftIcon ? 'pl-12' : 'pl-4',
+        xs: leftIcon ? "pl-7" : "pl-2",
+        sm: leftIcon ? "pl-9" : "pl-3",
+        md: leftIcon ? "pl-11" : "pl-4",
+        lg: leftIcon ? "pl-12" : "pl-4",
       },
       rightIconPadding: {
-        xs: rightIcon ? 'pr-7' : 'pr-2',
-        sm: rightIcon ? 'pr-9' : 'pr-3',
-        md: rightIcon ? 'pr-11' : 'pr-4',
-        lg: rightIcon ? 'pr-12' : 'pr-4',
+        xs: rightIcon ? "pr-7" : "pr-2",
+        sm: rightIcon ? "pr-9" : "pr-3",
+        md: rightIcon ? "pr-11" : "pr-4",
+        lg: rightIcon ? "pr-12" : "pr-4",
       },
     };
 
     // Variant specific styles
     const variantClasses = {
-      outline: 'border border-gray-300 bg-white rounded-lg',
-      filled: 'border border-transparent bg-gray-100 rounded-lg',
-      flushed: 'border-b-2 border-gray-300 rounded-none px-0',
+      outline: "border border-gray-300 bg-white rounded-lg",
+      filled: "border border-transparent bg-gray-100 rounded-lg",
+      flushed: "border-b-2 border-gray-300 rounded-none px-0",
     };
 
     // Get theme color classes based on the current primary color from the theme
     const getThemeColorClasses = () => {
       switch (primaryColor) {
-        case 'blue':
+        case "blue":
           return {
-            border: 'border-blue-500',
-            ring: 'ring ring-blue-200',
-            focus: 'focus:border-blue-500 focus:ring-blue-100',
+            border: "border-blue-500",
+            ring: "ring ring-blue-200",
+            focus: "focus:border-blue-500 focus:ring-blue-100",
           };
-        case 'purple':
+        case "black":
           return {
-            border: 'border-purple-500',
-            ring: 'ring ring-purple-200',
-            focus: 'focus:border-purple-500 focus:ring-purple-100',
+            border: "border-gray-900",
+            ring: "ring ring-gray-300",
+            focus: "focus:border-black focus:ring-gray-200",
           };
-        case 'green':
+        case "teal":
           return {
-            border: 'border-green-500',
-            ring: 'ring ring-green-200',
-            focus: 'focus:border-green-500 focus:ring-green-100',
+            border: "border-teal-500",
+            ring: "ring ring-teal-200",
+            focus: "focus:border-teal-500 focus:ring-teal-100",
           };
-        case 'orange':
+        case "purple":
           return {
-            border: 'border-orange-500',
-            ring: 'ring ring-orange-200',
-            focus: 'focus:border-orange-500 focus:ring-orange-100',
+            border: "border-purple-500",
+            ring: "ring ring-purple-200",
+            focus: "focus:border-purple-500 focus:ring-purple-100",
           };
-        case 'red':
+        case "green":
           return {
-            border: 'border-red-500',
-            ring: 'ring ring-red-200',
-            focus: 'focus:border-red-500 focus:ring-red-100',
+            border: "border-green-500",
+            ring: "ring ring-green-200",
+            focus: "focus:border-green-500 focus:ring-green-100",
+          };
+        case "orange":
+          return {
+            border: "border-orange-500",
+            ring: "ring ring-orange-200",
+            focus: "focus:border-orange-500 focus:ring-orange-100",
+          };
+        case "red":
+          return {
+            border: "border-red-500",
+            ring: "ring ring-red-200",
+            focus: "focus:border-red-500 focus:ring-red-100",
           };
         default:
-          return getSemanticColorClasses('info');
+          return getSemanticColorClasses("info");
       }
     };
 
-    const getSemanticColorClasses = (scheme: InputColorScheme): { border: string; ring: string; focus: string } => {
+    const getSemanticColorClasses = (
+      scheme: InputColorScheme
+    ): { border: string; ring: string; focus: string } => {
       switch (scheme) {
-        case 'success':
+        case "success":
           return {
-            border: 'border-green-500',
-            ring: 'ring ring-green-200',
-            focus: 'focus:border-green-500 focus:ring-green-100',
+            border: "border-green-500",
+            ring: "ring ring-green-200",
+            focus: "focus:border-green-500 focus:ring-green-100",
           };
-        case 'error':
+        case "error":
           return {
-            border: 'border-red-500',
-            ring: 'ring ring-red-200',
-            focus: 'focus:border-red-500 focus:ring-red-100',
+            border: "border-red-500",
+            ring: "ring ring-red-200",
+            focus: "focus:border-red-500 focus:ring-red-100",
           };
-        case 'warning':
+        case "warning":
           return {
-            border: 'border-yellow-500',
-            ring: 'ring ring-yellow-200',
-            focus: 'focus:border-yellow-500 focus:ring-yellow-100',
+            border: "border-yellow-500",
+            ring: "ring ring-yellow-200",
+            focus: "focus:border-yellow-500 focus:ring-yellow-100",
           };
-        case 'info':
+        case "info":
           return {
-            border: 'border-blue-500',
-            ring: 'ring ring-blue-200',
-            focus: 'focus:border-blue-500 focus:ring-blue-100',
+            border: "border-blue-500",
+            ring: "ring ring-blue-200",
+            focus: "focus:border-blue-500 focus:ring-blue-100",
           };
-        case 'gray':
+        case "gray":
           return {
-            border: 'border-gray-500',
-            ring: 'ring ring-gray-200',
-            focus: 'focus:border-gray-500 focus:ring-gray-100',
+            border: "border-gray-500",
+            ring: "ring ring-gray-200",
+            focus: "focus:border-gray-500 focus:ring-gray-100",
           };
-        case 'default':
+        case "default":
         default:
           return getThemeColorClasses();
       }
@@ -185,14 +206,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       // Always use error colors for invalid state
       if (isInvalid) {
         return {
-          border: 'border-red-500',
-          ring: 'ring ring-red-200',
-          focus: 'focus:border-red-500 focus:ring-red-100',
+          border: "border-red-500",
+          ring: "ring ring-red-200",
+          focus: "focus:border-red-500 focus:ring-red-100",
         };
       }
 
       // If using default colorScheme and theme colors are enabled, use theme's primary color
-      if (colorScheme === 'default' && useThemeColor) {
+      if (colorScheme === "default" && useThemeColor) {
         return getThemeColorClasses();
       }
 
@@ -208,31 +229,31 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     // Combine all classes for the input
     const inputClasses = [
-      'form-input w-full',
+      "form-input w-full",
       sizeClasses.input[size],
       sizeClasses.iconPadding[size],
       sizeClasses.rightIconPadding[size],
       variantClasses[variant],
       getFocusClasses(),
-      'transition duration-200',
+      "transition duration-200",
     ];
-    
+
     // Add focused state classes
     if (isFocused) {
       const colors = getColorClasses();
       inputClasses.push(`${colors.border} ${colors.ring}`);
     }
-    
+
     // Add invalid state classes
     if (isInvalid) {
-      inputClasses.push('border-red-500 text-red-900 placeholder-red-300');
+      inputClasses.push("border-red-500 text-red-900 placeholder-red-300");
     }
-    
+
     // Add disabled state classes
     if (isDisabled) {
-      inputClasses.push('bg-gray-100 text-gray-400 cursor-not-allowed');
+      inputClasses.push("bg-gray-100 text-gray-400 cursor-not-allowed");
     }
-    
+
     // Add custom classes
     if (className) {
       inputClasses.push(className);
@@ -246,16 +267,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       if (isInvalid && errorText) {
         return <p className="text-red-600">{errorText}</p>;
       }
-      
+
       if (helperText) {
         return <p className="text-gray-500">{helperText}</p>;
       }
-      
+
       return null;
     };
 
     return (
-      <div className={`flex flex-col ${fullWidth ? 'w-full' : ''}`}>
+      <div className={`flex flex-col ${fullWidth ? "w-full" : ""}`}>
         {/* Label */}
         {label && (
           <label
@@ -266,7 +287,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {required && <span className="text-red-500 ml-1">*</span>}
           </label>
         )}
-        
+
         {/* Input container for positioning icons */}
         <div className="relative">
           {/* Left icon */}
@@ -277,14 +298,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               </div>
             </div>
           )}
-          
+
           {/* Input element */}
           <input
             ref={ref}
             id={uniqueId}
             type={type}
             disabled={isDisabled}
-            className={inputClasses.join(' ')}
+            className={inputClasses.join(" ")}
             onFocus={(e) => {
               setIsFocused(true);
               if (props.onFocus) {
@@ -299,7 +320,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             }}
             {...props}
           />
-          
+
           {/* Right icon */}
           {rightIcon && (
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -309,7 +330,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        
+
         {/* Helper text or Error text */}
         {(helperText || (isInvalid && errorText)) && (
           <div className={`mt-1 ${sizeClasses.helperText[size]}`}>
@@ -321,4 +342,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   }
 );
 
-Input.displayName = 'Input';
+Input.displayName = "Input";

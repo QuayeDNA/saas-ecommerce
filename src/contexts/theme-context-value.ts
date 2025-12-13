@@ -1,7 +1,15 @@
-import { createContext } from 'react';
+import { createContext } from "react";
 
 // Available theme options
-export type ThemeColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'default';
+export type ThemeColor =
+  | "blue"
+  | "black"
+  | "teal"
+  | "purple"
+  | "green"
+  | "orange"
+  | "red"
+  | "default";
 
 // Theme context type
 export interface ThemeContextType {
@@ -11,6 +19,6 @@ export interface ThemeContextType {
 
 // Create context with default values
 export const ThemeContext = createContext<ThemeContextType>({
-  primaryColor: 'default',
+  primaryColor: "default",
   setPrimaryColor: () => {},
 });

@@ -728,7 +728,9 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                     onClick={handleSelectAll}
                     className="flex items-center gap-2 flex-1 sm:flex-none justify-center"
                   >
-                    <FaCheckSquare className="text-blue-600" />
+                    <FaCheckSquare
+                      style={{ color: "var(--color-primary-600)" }}
+                    />
                     <span className="text-xs sm:text-sm">Smart Select</span>
                   </Button>
                   {selectedOrders.length > 0 && (
@@ -759,9 +761,19 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         activeTab !== "reported" && (
           <Card>
             <CardBody>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div
+                className="rounded-lg p-4"
+                style={{
+                  backgroundColor: "var(--color-primary-100)",
+                  borderColor: "var(--color-primary-300)",
+                  borderWidth: "1px",
+                }}
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <span className="text-sm text-blue-800 font-medium">
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: "var(--color-primary-800)" }}
+                  >
                     {selectedOrders.length} order(s) selected for bulk
                     processing
                   </span>
@@ -839,7 +851,18 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                     size="sm"
                     variant="outline"
                     onClick={() => handleBulkReceptionStatus("resolved")}
-                    className="flex-1 sm:flex-none border-blue-300 text-blue-700 hover:bg-blue-50"
+                    className="flex-1 sm:flex-none"
+                    style={{
+                      borderColor: "var(--color-primary-300)",
+                      color: "var(--color-primary-700)",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "var(--color-primary-50)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
                     <FaCheck className="mr-1" />
                     <span className="hidden sm:inline">Mark Resolved</span>
@@ -860,9 +883,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 onClick={() => setActiveTab("all")}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === "all"
-                    ? "border-blue-500 text-blue-600"
+                    ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
+                style={
+                  activeTab === "all"
+                    ? {
+                        borderColor: "var(--color-primary-500)",
+                        color: "var(--color-primary-600)",
+                      }
+                    : {}
+                }
               >
                 All Orders
               </button>
@@ -870,9 +901,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 onClick={() => setActiveTab("reported")}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === "reported"
-                    ? "border-blue-500 text-blue-600"
+                    ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
+                style={
+                  activeTab === "reported"
+                    ? {
+                        borderColor: "var(--color-primary-500)",
+                        color: "var(--color-primary-600)",
+                      }
+                    : {}
+                }
               >
                 Reported Orders
               </button>
@@ -1006,7 +1045,10 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 <FaTimes className="text-red-500 text-xl" />
               )}
               {pendingBulkAction === "process" && (
-                <FaSync className="text-blue-500 text-xl" />
+                <FaSync
+                  style={{ color: "var(--color-primary-500)" }}
+                  className="text-xl"
+                />
               )}
               {pendingBulkAction === "complete" && (
                 <FaCheck className="text-green-500 text-xl" />
@@ -1095,7 +1137,10 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 <FaClock className="text-yellow-500 text-xl" />
               )}
               {pendingReceptionStatus === "resolved" && (
-                <FaCheck className="text-blue-500 text-xl" />
+                <FaCheck
+                  style={{ color: "var(--color-primary-500)" }}
+                  className="text-xl"
+                />
               )}
               <div>
                 <h3 className="font-medium text-gray-900">

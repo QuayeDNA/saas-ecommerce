@@ -14,6 +14,7 @@ import {
   FaMobile,
   FaInfoCircle,
   FaMoneyBillWave,
+  FaPalette,
 } from "react-icons/fa";
 import { Button } from "../../design-system/components/button";
 import { Card } from "../../design-system/components/card";
@@ -26,6 +27,7 @@ import {
   type WalletSettings,
 } from "../../services/settings.service";
 import { Alert } from "../../design-system/components/alert";
+import { ColorSchemeSelector } from "../../components/common/color-scheme-selector";
 
 export default function SuperAdminSettingsPage() {
   const navigate = useNavigate();
@@ -660,6 +662,15 @@ export default function SuperAdminSettingsPage() {
             </Button>
           </div>
         </div>
+      </Card>
+
+      {/* Color Scheme */}
+      <Card>
+        <div className="flex items-center gap-2 mb-4">
+          <FaPalette className="text-purple-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Appearance</h2>
+        </div>
+        <ColorSchemeSelector />
       </Card>
 
       {/* System Information */}

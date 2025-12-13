@@ -83,8 +83,12 @@ export const LoginPage = () => {
             "Your account has been rejected. Please contact support for more information.";
         } else if (error.message.includes("Too many login attempts")) {
           message = error.message; // Use the specific rate limiting message
-        } else if (error.message.includes("429") || error.message.includes("Too Many Requests")) {
-          message = "Too many login attempts. Please wait a few minutes before trying again.";
+        } else if (
+          error.message.includes("429") ||
+          error.message.includes("Too Many Requests")
+        ) {
+          message =
+            "Too many login attempts. Please wait a few minutes before trying again.";
         } else {
           message = error.message;
         }
@@ -96,14 +100,14 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-indigo-100">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-100">
       {/* Header with back to home */}
       <header className="p-4 sm:p-6">
         <Container>
           <div className="flex items-center justify-between">
             <Link
               to="/"
-              className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
             >
               <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
               <span className="hidden sm:inline">Back to Home</span>
@@ -133,7 +137,14 @@ export const LoginPage = () => {
                 Don't have an account?{" "}
                 <Link
                   to="/register"
-                  className="font-semibold text-blue-600 hover:text-blue-500 transition-colors"
+                  className="font-semibold transition-colors"
+                  style={{ color: "var(--color-primary-600)" }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = "var(--color-primary-700)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "var(--color-primary-600)")
+                  }
                 >
                   Sign up for free
                 </Link>
@@ -152,14 +163,19 @@ export const LoginPage = () => {
                     <FaExclamationTriangle className="mt-0.5 mr-3 flex-shrink-0 text-red-500" />
                     <div>
                       <div className="font-medium text-red-800">
-                        {(localError ?? authState.error)?.includes("Too many") ? "Rate Limited" : "Login Failed"}
+                        {(localError ?? authState.error)?.includes("Too many")
+                          ? "Rate Limited"
+                          : "Login Failed"}
                       </div>
                       <div className="text-red-700 text-sm mt-1">
                         {localError ?? authState.error}
                       </div>
-                      {(localError ?? authState.error)?.includes("Too many") && (
+                      {(localError ?? authState.error)?.includes(
+                        "Too many"
+                      ) && (
                         <div className="text-red-600 text-xs mt-2 font-medium">
-                          💡 Tip: Wait a moment before retrying to avoid further delays
+                          💡 Tip: Wait a moment before retrying to avoid further
+                          delays
                         </div>
                       )}
                     </div>
@@ -237,7 +253,14 @@ export const LoginPage = () => {
 
                   <Link
                     to="/forgot-password"
-                    className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                    className="text-sm font-medium transition-colors"
+                    style={{ color: "var(--color-primary-600)" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "var(--color-primary-700)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "var(--color-primary-600)")
+                    }
                   >
                     Forgot password?
                   </Link>

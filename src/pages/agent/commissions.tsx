@@ -6,7 +6,16 @@ import {
   type CommissionMonthlySummary,
   type CurrentMonthStatistics,
 } from "../../services/commission.service";
-import { Card, CardBody, CardHeader, Badge, Tabs, TabsList, TabsTrigger, TabsContent } from "../../design-system";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Badge,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "../../design-system";
 import {
   FaInfoCircle,
   FaCalendarAlt,
@@ -19,9 +28,14 @@ import { MonthlyCommissionList } from "../../components/commissions/monthly-comm
 
 export default function AgentCommissionPage() {
   const [commissions, setCommissions] = useState<CommissionRecord[]>([]);
-  const [statistics, setStatistics] = useState<CommissionStatistics | null>(null);
-  const [currentMonthStats, setCurrentMonthStats] = useState<CurrentMonthStatistics | null>(null);
-  const [monthlySummaries, setMonthlySummaries] = useState<CommissionMonthlySummary[]>([]);
+  const [statistics, setStatistics] = useState<CommissionStatistics | null>(
+    null
+  );
+  const [currentMonthStats, setCurrentMonthStats] =
+    useState<CurrentMonthStatistics | null>(null);
+  const [monthlySummaries, setMonthlySummaries] = useState<
+    CommissionMonthlySummary[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [summariesLoading, setSummariesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -181,7 +195,10 @@ export default function AgentCommissionPage() {
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-4 sm:p-6 space-y-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <FaInfoCircle className="text-blue-600 text-xl flex-shrink-0" />
+                  <FaInfoCircle
+                    className="text-xl flex-shrink-0"
+                    style={{ color: "var(--color-primary-600)" }}
+                  />
                   <h3 className="text-lg font-semibold text-gray-900">
                     Understanding Your Commissions
                   </h3>
@@ -222,8 +239,8 @@ export default function AgentCommissionPage() {
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed">
                     You earn a <strong>percentage of each order</strong> you
-                    process. The rate depends on your agent tier and is shown in the
-                    "Rate" column of your history.
+                    process. The rate depends on your agent tier and is shown in
+                    the "Rate" column of your history.
                   </p>
                 </div>
 
@@ -235,21 +252,23 @@ export default function AgentCommissionPage() {
                     </h4>
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Pending commissions <strong>expire after 30 days</strong> if not
-                    paid. Make sure to follow up with admin for timely payments.
+                    Pending commissions <strong>expire after 30 days</strong> if
+                    not paid. Make sure to follow up with admin for timely
+                    payments.
                   </p>
                 </div>
               </div>
 
               <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
                 <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <FaInfoCircle className="text-blue-600" />
+                  <FaInfoCircle style={{ color: "var(--color-primary-600)" }} />
                   Commission Status Guide
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
                   <div>
-                    <strong className="text-yellow-600">Pending:</strong> Commission
-                    calculated and awaiting admin approval and payment.
+                    <strong className="text-yellow-600">Pending:</strong>{" "}
+                    Commission calculated and awaiting admin approval and
+                    payment.
                   </div>
                   <div>
                     <strong className="text-green-600">Paid:</strong> Commission
@@ -257,13 +276,13 @@ export default function AgentCommissionPage() {
                     history.
                   </div>
                   <div>
-                    <strong className="text-red-600">Rejected:</strong> Commission
-                    rejected by admin. Check the reason in the notes.
+                    <strong className="text-red-600">Rejected:</strong>{" "}
+                    Commission rejected by admin. Check the reason in the notes.
                   </div>
                   <div>
-                    <strong className="text-orange-600">Expired:</strong> Pending
-                    commission exceeded the 30-day waiting period and was
-                    automatically expired.
+                    <strong className="text-orange-600">Expired:</strong>{" "}
+                    Pending commission exceeded the 30-day waiting period and
+                    was automatically expired.
                   </div>
                 </div>
               </div>
@@ -273,7 +292,14 @@ export default function AgentCommissionPage() {
           {!showInfoCards && (
             <button
               onClick={() => setShowInfoCards(true)}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-2 transition-colors"
+              className="text-sm font-medium flex items-center gap-2 transition-colors"
+              style={{ color: "var(--color-primary-600)" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--color-primary-800)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--color-primary-600)")
+              }
             >
               <FaInfoCircle />
               <span>Show Commission System Info</span>
@@ -284,9 +310,12 @@ export default function AgentCommissionPage() {
         {/* Previous Months Tab */}
         <TabsContent value="history" className="space-y-6">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Historical Commission Summaries</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Historical Commission Summaries
+            </h2>
             <p className="text-sm text-gray-600 mb-6">
-              View your commission history by month with payment status indicators
+              View your commission history by month with payment status
+              indicators
             </p>
           </div>
 
@@ -331,7 +360,10 @@ export default function AgentCommissionPage() {
                   <h3 className="text-sm font-medium">Pending Count</h3>
                 </CardHeader>
                 <CardBody>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--color-primary-600)" }}
+                  >
                     {statistics.pendingCount}
                   </div>
                   <p className="text-xs text-gray-600">Pending records</p>
@@ -346,7 +378,9 @@ export default function AgentCommissionPage() {
                   <div className="text-2xl font-bold text-purple-600">
                     {formatCurrency(statistics.thisMonth.totalPaid)}
                   </div>
-                  <p className="text-xs text-gray-600">Current month earnings</p>
+                  <p className="text-xs text-gray-600">
+                    Current month earnings
+                  </p>
                 </CardBody>
               </Card>
             </div>
@@ -379,7 +413,8 @@ export default function AgentCommissionPage() {
                     No commissions yet
                   </h3>
                   <p className="text-sm text-gray-500">
-                    Your commission history will appear here once you start earning.
+                    Your commission history will appear here once you start
+                    earning.
                   </p>
                 </div>
               ) : (
@@ -414,7 +449,9 @@ export default function AgentCommissionPage() {
                       {commissions.map((commission) => (
                         <tr key={commission._id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {new Date(commission.createdAt).toLocaleDateString()}
+                            {new Date(
+                              commission.createdAt
+                            ).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {commission.period} ({commission.periodStart} -{" "}
@@ -434,7 +471,9 @@ export default function AgentCommissionPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Badge
-                              colorScheme={getStatusBadgeColor(commission.status)}
+                              colorScheme={getStatusBadgeColor(
+                                commission.status
+                              )}
                             >
                               {getStatusText(commission.status)}
                             </Badge>

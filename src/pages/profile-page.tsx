@@ -20,9 +20,11 @@ import {
   FaBriefcase,
   FaWifi,
   FaSync,
+  FaPalette,
 } from "react-icons/fa";
 import type { User } from "../types";
 import { isBusinessUser } from "../utils/userTypeHelpers";
+import { ColorSchemeSelector } from "../components/common/color-scheme-selector";
 
 export const ProfilePage: React.FC = () => {
   const { authState, logout } = useAuth();
@@ -429,6 +431,21 @@ export const ProfilePage: React.FC = () => {
                     Sign Out
                   </Button>
                 </div>
+              </CardBody>
+            </Card>
+
+            {/* Appearance Settings */}
+            <Card className="shadow-lg">
+              <CardHeader className="p-6 sm:p-8 pb-0">
+                <div className="flex items-center gap-2">
+                  <FaPalette className="text-purple-600" />
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                    Appearance
+                  </h2>
+                </div>
+              </CardHeader>
+              <CardBody className="p-6 sm:p-8 pt-6">
+                <ColorSchemeSelector />
               </CardBody>
             </Card>
 

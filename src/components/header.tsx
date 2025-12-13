@@ -153,9 +153,13 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
   return (
     <header
-      className={`sticky z-10 bg-[#142850] shadow-sm border-b border-[#0f1f3a] rounded-b-xl ${
+      className={`sticky z-10 bg-primary-500 shadow-sm border-b border-primary-600 rounded-b-xl ${
         isImpersonating ? "top-0" : "top-0"
       }`}
+      style={{
+        backgroundColor: "var(--color-primary-500)",
+        borderBottomColor: "var(--color-primary-600)",
+      }}
     >
       <div className="px-2 sm:px-6 lg:px-8 py-4 sm:py-5">
         {/* Main Header Row */}
@@ -167,7 +171,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
               variant="ghost"
               size="sm"
               onClick={onMenuClick}
-              className="md:hidden flex-shrink-0 text-white hover:bg-[#1e3a5f]"
+              className="md:hidden flex-shrink-0 text-white"
+              style={
+                {
+                  "--hover-bg": "var(--color-primary-600)",
+                } as React.CSSProperties
+              }
               aria-label="Open sidebar menu"
             >
               <FaBars className="w-5 h-5" />
@@ -259,7 +268,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="p-1.5 text-white hover:bg-[#1e3a5f]"
+                className="p-1.5 text-white"
+                style={
+                  {
+                    "--hover-bg": "var(--color-primary-600)",
+                  } as React.CSSProperties
+                }
                 aria-label="User menu"
               >
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-medium shadow-sm text-sm">
