@@ -6,6 +6,18 @@ interface ThemeProviderProps {
   initialTheme?: ThemeColor;
 }
 
+// Map theme colors to their hex values for PWA
+const THEME_COLORS: Record<ThemeColor, string> = {
+  default: "#142850", // Default blue
+  blue: "#142850",
+  black: "#000000",
+  teal: "#14b8a6",
+  purple: "#8b5cf6",
+  green: "#10b981",
+  orange: "#f59e0b",
+  red: "#ef4444",
+};
+
 export const ThemeProvider = ({
   children,
   initialTheme = "default",
@@ -16,7 +28,7 @@ export const ThemeProvider = ({
     return (savedTheme as ThemeColor) || initialTheme;
   });
 
-  // Apply theme class to body element when theme changes
+  // Apply theme class to body element and update PWA colors when theme changes
   useEffect(() => {
     // Save to localStorage
     localStorage.setItem("saas-telecom-theme", primaryColor);
@@ -36,7 +48,37 @@ export const ThemeProvider = ({
     if (primaryColor !== "default") {
       document.body.classList.add(`theme-${primaryColor}`);
     }
+
+    // Update PWA theme color
+    const themeColor = THEME_COLORS[primaryColor];
+    updatePWAThemeColor(themeColor);
   }, [primaryColor]);
+
+  // Function to update PWA theme color
+  const updatePWAThemeColor = (color: string) => {
+    // Update theme-color meta tag
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute("content", color);
+    }
+
+    // Update msapplication-TileColor meta tag
+    const tileColorMeta = document.querySelector(
+      'meta[name="msapplication-TileColor"]'
+    );
+    if (tileColorMeta) {
+      tileColorMeta.setAttribute("content", color);
+    }
+
+    // Update manifest link to include theme parameter for dynamic manifest
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+      manifestLink.setAttribute(
+        "href",
+        `/manifest?theme=${encodeURIComponent(color)}`
+      );
+    }
+  };
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(
