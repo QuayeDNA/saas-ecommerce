@@ -60,7 +60,7 @@ export const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
         {USER_TYPES.map((type) => {
           const isSelected = selectedTypes.includes(type.value);
           return (
