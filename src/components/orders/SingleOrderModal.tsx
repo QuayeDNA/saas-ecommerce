@@ -430,7 +430,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                   Processing...
                 </>
               ) : siteStatus && !siteStatus.isSiteOpen ? (
-                "Site Under Maintenance"
+                "Service Unavailable"
               ) : (
                 "Continue"
               )}

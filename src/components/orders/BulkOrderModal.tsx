@@ -588,7 +588,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                   Processing...
                 </>
               ) : siteStatus?.isSiteOpen === false ? (
-                "Site Under Maintenance"
+                "Service Unavailable"
               ) : (
                 `Continue (${orderItems.length} items)`
               )}

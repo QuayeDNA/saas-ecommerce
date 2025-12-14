@@ -22,7 +22,7 @@ export const StatCard: React.FC<StatCardProps> = ({
     sm: {
       title: "text-xs font-medium text-gray-300",
       value: "text-base sm:text-lg font-bold text-white",
-      subtitle: "text-xs mt-0.5 sm:mt-1 text-gray-400",
+      subtitle: "text-xs mt-0.5 sm:mt-1",
       icon: "text-xs sm:text-sm",
       iconContainer: "p-1.5 sm:p-2",
       cardPadding: "p-0 sm:p-3",
@@ -30,7 +30,7 @@ export const StatCard: React.FC<StatCardProps> = ({
     md: {
       title: "text-xs sm:text-sm font-medium text-gray-300",
       value: "text-lg sm:text-xl lg:text-2xl font-bold text-white",
-      subtitle: "text-xs sm:text-sm mt-0.5 sm:mt-1 text-gray-400",
+      subtitle: "text-xs sm:text-sm mt-0.5 sm:mt-1",
       icon: "text-sm sm:text-base lg:text-lg",
       iconContainer: "p-2 sm:p-2.5 lg:p-3",
       cardPadding: "p-0 sm:p-4 lg:p-5",
@@ -38,7 +38,7 @@ export const StatCard: React.FC<StatCardProps> = ({
     lg: {
       title: "text-sm sm:text-base font-medium text-gray-300",
       value: "text-xl sm:text-2xl lg:text-3xl font-bold text-white",
-      subtitle: "text-xs sm:text-sm mt-0.5 sm:mt-1 text-gray-400",
+      subtitle: "text-xs sm:text-sm mt-0.5 sm:mt-1",
       icon: "text-base sm:text-lg lg:text-xl",
       iconContainer: "p-2 sm:p-3 lg:p-4",
       cardPadding: "p-0 sm:p-5 lg:p-6",
@@ -69,7 +69,10 @@ export const StatCard: React.FC<StatCardProps> = ({
             </p>
             <p className={`${classes.value} leading-tight`}>{value}</p>
             {subtitle && (
-              <p className={`${classes.subtitle} mt-0.5 sm:mt-1 lg:mt-2`}>
+              <p
+                className={`${classes.subtitle} mt-0.5 sm:mt-1 lg:mt-2`}
+                style={{ color: "var(--color-accent-500, #9ca3af)" }}
+              >
                 {subtitle}
               </p>
             )}

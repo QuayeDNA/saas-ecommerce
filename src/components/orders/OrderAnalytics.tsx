@@ -161,10 +161,16 @@ const ReceptionCarouselCard: React.FC<{
                     <div className="text-3xl font-bold text-white">
                       {formatNumber(currentReceptionItem.value)}
                     </div>
-                    <div className="text-lg font-medium text-gray-300">
+                    <div
+                      className="text-lg font-medium"
+                      style={{ color: "var(--color-accent-orange, #d1d5db)" }}
+                    >
                       {currentReceptionItem.title}
                     </div>
-                    <div className="text-sm text-gray-400">
+                    <div
+                      className="text-sm"
+                      style={{ color: "var(--color-accent-orange, #9ca3af)" }}
+                    >
                       {currentReceptionItem.subtitle}
                     </div>
                   </div>

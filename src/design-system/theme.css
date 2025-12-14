@@ -125,6 +125,10 @@
   --color-primary-500: #000000; /* Pure black */
   --color-primary-600: #1a1a1a; /* Slightly lighter for hover */
   --color-primary-700: #0a0a0a; /* Darker for active */
+  --color-secondary-500: #f59e0b; /* Orange for active links */
+  --color-secondary-600: #d97706; /* Darker orange for hover */
+  --color-secondary-700: #b45309; /* Even darker orange */
+  --color-accent-500: #f59e0b; /* Orange accent for subtitles */
 }
 
 .theme-teal {

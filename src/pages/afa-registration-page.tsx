@@ -15,12 +15,19 @@ import type { AfaOrder } from "../services/user.service";
 import type { Bundle } from "../types/package";
 import { providerService } from "../services/provider.service";
 import { AuthContext } from "../contexts/AuthContext";
+import { useSiteStatus } from "../contexts/site-status-context";
 
 export const AfaRegistrationPage: React.FC = () => {
-  const { submitAfaRegistration, getAfaRegistration, getAfaBundles, isLoading } = useUser();
+  const {
+    submitAfaRegistration,
+    getAfaRegistration,
+    getAfaBundles,
+    isLoading,
+  } = useUser();
   const navigate = useNavigate();
   const { authState } = useContext(AuthContext)!;
   const currentUser = authState.user;
+  const { siteStatus } = useSiteStatus();
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -55,11 +62,13 @@ export const AfaRegistrationPage: React.FC = () => {
             setAfaPlans(bundlesResult.bundles);
             // Auto-select if only one plan available
             if (bundlesResult.bundles.length === 1) {
-              setFormData(prev => ({
+              setFormData((prev) => ({
                 ...prev,
                 bundleId: bundlesResult.bundles[0]._id || "",
                 // Clear Ghana Card if not required for the auto-selected plan
-                ghanaCardNumber: bundlesResult.bundles[0].requiresGhanaCard ? prev.ghanaCardNumber : "",
+                ghanaCardNumber: bundlesResult.bundles[0].requiresGhanaCard
+                  ? prev.ghanaCardNumber
+                  : "",
               }));
             }
           }
@@ -87,6 +96,12 @@ export const AfaRegistrationPage: React.FC = () => {
     setError(null);
     setSuccess(false);
 
+    // Check if site is closed
+    if (siteStatus && !siteStatus.isSiteOpen) {
+      setError("Service is currently unavailable. Please try again later.");
+      return;
+    }
+
     // Validate plan selection
     if (!formData.bundleId) {
       setError("Please select an AFA registration plan");
@@ -94,21 +109,26 @@ export const AfaRegistrationPage: React.FC = () => {
     }
 
     // Check if Ghana Card is required for selected plan
-    const selectedPlan = afaPlans.find(b => b._id === formData.bundleId);
+    const selectedPlan = afaPlans.find((b) => b._id === formData.bundleId);
     if (selectedPlan?.requiresGhanaCard && !formData.ghanaCardNumber) {
       setError("Ghana Card number is required for this plan");
       return;
     }
 
     // Validate Ghana Card format if provided
-    if (formData.ghanaCardNumber && !validateGhanaCardFormat(formData.ghanaCardNumber)) {
+    if (
+      formData.ghanaCardNumber &&
+      !validateGhanaCardFormat(formData.ghanaCardNumber)
+    ) {
       setError("Invalid Ghana Card format. Format should be GHA-XXXXXXXXX-X");
       return;
     }
 
     // Validate Ghana Card with API if provided
     if (formData.ghanaCardNumber && ghanaCardValid === false) {
-      setError("Ghana Card validation failed. Please check the number and try again.");
+      setError(
+        "Ghana Card validation failed. Please check the number and try again."
+      );
       return;
     }
 
@@ -162,7 +182,10 @@ export const AfaRegistrationPage: React.FC = () => {
   };
 
   const handleGhanaCardBlur = async () => {
-    if (formData.ghanaCardNumber && !validateGhanaCardFormat(formData.ghanaCardNumber)) {
+    if (
+      formData.ghanaCardNumber &&
+      !validateGhanaCardFormat(formData.ghanaCardNumber)
+    ) {
       setGhanaCardValid(false);
       setError("Invalid Ghana Card format. Format should be GHA-XXXXXXXXX-X");
       return;
@@ -172,7 +195,9 @@ export const AfaRegistrationPage: React.FC = () => {
       const isValid = await validateGhanaCardWithAPI(formData.ghanaCardNumber);
       setGhanaCardValid(isValid);
       if (!isValid) {
-        setError("Ghana Card validation failed. Please check the number and try again.");
+        setError(
+          "Ghana Card validation failed. Please check the number and try again."
+        );
       } else {
         setError(null); // Clear error if valid
       }
@@ -184,7 +209,8 @@ export const AfaRegistrationPage: React.FC = () => {
       ...prev,
       bundleId,
       // Clear Ghana Card if not required for new plan
-      ghanaCardNumber: afaPlans.find(b => b._id === bundleId)?.requiresGhanaCard
+      ghanaCardNumber: afaPlans.find((b) => b._id === bundleId)
+        ?.requiresGhanaCard
         ? prev.ghanaCardNumber
         : "",
     }));
@@ -196,7 +222,8 @@ export const AfaRegistrationPage: React.FC = () => {
     }
 
     const userType = currentUser.userType;
-    const tierPrice = plan.pricingTiers[userType as keyof typeof plan.pricingTiers];
+    const tierPrice =
+      plan.pricingTiers[userType as keyof typeof plan.pricingTiers];
 
     return tierPrice ?? plan.pricingTiers.default ?? plan.price;
   };
@@ -230,21 +257,23 @@ export const AfaRegistrationPage: React.FC = () => {
     return ghanaCardRegex.test(cardNumber);
   };
 
-  const validateGhanaCardWithAPI = async (cardNumber: string): Promise<boolean> => {
+  const validateGhanaCardWithAPI = async (
+    cardNumber: string
+  ): Promise<boolean> => {
     try {
       setValidatingGhanaCard(true);
       // For now, we'll use a mock API call - replace with actual API integration
       // Example API: SourceID.tech Ghana Card Verification API
-      const response = await fetch('/api/verify-ghana-card', {
-        method: 'POST',
+      const response = await fetch("/api/verify-ghana-card", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           // Add API key if needed
         },
         body: JSON.stringify({
           cardNumber: cardNumber.toUpperCase(),
-          country: 'GHA'
-        })
+          country: "GHA",
+        }),
       });
 
       if (response.ok) {
@@ -255,7 +284,7 @@ export const AfaRegistrationPage: React.FC = () => {
       // If API fails, fall back to format validation
       return validateGhanaCardFormat(cardNumber);
     } catch (error) {
-      console.error('Ghana Card API validation failed:', error);
+      console.error("Ghana Card API validation failed:", error);
       // Fall back to format validation if API is unavailable
       return validateGhanaCardFormat(cardNumber);
     } finally {
@@ -266,6 +295,25 @@ export const AfaRegistrationPage: React.FC = () => {
   return (
     <div className="min-h-screen">
       <Container>
+        {/* Site Status Check */}
+        {siteStatus && !siteStatus.isSiteOpen && (
+          <Alert type="error" className="mb-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-2">
+                Service Unavailable
+              </h3>
+              <p className="mb-4">
+                {siteStatus.customMessage ||
+                  "The site is currently closed for maintenance. AFA registration is temporarily disabled."}
+              </p>
+              <p className="text-sm">
+                Please check back later or contact support if you need
+                assistance.
+              </p>
+            </div>
+          </Alert>
+        )}
+
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -383,31 +431,48 @@ export const AfaRegistrationPage: React.FC = () => {
                         value={formData.bundleId}
                         onChange={handleBundleChange}
                         options={[
-                          { value: "", label: loadingPlans ? "Loading plans..." : "Select a plan" },
-                          ...afaPlans.map(plan => ({
+                          {
+                            value: "",
+                            label: loadingPlans
+                              ? "Loading plans..."
+                              : "Select a plan",
+                          },
+                          ...afaPlans.map((plan) => ({
                             value: plan._id || "",
-                            label: `${plan.name} - GH¢${getPriceForUser(plan)}${plan.requiresGhanaCard ? " (Requires Ghana Card)" : ""}`
-                          }))
+                            label: `${plan.name} - GH¢${getPriceForUser(plan)}${
+                              plan.requiresGhanaCard
+                                ? " (Requires Ghana Card)"
+                                : ""
+                            }`,
+                          })),
                         ]}
                         disabled={
-                          isLoading || checkingProvider || !afaProviderActive || loadingPlans
+                          isLoading ||
+                          checkingProvider ||
+                          !afaProviderActive ||
+                          loadingPlans
                         }
                         className="w-full"
                       />
                       {formData.bundleId && (
                         <div className="mt-2 text-sm text-gray-600">
                           {(() => {
-                            const selectedPlan = afaPlans.find(b => b._id === formData.bundleId);
+                            const selectedPlan = afaPlans.find(
+                              (b) => b._id === formData.bundleId
+                            );
                             return selectedPlan ? (
                               <div>
                                 <p>{selectedPlan.description}</p>
-                                {selectedPlan.features && selectedPlan.features.length > 0 && (
-                                  <ul className="mt-1 list-disc list-inside">
-                                    {selectedPlan.features.map((feature: string, index: number) => (
-                                      <li key={index}>{feature}</li>
-                                    ))}
-                                  </ul>
-                                )}
+                                {selectedPlan.features &&
+                                  selectedPlan.features.length > 0 && (
+                                    <ul className="mt-1 list-disc list-inside">
+                                      {selectedPlan.features.map(
+                                        (feature: string, index: number) => (
+                                          <li key={index}>{feature}</li>
+                                        )
+                                      )}
+                                    </ul>
+                                  )}
                               </div>
                             ) : null;
                           })()}
@@ -417,14 +482,17 @@ export const AfaRegistrationPage: React.FC = () => {
 
                     {/* Ghana Card Number Field (conditional) */}
                     {(() => {
-                      const selectedPlan = afaPlans.find(b => b._id === formData.bundleId);
+                      const selectedPlan = afaPlans.find(
+                        (b) => b._id === formData.bundleId
+                      );
                       return selectedPlan?.requiresGhanaCard ? (
                         <div>
                           <label
                             htmlFor="ghanaCardNumber"
                             className="block text-sm font-medium text-gray-700 mb-2"
                           >
-                            Ghana Card Number <span className="text-red-500">*</span>
+                            Ghana Card Number{" "}
+                            <span className="text-red-500">*</span>
                           </label>
                           <Input
                             type="text"
@@ -436,21 +504,37 @@ export const AfaRegistrationPage: React.FC = () => {
                             placeholder="Enter Ghana Card number (e.g., GHA-123456789-0)"
                             required
                             disabled={
-                              isLoading || checkingProvider || !afaProviderActive || validatingGhanaCard
+                              isLoading ||
+                              checkingProvider ||
+                              !afaProviderActive ||
+                              validatingGhanaCard
                             }
-                            className={`w-full ${ghanaCardValid === false ? 'border-red-500' : ghanaCardValid === true ? 'border-green-500' : ''}`}
+                            className={`w-full ${
+                              ghanaCardValid === false
+                                ? "border-red-500"
+                                : ghanaCardValid === true
+                                ? "border-green-500"
+                                : ""
+                            }`}
                           />
                           {validatingGhanaCard && (
-                            <p className="mt-1 text-xs text-blue-600">Validating Ghana Card...</p>
+                            <p className="mt-1 text-xs text-blue-600">
+                              Validating Ghana Card...
+                            </p>
                           )}
                           {ghanaCardValid === true && (
-                            <p className="mt-1 text-xs text-green-600">✓ Ghana Card validated</p>
+                            <p className="mt-1 text-xs text-green-600">
+                              ✓ Ghana Card validated
+                            </p>
                           )}
                           {ghanaCardValid === false && (
-                            <p className="mt-1 text-xs text-red-600">✗ Invalid Ghana Card number</p>
+                            <p className="mt-1 text-xs text-red-600">
+                              ✗ Invalid Ghana Card number
+                            </p>
                           )}
                           <p className="mt-1 text-xs text-gray-500">
-                            Format: GHA-XXXXXXXXX-X (9 digits in middle, 1 at end)
+                            Format: GHA-XXXXXXXXX-X (9 digits in middle, 1 at
+                            end)
                           </p>
                         </div>
                       ) : null;
@@ -462,7 +546,10 @@ export const AfaRegistrationPage: React.FC = () => {
                         type="submit"
                         className="w-full py-3 sm:py-4 text-base sm:text-lg font-medium"
                         disabled={
-                          isLoading || checkingProvider || !afaProviderActive
+                          isLoading ||
+                          checkingProvider ||
+                          !afaProviderActive ||
+                          (siteStatus && !siteStatus.isSiteOpen)
                         }
                         isLoading={isLoading || checkingProvider}
                       >

@@ -600,7 +600,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   ? "Agent Orders"
                   : "My Orders"}
               </h1>
-              <p className="text-gray-600">
+              <p style={{ color: "var(--color-accent-orange, #6b7280)" }}>
                 {isAdmin
                   ? "Monitor and manage all platform orders"
                   : isAgent
@@ -1072,7 +1072,10 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
             {/* Show selected orders info */}
             <div className="bg-gray-50 rounded-lg p-3">
-              <h4 className="font-medium text-sm text-gray-700 mb-2">
+              <h4
+                style={{ color: "var(--color-accent-orange, #374151)" }}
+                className="font-medium text-sm mb-2"
+              >
                 Selected Orders:
               </h4>
               <div className="space-y-1">
@@ -1082,12 +1085,19 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   )
                   .slice(0, 3)
                   .map((order: Order) => (
-                    <div key={order._id} className="text-sm text-gray-600">
+                    <div
+                      style={{ color: "var(--color-accent-orange, #6b7280)" }}
+                      key={order._id}
+                      className="text-sm"
+                    >
                       {order.orderNumber} - {order.status}
                     </div>
                   ))}
                 {selectedOrders.length > 3 && (
-                  <div className="text-sm text-gray-500">
+                  <div
+                    style={{ color: "var(--color-accent-orange, #9ca3af)" }}
+                    className="text-sm"
+                  >
                     ...and {selectedOrders.length - 3} more
                   </div>
                 )}
@@ -1169,13 +1179,20 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   )
                   .slice(0, 3)
                   .map((order: Order) => (
-                    <div key={order._id} className="text-sm text-gray-600">
+                    <div
+                      style={{ color: "var(--color-accent-orange, #6b7280)" }}
+                      key={order._id}
+                      className="text-sm"
+                    >
                       {order.orderNumber} - Current:{" "}
                       {order.receptionStatus || "N/A"}
                     </div>
                   ))}
                 {selectedOrders.length > 3 && (
-                  <div className="text-sm text-gray-500">
+                  <div
+                    style={{ color: "var(--color-accent-orange, #9ca3af)" }}
+                    className="text-sm"
+                  >
                     ...and {selectedOrders.length - 3} more
                   </div>
                 )}
