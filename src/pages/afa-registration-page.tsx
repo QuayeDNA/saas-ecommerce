@@ -297,7 +297,7 @@ export const AfaRegistrationPage: React.FC = () => {
       <Container>
         {/* Site Status Check */}
         {siteStatus && !siteStatus.isSiteOpen && (
-          <Alert type="error" className="mb-6">
+          <Alert status="error" className="mb-6">
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-2">
                 Service Unavailable
@@ -549,7 +549,7 @@ export const AfaRegistrationPage: React.FC = () => {
                           isLoading ||
                           checkingProvider ||
                           !afaProviderActive ||
-                          (siteStatus && !siteStatus.isSiteOpen)
+                          !!(siteStatus && !siteStatus.isSiteOpen)
                         }
                         isLoading={isLoading || checkingProvider}
                       >
