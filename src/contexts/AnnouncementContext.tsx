@@ -6,6 +6,7 @@ import type {
 } from "../types/announcement";
 import announcementService from "../services/announcement.service";
 import { useAuth } from "../hooks/use-auth";
+import { websocketService } from "../services/websocket.service";
 
 const AnnouncementContext = createContext<AnnouncementContextValue | undefined>(
   undefined
@@ -118,6 +119,39 @@ export const AnnouncementProvider: React.FC<AnnouncementProviderProps> = ({
       setUnreadCount(0);
     }
   }, [user, fetchActiveAnnouncements]);
+
+  // Listen for WebSocket announcement events
+  useEffect(() => {
+    if (!user) return;
+
+    const handleAnnouncement = (data: unknown) => {
+      const newAnnouncement = data as Announcement;
+      // Add the new announcement to the list if not already present
+      setAnnouncements((prev) => {
+        const exists = prev.some((a) => a._id === newAnnouncement._id);
+        if (exists) {
+          // Update existing announcement
+          return prev.map((a) =>
+            a._id === newAnnouncement._id ? newAnnouncement : a
+          );
+        } else {
+          // Add new announcement
+          return [newAnnouncement, ...prev];
+        }
+      });
+
+      // Update unread count if not viewed
+      if (!newAnnouncement.hasViewed) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    websocketService.on("announcement", handleAnnouncement);
+
+    return () => {
+      websocketService.off("announcement", handleAnnouncement);
+    };
+  }, [user]);
 
   const value: AnnouncementContextValue = {
     announcements,

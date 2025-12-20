@@ -201,6 +201,9 @@ class WebSocketService {
       case "commission_finalized":
         this.emit("commission_finalized", data.commission);
         break;
+      case "announcement":
+        this.emit("announcement", data.data);
+        break;
       default:
         // Unknown WebSocket message type
         break;
