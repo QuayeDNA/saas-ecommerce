@@ -595,7 +595,7 @@ export default function SuperAdminUserDetailsPage() {
                 {user.userType === "agent" && user.status === "pending" && (
                   <>
                     <Button
-                      variant="success"
+                      variant="primary"
                       size="sm"
                       onClick={handleApprove}
                       isLoading={actionLoading}
@@ -605,7 +605,7 @@ export default function SuperAdminUserDetailsPage() {
                       <span className="sm:hidden">Approve</span>
                     </Button>
                     <Button
-                      variant="danger"
+                      variant="primary"
                       size="sm"
                       onClick={handleReject}
                       isLoading={actionLoading}
@@ -618,7 +618,7 @@ export default function SuperAdminUserDetailsPage() {
                 )}
                 {user.isActive ? (
                   <Button
-                    variant="danger"
+                    variant="primary"
                     size="sm"
                     onClick={handleDeactivate}
                     isLoading={actionLoading}
@@ -629,7 +629,7 @@ export default function SuperAdminUserDetailsPage() {
                   </Button>
                 ) : (
                   <Button
-                    variant="success"
+                    variant="primary"
                     size="sm"
                     onClick={handleReactivate}
                     isLoading={actionLoading}
@@ -649,7 +649,7 @@ export default function SuperAdminUserDetailsPage() {
                   <span className="sm:hidden">Reset</span>
                 </Button>
                 <Button
-                  variant="danger"
+                  variant="primary"
                   size="sm"
                   onClick={() => setShowDeleteConfirm(true)}
                   isLoading={deleteLoading}
@@ -972,7 +972,7 @@ export default function SuperAdminUserDetailsPage() {
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  variant="danger"
+                  variant="primary"
                   onClick={handleDeleteUser}
                   isLoading={deleteLoading}
                   size="sm"

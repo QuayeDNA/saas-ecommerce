@@ -60,6 +60,17 @@ export default function SuperAdminSettingsPage() {
     text: string;
   } | null>(null);
 
+  // System Information
+  const [systemInfo, setSystemInfo] = useState({
+    version: "Loading...",
+    lastUpdated: "Loading...",
+    databaseStatus: "checking",
+    apiStatus: "checking",
+    cacheStatus: "checking",
+    sslStatus: "checking",
+  });
+  const [systemInfoLoading, setSystemInfoLoading] = useState(true);
+
   // Admin Password Change
   const [adminPassword, setAdminPassword] = useState({
     currentPassword: "",
@@ -79,6 +90,49 @@ export default function SuperAdminSettingsPage() {
     };
 
     fetchWalletSettings();
+  }, []);
+
+  // Fetch system information on component mount
+  useEffect(() => {
+    const fetchSystemInfo = async () => {
+      setSystemInfoLoading(true);
+      try {
+        const response = await fetch("/api/system/info", {
+          headers: {
+            "Content-Type": "application/json",
+            // Add auth header if needed
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setSystemInfo({
+            version: data.version || "v1.0.0",
+            lastUpdated: data.lastUpdated || "2024-01-15",
+            databaseStatus: data.databaseStatus || "connected",
+            apiStatus: data.apiStatus || "healthy",
+            cacheStatus: data.cacheStatus || "active",
+            sslStatus: data.sslStatus || "valid",
+          });
+        } else {
+          throw new Error("Failed to fetch system info");
+        }
+      } catch (error) {
+        console.error("Failed to fetch system info:", error);
+        // Keep default values on error
+        setSystemInfo({
+          version: "v1.0.0",
+          lastUpdated: "2024-01-15",
+          databaseStatus: "unknown",
+          apiStatus: "unknown",
+          cacheStatus: "unknown",
+          sslStatus: "unknown",
+        });
+      } finally {
+        setSystemInfoLoading(false);
+      }
+    };
+
+    fetchSystemInfo();
   }, []);
 
   const handleSiteToggle = async () => {
@@ -257,7 +311,7 @@ export default function SuperAdminSettingsPage() {
                 </p>
               </div>
               <Button
-                variant={siteSettings.isSiteOpen ? "danger" : "primary"}
+                variant="primary"
                 onClick={handleSiteToggle}
                 disabled={loading}
               >
@@ -686,30 +740,86 @@ export default function SuperAdminSettingsPage() {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">System Version</span>
-              <span className="font-medium">v1.0.0</span>
+              <span className="font-medium">
+                {systemInfoLoading ? "Loading..." : systemInfo.version}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Last Updated</span>
-              <span className="font-medium">2024-01-15</span>
+              <span className="font-medium">
+                {systemInfoLoading ? "Loading..." : systemInfo.lastUpdated}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Database Status</span>
-              <Badge colorScheme="success">Connected</Badge>
+              <Badge
+                colorScheme={
+                  systemInfo.databaseStatus === "connected"
+                    ? "success"
+                    : systemInfo.databaseStatus === "disconnected"
+                    ? "error"
+                    : "warning"
+                }
+              >
+                {systemInfoLoading
+                  ? "Checking..."
+                  : systemInfo.databaseStatus.charAt(0).toUpperCase() +
+                    systemInfo.databaseStatus.slice(1)}
+              </Badge>
             </div>
           </div>
 
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">API Status</span>
-              <Badge colorScheme="success">Healthy</Badge>
+              <Badge
+                colorScheme={
+                  systemInfo.apiStatus === "healthy"
+                    ? "success"
+                    : systemInfo.apiStatus === "unhealthy"
+                    ? "error"
+                    : "warning"
+                }
+              >
+                {systemInfoLoading
+                  ? "Checking..."
+                  : systemInfo.apiStatus.charAt(0).toUpperCase() +
+                    systemInfo.apiStatus.slice(1)}
+              </Badge>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Cache Status</span>
-              <Badge colorScheme="success">Active</Badge>
+              <Badge
+                colorScheme={
+                  systemInfo.cacheStatus === "active"
+                    ? "success"
+                    : systemInfo.cacheStatus === "inactive"
+                    ? "error"
+                    : "warning"
+                }
+              >
+                {systemInfoLoading
+                  ? "Checking..."
+                  : systemInfo.cacheStatus.charAt(0).toUpperCase() +
+                    systemInfo.cacheStatus.slice(1)}
+              </Badge>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">SSL Certificate</span>
-              <Badge colorScheme="success">Valid</Badge>
+              <Badge
+                colorScheme={
+                  systemInfo.sslStatus === "valid"
+                    ? "success"
+                    : systemInfo.sslStatus === "invalid"
+                    ? "error"
+                    : "warning"
+                }
+              >
+                {systemInfoLoading
+                  ? "Checking..."
+                  : systemInfo.sslStatus.charAt(0).toUpperCase() +
+                    systemInfo.sslStatus.slice(1)}
+              </Badge>
             </div>
           </div>
         </div>
