@@ -6,7 +6,6 @@ import { useAuth } from "../../hooks/use-auth";
 import { providerService } from "../../services/provider.service";
 import { analyticsService } from "../../services/analytics.service";
 import { apiClient } from "../../utils/api-client";
-import { apiClient } from "../../utils/api-client";
 import {
   Button,
   Card,
