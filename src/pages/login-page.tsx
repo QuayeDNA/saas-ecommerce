@@ -138,13 +138,15 @@ export const LoginPage = () => {
                 <Link
                   to="/register"
                   className="font-semibold transition-colors"
-                  style={{ color: "var(--color-primary-600)" }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "var(--color-primary-700)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "var(--color-primary-600)")
-                  }
+                  style={{
+                    color: "#60a5fa",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#3b82f6";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "#60a5fa";
+                  }}
                 >
                   Sign up for free
                 </Link>
