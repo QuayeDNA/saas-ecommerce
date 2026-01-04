@@ -5,6 +5,8 @@ import { useOrder } from "../../hooks/use-order";
 import { useAuth } from "../../hooks/use-auth";
 import { providerService } from "../../services/provider.service";
 import { analyticsService } from "../../services/analytics.service";
+import { apiClient } from "../../utils/api-client";
+import { apiClient } from "../../utils/api-client";
 import {
   Button,
   Card,
@@ -26,6 +28,7 @@ import {
   FaSync,
   FaExclamationTriangle,
   FaCheckSquare,
+  FaTrash,
 } from "react-icons/fa";
 import type { Order, OrderFilters } from "../../types/order";
 import type { Provider } from "../../types/package";
@@ -111,6 +114,12 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   // Provider data
   const [providers, setProviders] = useState<Provider[]>([]);
+
+  // Test user cleanup state
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const TEST_USER_ID = "689bae9e81b90ad7c5ad66d4";
+  const isTestUser =
+    authState.user?._id === TEST_USER_ID || authState.user?.id === TEST_USER_ID;
 
   // Ref to track if component is mounted
   const isMountedRef = useRef(true);
@@ -483,6 +492,40 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     fetchOrders();
   };
 
+  // Handle test user data cleanup
+  const handleCleanupTestData = async () => {
+    if (
+      !window.confirm(
+        "⚠️ This will permanently delete all your test orders, transactions, and commissions. Are you sure?"
+      )
+    ) {
+      return;
+    }
+
+    setIsCleaningUp(true);
+    try {
+      const response = await apiClient.post("/api/settings/cleanup/test-user");
+      const data = response.data;
+
+      addToast(
+        `✅ Cleanup successful! Deleted: ${data.deleted.orders} orders, ${data.deleted.transactions} transactions, ${data.deleted.commissions} commissions`,
+        "success",
+        5000
+      );
+
+      // Refresh orders and analytics
+      fetchOrders();
+      if (isAdmin || isAgent) {
+        fetchAnalytics();
+      }
+    } catch (error) {
+      console.error("Failed to cleanup test data:", error);
+      addToast("Failed to cleanup test data. Please try again.", "error");
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
+
   // Define search and filter configuration
   const searchAndFilterConfig = {
     searchTerm,
@@ -635,6 +678,46 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           isAdmin={isAdmin}
           isAgent={isAgent}
         />
+      )}
+      {/* Test User Cleanup Button - Only show for test user */}
+      {isTestUser && (
+        <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300">
+          <CardBody className="p-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                    <FaTrash className="text-yellow-600" size={18} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
+                    🧪 Test Account - Data Cleanup
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                    Clear all test orders, transactions, and commissions with
+                    one click
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleCleanupTestData}
+                disabled={isCleaningUp}
+                leftIcon={
+                  isCleaningUp ? (
+                    <FaSync className="animate-spin" />
+                  ) : (
+                    <FaTrash />
+                  )
+                }
+              >
+                {isCleaningUp ? "Cleaning..." : "Clear Test Data"}
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
       )}
       {/* Draft Orders Notification - Only show for agents when there are draft orders */}
       {(isAgent || !isAdmin) && hasDraftOrders && (
