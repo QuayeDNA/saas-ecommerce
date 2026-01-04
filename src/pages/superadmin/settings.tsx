@@ -49,7 +49,13 @@ export default function SuperAdminSettingsPage() {
 
   // Wallet Settings
   const [walletSettings, setWalletSettings] = useState<WalletSettings>({
-    minimumTopUpAmount: 10,
+    minimumTopUpAmounts: {
+      agent: 10,
+      super_agent: 50,
+      dealer: 100,
+      super_dealer: 200,
+      default: 10,
+    },
   });
 
   // Form States
@@ -617,31 +623,131 @@ export default function SuperAdminSettingsPage() {
           <div className="space-y-4">
             {editingSection === "wallet" ? (
               <div className="space-y-3">
+                <p className="text-sm text-gray-600 mb-4">
+                  Set minimum top-up amounts for different user types. Users
+                  must request at least the minimum amount for their user type.
+                </p>
+
                 <Input
-                  label="Minimum Top-Up Amount (GH₵)"
+                  label="Agent Minimum (GH₵)"
                   type="number"
                   min="0"
                   step="0.01"
-                  value={walletSettings.minimumTopUpAmount}
+                  value={walletSettings.minimumTopUpAmounts.agent}
                   onChange={(e) =>
                     setWalletSettings((prev) => ({
                       ...prev,
-                      minimumTopUpAmount: parseFloat(e.target.value) || 0,
+                      minimumTopUpAmounts: {
+                        ...prev.minimumTopUpAmounts,
+                        agent: parseFloat(e.target.value) || 0,
+                      },
                     }))
                   }
                   placeholder="10.00"
                 />
-                <p className="text-sm text-gray-600">
-                  This is the minimum amount users can request for wallet
-                  top-ups.
-                </p>
+
+                <Input
+                  label="Super Agent Minimum (GH₵)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={walletSettings.minimumTopUpAmounts.super_agent}
+                  onChange={(e) =>
+                    setWalletSettings((prev) => ({
+                      ...prev,
+                      minimumTopUpAmounts: {
+                        ...prev.minimumTopUpAmounts,
+                        super_agent: parseFloat(e.target.value) || 0,
+                      },
+                    }))
+                  }
+                  placeholder="50.00"
+                />
+
+                <Input
+                  label="Dealer Minimum (GH₵)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={walletSettings.minimumTopUpAmounts.dealer}
+                  onChange={(e) =>
+                    setWalletSettings((prev) => ({
+                      ...prev,
+                      minimumTopUpAmounts: {
+                        ...prev.minimumTopUpAmounts,
+                        dealer: parseFloat(e.target.value) || 0,
+                      },
+                    }))
+                  }
+                  placeholder="100.00"
+                />
+
+                <Input
+                  label="Super Dealer Minimum (GH₵)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={walletSettings.minimumTopUpAmounts.super_dealer}
+                  onChange={(e) =>
+                    setWalletSettings((prev) => ({
+                      ...prev,
+                      minimumTopUpAmounts: {
+                        ...prev.minimumTopUpAmounts,
+                        super_dealer: parseFloat(e.target.value) || 0,
+                      },
+                    }))
+                  }
+                  placeholder="200.00"
+                />
+
+                <Input
+                  label="Default Minimum (GH₵)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={walletSettings.minimumTopUpAmounts.default}
+                  onChange={(e) =>
+                    setWalletSettings((prev) => ({
+                      ...prev,
+                      minimumTopUpAmounts: {
+                        ...prev.minimumTopUpAmounts,
+                        default: parseFloat(e.target.value) || 0,
+                      },
+                    }))
+                  }
+                  placeholder="10.00"
+                />
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Minimum Top-Up Amount</span>
+                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">Agent Minimum</span>
                   <span className="font-medium">
-                    GH₵{walletSettings.minimumTopUpAmount}
+                    GH₵{walletSettings.minimumTopUpAmounts.agent}
+                  </span>
+                </div>
+                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">Super Agent Minimum</span>
+                  <span className="font-medium">
+                    GH₵{walletSettings.minimumTopUpAmounts.super_agent}
+                  </span>
+                </div>
+                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">Dealer Minimum</span>
+                  <span className="font-medium">
+                    GH₵{walletSettings.minimumTopUpAmounts.dealer}
+                  </span>
+                </div>
+                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">Super Dealer Minimum</span>
+                  <span className="font-medium">
+                    GH₵{walletSettings.minimumTopUpAmounts.super_dealer}
+                  </span>
+                </div>
+                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">Default Minimum</span>
+                  <span className="font-medium">
+                    GH₵{walletSettings.minimumTopUpAmounts.default}
                   </span>
                 </div>
               </div>

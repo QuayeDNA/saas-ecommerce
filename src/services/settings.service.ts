@@ -35,7 +35,13 @@ export interface SystemInfo {
 }
 
 export interface WalletSettings {
-  minimumTopUpAmount: number;
+  minimumTopUpAmounts: {
+    agent: number;
+    super_agent: number;
+    dealer: number;
+    super_dealer: number;
+    default: number;
+  };
 }
 
 export interface PasswordResetRequest {

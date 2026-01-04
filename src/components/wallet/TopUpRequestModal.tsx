@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   FaMoneyBillWave,
   FaWhatsapp,
@@ -10,6 +10,7 @@ import { Button, Input, Alert } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
 import { settingsService } from "../../services/settings.service";
 import { walletService } from "../../services/wallet-service";
+import { AuthContext } from "../../contexts/AuthContext";
 
 interface TopUpRequestModalProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const { addToast } = useToast();
+  const { authState } = useContext(AuthContext)!;
+  const user = authState?.user;
   const [stepData, setStepData] = useState<StepData>({
     amount: "",
     description: "",
@@ -64,17 +67,33 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
         setCheckingPending(false);
       }
 
-      // Fetch minimum amount
+      // Fetch minimum amount based on user type
       try {
         const walletSettings = await settingsService.getWalletSettings();
-        setMinimumAmount(walletSettings.minimumTopUpAmount);
+        const userType = user?.userType || "agent";
+
+        // Get minimum for user's type, fallback to default
+        const minimums = walletSettings.minimumTopUpAmounts;
+        let userMinimum = minimums.default;
+
+        if (userType === "agent" && minimums.agent) {
+          userMinimum = minimums.agent;
+        } else if (userType === "super_agent" && minimums.super_agent) {
+          userMinimum = minimums.super_agent;
+        } else if (userType === "dealer" && minimums.dealer) {
+          userMinimum = minimums.dealer;
+        } else if (userType === "super_dealer" && minimums.super_dealer) {
+          userMinimum = minimums.super_dealer;
+        }
+
+        setMinimumAmount(userMinimum);
       } catch (error) {
         console.error("Failed to fetch minimum top-up amount:", error);
       }
     };
 
     checkPendingAndFetchSettings();
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const validateStep = (step: number): boolean => {
     const newErrors: { [key: string]: string } = {};
