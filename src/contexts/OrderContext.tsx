@@ -101,6 +101,13 @@ interface OrderContextType {
     message: string;
     totalAmount: number;
   }>;
+  processSingleDraftOrder: (orderId: string) => Promise<{
+    processed: number;
+    message: string;
+    totalAmount: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    order: any;
+  }>;
   fetchAnalytics: (timeframe?: string) => Promise<void>;
   getAnalytics: (timeframe?: string) => Promise<OrderAnalytics>;
   getAgentAnalytics: (timeframe?: string) => Promise<{
@@ -502,6 +509,26 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [fetchOrders, filters]);
 
+  const processSingleDraftOrder = useCallback(
+    async (orderId: string) => {
+      try {
+        const result = await orderService.processSingleDraftOrder(orderId);
+        // Removed toast notification - handled by component
+        await fetchOrders(filters);
+        return result;
+      } catch (err: unknown) {
+        const message = extractErrorMessage(
+          err,
+          "Failed to process draft order"
+        );
+        setError(message);
+        // Removed toast notification - handled by component
+        throw new Error(message);
+      }
+    },
+    [fetchOrders, filters]
+  );
+
   const fetchAnalytics = useCallback(async (timeframe = "30d") => {
     try {
       const analyticsData = await orderService.getAnalytics(timeframe);
@@ -592,6 +619,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       updateOrderStatus,
       updateReceptionStatus,
       processDraftOrders,
+      processSingleDraftOrder,
       fetchAnalytics,
       getAnalytics,
       getAgentAnalytics,
@@ -625,6 +653,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       updateOrderStatus,
       updateReceptionStatus,
       processDraftOrders,
+      processSingleDraftOrder,
       fetchAnalytics,
       getAnalytics,
       getAgentAnalytics,
@@ -675,6 +704,12 @@ export const useOrder = () => {
         processed: 0,
         message: "",
         totalAmount: 0,
+      }),
+      processSingleDraftOrder: async () => ({
+        processed: 0,
+        message: "",
+        totalAmount: 0,
+        order: null,
       }),
       fetchAnalytics: async () => {},
       getAnalytics: async () => ({

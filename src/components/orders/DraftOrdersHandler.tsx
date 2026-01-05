@@ -1,10 +1,17 @@
 // src/components/orders/DraftOrdersHandler.tsx
-import React, { useState, useContext, useEffect } from 'react';
-import { FaExclamationTriangle, FaWallet, FaCheckCircle, FaTimes, FaArrowRight, FaSpinner } from 'react-icons/fa';
-import { useOrder } from '../../contexts/OrderContext';
-import { WalletContext } from '../../contexts/wallet-context';
-import { Button, Card, CardHeader, CardBody } from '../../design-system';
-import { useToast } from '../../design-system/components/toast';
+import React, { useState, useContext, useEffect } from "react";
+import {
+  FaExclamationTriangle,
+  FaWallet,
+  FaCheckCircle,
+  FaTimes,
+  FaArrowRight,
+  FaSpinner,
+} from "react-icons/fa";
+import { useOrder } from "../../contexts/OrderContext";
+import { WalletContext } from "../../contexts/wallet-context";
+import { Button, Card, CardHeader, CardBody } from "../../design-system";
+import { useToast } from "../../design-system/components/toast";
 
 interface DraftOrdersHandlerProps {
   isOpen: boolean;
@@ -13,9 +20,9 @@ interface DraftOrdersHandlerProps {
 
 export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
   isOpen,
-  onClose
+  onClose,
 }) => {
-  const { orders, processDraftOrders } = useOrder();
+  const { orders, processDraftOrders, processSingleDraftOrder } = useOrder();
   const walletContext = useContext(WalletContext);
   const { addToast } = useToast();
   const [processing, setProcessing] = useState(false);
@@ -24,15 +31,15 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
   const [processedCount, setProcessedCount] = useState(0);
 
   // Get draft orders
-  const draftOrders = orders.filter(order => order.status === 'draft');
+  const draftOrders = orders.filter((order) => order.status === "draft");
   const currentDraft = draftOrders[currentDraftIndex];
-  
 
+  const currentDraftAmount = currentDraft
+    ? currentDraft.items.reduce((sum, item) => sum + item.totalPrice, 0)
+    : 0;
 
-  const currentDraftAmount = currentDraft ? 
-    currentDraft.items.reduce((sum, item) => sum + item.totalPrice, 0) : 0;
-
-  const canProcessCurrentDraft = (walletContext?.walletBalance || 0) >= currentDraftAmount;
+  const canProcessCurrentDraft =
+    (walletContext?.walletBalance || 0) >= currentDraftAmount;
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -46,7 +53,14 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
 
   const handleProcessCurrentDraft = async () => {
     if (!currentDraft || !canProcessCurrentDraft) {
-      setError('Insufficient wallet balance to process this draft order');
+      setError(
+        "Insufficient wallet balance. Top up to move draft orders to pending status."
+      );
+      return;
+    }
+
+    if (!currentDraft._id) {
+      setError("Invalid order ID");
       return;
     }
 
@@ -54,22 +68,33 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
     setError(null);
 
     try {
-      await processDraftOrders();
-      setProcessedCount(prev => prev + 1);
-      
+      // Process ONLY the current draft order
+      await processSingleDraftOrder(currentDraft._id);
+      setProcessedCount((prev) => prev + 1);
+
       // Move to next draft or close if all processed
       if (currentDraftIndex < draftOrders.length - 1) {
-        setCurrentDraftIndex(prev => prev + 1);
-        addToast(`Draft order processed successfully! ${processedCount + 1}/${draftOrders.length} completed`, 'success');
+        setCurrentDraftIndex((prev) => prev + 1);
+        addToast(
+          `Draft moved to pending! ${processedCount + 1}/${
+            draftOrders.length
+          } completed. GH₵${currentDraftAmount.toFixed(
+            2
+          )} deducted from wallet.`,
+          "success"
+        );
       } else {
-        addToast(`All ${draftOrders.length} draft orders processed successfully!`, 'success');
+        addToast(
+          `All ${draftOrders.length} draft orders moved to pending! Total amount deducted from wallet.`,
+          "success"
+        );
         onClose();
       }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Failed to process draft order');
+        setError("Failed to process draft order");
       }
     } finally {
       setProcessing(false);
@@ -78,7 +103,7 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
 
   const handleSkipCurrentDraft = () => {
     if (currentDraftIndex < draftOrders.length - 1) {
-      setCurrentDraftIndex(prev => prev + 1);
+      setCurrentDraftIndex((prev) => prev + 1);
       setError(null);
     } else {
       onClose();
@@ -91,13 +116,16 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
 
     try {
       await processDraftOrders();
-      addToast(`All remaining draft orders processed successfully!`, 'success');
+      addToast(
+        `All remaining draft orders moved to pending! Total amount deducted from wallet.`,
+        "success"
+      );
       onClose();
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Failed to process draft orders');
+        setError("Failed to process draft orders");
       }
     } finally {
       setProcessing(false);
@@ -117,8 +145,8 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
               Draft Orders ({draftOrders.length})
             </h2>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <FaTimes size={20} />
@@ -141,19 +169,42 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
             </Card>
           ) : (
             <div className="space-y-4">
+              {/* Info Box - Payment Flow Explanation */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <FaWallet className="text-blue-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900 mb-1">
+                      Payment & Refund Policy
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Wallet is deducted immediately when orders move to pending
+                      status. If an order fails or is cancelled, the amount will
+                      be automatically refunded to your wallet.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Progress Indicator */}
               <Card>
                 <CardBody className="p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">Progress</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Progress
+                    </span>
                     <span className="text-sm text-gray-500">
                       {processedCount}/{draftOrders.length} processed
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(processedCount / draftOrders.length) * 100}%` }}
+                      style={{
+                        width: `${
+                          (processedCount / draftOrders.length) * 100
+                        }%`,
+                      }}
                     ></div>
                   </div>
                 </CardBody>
@@ -178,10 +229,14 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
                       <div className="bg-gray-50 rounded-lg p-3">
                         <div className="space-y-2">
                           {currentDraft.items.map((item, index) => (
-                            <div key={index} className="flex justify-between items-start">
+                            <div
+                              key={index}
+                              className="flex justify-between items-start"
+                            >
                               <div className="flex-1">
                                 <p className="font-medium text-gray-900">
-                                  {item.packageDetails?.name || 'Unknown Bundle'}
+                                  {item.packageDetails?.name ||
+                                    "Unknown Bundle"}
                                 </p>
                                 <p className="text-sm text-gray-600">
                                   {item.customerPhone}
@@ -203,28 +258,44 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
                       </div>
 
                       {/* Wallet Check */}
-                      <div className={`rounded-lg p-3 ${
-                        canProcessCurrentDraft 
-                          ? 'bg-green-50 border border-green-200' 
-                          : 'bg-red-50 border border-red-200'
-                      }`}>
+                      <div
+                        className={`rounded-lg p-3 ${
+                          canProcessCurrentDraft
+                            ? "bg-green-50 border border-green-200"
+                            : "bg-red-50 border border-red-200"
+                        }`}
+                      >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className={`font-medium ${
-                              canProcessCurrentDraft ? 'text-green-800' : 'text-red-800'
-                            }`}>
-                              {canProcessCurrentDraft ? 'Sufficient Balance' : 'Insufficient Balance'}
+                            <p
+                              className={`font-medium ${
+                                canProcessCurrentDraft
+                                  ? "text-green-800"
+                                  : "text-red-800"
+                              }`}
+                            >
+                              {canProcessCurrentDraft
+                                ? "Sufficient Balance"
+                                : "Insufficient Balance"}
                             </p>
                             <p className="text-sm text-gray-600">
                               Required: GH₵{currentDraftAmount.toFixed(2)}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm text-gray-600">Wallet Balance</p>
-                            <p className={`font-medium ${
-                              canProcessCurrentDraft ? 'text-green-800' : 'text-red-800'
-                            }`}>
-                              GH₵{walletContext?.walletBalance.toFixed(2) || '0.00'}
+                            <p className="text-sm text-gray-600">
+                              Wallet Balance
+                            </p>
+                            <p
+                              className={`font-medium ${
+                                canProcessCurrentDraft
+                                  ? "text-green-800"
+                                  : "text-red-800"
+                              }`}
+                            >
+                              GH₵
+                              {walletContext?.walletBalance.toFixed(2) ||
+                                "0.00"}
                             </p>
                           </div>
                         </div>
@@ -275,14 +346,23 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-red-800">
                         <FaWallet />
-                        <span className="font-medium">Insufficient Balance</span>
+                        <span className="font-medium">
+                          Insufficient Balance
+                        </span>
                       </div>
                       <p className="text-sm text-red-700 mt-1">
-                        You need GH₵{(currentDraftAmount - (walletContext?.walletBalance || 0)).toFixed(2)} more to process this order.
+                        You need GH₵
+                        {(
+                          currentDraftAmount -
+                          (walletContext?.walletBalance || 0)
+                        ).toFixed(2)}{" "}
+                        more to process this order.
                       </p>
                     </div>
                     <Button
-                      onClick={() => window.location.href = '/agent/dashboard/wallet'}
+                      onClick={() =>
+                        (window.location.href = "/agent/dashboard/wallet")
+                      }
                       className="w-full"
                       variant="secondary"
                     >
@@ -295,28 +375,30 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
                 )}
 
                 {/* Process All Remaining Button */}
-                {draftOrders.length > 1 && currentDraftIndex < draftOrders.length - 1 && (
-                  <div className="border-t pt-3">
-                    <Button
-                      onClick={handleProcessAllRemaining}
-                      disabled={processing}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      {processing ? (
-                        <div className="flex items-center gap-2">
-                          <FaSpinner className="animate-spin" />
-                          Processing All...
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <FaCheckCircle />
-                          Process All Remaining ({draftOrders.length - currentDraftIndex - 1})
-                        </div>
-                      )}
-                    </Button>
-                  </div>
-                )}
+                {draftOrders.length > 1 &&
+                  currentDraftIndex < draftOrders.length - 1 && (
+                    <div className="border-t pt-3">
+                      <Button
+                        onClick={handleProcessAllRemaining}
+                        disabled={processing}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        {processing ? (
+                          <div className="flex items-center gap-2">
+                            <FaSpinner className="animate-spin" />
+                            Processing All...
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <FaCheckCircle />
+                            Process All Remaining (
+                            {draftOrders.length - currentDraftIndex - 1})
+                          </div>
+                        )}
+                      </Button>
+                    </div>
+                  )}
               </div>
 
               {error && (
@@ -334,4 +416,4 @@ export const DraftOrdersHandler: React.FC<DraftOrdersHandlerProps> = ({
       </div>
     </div>
   );
-}; 
+};

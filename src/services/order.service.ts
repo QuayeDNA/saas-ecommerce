@@ -203,6 +203,19 @@ class OrderService {
     return response.data;
   }
 
+  // Process single draft order
+  async processSingleDraftOrder(orderId: string): Promise<{
+    processed: number;
+    message: string;
+    totalAmount: number;
+    order: any;
+  }> {
+    const response = await apiClient.post(
+      `/api/orders/process-draft/${orderId}`
+    );
+    return response.data;
+  }
+
   // Get analytics
   async getAnalytics(timeframe = "30d"): Promise<OrderAnalytics> {
     const response = await apiClient.get("/api/orders/analytics/summary", {

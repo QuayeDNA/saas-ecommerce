@@ -207,19 +207,24 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
         packageItemId: bundle._id || "",
         customerPhone: customerPhone.replace(/^\+?233/, "0"),
         // Only include bundleSize for non-AFA bundles
-        ...(bundle.dataVolume && bundle.dataUnit ? {
-          bundleSize: {
-            value: bundle.dataVolume,
-            unit: bundle.dataUnit as "MB" | "GB",
-          }
-        } : {}),
+        ...(bundle.dataVolume && bundle.dataUnit
+          ? {
+              bundleSize: {
+                value: bundle.dataVolume,
+                unit: bundle.dataUnit as "MB" | "GB",
+              },
+            }
+          : {}),
         quantity: 1,
       };
 
       await createSingleOrder(orderData);
 
       // Order created successfully (including draft orders)
-      addToast("Order created successfully", "success");
+      addToast(
+        "Order created successfully! Amount deducted from wallet. Automatic refund if order fails or is cancelled.",
+        "success"
+      );
       onSuccess();
       onClose();
       navigate("/agent/dashboard/orders");
@@ -236,12 +241,14 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
           packageItemId: bundle._id || "",
           customerPhone: customerPhone.replace(/^\+?233/, "0"),
           // Only include bundleSize for non-AFA bundles
-          ...(bundle.dataVolume && bundle.dataUnit ? {
-            bundleSize: {
-              value: bundle.dataVolume,
-              unit: bundle.dataUnit as "MB" | "GB",
-            }
-          } : {}),
+          ...(bundle.dataVolume && bundle.dataUnit
+            ? {
+                bundleSize: {
+                  value: bundle.dataVolume,
+                  unit: bundle.dataUnit as "MB" | "GB",
+                },
+              }
+            : {}),
           quantity: 1,
         };
 
@@ -305,7 +312,10 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
         await createSingleOrder(orderDataWithOverride);
 
         // Order created successfully
-        addToast("Order created successfully", "success");
+        addToast(
+          "Order created successfully! Amount deducted from wallet. Automatic refund if order fails or is cancelled.",
+          "success"
+        );
         onSuccess();
         onClose();
         navigate("/agent/dashboard/orders");

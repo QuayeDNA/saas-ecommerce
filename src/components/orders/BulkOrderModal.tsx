@@ -272,7 +272,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
       );
       const orderData = { items, packageId, forceOverride };
       await createBulkOrder(orderData);
-      addToast("Bulk order created successfully", "success");
+      addToast(
+        "Bulk order created successfully! Amount deducted from wallet. Automatic refund if order fails or is cancelled.",
+        "success"
+      );
       onSuccess();
       onClose();
       navigate("/agent/dashboard/orders");
