@@ -75,9 +75,13 @@ export default function WalletHistoryPage() {
         );
         // Filter out transactions belonging to the test user
         const filteredTransactions = response.transactions.filter(
-          (transaction: WalletTransaction) =>
-            transaction.userId !== TEST_USER_ID &&
-            transaction.user?._id !== TEST_USER_ID
+          (transaction: WalletTransaction) => {
+            const userId =
+              typeof transaction.user === "string"
+                ? transaction.user
+                : transaction.user?._id;
+            return userId !== TEST_USER_ID;
+          }
         );
         setAdminTransactions(filteredTransactions);
         setAdminTransactionsPagination(response.pagination);
