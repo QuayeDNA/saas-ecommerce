@@ -457,118 +457,139 @@ export default function SuperAdminUsersPage() {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {users.map((user) => (
-              <div
-                key={user._id}
-                className="p-4 sm:p-6 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex flex-col gap-4">
-                  {/* User Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start gap-3 mb-3">
-                      {getUserTypeIcon(user.userType)}
+          <div className="p-4 sm:p-6">
+            {/* Grid layout: 1 column on mobile, 2 on lg, 3 on xl */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {users.map((user) => (
+                <div
+                  key={user._id}
+                  className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                >
+                  {/* Card Header */}
+                  <div className="p-4 sm:p-5 border-b border-gray-100">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-base">
+                          {user.fullName.charAt(0).toUpperCase()}
+                        </div>
+                      </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                           {user.fullName}
                         </h3>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 mt-1">
-                          <span className="flex items-center gap-1 truncate">
-                            <FaEnvelope className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{user.email}</span>
-                          </span>
-                          <span className="flex items-center gap-1 truncate">
-                            <FaPhone className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{user.phone}</span>
-                          </span>
-                          <span className="flex items-center gap-1 truncate">
-                            <FaIdCard className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{user.agentCode}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          {getUserTypeIcon(user.userType)}
+                          <span className="text-xs sm:text-sm text-gray-600 font-medium">
+                            {getUserTypeLabel(user.userType)}
                           </span>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${getStatusColor(
-                          user.status
-                        )}`}
-                      >
-                        {user.status === "pending"
-                          ? "Pending Approval"
-                          : user.status}
-                      </span>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800">
-                        {getUserTypeLabel(user.userType)}
-                      </span>
-                      {user.businessName && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800">
-                          <FaBuilding className="w-3 h-3 mr-1 flex-shrink-0" />
-                          <span className="truncate">{user.businessName}</span>
+                      <div className="flex-shrink-0">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                            user.status
+                          )}`}
+                        >
+                          {user.status === "pending"
+                            ? "Pending"
+                            : user.status.charAt(0).toUpperCase() +
+                              user.status.slice(1)}
                         </span>
-                      )}
-                      <span className="inline-flex items-center px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-800">
-                        <FaCalendar className="w-3 h-3 mr-1 flex-shrink-0" />
-                        {formatDate(user.createdAt || "")}
-                      </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                    {user.userType === "agent" && user.status === "pending" && (
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button
-                          size="sm"
-                          variant="success"
-                          onClick={() => handleApprove(user._id)}
-                          disabled={processingUser === user._id}
-                          className="w-full sm:w-auto"
-                        >
-                          {processingUser === user._id ? (
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                          ) : (
-                            <>
-                              <FaCheck className="mr-1 sm:mr-2" />
-                              <span className="hidden sm:inline">Approve</span>
-                              <span className="sm:hidden">✓</span>
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => handleReject(user._id)}
-                          disabled={processingUser === user._id}
-                          className="w-full sm:w-auto"
-                        >
-                          {processingUser === user._id ? (
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                          ) : (
-                            <>
-                              <FaTimes className="mr-1 sm:mr-2" />
-                              <span className="hidden sm:inline">Reject</span>
-                              <span className="sm:hidden">✕</span>
-                            </>
-                          )}
-                        </Button>
+                  {/* Card Body */}
+                  <div className="p-4 sm:p-5 space-y-3">
+                    {/* Contact Info */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <FaEnvelope className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                        <span className="truncate">{user.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <FaPhone className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                        <span className="truncate">{user.phone}</span>
+                      </div>
+                      {user.agentCode && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <FaIdCard className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                          <span className="truncate">{user.agentCode}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Business Name */}
+                    {user.businessName && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <FaBuilding className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                        <span className="truncate">{user.businessName}</span>
                       </div>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => navigate(`/superadmin/users/${user._id}`)}
-                      className="w-full sm:w-auto"
-                    >
-                      <FaEye className="mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">View Details</span>
-                      <span className="sm:hidden">View</span>
-                    </Button>
+
+                    {/* Registration Date */}
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                      <FaCalendar className="w-3 h-3 flex-shrink-0" />
+                      <span>Joined {formatDate(user.createdAt || "")}</span>
+                    </div>
+                  </div>
+
+                  {/* Card Footer - Actions */}
+                  <div className="px-4 sm:px-5 pb-4 sm:pb-5">
+                    <div className="flex flex-col gap-2">
+                      {user.userType === "agent" &&
+                        user.status === "pending" && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="success"
+                              onClick={() => handleApprove(user._id)}
+                              disabled={processingUser === user._id}
+                              className="flex-1 text-xs sm:text-sm"
+                            >
+                              {processingUser === user._id ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mx-auto"></div>
+                              ) : (
+                                <>
+                                  <FaCheck className="mr-1 sm:mr-2" />
+                                  Approve
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => handleReject(user._id)}
+                              disabled={processingUser === user._id}
+                              className="flex-1 text-xs sm:text-sm"
+                            >
+                              {processingUser === user._id ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mx-auto"></div>
+                              ) : (
+                                <>
+                                  <FaTimes className="mr-1 sm:mr-2" />
+                                  Reject
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          navigate(`/superadmin/users/${user._id}`)
+                        }
+                        className="w-full text-xs sm:text-sm"
+                      >
+                        <FaEye className="mr-1 sm:mr-2" />
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>

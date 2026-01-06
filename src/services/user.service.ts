@@ -31,6 +31,8 @@ export interface FetchUsersParams {
 export interface UpdateProfileData {
   fullName?: string;
   phone?: string;
+  businessName?: string;
+  businessCategory?: "electronics" | "fashion" | "food" | "services" | "other";
 }
 
 export interface ChangePasswordData {

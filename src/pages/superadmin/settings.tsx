@@ -4,8 +4,6 @@ import {
   FaPowerOff,
   FaUserShield,
   FaEdit,
-  FaSave,
-  FaTimes,
   FaDatabase,
   FaKey,
   FaGlobe,
@@ -18,7 +16,6 @@ import {
 } from "react-icons/fa";
 import { Button } from "../../design-system/components/button";
 import { Card } from "../../design-system/components/card";
-import { Input } from "../../design-system/components/input";
 import { Badge } from "../../design-system/components/badge";
 import {
   settingsService,
@@ -28,6 +25,12 @@ import {
 } from "../../services/settings.service";
 import { Alert } from "../../design-system/components/alert";
 import { ColorSchemeSelector } from "../../components/common/color-scheme-selector";
+import {
+  SiteSettingsDialog,
+  ApiSettingsDialog,
+  WalletSettingsDialog,
+  AdminPasswordDialog,
+} from "../../components/superadmin";
 
 export default function SuperAdminSettingsPage() {
   const navigate = useNavigate();
@@ -44,7 +47,7 @@ export default function SuperAdminSettingsPage() {
     mtnApiKey: "",
     telecelApiKey: "",
     airtelTigoApiKey: "",
-    apiEndpoint: "https://api.telecomsaas.com",
+    apiEndpoint: "",
   });
 
   // Wallet Settings
@@ -59,12 +62,17 @@ export default function SuperAdminSettingsPage() {
   });
 
   // Form States
-  const [editingSection, setEditingSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error" | "info";
     text: string;
   } | null>(null);
+
+  // Dialog States
+  const [siteDialogOpen, setSiteDialogOpen] = useState(false);
+  const [apiDialogOpen, setApiDialogOpen] = useState(false);
+  const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
   // System Information
   const [systemInfo, setSystemInfo] = useState({
@@ -77,25 +85,26 @@ export default function SuperAdminSettingsPage() {
   });
   const [systemInfoLoading, setSystemInfoLoading] = useState(true);
 
-  // Admin Password Change
-  const [adminPassword, setAdminPassword] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
-  // Fetch wallet settings on component mount
+  // Fetch all settings on component mount
   useEffect(() => {
-    const fetchWalletSettings = async () => {
+    const fetchAllSettings = async () => {
       try {
-        const settings = await settingsService.getWalletSettings();
-        setWalletSettings(settings);
+        const [siteData, apiData, walletData] = await Promise.all([
+          settingsService.getSiteSettings(),
+          settingsService.getApiSettings(),
+          settingsService.getWalletSettings(),
+        ]);
+
+        setSiteSettings(siteData);
+        setApiSettings(apiData);
+        setWalletSettings(walletData);
       } catch (error) {
-        console.error("Failed to fetch wallet settings:", error);
+        console.error("Failed to fetch settings:", error);
+        setMessage({ type: "error", text: "Failed to load settings" });
       }
     };
 
-    fetchWalletSettings();
+    fetchAllSettings();
   }, []);
 
   // Fetch system information on component mount
@@ -157,58 +166,35 @@ export default function SuperAdminSettingsPage() {
     }
   };
 
-  const handleSaveSettings = async (section: string) => {
-    setLoading(true);
-    try {
-      switch (section) {
-        case "Site":
-          await settingsService.updateSiteSettings(siteSettings);
-          break;
-        case "API":
-          await settingsService.updateApiSettings(apiSettings);
-          break;
-        case "Wallet":
-          await settingsService.updateWalletSettings(walletSettings);
-          break;
-      }
-      setMessage({
-        type: "success",
-        text: `${section} settings saved successfully`,
-      });
-      setEditingSection(null);
-    } catch {
-      setMessage({ type: "error", text: `Failed to save ${section} settings` });
-    } finally {
-      setLoading(false);
-    }
+  const handleSiteSettingsSuccess = (settings: SiteSettings) => {
+    setSiteSettings(settings);
+    setMessage({
+      type: "success",
+      text: "Site settings updated successfully",
+    });
   };
 
-  const handleAdminPasswordChange = async () => {
-    if (adminPassword.newPassword !== adminPassword.confirmPassword) {
-      setMessage({ type: "error", text: "Passwords do not match" });
-      return;
-    }
+  const handleApiSettingsSuccess = (settings: ApiSettings) => {
+    setApiSettings(settings);
+    setMessage({
+      type: "success",
+      text: "API settings updated successfully",
+    });
+  };
 
-    setLoading(true);
-    try {
-      await settingsService.changeAdminPassword({
-        currentPassword: adminPassword.currentPassword,
-        newPassword: adminPassword.newPassword,
-      });
-      setMessage({
-        type: "success",
-        text: "Admin password changed successfully",
-      });
-      setAdminPassword({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-    } catch {
-      setMessage({ type: "error", text: "Failed to change admin password" });
-    } finally {
-      setLoading(false);
-    }
+  const handleWalletSettingsSuccess = (settings: WalletSettings) => {
+    setWalletSettings(settings);
+    setMessage({
+      type: "success",
+      text: "Wallet settings updated successfully",
+    });
+  };
+
+  const handlePasswordChangeSuccess = () => {
+    setMessage({
+      type: "success",
+      text: "Admin password changed successfully. Please log in again.",
+    });
   };
 
   const clearMessage = () => setMessage(null);
@@ -273,36 +259,14 @@ export default function SuperAdminSettingsPage() {
                 Site Management
               </h2>
             </div>
-            {editingSection === "site" ? (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => handleSaveSettings("Site")}
-                  disabled={loading}
-                >
-                  <FaSave className="w-3 h-3 mr-1" />
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setEditingSection(null)}
-                >
-                  <FaTimes className="w-3 h-3 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setEditingSection("site")}
-              >
-                <FaEdit className="w-3 h-3 mr-1" />
-                Edit
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setSiteDialogOpen(true)}
+            >
+              <FaEdit className="w-3 h-3 mr-1" />
+              Configure
+            </Button>
           </div>
 
           <div className="space-y-4">
@@ -335,26 +299,15 @@ export default function SuperAdminSettingsPage() {
               </Button>
             </div>
 
-            {/* Custom Message */}
-            {editingSection === "site" && (
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Custom Message (when site is closed)
-                </label>
-                <textarea
-                  value={siteSettings.customMessage}
-                  onChange={(e) =>
-                    setSiteSettings((prev) => ({
-                      ...prev,
-                      customMessage: e.target.value,
-                    }))
-                  }
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows={3}
-                  placeholder="Enter custom message to display when site is closed..."
-                />
-              </div>
-            )}
+            {/* Custom Message Display */}
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <h3 className="font-medium text-gray-900 mb-2">
+                Maintenance Message
+              </h3>
+              <p className="text-sm text-gray-600">
+                {siteSettings.customMessage || "No custom message set"}
+              </p>
+            </div>
           </div>
         </Card>
 
@@ -367,64 +320,26 @@ export default function SuperAdminSettingsPage() {
                 User Management
               </h2>
             </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setPasswordDialogOpen(true)}
+            >
+              <FaKey className="w-3 h-3 mr-1" />
+              Change Password
+            </Button>
           </div>
 
           <div className="space-y-4">
-            {/* Admin Password Change */}
-            <div className="space-y-3 pt-4 border-t border-gray-200">
-              <h3 className="font-medium text-gray-900">
-                Change Admin Password
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h3 className="font-medium text-green-900 mb-2">
+                Admin Account Security
               </h3>
-              <div className="grid grid-cols-1 gap-3">
-                <Input
-                  label="Current Password"
-                  type="password"
-                  value={adminPassword.currentPassword}
-                  onChange={(e) =>
-                    setAdminPassword((prev) => ({
-                      ...prev,
-                      currentPassword: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter current password"
-                />
-                <Input
-                  label="New Password"
-                  type="password"
-                  value={adminPassword.newPassword}
-                  onChange={(e) =>
-                    setAdminPassword((prev) => ({
-                      ...prev,
-                      newPassword: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter new password"
-                />
-                <Input
-                  label="Confirm New Password"
-                  type="password"
-                  value={adminPassword.confirmPassword}
-                  onChange={(e) =>
-                    setAdminPassword((prev) => ({
-                      ...prev,
-                      confirmPassword: e.target.value,
-                    }))
-                  }
-                  placeholder="Confirm new password"
-                />
-                <Button
-                  variant="primary"
-                  onClick={handleAdminPasswordChange}
-                  disabled={
-                    loading ||
-                    !adminPassword.currentPassword ||
-                    !adminPassword.newPassword
-                  }
-                >
-                  <FaKey className="w-3 h-3 mr-1" />
-                  Change Password
-                </Button>
-              </div>
+              <p className="text-sm text-green-800">
+                Change your admin password regularly to maintain account
+                security. You will need to log in again after changing your
+                password.
+              </p>
             </div>
           </div>
         </Card>
@@ -438,144 +353,73 @@ export default function SuperAdminSettingsPage() {
                 API Settings
               </h2>
             </div>
-            {editingSection === "api" ? (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => handleSaveSettings("API")}
-                  disabled={loading}
-                >
-                  <FaSave className="w-3 h-3 mr-1" />
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setEditingSection(null)}
-                >
-                  <FaTimes className="w-3 h-3 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setEditingSection("api")}
-              >
-                <FaEdit className="w-3 h-3 mr-1" />
-                Edit
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setApiDialogOpen(true)}
+            >
+              <FaEdit className="w-3 h-3 mr-1" />
+              Configure
+            </Button>
           </div>
 
           <div className="space-y-4">
-            {editingSection === "api" ? (
-              <div className="space-y-3">
-                <Input
-                  label="MTN API Key"
-                  type="password"
-                  value={apiSettings.mtnApiKey}
-                  onChange={(e) =>
-                    setApiSettings((prev) => ({
-                      ...prev,
-                      mtnApiKey: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter MTN API key"
-                />
-                <Input
-                  label="Telecel API Key"
-                  type="password"
-                  value={apiSettings.telecelApiKey}
-                  onChange={(e) =>
-                    setApiSettings((prev) => ({
-                      ...prev,
-                      telecelApiKey: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter Telecel API key"
-                />
-                <Input
-                  label="AirtelTigo API Key"
-                  type="password"
-                  value={apiSettings.airtelTigoApiKey}
-                  onChange={(e) =>
-                    setApiSettings((prev) => ({
-                      ...prev,
-                      airtelTigoApiKey: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter AirtelTigo API key"
-                />
-                <Input
-                  label="API Endpoint"
-                  value={apiSettings.apiEndpoint}
-                  onChange={(e) =>
-                    setApiSettings((prev) => ({
-                      ...prev,
-                      apiEndpoint: e.target.value,
-                    }))
-                  }
-                  placeholder="https://api.telecomsaas.com"
-                />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">MTN API</h3>
-                    <p className="text-sm text-gray-600">
-                      {apiSettings.mtnApiKey ? "Configured" : "Not configured"}
-                    </p>
-                  </div>
-                  <Badge
-                    colorScheme={apiSettings.mtnApiKey ? "success" : "error"}
-                  >
-                    {apiSettings.mtnApiKey ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
+            <div className="p-3 bg-orange-50 rounded-lg">
+              <h3 className="font-medium text-orange-900 mb-2">API Endpoint</h3>
+              <p className="text-sm text-orange-800 font-mono">
+                {apiSettings.apiEndpoint || "Not configured"}
+              </p>
+            </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Telecel API</h3>
-                    <p className="text-sm text-gray-600">
-                      {apiSettings.telecelApiKey
-                        ? "Configured"
-                        : "Not configured"}
-                    </p>
-                  </div>
-                  <Badge
-                    colorScheme={
-                      apiSettings.telecelApiKey ? "success" : "error"
-                    }
-                  >
-                    {apiSettings.telecelApiKey ? "Active" : "Inactive"}
-                  </Badge>
+            <div className="grid grid-cols-1 gap-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <h3 className="font-medium text-gray-900">MTN API</h3>
+                  <p className="text-sm text-gray-600">
+                    {apiSettings.mtnApiKey ? "Configured" : "Not configured"}
+                  </p>
                 </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      AirtelTigo API
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {apiSettings.airtelTigoApiKey
-                        ? "Configured"
-                        : "Not configured"}
-                    </p>
-                  </div>
-                  <Badge
-                    colorScheme={
-                      apiSettings.airtelTigoApiKey ? "success" : "error"
-                    }
-                  >
-                    {apiSettings.airtelTigoApiKey ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
+                <Badge
+                  colorScheme={apiSettings.mtnApiKey ? "success" : "error"}
+                >
+                  {apiSettings.mtnApiKey ? "Active" : "Inactive"}
+                </Badge>
               </div>
-            )}
+
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <h3 className="font-medium text-gray-900">Telecel API</h3>
+                  <p className="text-sm text-gray-600">
+                    {apiSettings.telecelApiKey
+                      ? "Configured"
+                      : "Not configured"}
+                  </p>
+                </div>
+                <Badge
+                  colorScheme={apiSettings.telecelApiKey ? "success" : "error"}
+                >
+                  {apiSettings.telecelApiKey ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <h3 className="font-medium text-gray-900">AirtelTigo API</h3>
+                  <p className="text-sm text-gray-600">
+                    {apiSettings.airtelTigoApiKey
+                      ? "Configured"
+                      : "Not configured"}
+                  </p>
+                </div>
+                <Badge
+                  colorScheme={
+                    apiSettings.airtelTigoApiKey ? "success" : "error"
+                  }
+                >
+                  {apiSettings.airtelTigoApiKey ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+            </div>
           </div>
         </Card>
 
@@ -588,170 +432,59 @@ export default function SuperAdminSettingsPage() {
                 Wallet Settings
               </h2>
             </div>
-            {editingSection === "wallet" ? (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => handleSaveSettings("Wallet")}
-                  disabled={loading}
-                >
-                  <FaSave className="w-3 h-3 mr-1" />
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setEditingSection(null)}
-                >
-                  <FaTimes className="w-3 h-3 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setEditingSection("wallet")}
-              >
-                <FaEdit className="w-3 h-3 mr-1" />
-                Edit
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setWalletDialogOpen(true)}
+            >
+              <FaEdit className="w-3 h-3 mr-1" />
+              Configure
+            </Button>
           </div>
 
           <div className="space-y-4">
-            {editingSection === "wallet" ? (
-              <div className="space-y-3">
-                <p className="text-sm text-gray-600 mb-4">
-                  Set minimum top-up amounts for different user types. Users
-                  must request at least the minimum amount for their user type.
-                </p>
+            <div className="p-3 bg-green-50 rounded-lg">
+              <h3 className="font-medium text-green-900 mb-2">
+                Minimum Top-up Amounts
+              </h3>
+              <p className="text-sm text-green-800">
+                Set the minimum amounts users can top-up their wallets with for
+                each user type.
+              </p>
+            </div>
 
-                <Input
-                  label="Agent Minimum (GH₵)"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={walletSettings.minimumTopUpAmounts.agent}
-                  onChange={(e) =>
-                    setWalletSettings((prev) => ({
-                      ...prev,
-                      minimumTopUpAmounts: {
-                        ...prev.minimumTopUpAmounts,
-                        agent: parseFloat(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  placeholder="10.00"
-                />
-
-                <Input
-                  label="Super Agent Minimum (GH₵)"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={walletSettings.minimumTopUpAmounts.super_agent}
-                  onChange={(e) =>
-                    setWalletSettings((prev) => ({
-                      ...prev,
-                      minimumTopUpAmounts: {
-                        ...prev.minimumTopUpAmounts,
-                        super_agent: parseFloat(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  placeholder="50.00"
-                />
-
-                <Input
-                  label="Dealer Minimum (GH₵)"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={walletSettings.minimumTopUpAmounts.dealer}
-                  onChange={(e) =>
-                    setWalletSettings((prev) => ({
-                      ...prev,
-                      minimumTopUpAmounts: {
-                        ...prev.minimumTopUpAmounts,
-                        dealer: parseFloat(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  placeholder="100.00"
-                />
-
-                <Input
-                  label="Super Dealer Minimum (GH₵)"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={walletSettings.minimumTopUpAmounts.super_dealer}
-                  onChange={(e) =>
-                    setWalletSettings((prev) => ({
-                      ...prev,
-                      minimumTopUpAmounts: {
-                        ...prev.minimumTopUpAmounts,
-                        super_dealer: parseFloat(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  placeholder="200.00"
-                />
-
-                <Input
-                  label="Default Minimum (GH₵)"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={walletSettings.minimumTopUpAmounts.default}
-                  onChange={(e) =>
-                    setWalletSettings((prev) => ({
-                      ...prev,
-                      minimumTopUpAmounts: {
-                        ...prev.minimumTopUpAmounts,
-                        default: parseFloat(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                  placeholder="10.00"
-                />
+            <div className="grid grid-cols-1 gap-3">
+              <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-600">Agent Minimum</span>
+                <span className="font-medium">
+                  GH₵{walletSettings.minimumTopUpAmounts.agent}
+                </span>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">Agent Minimum</span>
-                  <span className="font-medium">
-                    GH₵{walletSettings.minimumTopUpAmounts.agent}
-                  </span>
-                </div>
-                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">Super Agent Minimum</span>
-                  <span className="font-medium">
-                    GH₵{walletSettings.minimumTopUpAmounts.super_agent}
-                  </span>
-                </div>
-                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">Dealer Minimum</span>
-                  <span className="font-medium">
-                    GH₵{walletSettings.minimumTopUpAmounts.dealer}
-                  </span>
-                </div>
-                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">Super Dealer Minimum</span>
-                  <span className="font-medium">
-                    GH₵{walletSettings.minimumTopUpAmounts.super_dealer}
-                  </span>
-                </div>
-                <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-gray-600">Default Minimum</span>
-                  <span className="font-medium">
-                    GH₵{walletSettings.minimumTopUpAmounts.default}
-                  </span>
-                </div>
+              <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-600">Super Agent Minimum</span>
+                <span className="font-medium">
+                  GH₵{walletSettings.minimumTopUpAmounts.super_agent}
+                </span>
               </div>
-            )}
+              <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-600">Dealer Minimum</span>
+                <span className="font-medium">
+                  GH₵{walletSettings.minimumTopUpAmounts.dealer}
+                </span>
+              </div>
+              <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-600">Super Dealer Minimum</span>
+                <span className="font-medium">
+                  GH₵{walletSettings.minimumTopUpAmounts.super_dealer}
+                </span>
+              </div>
+              <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-600">Default Minimum</span>
+                <span className="font-medium">
+                  GH₵{walletSettings.minimumTopUpAmounts.default}
+                </span>
+              </div>
+            </div>
           </div>
         </Card>
       </div>
@@ -930,6 +663,34 @@ export default function SuperAdminSettingsPage() {
           </div>
         </div>
       </Card>
+
+      {/* Dialog Components */}
+      <SiteSettingsDialog
+        isOpen={siteDialogOpen}
+        onClose={() => setSiteDialogOpen(false)}
+        currentSettings={siteSettings}
+        onSuccess={handleSiteSettingsSuccess}
+      />
+
+      <ApiSettingsDialog
+        isOpen={apiDialogOpen}
+        onClose={() => setApiDialogOpen(false)}
+        currentSettings={apiSettings}
+        onSuccess={handleApiSettingsSuccess}
+      />
+
+      <WalletSettingsDialog
+        isOpen={walletDialogOpen}
+        onClose={() => setWalletDialogOpen(false)}
+        currentSettings={walletSettings}
+        onSuccess={handleWalletSettingsSuccess}
+      />
+
+      <AdminPasswordDialog
+        isOpen={passwordDialogOpen}
+        onClose={() => setPasswordDialogOpen(false)}
+        onSuccess={handlePasswordChangeSuccess}
+      />
     </div>
   );
 }

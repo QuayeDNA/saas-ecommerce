@@ -1,10 +1,10 @@
-import { forwardRef, useEffect, type ReactNode } from 'react';
+import { forwardRef, useEffect, type ReactNode } from "react";
 
 interface DialogProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: "sm" | "md" | "lg" | "xl" | "full";
   closeOnOverlay?: boolean;
   className?: string;
 }
@@ -15,38 +15,38 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
       isOpen,
       onClose,
       children,
-      size = 'md',
+      size = "md",
       closeOnOverlay = true,
-      className = '',
+      className = "",
     },
     ref
   ) => {
     const sizeClasses = {
-      sm: 'max-w-md',
-      md: 'max-w-lg',
-      lg: 'max-w-2xl',
-      xl: 'max-w-4xl',
-      full: 'max-w-full mx-4',
+      sm: "max-w-md",
+      md: "max-w-lg",
+      lg: "max-w-2xl",
+      xl: "max-w-4xl",
+      full: "max-w-full mx-4",
     };
 
     useEffect(() => {
       const handleEscape = (event: KeyboardEvent) => {
-        if (event.key === 'Escape' && isOpen) {
+        if (event.key === "Escape" && isOpen) {
           onClose();
         }
       };
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
     }, [isOpen, onClose]);
 
     useEffect(() => {
       if (isOpen) {
-        document.body.style.overflow = 'hidden';
+        document.body.style.overflow = "hidden";
       } else {
-        document.body.style.overflow = 'unset';
+        document.body.style.overflow = "unset";
       }
       return () => {
-        document.body.style.overflow = 'unset';
+        document.body.style.overflow = "unset";
       };
     }, [isOpen]);
 
@@ -61,12 +61,12 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
         <div
           ref={ref}
           className={[
-            'relative w-full bg-white rounded-lg shadow-xl',
-            'max-h-[90vh] flex flex-col',
-            'transform transition-all',
+            "relative w-full bg-white rounded-lg shadow-xl",
+            "max-h-[90vh] flex flex-col overflow-hidden",
+            "transform transition-all",
             sizeClasses[size],
             className,
-          ].join(' ')}
+          ].join(" ")}
           role="dialog"
           aria-modal="true"
         >
@@ -77,4 +77,4 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
   }
 );
 
-Dialog.displayName = 'Dialog';
+Dialog.displayName = "Dialog";

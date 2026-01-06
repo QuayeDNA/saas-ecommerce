@@ -1,4 +1,4 @@
-import { forwardRef, type ReactNode, type HTMLAttributes } from 'react';
+import { forwardRef, type ReactNode, type HTMLAttributes } from "react";
 
 interface DialogBodyProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -6,11 +6,11 @@ interface DialogBodyProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const DialogBody = forwardRef<HTMLDivElement, DialogBodyProps>(
-  ({ children, className = '', ...props }, ref) => {
+  ({ children, className = "", ...props }, ref) => {
     return (
       <div
         ref={ref}
-        className={`px-6 py-4 overflow-y-auto ${className}`}
+        className={`px-6 py-4 overflow-y-auto max-h-[60vh] ${className}`}
         {...props}
       >
         {children}
@@ -19,4 +19,4 @@ export const DialogBody = forwardRef<HTMLDivElement, DialogBodyProps>(
   }
 );
 
-DialogBody.displayName = 'DialogBody';
+DialogBody.displayName = "DialogBody";
