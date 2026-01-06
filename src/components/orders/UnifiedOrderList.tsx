@@ -5,6 +5,7 @@ import { useOrder } from "../../hooks/use-order";
 import { useAuth } from "../../hooks/use-auth";
 import { providerService } from "../../services/provider.service";
 import { analyticsService } from "../../services/analytics.service";
+import { websocketService } from "../../services/websocket.service";
 import { apiClient } from "../../utils/api-client";
 import {
   Button,
@@ -244,6 +245,97 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       isMountedRef.current = false;
     };
   }, [fetchOrders, isAdmin, fetchProviders, isAgent, fetchAnalytics]);
+
+  // WebSocket real-time updates with intelligent debouncing
+  useEffect(() => {
+    if (!authState.user?._id) return;
+
+    // Connect to WebSocket
+    websocketService.connect(authState.user._id);
+
+    // Batch tracking for toast notifications
+    let orderCreatedCount = 0;
+    let orderStatusUpdatedCount = 0;
+    let toastTimerId: NodeJS.Timeout | null = null;
+
+    // Debounced toast notification (batches events within 2 seconds)
+    const showBatchedToast = () => {
+      if (orderCreatedCount > 0) {
+        const message =
+          orderCreatedCount === 1
+            ? "New order received!"
+            : `${orderCreatedCount} new orders received!`;
+        addToast(message, "success");
+        orderCreatedCount = 0;
+      }
+
+      if (orderStatusUpdatedCount > 0) {
+        const message =
+          orderStatusUpdatedCount === 1
+            ? "Order status updated"
+            : `${orderStatusUpdatedCount} orders updated`;
+        addToast(message, "info");
+        orderStatusUpdatedCount = 0;
+      }
+
+      toastTimerId = null;
+    };
+
+    // Handle new order creation (for admins)
+    const handleOrderCreated = (data: unknown) => {
+      console.log("📦 New order created:", data);
+      orderCreatedCount++;
+
+      // Cancel existing timer and set new one
+      if (toastTimerId) {
+        clearTimeout(toastTimerId);
+      }
+      toastTimerId = setTimeout(showBatchedToast, 2000);
+
+      fetchOrders(); // Refresh orders list
+      if (isAdmin || isAgent) {
+        fetchAnalytics(); // Refresh analytics
+      }
+    };
+
+    // Handle order status update (for agents and admins)
+    const handleOrderStatusUpdated = (data: unknown) => {
+      console.log("🔄 Order status updated:", data);
+      orderStatusUpdatedCount++;
+
+      // Cancel existing timer and set new one
+      if (toastTimerId) {
+        clearTimeout(toastTimerId);
+      }
+      toastTimerId = setTimeout(showBatchedToast, 2000);
+
+      fetchOrders(); // Refresh orders list
+      if (isAdmin || isAgent) {
+        fetchAnalytics(); // Refresh analytics
+      }
+    };
+
+    // Register listeners
+    if (isAdmin) {
+      websocketService.on("order_created", handleOrderCreated);
+    }
+    websocketService.on("order_status_updated", handleOrderStatusUpdated);
+
+    return () => {
+      // Clean up timer
+      if (toastTimerId) {
+        clearTimeout(toastTimerId);
+        // Show any pending batched toasts
+        showBatchedToast();
+      }
+
+      // Clean up listeners
+      if (isAdmin) {
+        websocketService.off("order_created", handleOrderCreated);
+      }
+      websocketService.off("order_status_updated", handleOrderStatusUpdated);
+    };
+  }, [authState.user, isAdmin, isAgent, fetchOrders, fetchAnalytics, addToast]);
 
   // Auto-search effect for instant filtering
   useEffect(() => {

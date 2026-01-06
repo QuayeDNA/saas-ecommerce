@@ -174,6 +174,12 @@ class WebSocketService {
       case "order_update":
         this.emit("order_update", data.data);
         break;
+      case "order_created":
+        this.emit("order_created", data.data);
+        break;
+      case "order_status_updated":
+        this.emit("order_status_updated", data.data);
+        break;
       case "transaction_update":
         this.emit("transaction_update", data.data);
         break;
