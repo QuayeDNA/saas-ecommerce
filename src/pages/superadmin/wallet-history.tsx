@@ -33,6 +33,9 @@ interface PaginationInfo {
 }
 
 export default function WalletHistoryPage() {
+  // Test user ID to hide from the list
+  const TEST_USER_ID = "689bae9e81b90ad7c5ad66d4";
+
   const [adminTransactions, setAdminTransactions] = useState<
     WalletTransaction[]
   >([]);
@@ -70,7 +73,13 @@ export default function WalletHistoryPage() {
           adminTransactionFilters.endDate || undefined,
           adminTransactionFilters.userId || undefined
         );
-        setAdminTransactions(response.transactions);
+        // Filter out transactions belonging to the test user
+        const filteredTransactions = response.transactions.filter(
+          (transaction: WalletTransaction) =>
+            transaction.userId !== TEST_USER_ID &&
+            transaction.user?._id !== TEST_USER_ID
+        );
+        setAdminTransactions(filteredTransactions);
         setAdminTransactionsPagination(response.pagination);
       } catch {
         addToast("Failed to fetch admin transactions", "error", 4000);

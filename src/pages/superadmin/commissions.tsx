@@ -19,6 +19,9 @@ import {
 import { websocketService } from "../../services/websocket.service";
 
 export default function SuperAdminCommissions() {
+  // Test user ID to hide from the list
+  const TEST_USER_ID = "689bae9e81b90ad7c5ad66d4";
+
   // State
   const [commissions, setCommissions] = useState<CommissionRecord[]>([]);
   const [currentMonthStats, setCurrentMonthStats] =
@@ -113,7 +116,14 @@ export default function SuperAdminCommissions() {
           ? await commissionService.getCurrentMonthStatistics()
           : null;
 
-      setCommissions(commissionsResponse.data);
+      // Filter out commissions belonging to the test user
+      const filteredCommissions = commissionsResponse.data.filter(
+        (commission: CommissionRecord) =>
+          commission.agentId?._id !== TEST_USER_ID &&
+          commission.agentId?.toString() !== TEST_USER_ID
+      );
+
+      setCommissions(filteredCommissions);
       setTotalPages(commissionsResponse.pagination.pages);
       setTotalItems(commissionsResponse.pagination.total);
       setCurrentMonthStats(statsData);

@@ -54,6 +54,9 @@ export default function SuperAdminUsersPage() {
   const [statusCarouselIndex, setStatusCarouselIndex] = useState(0);
   const navigate = useNavigate();
 
+  // Test user ID to hide from the list
+  const TEST_USER_ID = "689bae9e81b90ad7c5ad66d4";
+
   // Filter options for the reusable component
   const filterOptions = {
     userType: {
@@ -79,7 +82,11 @@ export default function SuperAdminUsersPage() {
         status: status || undefined, // Only send if status is not empty
         search: search.trim() || undefined,
       });
-      setUsers(data);
+      // Filter out the test user from the results
+      const filteredData = data.filter(
+        (user: User) => user._id !== TEST_USER_ID
+      );
+      setUsers(filteredData);
     } catch {
       setError("Failed to fetch users");
       // Error fetching users
