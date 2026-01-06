@@ -1,5 +1,5 @@
 // src/components/orders/UnifiedOrderTable.tsx
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { Button } from "../../design-system";
 import {
   FaCheck,
@@ -10,8 +10,6 @@ import {
   FaChevronUp,
 } from "react-icons/fa";
 import type { Order } from "../../types/order";
-import { AuthContext } from "../../contexts/AuthContext";
-import { PROD_TESTER_USER_ID } from "../../utils/constants";
 
 interface ReceptionStatusDropdownProps {
   orderId: string;
@@ -117,18 +115,6 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   onSelectAll,
   loading = false,
 }) => {
-  const { authState } = useContext(AuthContext)!;
-  const isProdTester = authState.user?.fullName === "Prod Tester";
-
-  // Helper function to check if an order was created by prod tester
-  const isOrderByProdTester = (order: Order) => {
-    const createdById =
-      typeof order.createdBy === "string"
-        ? order.createdBy
-        : (order.createdBy as { _id: string })?._id;
-    return createdById === PROD_TESTER_USER_ID || isProdTester;
-  };
-
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [statusDropdowns, setStatusDropdowns] = useState<Set<string>>(
     new Set()
@@ -249,8 +235,11 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
 
   // Check if order is AFA
   const isAfaOrder = (order: Order) => {
-    return order.items && order.items.length > 0 && 
-           order.items[0].packageDetails?.provider === 'AFA';
+    return (
+      order.items &&
+      order.items.length > 0 &&
+      order.items[0].packageDetails?.provider === "AFA"
+    );
   };
 
   // Extract Ghana Card number from notes
@@ -262,7 +251,9 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
 
   // Get display info for AFA orders
   const getAfaOrderInfo = (order: Order) => {
-    const ghanaCardNumber = order.customerInfo?.ghanaCardNumber || extractGhanaCardFromNotes(order.notes);
+    const ghanaCardNumber =
+      order.customerInfo?.ghanaCardNumber ||
+      extractGhanaCardFromNotes(order.notes);
     return ghanaCardNumber || "AFA Registration Service";
   };
 
@@ -385,13 +376,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
             ) : (
               orders.map((order) => (
                 <React.Fragment key={order._id}>
-                  <tr
-                    className={`hover:bg-gray-50 ${
-                      isOrderByProdTester(order)
-                        ? "bg-yellow-50 border-l-4 border-yellow-400"
-                        : ""
-                    }`}
-                  >
+                  <tr className="hover:bg-gray-50">
                     {isAdmin && onSelect && (
                       <td className="px-6 py-4">
                         <input
@@ -434,7 +419,9 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                         {getOrderProvider(order)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {isAfaOrder(order) ? getAfaOrderInfo(order) : getOrderVolume(order)}
+                        {isAfaOrder(order)
+                          ? getAfaOrderInfo(order)
+                          : getOrderVolume(order)}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
