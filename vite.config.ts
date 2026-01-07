@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt", // Changed from "autoUpdate" to "prompt" to avoid conflicts
       includeAssets: [
         "favicon.svg",
         "favicon-16x16.png",

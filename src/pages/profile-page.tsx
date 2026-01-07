@@ -24,10 +24,12 @@ import {
   FaSync,
   FaPalette,
   FaRedo,
+  FaBell,
 } from "react-icons/fa";
 import type { User } from "../types";
 import { isBusinessUser } from "../utils/userTypeHelpers";
 import { ColorSchemeSelector } from "../components/common/color-scheme-selector";
+import pushNotificationService from "../services/pushNotificationService";
 
 export const ProfilePage: React.FC = () => {
   const { authState, logout } = useAuth();
@@ -38,6 +40,14 @@ export const ProfilePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [pushPreferences, setPushPreferences] = useState({
+    enabled: true,
+    orderUpdates: true,
+    walletUpdates: true,
+    commissionUpdates: true,
+    announcements: true,
+  });
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
 
   const refreshProfile = async () => {
     try {
@@ -67,6 +77,27 @@ export const ProfilePage: React.FC = () => {
 
     fetchProfile();
   }, [authState.user, getProfile]);
+
+  // Load push notification preferences
+  useEffect(() => {
+    const loadPushPreferences = async () => {
+      if (authState.user) {
+        setIsLoadingPreferences(true);
+        try {
+          const preferences = await pushNotificationService.getPreferences();
+          if (preferences) {
+            setPushPreferences(preferences);
+          }
+        } catch (error) {
+          console.error("Failed to load push preferences:", error);
+        } finally {
+          setIsLoadingPreferences(false);
+        }
+      }
+    };
+
+    loadPushPreferences();
+  }, [authState.user]);
 
   const getUserTypeColor = (
     userType: string
@@ -118,6 +149,19 @@ export const ProfilePage: React.FC = () => {
       await refreshWallet();
     } catch (err) {
       console.error("Failed to refresh wallet:", err);
+    }
+  };
+
+  const handlePushPreferenceChange = async (key: string, value: boolean) => {
+    const newPreferences = { ...pushPreferences, [key]: value };
+    setPushPreferences(newPreferences);
+
+    try {
+      await pushNotificationService.updatePreferences(newPreferences);
+    } catch (error) {
+      console.error("Failed to update push preferences:", error);
+      // Revert on error
+      setPushPreferences(pushPreferences);
     }
   };
 
@@ -599,6 +643,123 @@ export const ProfilePage: React.FC = () => {
             </CardBody>
           </Card>
 
+          {/* Push Notification Settings */}
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <FaBell className="text-orange-600" />
+                Push Notifications
+              </h3>
+            </CardHeader>
+            <CardBody>
+              {isLoadingPreferences ? (
+                <div className="space-y-3">
+                  <Skeleton variant="rectangular" height="2rem" />
+                  <Skeleton variant="rectangular" height="2rem" />
+                  <Skeleton variant="rectangular" height="2rem" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        Enable Push Notifications
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Receive notifications outside the app
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={pushPreferences.enabled}
+                        onChange={(e) =>
+                          handlePushPreferenceChange(
+                            "enabled",
+                            e.target.checked
+                          )
+                        }
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {pushPreferences.enabled && (
+                    <>
+                      <div className="border-t border-gray-200 pt-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">
+                            Order Updates
+                          </span>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                            checked={pushPreferences.orderUpdates}
+                            onChange={(e) =>
+                              handlePushPreferenceChange(
+                                "orderUpdates",
+                                e.target.checked
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">
+                            Wallet Updates
+                          </span>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                            checked={pushPreferences.walletUpdates}
+                            onChange={(e) =>
+                              handlePushPreferenceChange(
+                                "walletUpdates",
+                                e.target.checked
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">
+                            Commission Updates
+                          </span>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                            checked={pushPreferences.commissionUpdates}
+                            onChange={(e) =>
+                              handlePushPreferenceChange(
+                                "commissionUpdates",
+                                e.target.checked
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">
+                            Announcements
+                          </span>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                            checked={pushPreferences.announcements}
+                            onChange={(e) =>
+                              handlePushPreferenceChange(
+                                "announcements",
+                                e.target.checked
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
           {/* Support Card */}
           <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
@@ -828,6 +989,65 @@ export const ProfilePage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              </CardBody>
+            </Card>
+
+            {/* Push Notification Settings */}
+            <Card className="shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader>
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <FaBell className="text-orange-600" />
+                  Notifications
+                </h3>
+              </CardHeader>
+              <CardBody>
+                {isLoadingPreferences ? (
+                  <div className="space-y-2">
+                    <Skeleton variant="rectangular" height="1.5rem" />
+                    <Skeleton variant="rectangular" height="1.5rem" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">
+                        Push Notifications
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={pushPreferences.enabled}
+                          onChange={(e) =>
+                            handlePushPreferenceChange(
+                              "enabled",
+                              e.target.checked
+                            )
+                          }
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                    {pushPreferences.enabled && (
+                      <div className="text-xs text-gray-600">
+                        <p>Receive notifications for:</p>
+                        <ul className="mt-1 space-y-1">
+                          {pushPreferences.orderUpdates && (
+                            <li>• Order updates</li>
+                          )}
+                          {pushPreferences.walletUpdates && (
+                            <li>• Wallet changes</li>
+                          )}
+                          {pushPreferences.commissionUpdates && (
+                            <li>• Commissions</li>
+                          )}
+                          {pushPreferences.announcements && (
+                            <li>• Announcements</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardBody>
             </Card>
 

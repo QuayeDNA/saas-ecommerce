@@ -12,6 +12,7 @@ import { NetworkStatusIndicator } from "./components/network-status-indicator";
 import { MaintenanceBanner } from "./components/maintenance-banner";
 import { InstallPrompt } from "./components/install-prompt";
 import { AnnouncementPopupHandler } from "./components/announcements/announcement-popup-handler";
+import PushNotificationInitializer from "./components/PushNotificationInitializer";
 
 function App() {
   const routeElement = useRoutes(routes);
@@ -59,6 +60,7 @@ function App() {
             <CommissionProvider>
               <NotificationProvider>
                 <AnnouncementProvider>
+                  <PushNotificationInitializer />
                   <div className="min-h-screen flex flex-col">
                     <MaintenanceBanner />
                     <div className="flex-1">{routeElement}</div>
