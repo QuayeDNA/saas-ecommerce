@@ -16,12 +16,14 @@ class PushNotificationService {
    */
   async init(): Promise<void> {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      console.log("[Push] Service worker or PushManager not supported");
       return;
     }
 
     try {
       // Register service worker if not already registered
       const registration = await navigator.serviceWorker.register("/sw.js");
+      console.log("[Push] Service worker registered");
 
       // Get VAPID public key
       await this.fetchVapidPublicKey();
@@ -29,8 +31,9 @@ class PushNotificationService {
       // Check if already subscribed
       const subscription = await registration.pushManager.getSubscription();
       this.isSubscribed = !!subscription;
-    } catch {
-      // Silent error handling
+      console.log("[Push] Already subscribed:", this.isSubscribed);
+    } catch (error) {
+      console.error("[Push] Init failed:", error);
     }
   }
 
@@ -43,9 +46,15 @@ class PushNotificationService {
 
       if (response.data.success && response.data.publicKey) {
         this.vapidPublicKey = response.data.publicKey;
+        console.log(
+          "[Push] VAPID key fetched, length:",
+          this.vapidPublicKey!.length
+        );
+      } else {
+        console.warn("[Push] VAPID key fetch failed - no key in response");
       }
-    } catch {
-      // Silent error handling
+    } catch (error) {
+      console.error("[Push] Failed to fetch VAPID key:", error);
     }
   }
 
@@ -53,21 +62,27 @@ class PushNotificationService {
    * Subscribe to push notifications
    */
   async subscribe(): Promise<boolean> {
+    console.log("[Push] Starting subscription process...");
+
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      console.warn("[Push] Service worker or PushManager not available");
       return false;
     }
 
     // Check if we're in a secure context (required for push notifications)
     if (!window.isSecureContext) {
+      console.warn("[Push] Not in secure context");
       return false;
     }
 
     // Ensure VAPID key is available
     if (!this.vapidPublicKey) {
+      console.log("[Push] VAPID key not cached, fetching...");
       await this.fetchVapidPublicKey();
     }
 
     if (!this.vapidPublicKey) {
+      console.error("[Push] No VAPID key available after fetch");
       return false;
     }
 
@@ -75,20 +90,25 @@ class PushNotificationService {
     try {
       const keyArray = this.urlBase64ToUint8Array(this.vapidPublicKey);
       if (keyArray.byteLength !== 65) {
+        console.error("[Push] Invalid VAPID key length:", keyArray.byteLength);
         return false;
       }
-    } catch {
+      console.log("[Push] VAPID key validated");
+    } catch (error) {
+      console.error("[Push] VAPID key validation failed:", error);
       return false;
     }
 
     try {
       // Wait for service worker to be ready
       const registration = await navigator.serviceWorker.ready;
+      console.log("[Push] Service worker ready");
 
       // Check for existing subscription and unsubscribe if exists
       const existingSubscription =
         await registration.pushManager.getSubscription();
       if (existingSubscription) {
+        console.log("[Push] Unsubscribing existing subscription");
         await existingSubscription.unsubscribe();
       }
 
@@ -97,10 +117,15 @@ class PushNotificationService {
         this.vapidPublicKey
       );
 
+      console.log("[Push] Creating new subscription...");
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey,
       });
+      console.log(
+        "[Push] Subscription created, endpoint:",
+        subscription.endpoint.substring(0, 50) + "..."
+      );
 
       // Convert subscription to plain object with proper structure
       const subscriptionObject = {
@@ -110,6 +135,7 @@ class PushNotificationService {
           auth: arrayBufferToBase64(subscription.getKey("auth")!),
         },
       };
+      console.log("[Push] Subscription object created, sending to server...");
 
       // Send subscription to server
       const response = await apiClient.post("/api/push/subscribe", {
@@ -118,12 +144,15 @@ class PushNotificationService {
       const data = response.data;
 
       if (data.success) {
+        console.log("[Push] ✅ Subscription successful");
         this.isSubscribed = true;
         return true;
       } else {
+        console.error("[Push] ❌ Server rejected subscription:", data);
         return false;
       }
-    } catch {
+    } catch (error) {
+      console.error("[Push] ❌ Subscription failed:", error);
       return false;
     }
   }

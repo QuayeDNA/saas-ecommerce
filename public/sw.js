@@ -2,6 +2,10 @@
 // This is a minimal service worker focused on push notifications
 // Workbox caching is handled by VitePWA generated service worker
 
+// Workbox manifest placeholder - required for injectManifest strategy
+// This will be replaced during build with the actual precache manifest
+self.__WB_MANIFEST;
+
 // Handle push notifications
 self.addEventListener("push", (event) => {
   if (!event.data) return;
