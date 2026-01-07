@@ -17,6 +17,7 @@ import {
   FaCreditCard,
   FaHistory,
   FaBullhorn,
+  FaStore,
 } from "react-icons/fa";
 import { Home, Plus, LogOut, ChevronRight, Check } from "lucide-react";
 import { useState } from "react";
@@ -85,6 +86,11 @@ const getAgentNavItems = (): NavItem[] => [
     label: "Wallet",
     path: "/agent/dashboard/wallet",
     icon: <FaWallet />,
+  },
+  {
+    label: "My Store",
+    path: "/agent/dashboard/my-store",
+    icon: <FaStore />,
   },
   {
     label: "AFA Registration",
@@ -163,6 +169,11 @@ const getSuperAdminNavItems = (): NavItem[] => [
     label: "Announcements",
     path: "/superadmin/announcements",
     icon: <FaBullhorn />,
+  },
+  {
+    label: "Stores",
+    path: "/superadmin/stores",
+    icon: <FaStore />,
   },
   {
     label: "Wallet",
