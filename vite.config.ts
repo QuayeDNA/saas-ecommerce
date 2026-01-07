@@ -89,10 +89,13 @@ export default defineConfig({
           },
         ],
       },
-      strategies:
-        process.env.NODE_ENV === "production" ? "injectManifest" : "generateSW",
-      srcDir: "public",
-      filename: "sw.js",
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        swDest: "dist/sw.js",
+      },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         // Clean old caches on activation
