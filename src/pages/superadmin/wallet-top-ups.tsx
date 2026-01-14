@@ -165,9 +165,6 @@ function WalletTransactionModal({
 }
 
 export default function WalletTopUpsPage() {
-  // Test user ID to hide from the list
-  const TEST_USER_ID = "689bae9e81b90ad7c5ad66d4";
-
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -259,11 +256,7 @@ export default function WalletTopUpsPage() {
     setError(null);
     try {
       const response = await userService.getUsers();
-      // Filter out the test user from the results
-      const filteredUsers = response.users.filter(
-        (user: User) => user._id !== TEST_USER_ID
-      );
-      setUsers(filteredUsers);
+      setUsers(response.users);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch users");
     } finally {

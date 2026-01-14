@@ -166,9 +166,6 @@ export default function SuperAdminWalletPage() {
   const { refreshWallet } = useWallet();
   const { addToast } = useToast();
 
-  // Test user ID to hide from the list
-  const TEST_USER_ID = "689bae9e81b90ad7c5ad66d4";
-
   // State for users
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -384,11 +381,7 @@ export default function SuperAdminWalletPage() {
         },
       });
       if (response.data.success) {
-        // Filter out the test user from the results
-        const filteredUsers = response.data.users.filter(
-          (user: User) => user._id !== TEST_USER_ID
-        );
-        setUsers(filteredUsers);
+        setUsers(response.data.users);
       } else {
         setError(response.data.message || "Failed to fetch users");
       }
