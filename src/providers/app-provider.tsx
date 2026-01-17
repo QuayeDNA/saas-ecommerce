@@ -12,6 +12,7 @@ import {
   SiteStatusWebSocketConnector,
 } from "../contexts/site-status-context";
 import { NotificationProvider } from "../contexts/NotificationContext";
+import { AnnouncementProvider } from "../contexts/AnnouncementContext";
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -25,13 +26,15 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         <UserProvider>
           <WalletProvider>
             <NotificationProvider>
-              <ProviderProvider>
-                <PackageProvider>
-                  <StorefrontProvider>
-                    <OrderProvider>{children}</OrderProvider>
-                  </StorefrontProvider>
-                </PackageProvider>
-              </ProviderProvider>
+              <AnnouncementProvider>
+                <ProviderProvider>
+                  <PackageProvider>
+                    <StorefrontProvider>
+                      <OrderProvider>{children}</OrderProvider>
+                    </StorefrontProvider>
+                  </PackageProvider>
+                </ProviderProvider>
+              </AnnouncementProvider>
             </NotificationProvider>
           </WalletProvider>
         </UserProvider>

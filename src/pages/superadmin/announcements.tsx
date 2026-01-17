@@ -42,7 +42,7 @@ export const AnnouncementsPage: React.FC = () => {
     type: "info",
     priority: "medium",
     targetAudience: [],
-    status: "draft",
+    status: "active", // Changed from "draft" to "active" as new default
     actionRequired: false,
   });
 
@@ -173,7 +173,7 @@ export const AnnouncementsPage: React.FC = () => {
       type: "info",
       priority: "medium",
       targetAudience: [],
-      status: "draft",
+      status: "active", // Changed from "draft" to "active" as new default
       actionRequired: false,
     });
   };
@@ -670,7 +670,7 @@ export const AnnouncementsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Select
                   label="Status"
-                  value={formData.status}
+                  value={formData.status || "active"}
                   onChange={(value) =>
                     setFormData({
                       ...formData,
@@ -679,21 +679,26 @@ export const AnnouncementsPage: React.FC = () => {
                   }
                   options={[
                     { value: "draft", label: "Draft" },
-                    { value: "active", label: "Active" },
+                    { value: "active", label: "Active (Default)" },
                     { value: "archived", label: "Archived" },
                   ]}
                   className="text-sm"
                 />
 
-                <Input
-                  label="Expires At (Optional)"
-                  type="datetime-local"
-                  value={formData.expiresAt?.slice(0, 16) || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, expiresAt: e.target.value })
-                  }
-                  className="text-sm"
-                />
+                <div>
+                  <Input
+                    label="Expires At (Optional)"
+                    type="datetime-local"
+                    value={formData.expiresAt?.slice(0, 16) || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, expiresAt: e.target.value })
+                    }
+                    className="text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Leave empty for auto-expiration in 1 day
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">

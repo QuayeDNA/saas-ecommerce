@@ -16,6 +16,7 @@ import { Header } from "../components/header";
 import { NavigationLoader } from "../components/navigation-loader";
 import GuidedTour from "../components/guided-tour";
 import type { TourStep } from "../components/guided-tour";
+import { AnnouncementPopupHandler } from "../components/announcements/announcement-popup-handler";
 import { useAuth } from "../hooks";
 import ImpersonationService from "../utils/impersonation";
 import {
@@ -133,6 +134,16 @@ export const DashboardLayout = () => {
     }
   };
 
+  const handleTourSkip = () => {
+    // Mark tour as completed
+    localStorage.setItem("tourCompleted", "true");
+
+    // Update first time flag in backend even when skipping
+    if (authState.user?.isFirstTime) {
+      updateFirstTimeFlag();
+    }
+  };
+
   return (
     <div
       className={`flex bg-gray-50 overflow-hidden ${
@@ -178,11 +189,14 @@ export const DashboardLayout = () => {
           isOpen={showTour}
           onClose={() => {
             setShowTour(false);
-            localStorage.setItem("tourCompleted", "true");
+            handleTourSkip();
           }}
           onComplete={handleTourComplete}
         />
       )}
+
+      {/* Announcement Popup Handler */}
+      <AnnouncementPopupHandler />
     </div>
   );
 };

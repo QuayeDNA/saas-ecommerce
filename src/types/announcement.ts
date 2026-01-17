@@ -50,6 +50,7 @@ export interface Announcement {
     email: string;
   };
   expiresAt?: string;
+  broadcastedAt?: string;
   viewedBy: ViewRecord[];
   acknowledgedBy: AcknowledgeRecord[];
   template: AnnouncementTemplateType;
@@ -68,7 +69,7 @@ export interface CreateAnnouncementDTO {
   type: AnnouncementType;
   priority: AnnouncementPriority;
   targetAudience: TargetAudience[];
-  status: AnnouncementStatus;
+  status?: AnnouncementStatus; // Now optional, defaults to "active"
   expiresAt?: string;
   template?: AnnouncementTemplateType;
   actionRequired?: boolean;
