@@ -10,7 +10,6 @@
  * - Enhanced accessibility and form validation
  * - Password visibility toggle with smooth animations
  * - Remember me functionality with clear messaging
- * - Social proof elements and trust indicators
  * - Seamless navigation and user flow
  * - Consistent design system integration
  */
@@ -313,24 +312,6 @@ export const LoginPage = () => {
               </form>
             </CardBody>
           </Card>
-
-          {/* Trust indicators */}
-          <div className="mt-8 text-center">
-            <div className="flex items-center justify-center space-x-8 text-sm text-gray-500">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                99.9% Uptime
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                Bank-grade Security
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                24/7 Support
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

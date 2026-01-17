@@ -56,6 +56,10 @@ export const SiteStatusProvider: React.FC<SiteStatusProviderProps> = ({
       ]);
       setSiteStatus(status);
       setSignupApprovalRequired(approvalData.requireApprovalForSignup);
+      console.log(
+        "Loaded signup approval setting:",
+        approvalData.requireApprovalForSignup
+      );
     } catch (err) {
       setError("Failed to load site status");
       console.error("Error loading site status:", err);
