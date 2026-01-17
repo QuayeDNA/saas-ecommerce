@@ -18,6 +18,7 @@ import {
   FaHistory,
   FaBullhorn,
   FaStore,
+  FaChartLine,
 } from "react-icons/fa";
 import { Home, Plus, LogOut, ChevronRight, Check } from "lucide-react";
 import { useState } from "react";
@@ -139,6 +140,11 @@ const getSuperAdminNavItems = (): NavItem[] => [
     label: "Dashboard",
     path: "/superadmin",
     icon: <FaTachometerAlt />,
+  },
+  {
+    label: "Analytics",
+    path: "/superadmin/analytics",
+    icon: <FaChartLine />,
   },
   {
     label: "Users",

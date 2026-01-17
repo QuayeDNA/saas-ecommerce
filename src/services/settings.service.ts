@@ -1,4 +1,4 @@
-import { apiClient } from "../utils/api-client";
+import { apiClient, publicApiClient } from "../utils/api-client";
 
 // =============================================================================
 // TYPES
@@ -81,12 +81,22 @@ class SettingsService {
     return response.data;
   }
 
+  async getSignupApprovalSetting(): Promise<{ requireApprovalForSignup: boolean }> {
+    const response = await publicApiClient.get("/api/settings/signup-approval");
+    return response.data;
+  }
+
+  async updateSignupApprovalSetting(requireApproval: boolean): Promise<{ requireApprovalForSignup: boolean }> {
+    const response = await apiClient.put("/api/settings/signup-approval", { requireApprovalForSignup: requireApproval });
+    return response.data;
+  }
+
   // Get site status (public endpoint)
   async getSiteStatus(): Promise<{
     isSiteOpen: boolean;
     customMessage: string;
   }> {
-    const response = await apiClient.get("/api/settings/site/status");
+    const response = await publicApiClient.get("/api/settings/site/status");
     return response.data;
   }
 

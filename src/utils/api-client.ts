@@ -2,6 +2,14 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { getToken, removeToken } from "./auth-storage";
 
+// Create a public axios instance for unauthenticated requests
+export const publicApiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:5050",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 // Create a custom axios instance
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:5050",

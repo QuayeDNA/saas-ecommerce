@@ -31,11 +31,6 @@ const RegisterPage = lazy(() =>
     default: module.RegisterPage,
   }))
 );
-const RegisterSuccessPage = lazy(() =>
-  import("../pages/register-success-page").then((module) => ({
-    default: module.RegisterSuccessPage,
-  }))
-);
 const ForgotPasswordPage = lazy(() =>
   import("../pages/forgot-password-page").then((module) => ({
     default: module.ForgotPasswordPage,
@@ -174,14 +169,6 @@ const publicRoutes: RouteObject[] = [
     element: (
       <Suspense fallback={<PageLoader />}>
         <RegisterPage />
-      </Suspense>
-    ),
-  },
-  {
-    path: "/register/success",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <RegisterSuccessPage />
       </Suspense>
     ),
   },

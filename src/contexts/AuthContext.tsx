@@ -337,10 +337,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         const result = await authService.registerAgent(data);
         setState((prev) => ({ ...prev, isLoading: false }));
-        addToast(
-          "Agent account created successfully! Your account is pending approval by a super admin.",
-          "success"
-        );
         return result;
       } catch (error) {
         const errorMessage =

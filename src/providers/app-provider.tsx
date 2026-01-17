@@ -7,7 +7,10 @@ import { StorefrontProvider } from "../contexts/StorefrontContext";
 import { PackageProvider } from "../contexts/package-context-value.tsx";
 import { ProviderProvider } from "../contexts/provider-provider";
 import { WalletProvider } from "../contexts/wallet-provider";
-import { SiteStatusProvider } from "../contexts/site-status-context";
+import {
+  SiteStatusProvider,
+  SiteStatusWebSocketConnector,
+} from "../contexts/site-status-context";
 import { NotificationProvider } from "../contexts/NotificationContext";
 
 interface AppProviderProps {
@@ -18,6 +21,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   return (
     <SiteStatusProvider>
       <AuthProvider>
+        <SiteStatusWebSocketConnector />
         <UserProvider>
           <WalletProvider>
             <NotificationProvider>

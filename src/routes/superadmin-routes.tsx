@@ -29,6 +29,7 @@ const AnnouncementsPage = lazy(
   () => import("../pages/superadmin/announcements")
 );
 const StoresPage = lazy(() => import("../pages/superadmin/stores"));
+const AnalyticsPage = lazy(() => import("../pages/superadmin/analytics"));
 
 const superadminRoutes: RouteObject = {
   path: "/superadmin",
@@ -43,6 +44,14 @@ const superadminRoutes: RouteObject = {
           element: (
             <Suspense fallback={<PageLoader />}>
               <SuperAdminDashboard />
+            </Suspense>
+          ),
+        },
+        {
+          path: "analytics",
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <AnalyticsPage />
             </Suspense>
           ),
         },

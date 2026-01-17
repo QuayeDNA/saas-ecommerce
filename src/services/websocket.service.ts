@@ -210,6 +210,9 @@ class WebSocketService {
       case "announcement":
         this.emit("announcement", data.data);
         break;
+      case "site_status_update":
+        this.emit("site_status_update", data.data);
+        break;
       default:
         // Unknown WebSocket message type
         break;
