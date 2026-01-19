@@ -141,11 +141,11 @@ const getSuperAdminNavItems = (): NavItem[] => [
     path: "/superadmin",
     icon: <FaTachometerAlt />,
   },
-  {
-    label: "Analytics",
-    path: "/superadmin/analytics",
-    icon: <FaChartLine />,
-  },
+  // {
+  //   label: "Analytics",
+  //   path: "/superadmin/analytics",
+  //   icon: <FaChartLine />,
+  // },
   {
     label: "Users",
     path: "/superadmin/users",
