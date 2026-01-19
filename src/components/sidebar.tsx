@@ -18,7 +18,7 @@ import {
   FaHistory,
   FaBullhorn,
   FaStore,
-  FaChartLine,
+  // FaChartLine,
 } from "react-icons/fa";
 import { Home, Plus, LogOut, ChevronRight, Check } from "lucide-react";
 import { useState } from "react";
