@@ -13,58 +13,53 @@ import superadminRoutes from "./superadmin-routes";
 const LandingPage = lazy(() =>
   import("../pages/landing-page").then((module) => ({
     default: module.LandingPage,
-  }))
+  })),
 );
 
 const LogoPage = lazy(() =>
   import("../components/common/BryteLinksLogoShowcase").then((module) => ({
     default: module.BryteLinksLogoShowcase,
-  }))
+  })),
 );
 const LoginPage = lazy(() =>
   import("../pages/login-page").then((module) => ({
     default: module.LoginPage,
-  }))
+  })),
 );
 const RegisterPage = lazy(() =>
   import("../pages/register-page").then((module) => ({
     default: module.RegisterPage,
-  }))
+  })),
 );
 const ForgotPasswordPage = lazy(() =>
   import("../pages/forgot-password-page").then((module) => ({
     default: module.ForgotPasswordPage,
-  }))
+  })),
 );
 const ResetPasswordPage = lazy(() =>
   import("../pages/reset-password-page").then((module) => ({
     default: module.ResetPasswordPage,
-  }))
+  })),
 );
 const VerifyAccountPage = lazy(() =>
   import("../pages/verify-account-page").then((module) => ({
     default: module.VerifyAccountPage,
-  }))
-);
-const PublicStorefrontPage = lazy(() =>
-  import("../pages/PublicStorefrontPage").then((module) => ({
-    default: module.PublicStorefrontPage,
-  }))
+  })),
 );
 const NotFoundPage = lazy(() =>
   import("../pages/not-found-page").then((module) => ({
     default: module.NotFoundPage,
-  }))
+  })),
 );
 const ForbiddenPage = lazy(() =>
   import("../pages/forbidden-page").then((module) => ({
     default: module.ForbiddenPage,
-  }))
+  })),
 );
 const PrivacyPolicyPage = lazy(() =>
   import("../pages/privacy-policy-page").then((module) => ({
     default: module.PrivacyPolicyPage,
-  }))
+  })),
 );
 // =============================================================================
 // LAZY LOADED COMPONENTS - DASHBOARD PAGES
@@ -72,12 +67,12 @@ const PrivacyPolicyPage = lazy(() =>
 const DashboardPage = lazy(() =>
   import("../pages/dashboard-page").then((module) => ({
     default: module.DashboardPage,
-  }))
+  })),
 );
 const ProfilePage = lazy(() =>
   import("../pages/profile-page").then((module) => ({
     default: module.ProfilePage,
-  }))
+  })),
 );
 
 // =============================================================================
@@ -86,27 +81,22 @@ const ProfilePage = lazy(() =>
 const PackageManagementPage = lazy(() =>
   import("../pages/packages-page").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const OrderManagementPage = lazy(() =>
   import("../pages/orders-page").then((module) => ({
     default: module.OrderManagementPage,
-  }))
-);
-const StorefrontManagementPage = lazy(() =>
-  import("../pages/store-page").then((module) => ({
-    default: module.StorefrontManagementPage,
-  }))
+  })),
 );
 const AfaRegistrationPage = lazy(() =>
   import("../pages/afa-registration-page").then((module) => ({
     default: module.AfaRegistrationPage,
-  }))
+  })),
 );
 const WalletPage = lazy(() =>
   import("../pages/wallet-page").then((module) => ({
     default: module.WalletPage,
-  }))
+  })),
 );
 const MyStorePage = lazy(() => import("../pages/agent/my-store"));
 
@@ -116,22 +106,22 @@ const MyStorePage = lazy(() => import("../pages/agent/my-store"));
 const MtnPackagesPage = lazy(() =>
   import("../pages/mtn-packages-page").then((module) => ({
     default: module.MtnPackagesPage,
-  }))
+  })),
 );
 const TelecelPackagesPage = lazy(() =>
   import("../pages/telecel-packages-page").then((module) => ({
     default: module.TelecelPackagesPage,
-  }))
+  })),
 );
 const AtBigTimePackagesPage = lazy(() =>
   import("../pages/at-bigtime-packages").then((module) => ({
     default: module.AtBigTimePackagesPage,
-  }))
+  })),
 );
 const AtISharePremiumPackagesPage = lazy(() =>
   import("../pages/at-ishare-packages").then((module) => ({
     default: module.AtISharePremiumPackagesPage,
-  }))
+  })),
 );
 
 // =============================================================================
@@ -193,14 +183,6 @@ const publicRoutes: RouteObject[] = [
     element: (
       <Suspense fallback={<PageLoader />}>
         <VerifyAccountPage />
-      </Suspense>
-    ),
-  },
-  {
-    path: "/store/:slug",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <PublicStorefrontPage />
       </Suspense>
     ),
   },
@@ -306,14 +288,6 @@ const agentRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OrderManagementPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "store",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <StorefrontManagementPage />
               </Suspense>
             ),
           },
