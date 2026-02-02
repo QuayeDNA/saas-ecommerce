@@ -6,7 +6,7 @@ export default function StoresPage() {
     <div className="container mx-auto px-4 py-8">
       <ComingSoon
         title="Agent Stores Management"
-        description="View and manage all agent storefronts across the platform. Monitor store performance and sub-agent relationships."
+        description="View and manage all agent stores across the platform. Monitor store performance and sub-agent relationships."
       />
     </div>
   );

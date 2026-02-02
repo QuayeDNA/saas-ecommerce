@@ -130,7 +130,7 @@ class BundleService {
     return response.data.data;
   }
 
-  // Public bundle access (for storefront)
+  // Public bundle access
   async getPublicBundles(
     filters?: BundleFilters,
     pagination?: Partial<Pagination>

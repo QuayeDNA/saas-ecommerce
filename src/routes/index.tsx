@@ -61,11 +61,6 @@ const PrivacyPolicyPage = lazy(() =>
     default: module.PrivacyPolicyPage,
   })),
 );
-const PublicStorePage = lazy(() =>
-  import("../pages/public/store-page").then((module) => ({
-    default: module.PublicStorePage,
-  })),
-);
 // =============================================================================
 // LAZY LOADED COMPONENTS - DASHBOARD PAGES
 // =============================================================================
@@ -103,7 +98,6 @@ const WalletPage = lazy(() =>
     default: module.WalletPage,
   })),
 );
-const MyStorePage = lazy(() => import("../pages/agent/my-store"));
 
 // =============================================================================
 // LAZY LOADED COMPONENTS - PACKAGE SPECIFIC PAGES
@@ -215,14 +209,6 @@ const publicRoutes: RouteObject[] = [
       </Suspense>
     ),
   },
-  {
-    path: "/stores/:businessName",
-    element: (
-      <Suspense fallback={<PageLoader />}>
-        <PublicStorePage />
-      </Suspense>
-    ),
-  },
 
   {
     path: "/404",
@@ -325,14 +311,6 @@ const agentRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <WalletPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: "my-store",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <MyStorePage />
               </Suspense>
             ),
           },

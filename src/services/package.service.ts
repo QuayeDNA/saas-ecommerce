@@ -155,7 +155,7 @@ class PackageService {
     return response.data.data;
   }
 
-  // Public bundle access (for storefront)
+  // Public package access
   async getPublicBundles(filters?: BundleFilters, pagination?: Partial<Pagination>): Promise<BundleResponse> {
     const params = { ...filters, ...pagination };
     const response = await apiClient.get('/api/bundles', { params });
