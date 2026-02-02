@@ -8,6 +8,7 @@ import { AppProvider } from "./providers/app-provider";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { CommissionProvider } from "./contexts/CommissionContext";
 import { AnnouncementProvider } from "./contexts/AnnouncementContext";
+import { StorefrontProvider } from "./contexts/StorefrontContext";
 import { NetworkStatusIndicator } from "./components/network-status-indicator";
 import { MaintenanceBanner } from "./components/maintenance-banner";
 import { InstallPrompt } from "./components/install-prompt";
@@ -60,14 +61,16 @@ function App() {
             <CommissionProvider>
               <NotificationProvider>
                 <AnnouncementProvider>
-                  <PushNotificationInitializer />
-                  <div className="min-h-screen flex flex-col">
-                    <MaintenanceBanner />
-                    <div className="flex-1">{routeElement}</div>
-                    <NetworkStatusIndicator />
-                    <InstallPrompt />
-                    <AnnouncementPopupHandler />
-                  </div>
+                  <StorefrontProvider>
+                    <PushNotificationInitializer />
+                    <div className="min-h-screen flex flex-col">
+                      <MaintenanceBanner />
+                      <div className="flex-1">{routeElement}</div>
+                      <NetworkStatusIndicator />
+                      <InstallPrompt />
+                      <AnnouncementPopupHandler />
+                    </div>
+                  </StorefrontProvider>
                 </AnnouncementProvider>
               </NotificationProvider>
             </CommissionProvider>

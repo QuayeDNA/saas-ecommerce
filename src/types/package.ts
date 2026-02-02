@@ -145,6 +145,7 @@ export interface BundleFilters {
   category?: string;
   providerId?: string;
   packageId?: string;
+  isActive?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }

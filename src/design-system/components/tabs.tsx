@@ -1,5 +1,5 @@
-import { createContext, useContext, useState } from 'react';
-import type { ReactNode } from 'react';
+import { createContext, useContext, useState } from "react";
+import type { ReactNode } from "react";
 
 interface TabsContextValue {
   activeTab: string;
@@ -9,13 +9,32 @@ interface TabsContextValue {
 const TabsContext = createContext<TabsContextValue | undefined>(undefined);
 
 interface TabsProps {
-  defaultValue: string;
+  defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
   children: ReactNode;
   className?: string;
 }
 
-export function Tabs({ defaultValue, children, className = '' }: TabsProps) {
-  const [activeTab, setActiveTab] = useState(defaultValue);
+export function Tabs({
+  defaultValue,
+  value,
+  onValueChange,
+  children,
+  className = "",
+}: TabsProps) {
+  const [internalActiveTab, setInternalActiveTab] = useState(
+    defaultValue || "",
+  );
+
+  const activeTab = value !== undefined ? value : internalActiveTab;
+  const setActiveTab = (tab: string) => {
+    if (onValueChange) {
+      onValueChange(tab);
+    } else {
+      setInternalActiveTab(tab);
+    }
+  };
 
   return (
     <TabsContext.Provider value={{ activeTab, setActiveTab }}>
@@ -29,7 +48,7 @@ interface TabsListProps {
   className?: string;
 }
 
-export function TabsList({ children, className = '' }: TabsListProps) {
+export function TabsList({ children, className = "" }: TabsListProps) {
   return (
     <div
       className={`inline-flex h-10 items-center justify-center rounded-lg bg-gray-100 p-1 text-gray-500 ${className}`}
@@ -46,10 +65,14 @@ interface TabsTriggerProps {
   className?: string;
 }
 
-export function TabsTrigger({ value, children, className = '' }: TabsTriggerProps) {
+export function TabsTrigger({
+  value,
+  children,
+  className = "",
+}: TabsTriggerProps) {
   const context = useContext(TabsContext);
   if (!context) {
-    throw new Error('TabsTrigger must be used within Tabs');
+    throw new Error("TabsTrigger must be used within Tabs");
   }
 
   const { activeTab, setActiveTab } = context;
@@ -68,8 +91,8 @@ export function TabsTrigger({ value, children, className = '' }: TabsTriggerProp
         disabled:opacity-50
         ${
           isActive
-            ? 'bg-white text-gray-900 shadow-sm'
-            : 'text-gray-600 hover:text-gray-900'
+            ? "bg-white text-gray-900 shadow-sm"
+            : "text-gray-600 hover:text-gray-900"
         }
         ${className}
       `}
@@ -85,10 +108,14 @@ interface TabsContentProps {
   className?: string;
 }
 
-export function TabsContent({ value, children, className = '' }: TabsContentProps) {
+export function TabsContent({
+  value,
+  children,
+  className = "",
+}: TabsContentProps) {
   const context = useContext(TabsContext);
   if (!context) {
-    throw new Error('TabsContent must be used within Tabs');
+    throw new Error("TabsContent must be used within Tabs");
   }
 
   const { activeTab } = context;
