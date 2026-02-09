@@ -165,6 +165,7 @@ export interface DashboardStats {
   revenue: {
     total: number;
     thisMonth: number;
+    today: number;
     orderCount: number;
     averageOrderValue: number;
   };

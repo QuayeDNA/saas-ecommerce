@@ -492,10 +492,10 @@ export default function SuperAdminDashboard() {
               <div>
                 <p className="text-xs text-gray-500 mb-1">Revenue Today</p>
                 <p className="text-2xl sm:text-3xl font-bold text-green-600">
-                  {formatCurrency(stats.revenue.thisMonth)}
+                  {formatCurrency(stats.revenue.today)}
                 </p>
                 <p className="text-[10px] text-gray-400 mt-1">
-                  All-time: {formatCurrency(stats.revenue.total)}
+                  This month: {formatCurrency(stats.revenue.thisMonth)}
                 </p>
               </div>
               {/* New Users */}

@@ -14,6 +14,7 @@ import {
   FaClock,
 } from "react-icons/fa";
 import { useOrder } from "../../contexts/OrderContext";
+import { isOrderLocked } from "../../utils/order-lock";
 
 interface UnifiedOrderExcelProps {
   orders: Order[];
@@ -165,12 +166,22 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
     type: "afa" | "data" | "mtn" | "telecel" | "at",
     copyOnly: boolean = false
   ) => {
+    // Filter out locked orders
+    const actionableOrders = orders.filter((o) => !isOrderLocked(o));
+    if (actionableOrders.length === 0) {
+      showAlert("warning", "All selected orders are locked (24h+ in terminal status)");
+      return;
+    }
+    if (actionableOrders.length < orders.length) {
+      showAlert("info", `${orders.length - actionableOrders.length} locked order(s) were skipped`);
+    }
+
     try {
       setShowProcessDialog(false);
       setIsProcessing(true);
 
       // Format orders for clipboard
-      const formattedData = orders
+      const formattedData = actionableOrders
         .map((order) => (type === "afa" ? formatAFAOrder(order) : formatDataOrder(order)))
         .join("\n");
 
@@ -183,7 +194,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
       // Copy to clipboard
       try {
         await navigator.clipboard.writeText(formattedData);
-        showAlert("success", `Copied ${orders.length} ${providerName} orders to clipboard!`);
+        showAlert("success", `Copied ${actionableOrders.length} ${providerName} orders to clipboard!`);
       } catch {
         // Fallback for older browsers
         const textArea = document.createElement("textarea");
@@ -192,17 +203,17 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
         textArea.select();
         document.execCommand("copy");
         document.body.removeChild(textArea);
-        showAlert("success", `Copied ${orders.length} ${type.toUpperCase()} orders to clipboard!`);
+        showAlert("success", `Copied ${actionableOrders.length} ${type.toUpperCase()} orders to clipboard!`);
       }
 
       // If not copy-only and status update is requested
       if (!copyOnly && statusUpdate !== "none") {
-        const batches = chunkArray(orders, batchSize);
+        const batches = chunkArray(actionableOrders, batchSize);
         
         // Initialize progress state before showing dialog
         setProcessingProgress({
           current: 0,
-          total: orders.length,
+          total: actionableOrders.length,
           currentBatch: 0,
           totalBatches: batches.length,
         });
@@ -239,7 +250,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
         }
 
         setShowProgressDialog(false);
-        showAlert("success", `Successfully updated ${orders.length} orders to ${statusUpdate}!`);
+        showAlert("success", `Successfully updated ${actionableOrders.length} orders to ${statusUpdate}!`);
         
         // Clear selection after successful processing
         setSelectedOrderIds([]);

@@ -37,6 +37,7 @@ import { OrderAnalytics } from "./OrderAnalytics";
 import { SearchAndFilter } from "../common/SearchAndFilter";
 import { DraftOrdersHandler } from "./DraftOrdersHandler";
 import { SmartSelectDialog } from "./SmartSelectDialog";
+import { isOrderLocked } from "../../utils/order-lock";
 
 interface UnifiedOrderListProps {
   isAdmin: boolean;
@@ -495,21 +496,39 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const confirmBulkAction = async () => {
     if (!pendingBulkAction || selectedOrders.length === 0) return;
 
+    // Filter out locked orders from bulk actions
+    const actionableOrderIds = selectedOrders.filter((id) => {
+      const order = currentOrders.find((o) => o._id === id);
+      return order && !isOrderLocked(order);
+    });
+
+    if (actionableOrderIds.length === 0) {
+      addToast("All selected orders are locked (24h+ in terminal status)", "warning");
+      setShowBulkConfirmDialog(false);
+      setPendingBulkAction(null);
+      return;
+    }
+
+    const skippedCount = selectedOrders.length - actionableOrderIds.length;
+    if (skippedCount > 0) {
+      addToast(`${skippedCount} locked order(s) were skipped`, "info");
+    }
+
     try {
       if (pendingBulkAction === "cancel") {
-        for (const orderId of selectedOrders) {
+        for (const orderId of actionableOrderIds) {
           await cancelOrder(orderId, "Bulk cancelled by admin");
         }
         addToast(
-          `Successfully cancelled ${selectedOrders.length} orders`,
+          `Successfully cancelled ${actionableOrderIds.length} orders`,
           "success"
         );
       } else {
         const bulkAction =
           pendingBulkAction === "process" ? "processing" : "completed";
-        await bulkProcessOrders(selectedOrders, bulkAction);
+        await bulkProcessOrders(actionableOrderIds, bulkAction);
         addToast(
-          `Successfully ${bulkAction} ${selectedOrders.length} orders`,
+          `Successfully ${bulkAction} ${actionableOrderIds.length} orders`,
           "success"
         );
       }

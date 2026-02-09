@@ -10,6 +10,7 @@ import {
   FaChevronUp,
 } from "react-icons/fa";
 import type { Order } from "../../types/order";
+import { isOrderLocked } from "../../utils/order-lock";
 
 interface ReceptionStatusDropdownProps {
   orderId: string;
@@ -278,6 +279,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     ["pending", "confirmed", "processing", "draft"].includes(status);
 
   const canUserCancelOrder = (order: Order) => {
+    if (isOrderLocked(order)) return false;
     if (!canCancel(order.status)) return false;
 
     // Admins can cancel any order
@@ -295,6 +297,11 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     }
 
     return false;
+  };
+
+  // Check if the admin can change status (not locked)
+  const canAdminChangeStatus = (order: Order) => {
+    return isAdmin && !isOrderLocked(order);
   };
 
   const statusOptions = [
@@ -429,8 +436,8 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                     </td>
                     <td className="px-6 py-4">
                       <div className="relative">
-                        {isAdmin ? (
-                          // Admin can change status
+                        {canAdminChangeStatus(order) ? (
+                          // Admin can change status (not locked)
                           <button
                             onClick={() => toggleStatusDropdown(order._id!)}
                             className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
@@ -442,18 +449,19 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                             <FaChevronRight className="text-xs" />
                           </button>
                         ) : (
-                          // Agent can only view status
+                          // Agent view or locked order
                           <span
                             className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
                               order.status
                             )}`}
+                            title={isOrderLocked(order) ? "This order is locked (24h+ in terminal status)" : undefined}
                           >
                             {getStatusIcon(order.status)}
                             {order.status.replace("_", " ")}
                           </span>
                         )}
 
-                        {isAdmin && statusDropdowns.has(order._id!) && (
+                        {canAdminChangeStatus(order) && statusDropdowns.has(order._id!) && (
                           <div
                             className="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown"
                             style={{ top: "100%", left: "0" }}

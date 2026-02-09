@@ -15,6 +15,7 @@ import { Select } from "../../design-system/components/select";
 import { ReportModal } from "./ReportModal";
 import type { Order } from "../../types/order";
 import { apiClient } from "../../utils/api-client";
+import { isOrderLocked } from "../../utils/order-lock";
 
 interface UnifiedOrderCardProps {
   order: Order;
@@ -251,6 +252,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     ["pending", "confirmed", "processing", "draft"].includes(status);
 
   const canUserCancelOrder = (order: Order) => {
+    if (isOrderLocked(order)) return false;
     if (!canCancel(order.status)) return false;
 
     // Admins can cancel any order
@@ -271,6 +273,11 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     }
 
     return false;
+  };
+
+  // Check if the admin can change status (not locked)
+  const canAdminChangeStatus = (order: Order) => {
+    return isAdmin && !isOrderLocked(order);
   };
 
   const canUserReportOrder = (order: Order) => {
@@ -400,7 +407,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
           {/* Status Badge */}
           <div className="flex-shrink-0 ml-3">
             <div className="relative">
-              {isAdmin ? (
+              {canAdminChangeStatus(order) ? (
                 <button
                   onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
                   className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
@@ -415,12 +422,13 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                   className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
                     order.status
                   )}`}
+                  title={isOrderLocked(order) ? "This order is locked (24h+ in terminal status)" : undefined}
                 >
                   <span>{order.status}</span>
                 </div>
               )}
 
-              {isAdmin && statusDropdownOpen && (
+              {canAdminChangeStatus(order) && statusDropdownOpen && (
                 <div className="absolute z-10 mt-1 right-0 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown min-w-32">
                   <div className="py-1 flex flex-col">
                     {statusOptions.map((option) => (
