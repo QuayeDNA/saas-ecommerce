@@ -163,7 +163,7 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: true,
+        enabled: false, // Disable in development to prevent import errors
         type: "classic",
       },
     }),

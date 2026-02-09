@@ -337,6 +337,8 @@ export default function SuperAdminProvidersPage() {
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
         searchPlaceholder="Search by name, code, or description..."
+        enableAutoSearch={true}
+        debounceDelay={500}
         filters={{
           status: {
             value: statusFilter,

@@ -287,11 +287,11 @@ export const userService = {
   },
   // Additional methods for UserContext
   async updateProfile(data: UpdateProfileData): Promise<User> {
-    const resp = await apiClient.patch("/api/auth/profile", data);
+    const resp = await apiClient.patch("/api/users/profile", data);
     return resp.data.user;
   },
   async changePassword(data: ChangePasswordData): Promise<void> {
-    await apiClient.patch("/api/auth/change-password", data);
+    await apiClient.patch("/api/users/change-password", data);
   },
   async submitAfaRegistration(
     data: AfaRegistrationData
@@ -316,7 +316,7 @@ export const userService = {
     return resp.data.user;
   },
   async getProfile(): Promise<User> {
-    const resp = await apiClient.get("/api/auth/profile");
+    const resp = await apiClient.get("/api/users/profile");
     return resp.data.user;
   },
   async getUserStats(): Promise<UserStats> {

@@ -658,6 +658,8 @@ export const BundleManagementPage: React.FC = () => {
         searchTerm={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by name, description, or data volume..."
+        enableAutoSearch={true}
+        debounceDelay={500}
         filters={filterOptions}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}

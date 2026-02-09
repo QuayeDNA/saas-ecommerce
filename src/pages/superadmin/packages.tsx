@@ -341,6 +341,8 @@ export default function SuperAdminPackagesPage() {
         searchTerm={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by name, description, or provider..."
+        enableAutoSearch={true}
+        debounceDelay={500}
         filters={filterOptions}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}

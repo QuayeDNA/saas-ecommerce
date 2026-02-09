@@ -130,6 +130,8 @@ export const ProviderList: React.FC = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search providers..."
+        enableAutoSearch={true}
+        debounceDelay={500}
         filters={{}}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}

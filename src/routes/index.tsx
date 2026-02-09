@@ -61,6 +61,11 @@ const PrivacyPolicyPage = lazy(() =>
     default: module.PrivacyPolicyPage,
   })),
 );
+const PublicStorePage = lazy(() =>
+  import("../pages/public/public-store").then((module) => ({
+    default: module.PublicStorePage,
+  })),
+);
 // =============================================================================
 // LAZY LOADED COMPONENTS - DASHBOARD PAGES
 // =============================================================================
@@ -96,6 +101,11 @@ const AfaRegistrationPage = lazy(() =>
 const WalletPage = lazy(() =>
   import("../pages/wallet-page").then((module) => ({
     default: module.WalletPage,
+  })),
+);
+const StorefrontDashboardPage = lazy(() =>
+  import("../pages/agent/storefront-dashboard").then((module) => ({
+    default: module.StorefrontDashboardPage,
   })),
 );
 
@@ -211,6 +221,14 @@ const publicRoutes: RouteObject[] = [
   },
 
   {
+    path: "/store/:businessName",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PublicStorePage />
+      </Suspense>
+    ),
+  },
+  {
     path: "/404",
     element: (
       <Suspense fallback={<PageLoader />}>
@@ -311,6 +329,14 @@ const agentRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <WalletPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "storefront",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <StorefrontDashboardPage />
               </Suspense>
             ),
           },

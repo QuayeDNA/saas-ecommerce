@@ -111,6 +111,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
     const getThemeColorClasses = () => {
       switch (primaryColor) {
         case "blue":
+        case "default":
           return {
             border: "border-blue-500",
             ring: "ring ring-blue-200",
@@ -167,7 +168,13 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
             optionSelected: "bg-red-100 text-red-900",
           };
         default:
-          return getSemanticColorClasses("info");
+          return {
+            border: "border-blue-500",
+            ring: "ring ring-blue-200",
+            focus: "focus:border-blue-500 focus:ring-blue-100",
+            optionHover: "hover:bg-blue-50",
+            optionSelected: "bg-blue-100 text-blue-900",
+          };
       }
     };
 

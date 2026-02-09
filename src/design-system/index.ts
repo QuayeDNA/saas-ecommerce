@@ -14,6 +14,7 @@ export { ToastProvider, useToast } from "./components/toast";
 export {
   Table,
   TableHeader,
+  TableHeaderCell,
   TableBody,
   TableRow,
   TableCell,
@@ -30,6 +31,8 @@ export { DialogHeader } from "./components/dialog-header";
 export { DialogBody } from "./components/dialog-body";
 export { DialogFooter } from "./components/dialog-footer";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs";
+
+export { Switch } from "./components/switch";
 
 // New components
 export { Spinner } from "./components/spinner";

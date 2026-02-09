@@ -1,0 +1,1084 @@
+import React, { useState, useCallback } from "react";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Button,
+  FormField,
+  Input,
+  Select,
+  Textarea,
+  Badge,
+  Alert,
+  Switch,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "../../design-system";
+import { useToast } from "../../design-system";
+import {
+  storefrontService,
+  type StorefrontData,
+} from "../../services/storefront.service";
+import { getApiErrorMessage } from "../../utils/error-helpers";
+import {
+  Store,
+  Phone,
+  Mail,
+  MapPin,
+  CreditCard,
+  Smartphone,
+  Banknote,
+  Share2,
+  Copy,
+  Check,
+  CheckCircle2,
+  AlertTriangle,
+  Trash2,
+  Plus,
+  X,
+  Settings,
+  Calendar,
+  Info,
+  Save,
+} from "lucide-react";
+
+// --- Types ---
+
+interface StorefrontSettingsProps {
+  storefront: StorefrontData;
+  onUpdate: (updatedStorefront: StorefrontData) => void;
+}
+
+interface PaymentMethodForm {
+  type: "mobile_money" | "bank_transfer";
+  details: {
+    accounts?: Array<{
+      provider: string;
+      number: string;
+      accountName: string;
+    }>;
+    bankName?: string;
+    accountNumber?: string;
+    accountName?: string;
+  };
+  isActive: boolean;
+}
+
+interface FormErrors {
+  businessName?: string;
+  phone?: string;
+  email?: string;
+  paymentMethods?: string;
+}
+
+// --- Constants ---
+
+const PAYMENT_TYPE_OPTIONS = [
+  { value: "mobile_money", label: "Mobile Money" },
+  { value: "bank_transfer", label: "Bank Transfer" },
+];
+
+const MOMO_PROVIDER_OPTIONS = [
+  { value: "", label: "Select provider" },
+  { value: "MTN", label: "MTN" },
+  { value: "Vodafone", label: "Vodafone" },
+  { value: "AirtelTigo", label: "AirtelTigo" },
+];
+
+// --- Component ---
+
+export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
+  storefront,
+  onUpdate,
+}) => {
+  const { addToast } = useToast();
+  const [activeTab, setActiveTab] = useState("general");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    businessName: storefront.businessName || "",
+    phone: storefront.contactInfo?.phone || "",
+    email: storefront.contactInfo?.email || "",
+    address: storefront.contactInfo?.address || "",
+  });
+
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodForm[]>(
+    storefront.paymentMethods || [],
+  );
+
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  // --- Validation ---
+
+  const validateGeneral = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.businessName.trim()) {
+      newErrors.businessName = "Business name is required";
+    } else if (formData.businessName.length < 3) {
+      newErrors.businessName = "Business name must be at least 3 characters";
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^[+]?[0-9\-()\s]+$/.test(formData.phone)) {
+      newErrors.phone = "Please enter a valid phone number";
+    }
+
+    if (
+      formData.email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+    ) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validatePaymentMethods = (): boolean => {
+    const activePayments = paymentMethods.filter((pm) => pm.isActive);
+
+    if (activePayments.length === 0) {
+      setErrors({
+        paymentMethods: "At least one payment method must be active",
+      });
+      return false;
+    }
+
+    for (const payment of activePayments) {
+      if (payment.type === "mobile_money") {
+        const accounts = payment.details.accounts || [];
+        if (accounts.length === 0) {
+          setErrors({
+            paymentMethods: "At least one mobile money account is required",
+          });
+          return false;
+        }
+        for (let i = 0; i < accounts.length; i++) {
+          const account = accounts[i];
+          if (!account.provider) {
+            setErrors({
+              paymentMethods: `Account ${i + 1}: Please select a provider`,
+            });
+            return false;
+          }
+          if (!account.number) {
+            setErrors({
+              paymentMethods: `Account ${i + 1}: Phone number is required`,
+            });
+            return false;
+          }
+          if (!account.accountName) {
+            setErrors({
+              paymentMethods: `Account ${i + 1}: Account name is required`,
+            });
+            return false;
+          }
+        }
+      }
+      if (
+        payment.type === "bank_transfer" &&
+        (!payment.details.accountNumber || !payment.details.bankName)
+      ) {
+        setErrors({
+          paymentMethods:
+            "Bank account details are required for active bank transfer method",
+        });
+        return false;
+      }
+    }
+
+    setErrors({});
+    return true;
+  };
+
+  // --- Handlers ---
+
+  const handleFormChange = (field: string, value: unknown) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handlePaymentMethodChange = (
+    index: number,
+    field: string,
+    value: string | boolean,
+  ) => {
+    const updated = [...paymentMethods];
+    if (field === "isActive") {
+      updated[index].isActive = value as boolean;
+    } else {
+      updated[index].details = { ...updated[index].details, [field]: value };
+    }
+    setPaymentMethods(updated);
+
+    if (errors.paymentMethods) {
+      setErrors((prev) => ({ ...prev, paymentMethods: undefined }));
+    }
+  };
+
+  const updateMomoAccount = useCallback(
+    (
+      methodIndex: number,
+      accountIndex: number,
+      field: string,
+      value: string,
+    ) => {
+      setPaymentMethods((prev) => {
+        const updated = [...prev];
+        const accounts = [...(updated[methodIndex].details.accounts || [])];
+        accounts[accountIndex] = { ...accounts[accountIndex], [field]: value };
+        updated[methodIndex] = {
+          ...updated[methodIndex],
+          details: { ...updated[methodIndex].details, accounts },
+        };
+        return updated;
+      });
+      if (errors.paymentMethods) {
+        setErrors((prev) => ({ ...prev, paymentMethods: undefined }));
+      }
+    },
+    [errors.paymentMethods],
+  );
+
+  const addPaymentMethod = (type: "mobile_money" | "bank_transfer") => {
+    const newMethod: PaymentMethodForm = {
+      type,
+      details:
+        type === "mobile_money"
+          ? { accounts: [{ provider: "", number: "", accountName: "" }] }
+          : { accountNumber: "", bankName: "", accountName: "" },
+      isActive: false,
+    };
+    setPaymentMethods((prev) => [...prev, newMethod]);
+  };
+
+  const removePaymentMethod = (index: number) => {
+    setPaymentMethods((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addMomoAccount = (methodIndex: number) => {
+    setPaymentMethods((prev) => {
+      const updated = [...prev];
+      updated[methodIndex] = {
+        ...updated[methodIndex],
+        details: {
+          ...updated[methodIndex].details,
+          accounts: [
+            ...(updated[methodIndex].details.accounts || []),
+            { provider: "", number: "", accountName: "" },
+          ],
+        },
+      };
+      return updated;
+    });
+  };
+
+  const removeMomoAccount = (methodIndex: number, accountIndex: number) => {
+    setPaymentMethods((prev) => {
+      const updated = [...prev];
+      updated[methodIndex] = {
+        ...updated[methodIndex],
+        details: {
+          ...updated[methodIndex].details,
+          accounts: (updated[methodIndex].details.accounts || []).filter(
+            (_, i) => i !== accountIndex,
+          ),
+        },
+      };
+      return updated;
+    });
+  };
+
+  // --- API Actions ---
+
+  const saveGeneralSettings = async () => {
+    if (!validateGeneral()) return;
+
+    try {
+      setIsLoading(true);
+      const updateData = {
+        businessName: formData.businessName.trim(),
+        contactInfo: {
+          phone: formData.phone.trim(),
+          email: formData.email.trim() || undefined,
+          address: formData.address.trim() || undefined,
+        },
+      };
+      const updatedStorefront =
+        await storefrontService.updateStorefront(updateData);
+      onUpdate(updatedStorefront);
+      addToast("General settings updated successfully!", "success");
+    } catch (error) {
+      addToast(getApiErrorMessage(error, "Failed to update settings"), "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const savePaymentSettings = async () => {
+    if (!validatePaymentMethods()) return;
+
+    try {
+      setIsLoading(true);
+      const updateData = {
+        paymentMethods: paymentMethods.filter(
+          (pm) =>
+            pm.isActive ||
+            paymentMethods.filter((p) => p.isActive).length === 0,
+        ),
+      };
+      const updatedStorefront =
+        await storefrontService.updateStorefront(updateData);
+      onUpdate(updatedStorefront);
+      addToast("Payment methods updated successfully!", "success");
+    } catch (error) {
+      addToast(
+        getApiErrorMessage(error, "Failed to update payment methods"),
+        "error",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleStoreStatus = async () => {
+    try {
+      setIsLoading(true);
+      if (storefront.isActive) {
+        await storefrontService.deactivateStorefront();
+        onUpdate({ ...storefront, isActive: false });
+        addToast(
+          "Storefront deactivated. You can reactivate anytime.",
+          "success",
+        );
+      } else {
+        await storefrontService.reactivateStorefront();
+        onUpdate({ ...storefront, isActive: true });
+        addToast("Storefront reactivated!", "success");
+      }
+    } catch (error) {
+      addToast(
+        getApiErrorMessage(error, "Failed to update store status"),
+        "error",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteStorefront = async () => {
+    try {
+      setIsLoading(true);
+      await storefrontService.deleteStorefront();
+      addToast("Storefront deleted successfully", "success");
+      window.location.reload();
+    } catch (error) {
+      addToast(
+        getApiErrorMessage(error, "Failed to delete storefront"),
+        "error",
+      );
+    } finally {
+      setIsLoading(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  const getStorefrontUrl = () =>
+    `${window.location.origin}/store/${storefront.businessName}`;
+
+  const copyStorefrontUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(getStorefrontUrl());
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2000);
+      addToast("Storefront URL copied!", "success");
+    } catch {
+      addToast("Failed to copy URL", "error");
+    }
+  };
+
+  // --- Computed ---
+
+  const storeStatusColor = storefront.suspendedByAdmin
+    ? "error"
+    : storefront.isActive
+      ? "success"
+      : ("gray" as const);
+
+  const storeStatusLabel = storefront.suspendedByAdmin
+    ? "Suspended by Admin"
+    : storefront.isActive
+      ? "Active"
+      : "Inactive";
+
+  // --- Render: Payment method card ---
+
+  const renderPaymentMethodCard = (
+    method: PaymentMethodForm,
+    index: number,
+  ) => (
+    <Card key={index} variant="outlined" className="mb-3 sm:mb-4">
+      <CardHeader className="pb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge
+              variant="subtle"
+              colorScheme={method.isActive ? "success" : "gray"}
+            >
+              {method.type === "mobile_money" && (
+                <Smartphone className="w-3 h-3 mr-1" />
+              )}
+              {method.type === "bank_transfer" && (
+                <Banknote className="w-3 h-3 mr-1" />
+              )}
+              {
+                PAYMENT_TYPE_OPTIONS.find((opt) => opt.value === method.type)
+                  ?.label
+              }
+            </Badge>
+            <Switch
+              size="sm"
+              colorScheme="success"
+              checked={method.isActive}
+              onCheckedChange={(checked) =>
+                handlePaymentMethodChange(index, "isActive", checked)
+              }
+              label="Active"
+            />
+          </div>
+          {paymentMethods.length > 1 && (
+            <Button
+              variant="danger"
+              size="xs"
+              onClick={() => removePaymentMethod(index)}
+              leftIcon={<X className="w-3.5 h-3.5" />}
+            >
+              Remove
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+
+      {method.isActive && (
+        <CardBody className="pt-2">
+          {method.type === "mobile_money" && (
+            <div className="space-y-3 sm:space-y-4">
+              {(method.details.accounts || []).map((account, accountIdx) => (
+                <div
+                  key={accountIdx}
+                  className="p-3 border border-gray-200 rounded-lg"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h5 className="text-sm font-medium text-gray-900">
+                      Account {accountIdx + 1}
+                    </h5>
+                    {(method.details.accounts || []).length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => removeMomoAccount(index, accountIdx)}
+                      >
+                        <X className="w-4 h-4 text-red-500" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <FormField label="Provider">
+                      <Select
+                        value={account.provider}
+                        onChange={(val) =>
+                          updateMomoAccount(index, accountIdx, "provider", val)
+                        }
+                        options={MOMO_PROVIDER_OPTIONS}
+                        placeholder="Select provider"
+                        size="sm"
+                      />
+                    </FormField>
+                    <FormField label="Phone Number">
+                      <Input
+                        value={account.number}
+                        onChange={(e) =>
+                          updateMomoAccount(
+                            index,
+                            accountIdx,
+                            "number",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="e.g., 0241234567"
+                        leftIcon={<Phone className="w-3.5 h-3.5" />}
+                        size="sm"
+                      />
+                    </FormField>
+                    <FormField label="Account Name">
+                      <Input
+                        value={account.accountName}
+                        onChange={(e) =>
+                          updateMomoAccount(
+                            index,
+                            accountIdx,
+                            "accountName",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Account holder name"
+                        size="sm"
+                      />
+                    </FormField>
+                  </div>
+                </div>
+              ))}
+              {(method.details.accounts || []).length < 2 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Plus className="w-4 h-4" />}
+                  onClick={() => addMomoAccount(index)}
+                  className="w-full"
+                >
+                  Add Another Account (max 2)
+                </Button>
+              )}
+            </div>
+          )}
+
+          {method.type === "bank_transfer" && (
+            <div className="space-y-3">
+              <FormField label="Bank Name" required>
+                <Input
+                  value={method.details.bankName || ""}
+                  onChange={(e) =>
+                    handlePaymentMethodChange(
+                      index,
+                      "bankName",
+                      e.target.value,
+                    )
+                  }
+                  placeholder="e.g., GCB Bank"
+                  leftIcon={<Banknote className="w-4 h-4" />}
+                />
+              </FormField>
+              <FormField label="Account Number" required>
+                <Input
+                  value={method.details.accountNumber || ""}
+                  onChange={(e) =>
+                    handlePaymentMethodChange(
+                      index,
+                      "accountNumber",
+                      e.target.value,
+                    )
+                  }
+                  placeholder="Account number"
+                  leftIcon={<CreditCard className="w-4 h-4" />}
+                />
+              </FormField>
+              <FormField label="Account Name" required>
+                <Input
+                  value={method.details.accountName || ""}
+                  onChange={(e) =>
+                    handlePaymentMethodChange(
+                      index,
+                      "accountName",
+                      e.target.value,
+                    )
+                  }
+                  placeholder="Account holder name"
+                />
+              </FormField>
+            </div>
+          )}
+        </CardBody>
+      )}
+    </Card>
+  );
+
+  // --- Render ---
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-gray-700 shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                Storefront Settings
+              </h2>
+              <p className="text-sm text-gray-600 mt-0.5">
+                Manage your storefront configuration and preferences
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardBody>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <div className="overflow-x-auto -mx-1 px-1">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 sm:mb-6 min-w-max sm:min-w-0">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="payment">Payment</TabsTrigger>
+                <TabsTrigger value="sharing">Share</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* ===== General Settings ===== */}
+            <TabsContent value="general" className="space-y-4 sm:space-y-6">
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Store className="w-5 h-5 text-gray-600" />
+                    <h3 className="text-base sm:text-lg font-semibold">
+                      Business Information
+                    </h3>
+                  </div>
+                </CardHeader>
+                <CardBody className="space-y-4">
+                  <FormField label="Business Name" required>
+                    <Input
+                      value={formData.businessName}
+                      onChange={(e) =>
+                        handleFormChange("businessName", e.target.value)
+                      }
+                      placeholder="Your business name"
+                      leftIcon={<Store className="w-4 h-4" />}
+                    />
+                    {errors.businessName && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {errors.businessName}
+                      </p>
+                    )}
+                  </FormField>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Contact Phone" required>
+                      <Input
+                        value={formData.phone}
+                        onChange={(e) =>
+                          handleFormChange("phone", e.target.value)
+                        }
+                        placeholder="Phone number"
+                        leftIcon={<Phone className="w-4 h-4" />}
+                      />
+                      {errors.phone && (
+                        <p className="text-sm text-red-600 mt-1">
+                          {errors.phone}
+                        </p>
+                      )}
+                    </FormField>
+
+                    <FormField label="Email Address">
+                      <Input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          handleFormChange("email", e.target.value)
+                        }
+                        placeholder="Optional email"
+                        leftIcon={<Mail className="w-4 h-4" />}
+                      />
+                      {errors.email && (
+                        <p className="text-sm text-red-600 mt-1">
+                          {errors.email}
+                        </p>
+                      )}
+                    </FormField>
+                  </div>
+
+                  <FormField label="Business Address">
+                    <div className="relative">
+                      <div className="absolute top-3 left-3 pointer-events-none">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <Textarea
+                        value={formData.address}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                          handleFormChange("address", e.target.value)
+                        }
+                        placeholder="Optional business address"
+                        rows={2}
+                        className="pl-10"
+                      />
+                    </div>
+                  </FormField>
+
+                  {/* Store Status */}
+                  <div className="p-3 sm:p-4 bg-gray-50 rounded-lg space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge colorScheme={storeStatusColor}>
+                          {storeStatusLabel}
+                        </Badge>
+                        <span className="text-sm text-gray-600">
+                          {storefront.suspendedByAdmin
+                            ? "Suspended by an administrator"
+                            : storefront.isActive
+                              ? "Customers can place orders"
+                              : "Customers cannot place orders"}
+                        </span>
+                      </div>
+                      {!storefront.suspendedByAdmin && (
+                        <Button
+                          variant={
+                            storefront.isActive ? "danger" : "success"
+                          }
+                          size="sm"
+                          onClick={toggleStoreStatus}
+                          isLoading={isLoading}
+                        >
+                          {storefront.isActive
+                            ? "Deactivate Store"
+                            : "Reactivate Store"}
+                        </Button>
+                      )}
+                    </div>
+                    {storefront.suspendedByAdmin &&
+                      storefront.suspensionReason && (
+                        <Alert status="error" variant="left-accent">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span className="ml-2">
+                            Reason: {storefront.suspensionReason}
+                          </span>
+                        </Alert>
+                      )}
+                  </div>
+                </CardBody>
+                <CardFooter>
+                  <Button
+                    onClick={saveGeneralSettings}
+                    isLoading={isLoading}
+                    leftIcon={<Save className="w-4 h-4" />}
+                  >
+                    Save General Settings
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            {/* ===== Payment Methods ===== */}
+            <TabsContent value="payment" className="space-y-4 sm:space-y-6">
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-gray-600" />
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold">
+                        Payment Methods
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Configure how customers can pay
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  {errors.paymentMethods && (
+                    <Alert
+                      status="error"
+                      variant="left-accent"
+                      className="mb-4"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      <span className="ml-2">{errors.paymentMethods}</span>
+                    </Alert>
+                  )}
+
+                  <div className="space-y-3 sm:space-y-4">
+                    {paymentMethods.map((method, index) =>
+                      renderPaymentMethodCard(method, index),
+                    )}
+                  </div>
+
+                  {/* Add payment method */}
+                  <div className="mt-4 sm:mt-6 pt-4 border-t">
+                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Add payment method:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {PAYMENT_TYPE_OPTIONS.filter(
+                        (option) =>
+                          !paymentMethods.some(
+                            (pm) => pm.type === option.value,
+                          ),
+                      ).map((option) => (
+                        <Button
+                          key={option.value}
+                          variant="outline"
+                          size="sm"
+                          leftIcon={<Plus className="w-4 h-4" />}
+                          onClick={() =>
+                            addPaymentMethod(
+                              option.value as
+                              | "mobile_money"
+                              | "bank_transfer",
+                            )
+                          }
+                        >
+                          Add {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </CardBody>
+                <CardFooter>
+                  <Button
+                    onClick={savePaymentSettings}
+                    isLoading={isLoading}
+                    leftIcon={<Save className="w-4 h-4" />}
+                  >
+                    Save Payment Methods
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            {/* ===== Share & Promote ===== */}
+            <TabsContent value="sharing" className="space-y-4 sm:space-y-6">
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Share2 className="w-5 h-5 text-gray-600" />
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold">
+                        Share Your Storefront
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Get links to share with customers
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody className="space-y-4">
+                  <FormField label="Your Storefront URL">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Input
+                        value={getStorefrontUrl()}
+                        readOnly
+                        className="flex-1 bg-gray-50"
+                      />
+                      <Button
+                        variant={urlCopied ? "success" : "outline"}
+                        onClick={copyStorefrontUrl}
+                        leftIcon={
+                          urlCopied ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )
+                        }
+                        className="shrink-0"
+                      >
+                        {urlCopied ? "Copied!" : "Copy Link"}
+                      </Button>
+                    </div>
+                  </FormField>
+
+                  <Alert status="info" variant="left-accent">
+                    <Info className="w-4 h-4" />
+                    <span className="ml-2">
+                      Share this link with your customers so they can browse
+                      and purchase bundles from your storefront.
+                    </span>
+                  </Alert>
+
+                  <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">
+                      Promotion Tips
+                    </h4>
+                    <ul className="text-sm text-gray-600 space-y-1.5">
+                      <li>
+                        • Share on WhatsApp groups and social media
+                      </li>
+                      <li>
+                        • Include in business cards and promotional materials
+                      </li>
+                      <li>
+                        • Add to your WhatsApp status and social media bios
+                      </li>
+                      <li>
+                        • Send directly to customers who inquire about bundles
+                      </li>
+                    </ul>
+                  </div>
+                </CardBody>
+              </Card>
+            </TabsContent>
+
+            {/* ===== Advanced Settings ===== */}
+            <TabsContent value="advanced" className="space-y-4 sm:space-y-6">
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-gray-600" />
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold">
+                        Advanced Settings
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Configuration and dangerous actions
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody className="space-y-4 sm:space-y-6">
+                  {/* Storefront Information */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                      <Info className="w-4 h-4 text-gray-600" />
+                      Storefront Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-600 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          Created
+                        </p>
+                        <p className="font-medium text-sm sm:text-base">
+                          {new Date(
+                            storefront.createdAt!,
+                          ).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-600 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          Updated
+                        </p>
+                        <p className="font-medium text-sm sm:text-base">
+                          {new Date(
+                            storefront.updatedAt!,
+                          ).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          Status
+                        </p>
+                        <Badge
+                          variant="subtle"
+                          colorScheme={storeStatusColor}
+                        >
+                          {storefront.suspendedByAdmin ? (
+                            "Suspended"
+                          ) : storefront.isActive ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Active
+                            </>
+                          ) : (
+                            "Inactive"
+                          )}
+                        </Badge>
+                      </div>
+                      <div className="col-span-2 sm:col-span-1">
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          Storefront ID
+                        </p>
+                        <p className="font-mono text-xs sm:text-sm truncate">
+                          {storefront._id}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Danger Zone */}
+                  <div className="border border-red-200 rounded-lg p-3 sm:p-4 bg-red-50">
+                    <h4 className="font-medium text-red-900 mb-2 flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      Danger Zone
+                    </h4>
+                    <p className="text-sm text-red-700 mb-4">
+                      Deleting your storefront is permanent and cannot be
+                      undone. All custom pricing and order history will be
+                      lost.
+                    </p>
+                    <Button
+                      variant="danger"
+                      leftIcon={<Trash2 className="w-4 h-4" />}
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      Delete Storefront
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardBody>
+      </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+      >
+        <DialogHeader>
+          <h3 className="text-lg font-semibold text-red-900">
+            Delete Storefront
+          </h3>
+        </DialogHeader>
+
+        <DialogBody>
+          <div className="space-y-4">
+            <Alert status="error" variant="left-accent">
+              <AlertTriangle className="w-5 h-5" />
+              <div className="ml-2">
+                <strong>Warning:</strong> This action cannot be undone!
+              </div>
+            </Alert>
+
+            <p className="text-gray-700 text-sm sm:text-base">
+              Are you sure you want to delete your storefront &quot;
+              {storefront.businessName}&quot;? This will permanently remove:
+            </p>
+
+            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+              <li>Your custom bundle pricing</li>
+              <li>Order history and customer data</li>
+              <li>Payment method configurations</li>
+              <li>Public storefront link access</li>
+            </ul>
+
+            <p className="text-sm text-gray-700">
+              You can create a new storefront later, but all data will be
+              lost.
+            </p>
+          </div>
+        </DialogBody>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowDeleteDialog(false)}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteStorefront}
+            isLoading={isLoading}
+            leftIcon={<Trash2 className="w-4 h-4" />}
+          >
+            Delete Storefront
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </div>
+  );
+};
