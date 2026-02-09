@@ -30,6 +30,7 @@ import {
   type AdminStorefrontData,
   type AdminStorefrontStats,
 } from "../../services/storefront.service";
+import { settingsService } from "../../services/settings.service";
 import {
   Store,
   CheckCircle,
@@ -271,18 +272,22 @@ export default function StoresPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedStore, setSelectedStore] = useState<AdminStorefrontData | null>(null);
+  const [autoApprove, setAutoApprove] = useState(false);
+  const [autoApproveLoading, setAutoApproveLoading] = useState(false);
 
   // Fetch data
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [storesRes, statsRes] = await Promise.all([
+      const [storesRes, statsRes, autoApproveRes] = await Promise.all([
         storefrontService.getAdminStorefronts(),
         storefrontService.getAdminStats(),
+        settingsService.getAutoApproveStorefronts(),
       ]);
       setStores(storesRes.storefronts);
       setStats(statsRes);
+      setAutoApprove(autoApproveRes.autoApproveStorefronts);
     } catch (err) {
       console.error("Failed to fetch stores:", err);
       setError("Failed to load stores data.");
@@ -429,6 +434,45 @@ export default function StoresPage() {
           ]}
         />
       )}
+
+      {/* Auto-Approve Toggle */}
+      <Card>
+        <CardBody className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-900">Auto-Approve New Storefronts</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {autoApprove
+                ? "New agent storefronts are approved automatically"
+                : "New storefronts require manual admin approval"}
+            </p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={autoApprove}
+              onChange={async () => {
+                setAutoApproveLoading(true);
+                try {
+                  const newVal = !autoApprove;
+                  await settingsService.updateAutoApproveStorefronts(newVal);
+                  setAutoApprove(newVal);
+                  addToast(`Storefront auto-approval ${newVal ? "enabled" : "disabled"}`, "success");
+                } catch {
+                  addToast("Failed to update auto-approval setting", "error");
+                } finally {
+                  setAutoApproveLoading(false);
+                }
+              }}
+              disabled={autoApproveLoading}
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            <span className="ml-3 text-sm font-medium text-gray-900">
+              {autoApprove ? "Auto" : "Manual"}
+            </span>
+          </label>
+        </CardBody>
+      </Card>
 
       {/* Error State */}
       {error && (
