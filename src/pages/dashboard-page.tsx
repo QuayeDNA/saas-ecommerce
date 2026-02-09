@@ -109,16 +109,20 @@ export const DashboardPage = () => {
       completed: 0,
       pending: 0,
       processing: 0,
+      confirmed: 0,
       failed: 0,
       cancelled: 0,
+      partiallyCompleted: 0,
       successRate: 0,
       todayCounts: {
         total: 0,
         completed: 0,
         pending: 0,
         processing: 0,
+        confirmed: 0,
         failed: 0,
         cancelled: 0,
+        partiallyCompleted: 0,
       },
     },
     revenue: {
@@ -128,12 +132,10 @@ export const DashboardPage = () => {
       averageOrderValue: 0,
     },
     commissions: {
-      rate: 0,
-      earned: 0,
-      paid: 0,
-      pending: 0,
-      totalOrders: 0,
-      totalRevenue: 0,
+      totalCommission: 0,
+      paidCommission: 0,
+      pendingCommission: 0,
+      commissionCount: 0,
     },
     wallet: {
       balance: 0,
@@ -239,161 +241,95 @@ export const DashboardPage = () => {
         try {
           const analytics = await getAgentAnalytics("30d");
           if (analytics) {
-            // Type guard to check if analytics has the new structure
-            const hasNewStructure = (
-              analytics: unknown
-            ): analytics is {
-              orders: { total: number; completed: number; successRate: number };
-              revenue: { total: number; orderCount: number };
-              commissions: { earned: number };
-              wallet: { balance: number };
+            // Use the AgentAnalyticsData shape directly from the backend
+            const data = analytics as {
+              orders: {
+                total: number;
+                completed: number;
+                pending: number;
+                processing: number;
+                confirmed: number;
+                failed: number;
+                cancelled: number;
+                partiallyCompleted: number;
+                successRate: number;
+                todayCounts: {
+                  total: number;
+                  completed: number;
+                  pending: number;
+                  processing: number;
+                  confirmed: number;
+                  failed: number;
+                  cancelled: number;
+                  partiallyCompleted: number;
+                };
+              };
+              revenue: {
+                total: number;
+                today: number;
+                thisMonth: number;
+                orderCount: number;
+                averageOrderValue: number;
+              };
+              commissions: {
+                totalCommission: number;
+                paidCommission: number;
+                pendingCommission: number;
+                commissionCount: number;
+              };
+              wallet: {
+                balance: number;
+              };
               charts: {
                 labels: string[];
                 orders: number[];
                 revenue: number[];
                 completedOrders: number[];
               };
-            } => {
-              const a = analytics as Record<string, unknown>;
-              return (
-                "orders" in a &&
-                "revenue" in a &&
-                "commissions" in a &&
-                "wallet" in a
-              );
             };
-
-            let totalOrders: number;
-            let completedOrders: number;
-            let overallTotalSales: number;
-            let todayRevenue: number;
-            let successRate: number;
-            let walletBalance: number;
-            let monthlyCommission: number;
-            let paidCommission: number;
-            let todayOrderCounts: {
-              total: number;
-              completed: number;
-              pending: number;
-              processing: number;
-              failed: number;
-              cancelled: number;
-            };
-            let chartLabels: string[] = [];
-            let chartOrders: number[] = [];
-            let chartRevenue: number[] = [];
-            let chartCompletedOrders: number[] = [];
-
-            if (hasNewStructure(analytics)) {
-              // New structure
-              const analyticsData = analytics as unknown as {
-                orders: {
-                  total: number;
-                  completed: number;
-                  successRate: number;
-                  todayCounts: {
-                    total: number;
-                    completed: number;
-                    pending: number;
-                    processing: number;
-                    failed: number;
-                    cancelled: number;
-                  };
-                };
-                revenue: {
-                  total: number;
-                  today: number;
-                  orderCount: number;
-                };
-                commissions: {
-                  earned: number;
-                  paid: number;
-                };
-                wallet: { balance: number };
-                charts: {
-                  labels: string[];
-                  orders: number[];
-                  revenue: number[];
-                  completedOrders: number[];
-                };
-              };
-              totalOrders = analyticsData.orders.total;
-              completedOrders = analyticsData.orders.completed;
-              overallTotalSales = analyticsData.revenue.total;
-              todayRevenue = analyticsData.revenue.today || 0;
-              successRate = analyticsData.orders.successRate;
-              walletBalance = analyticsData.wallet.balance;
-              monthlyCommission = analyticsData.commissions.earned;
-              paidCommission = analyticsData.commissions.paid || 0;
-              todayOrderCounts = analyticsData.orders.todayCounts || {
-                total: 0,
-                completed: 0,
-                pending: 0,
-                processing: 0,
-                failed: 0,
-                cancelled: 0,
-              };
-              chartLabels = analyticsData.charts.labels;
-              chartOrders = analyticsData.charts.orders;
-              chartRevenue = analyticsData.charts.revenue;
-              chartCompletedOrders = analyticsData.charts.completedOrders;
-            } else {
-              // Old structure
-              const oldAnalytics = analytics as Record<string, unknown>;
-              totalOrders = (oldAnalytics.totalOrders as number) || 0;
-              completedOrders = (oldAnalytics.completedOrders as number) || 0;
-              overallTotalSales =
-                (oldAnalytics.overallTotalSales as number) || 0;
-              todayRevenue = 0;
-              successRate = (oldAnalytics.successRate as number) || 0;
-              walletBalance = (oldAnalytics.walletBalance as number) || 0;
-              monthlyCommission =
-                (oldAnalytics.monthlyCommission as number) || 0;
-              paidCommission = 0;
-              todayOrderCounts = {
-                total: 0,
-                completed: 0,
-                pending: 0,
-                processing: 0,
-                failed: 0,
-                cancelled: 0,
-              };
-            }
 
             setAnalyticsData({
               orders: {
-                total: totalOrders,
-                completed: completedOrders,
-                pending: totalOrders - completedOrders,
-                processing: 0,
-                failed: 0,
-                cancelled: 0,
-                successRate: successRate,
-                todayCounts: todayOrderCounts,
+                total: data.orders?.total || 0,
+                completed: data.orders?.completed || 0,
+                pending: data.orders?.pending || 0,
+                processing: data.orders?.processing || 0,
+                confirmed: data.orders?.confirmed || 0,
+                failed: data.orders?.failed || 0,
+                cancelled: data.orders?.cancelled || 0,
+                partiallyCompleted: data.orders?.partiallyCompleted || 0,
+                successRate: data.orders?.successRate || 0,
+                todayCounts: {
+                  total: data.orders?.todayCounts?.total || 0,
+                  completed: data.orders?.todayCounts?.completed || 0,
+                  pending: data.orders?.todayCounts?.pending || 0,
+                  processing: data.orders?.todayCounts?.processing || 0,
+                  confirmed: data.orders?.todayCounts?.confirmed || 0,
+                  failed: data.orders?.todayCounts?.failed || 0,
+                  cancelled: data.orders?.todayCounts?.cancelled || 0,
+                  partiallyCompleted: data.orders?.todayCounts?.partiallyCompleted || 0,
+                },
               },
               revenue: {
-                total: overallTotalSales,
-                today: todayRevenue,
-                orderCount: totalOrders,
-                averageOrderValue:
-                  totalOrders > 0 ? overallTotalSales / totalOrders : 0,
+                total: data.revenue?.total || 0,
+                today: data.revenue?.today || 0,
+                orderCount: data.revenue?.orderCount || 0,
+                averageOrderValue: data.revenue?.averageOrderValue || 0,
               },
               commissions: {
-                rate: 0,
-                earned: monthlyCommission,
-                paid: paidCommission,
-                pending: 0,
-                totalOrders: totalOrders,
-                totalRevenue: overallTotalSales,
+                totalCommission: data.commissions?.totalCommission || 0,
+                paidCommission: data.commissions?.paidCommission || 0,
+                pendingCommission: data.commissions?.pendingCommission || 0,
+                commissionCount: data.commissions?.commissionCount || 0,
               },
               wallet: {
-                balance: walletBalance,
+                balance: data.wallet?.balance || 0,
               },
               charts: {
-                labels: chartLabels,
-                orders: chartOrders,
-                revenue: chartRevenue,
-                completedOrders: chartCompletedOrders,
+                labels: data.charts?.labels || [],
+                orders: data.charts?.orders || [],
+                revenue: data.charts?.revenue || [],
+                completedOrders: data.charts?.completedOrders || [],
               },
             });
           } else {
@@ -404,16 +340,20 @@ export const DashboardPage = () => {
                 completed: 0,
                 pending: 0,
                 processing: 0,
+                confirmed: 0,
                 failed: 0,
                 cancelled: 0,
+                partiallyCompleted: 0,
                 successRate: 0,
                 todayCounts: {
                   total: 0,
                   completed: 0,
                   pending: 0,
                   processing: 0,
+                  confirmed: 0,
                   failed: 0,
                   cancelled: 0,
+                  partiallyCompleted: 0,
                 },
               },
               revenue: {
@@ -423,12 +363,10 @@ export const DashboardPage = () => {
                 averageOrderValue: 0,
               },
               commissions: {
-                rate: 0,
-                earned: 0,
-                paid: 0,
-                pending: 0,
-                totalOrders: 0,
-                totalRevenue: 0,
+                totalCommission: 0,
+                paidCommission: 0,
+                pendingCommission: 0,
+                commissionCount: 0,
               },
               wallet: { balance: 0 },
               charts: {
@@ -448,16 +386,20 @@ export const DashboardPage = () => {
               completed: 0,
               pending: 0,
               processing: 0,
+              confirmed: 0,
               failed: 0,
               cancelled: 0,
+              partiallyCompleted: 0,
               successRate: 0,
               todayCounts: {
                 total: 0,
                 completed: 0,
                 pending: 0,
                 processing: 0,
+                confirmed: 0,
                 failed: 0,
                 cancelled: 0,
+                partiallyCompleted: 0,
               },
             },
             revenue: {
@@ -467,12 +409,10 @@ export const DashboardPage = () => {
               averageOrderValue: 0,
             },
             commissions: {
-              rate: 0,
-              earned: 0,
-              paid: 0,
-              pending: 0,
-              totalOrders: 0,
-              totalRevenue: 0,
+              totalCommission: 0,
+              paidCommission: 0,
+              pendingCommission: 0,
+              commissionCount: 0,
             },
             wallet: { balance: 0 },
             charts: {
@@ -730,10 +670,10 @@ export const DashboardPage = () => {
                 </div>
               </div>
               <div className="text-xl font-bold text-white">
-                ₵{(analyticsData.commissions.earned || 0).toFixed(2)}
+                ₵{(analyticsData.commissions.totalCommission || 0).toFixed(2)}
               </div>
               <div className="text-xs text-gray-300 mt-2">
-                Paid: ₵{(analyticsData.commissions.paid || 0).toFixed(2)}
+                Paid: ₵{(analyticsData.commissions.paidCommission || 0).toFixed(2)}
               </div>
             </CardBody>
           </Card>

@@ -272,7 +272,7 @@ class OrderService {
         month: "long",
         year: "numeric",
       }),
-      monthlyCommission: analytics.commissions?.earned || 0,
+      monthlyCommission: analytics.commissions?.totalCommission || 0,
       statusCounts: {
         completed: analytics.orders?.completed || 0,
         processing: analytics.orders?.processing || 0,

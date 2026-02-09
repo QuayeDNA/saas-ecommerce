@@ -116,25 +116,43 @@ interface OrderContextType {
       completed: number;
       pending: number;
       processing: number;
+      confirmed: number;
       failed: number;
       cancelled: number;
+      partiallyCompleted: number;
       successRate: number;
+      todayCounts: {
+        total: number;
+        completed: number;
+        pending: number;
+        processing: number;
+        confirmed: number;
+        failed: number;
+        cancelled: number;
+        partiallyCompleted: number;
+      };
     };
     revenue: {
       total: number;
+      today: number;
+      thisMonth: number;
       orderCount: number;
       averageOrderValue: number;
     };
     commissions: {
-      rate: number;
-      earned: number;
-      paid: number;
-      pending: number;
-      totalOrders: number;
-      totalRevenue: number;
+      totalCommission: number;
+      paidCommission: number;
+      pendingCommission: number;
+      commissionCount: number;
     };
     wallet: {
       balance: number;
+    };
+    charts: {
+      labels: string[];
+      orders: number[];
+      revenue: number[];
+      completedOrders: number[];
     };
     timeframe: string;
     generatedAt: string;
@@ -715,22 +733,24 @@ export const useOrder = () => {
       getAnalytics: async () => ({
         totalOrders: 0,
         completedOrders: 0,
-        overallTotalSales: 0,
+        totalRevenue: 0,
+        bulkOrders: 0,
         completionRate: 0,
-        averageOrderValue: 0,
-        topProducts: [],
+        timeframe: "30d",
       }),
       getAgentAnalytics: async () => ({
-        totalOrders: 0,
-        completedOrders: 0,
-        overallTotalSales: 0,
-        successRate: 0,
-        walletBalance: 0,
+        users: { referredUsers: 0, totalReferredUsers: 0, activeReferredUsers: 0, conversionRate: 0 },
+        orders: {
+          total: 0, completed: 0, pending: 0, processing: 0, confirmed: 0,
+          failed: 0, cancelled: 0, partiallyCompleted: 0, successRate: 0,
+          todayCounts: { total: 0, completed: 0, pending: 0, processing: 0, confirmed: 0, failed: 0, cancelled: 0, partiallyCompleted: 0 },
+        },
+        revenue: { total: 0, today: 0, thisMonth: 0, orderCount: 0, averageOrderValue: 0 },
+        commissions: { totalCommission: 0, paidCommission: 0, pendingCommission: 0, commissionCount: 0 },
+        wallet: { balance: 0, totalCredits: 0, totalDebits: 0, transactionCount: 0, subscriptionStatus: "inactive", recentTransactions: [] },
+        charts: { labels: [], orders: [], revenue: [], completedOrders: [] },
         timeframe: "30d",
-        monthlyRevenue: 0,
-        monthlyOrderCount: 0,
-        month: "",
-        monthlyCommission: 0,
+        generatedAt: new Date().toISOString(),
       }),
       fetchMonthlyRevenue: async () => {},
       setFilters: () => {},

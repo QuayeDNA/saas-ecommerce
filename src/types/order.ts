@@ -200,15 +200,10 @@ export interface OrderResponse {
 export interface OrderAnalytics {
   totalOrders: number;
   completedOrders: number;
-  pendingOrders: number;
-  overallTotalSales: number;
+  totalRevenue: number;
   bulkOrders: number;
   completionRate: number;
   timeframe: string;
-  monthlyRevenue?: number;
-  monthlyOrderCount?: number;
-  month?: string;
-  monthlyCommission?: number;
 }
 
 export interface CreateSingleOrderData {

@@ -130,29 +130,36 @@ export interface DashboardStats {
     completed: number;
     pending: number;
     processing: number;
-    draft: number;
+    confirmed: number;
     failed: number;
     cancelled: number;
+    partiallyCompleted: number;
     successRate: number;
     today: {
       total: number;
       completed: number;
       pending: number;
       processing: number;
+      confirmed: number;
       failed: number;
       cancelled: number;
+      partiallyCompleted: number;
     };
     thisMonth: {
       total: number;
       completed: number;
       pending: number;
       processing: number;
+      confirmed: number;
       failed: number;
       cancelled: number;
+      partiallyCompleted: number;
     };
     byType: {
       bulk: number;
       single: number;
+      regular: number;
+      storefront: number;
     };
   };
   revenue: {
@@ -180,6 +187,7 @@ export interface DashboardStats {
     newThisMonth: number;
   };
   commissions: {
+    totalEarned: number;
     totalPaid: number;
     totalRecords: number;
     pendingCount: number;

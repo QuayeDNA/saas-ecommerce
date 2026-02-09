@@ -21,28 +21,36 @@ export interface AnalyticsData {
     completed: number;
     pending: number;
     processing: number;
+    confirmed: number;
     failed: number;
     cancelled: number;
+    partiallyCompleted: number;
     successRate: number;
     today: {
       total: number;
       completed: number;
       pending: number;
       processing: number;
+      confirmed: number;
       failed: number;
       cancelled: number;
+      partiallyCompleted: number;
     };
     thisMonth: {
       total: number;
       completed: number;
       pending: number;
       processing: number;
+      confirmed: number;
       failed: number;
       cancelled: number;
+      partiallyCompleted: number;
     };
     byType: {
       bulk: number;
       single: number;
+      regular: number;
+      storefront: number;
     };
   };
   revenue: {
@@ -65,6 +73,7 @@ export interface AnalyticsData {
     newThisMonth: number;
   };
   commissions: {
+    totalEarned: number;
     totalPaid: number;
     totalRecords: number;
     pendingCount: number;
@@ -89,21 +98,31 @@ export interface AnalyticsData {
 }
 
 export interface AgentAnalyticsData {
+  users: {
+    referredUsers: number;
+    totalReferredUsers: number;
+    activeReferredUsers: number;
+    conversionRate: number;
+  };
   orders: {
     total: number;
     completed: number;
     pending: number;
     processing: number;
+    confirmed: number;
     failed: number;
     cancelled: number;
+    partiallyCompleted: number;
     successRate: number;
     todayCounts: {
       total: number;
       completed: number;
       pending: number;
       processing: number;
+      confirmed: number;
       failed: number;
       cancelled: number;
+      partiallyCompleted: number;
     };
   };
   revenue: {
@@ -114,15 +133,24 @@ export interface AgentAnalyticsData {
     averageOrderValue: number;
   };
   commissions: {
-    rate: number;
-    earned: number;
-    paid: number;
-    pending: number;
-    totalOrders: number;
-    totalRevenue: number;
+    totalCommission: number;
+    paidCommission: number;
+    pendingCommission: number;
+    commissionCount: number;
   };
   wallet: {
     balance: number;
+    totalCredits: number;
+    totalDebits: number;
+    transactionCount: number;
+    subscriptionStatus: string;
+    recentTransactions: Array<{
+      id: string;
+      type: string;
+      amount: number;
+      description: string;
+      createdAt: string;
+    }>;
   };
   charts: {
     labels: string[];

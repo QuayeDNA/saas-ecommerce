@@ -589,10 +589,10 @@ export default function SuperAdminDashboard() {
                       Total Commissions
                     </p>
                     <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
-                      {formatCurrency(stats.commissions.totalPaid)}
+                      {formatCurrency(stats.commissions.totalEarned)}
                     </p>
                     <p className="text-[9px] xs:text-xs text-yellow-400 mt-0.5 sm:mt-1 truncate">
-                      {stats.commissions.pendingCount} pending
+                      Paid: {formatCurrency(stats.commissions.totalPaid)} | {stats.commissions.pendingCount} pending
                     </p>
                   </div>
                   <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
@@ -713,16 +713,20 @@ export default function SuperAdminDashboard() {
                   <div className="h-60 sm:h-64">
                     <Pie
                       data={createPieChartData(
-                        ["Completed", "Pending", "Failed"],
+                        ["Completed", "Pending", "Processing", "Failed", "Cancelled"],
                         [
                           chartData.orderStatus.completed,
                           chartData.orderStatus.pending,
+                          chartData.orderStatus.processing,
                           chartData.orderStatus.failed,
+                          chartData.orderStatus.cancelled,
                         ],
                         [
                           "rgba(34, 197, 94, 0.8)",
                           "rgba(245, 158, 11, 0.8)",
+                          "rgba(59, 130, 246, 0.8)",
                           "rgba(239, 68, 68, 0.8)",
+                          "rgba(107, 114, 128, 0.8)",
                         ]
                       )}
                       options={pieChartOptions}

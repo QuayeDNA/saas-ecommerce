@@ -29,7 +29,9 @@ interface AnalyticsData {
   statusCounts?: {
     processing?: number;
     pending?: number;
+    confirmed?: number;
     cancelled?: number;
+    partiallyCompleted?: number;
   };
   receptionCounts?: {
     received?: number;
@@ -43,15 +45,20 @@ interface AnalyticsData {
     completed?: number;
     processing?: number;
     pending?: number;
+    confirmed?: number;
     cancelled?: number;
+    partiallyCompleted?: number;
     today?: {
       completed?: number;
       processing?: number;
       pending?: number;
+      confirmed?: number;
       cancelled?: number;
+      partiallyCompleted?: number;
     };
   };
   commission?: {
+    totalEarned?: number;
     totalPaid?: number;
     pendingAmount?: number;
     pendingCount?: number;
