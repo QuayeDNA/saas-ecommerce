@@ -470,10 +470,10 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       await bulkUpdateReceptionStatus(
         selectedOrders,
         pendingReceptionStatus as
-          | "not_received"
-          | "received"
-          | "checking"
-          | "resolved"
+        | "not_received"
+        | "received"
+        | "checking"
+        | "resolved"
       );
       addToast(
         `Successfully updated reception status for ${selectedOrders.length} order(s)`,
@@ -622,6 +622,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     searchTerm,
     onSearchChange: setSearchTerm,
     searchPlaceholder: "Search by order number, customer, or phone...",
+    enableAutoSearch: true,
+    debounceDelay: 500,
     filters: {
       status: {
         value: statusFilter,
@@ -643,42 +645,43 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           { value: "single", label: "Single" },
           { value: "bulk", label: "Bulk" },
           { value: "regular", label: "Regular" },
+          { value: "storefront", label: "Storefront" },
         ],
         label: "Order Type",
         placeholder: "All Types",
       },
       ...(activeTab === "reported"
         ? {
-            receptionStatus: {
-              value: receptionStatusFilter,
-              options: [
-                { value: "not_received", label: "Not Received" },
-                { value: "received", label: "Received" },
-                { value: "checking", label: "Checking" },
-                { value: "resolved", label: "Resolved" },
-              ],
-              label: "Reception Status",
-              placeholder: "All Reception Status",
-            },
-          }
+          receptionStatus: {
+            value: receptionStatusFilter,
+            options: [
+              { value: "not_received", label: "Not Received" },
+              { value: "received", label: "Received" },
+              { value: "checking", label: "Checking" },
+              { value: "resolved", label: "Resolved" },
+            ],
+            label: "Reception Status",
+            placeholder: "All Reception Status",
+          },
+        }
         : {}),
       ...(isAdmin
         ? {
-            provider: {
-              value: providerFilter,
-              options: [
-                // Include AFA as a static option since it appears in orders but isn't a traditional provider
-                { value: "AFA", label: "AFA" },
-                // Include all network providers from the provider service
-                ...providers.map((provider) => ({
-                  value: provider.code,
-                  label: provider.name,
-                })),
-              ],
-              label: "Network Provider",
-              placeholder: "All Providers",
-            },
-          }
+          provider: {
+            value: providerFilter,
+            options: [
+              // Include AFA as a static option since it appears in orders but isn't a traditional provider
+              { value: "AFA", label: "AFA" },
+              // Include all network providers from the provider service
+              ...providers.map((provider) => ({
+                value: provider.code,
+                label: provider.name,
+              })),
+            ],
+            label: "Network Provider",
+            placeholder: "All Providers",
+          },
+        }
         : {}),
     },
     onFilterChange: (filterKey: string, value: string) => {
@@ -731,15 +734,15 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 {isAdmin
                   ? "Order Management"
                   : isAgent
-                  ? "Agent Orders"
-                  : "My Orders"}
+                    ? "Agent Orders"
+                    : "My Orders"}
               </h1>
               <p style={{ color: "var(--color-accent-orange, #6b7280)" }}>
                 {isAdmin
                   ? "Monitor and manage all platform orders"
                   : isAgent
-                  ? "Manage your assigned orders"
-                  : "Track your order history and status"}
+                    ? "Manage your assigned orders"
+                    : "Track your order history and status"}
                 {userType && (
                   <Badge
                     variant="subtle"
@@ -858,33 +861,30 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               <div className="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
                 <button
                   onClick={() => setViewMode("cards")}
-                  className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${
-                    viewMode === "cards"
+                  className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${viewMode === "cards"
                       ? "bg-white text-gray-900 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
-                  }`}
+                    }`}
                 >
                   Cards
                 </button>
                 {/* Table view only visible on desktop (lg and above) */}
                 <button
                   onClick={() => setViewMode("table")}
-                  className={`hidden lg:block px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    viewMode === "table"
+                  className={`hidden lg:block px-3 py-1 text-sm font-medium rounded-md transition-colors ${viewMode === "table"
                       ? "bg-white text-gray-900 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
-                  }`}
+                    }`}
                 >
                   Table
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => setViewMode("excel")}
-                    className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${
-                      viewMode === "excel"
+                    className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${viewMode === "excel"
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-600 hover:text-gray-900"
-                    }`}
+                      }`}
                   >
                     Excel
                   </button>
@@ -1031,8 +1031,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                       color: "var(--color-primary-700)",
                     }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        "var(--color-primary-50)")
+                    (e.currentTarget.style.backgroundColor =
+                      "var(--color-primary-50)")
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.backgroundColor = "transparent")
@@ -1055,17 +1055,16 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             <div className="flex border-b border-gray-200">
               <button
                 onClick={() => setActiveTab("all")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === "all"
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "all"
                     ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
                 style={
                   activeTab === "all"
                     ? {
-                        borderColor: "var(--color-primary-500)",
-                        color: "var(--color-primary-600)",
-                      }
+                      borderColor: "var(--color-primary-500)",
+                      color: "var(--color-primary-600)",
+                    }
                     : {}
                 }
               >
@@ -1073,17 +1072,16 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab("reported")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === "reported"
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "reported"
                     ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
                 style={
                   activeTab === "reported"
                     ? {
-                        borderColor: "var(--color-primary-500)",
-                        color: "var(--color-primary-600)",
-                      }
+                      borderColor: "var(--color-primary-500)",
+                      color: "var(--color-primary-600)",
+                    }
                     : {}
                 }
               >
@@ -1125,8 +1123,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                     ? "No orders have been reported yet."
                     : "You haven't reported any orders yet."
                   : isAdmin
-                  ? "No orders match your current filters."
-                  : "You haven't placed any orders yet."}
+                    ? "No orders match your current filters."
+                    : "You haven't placed any orders yet."}
               </p>
             </div>
           </CardBody>
@@ -1331,7 +1329,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   Update Reception Status to{" "}
                   {pendingReceptionStatus &&
                     pendingReceptionStatus.charAt(0).toUpperCase() +
-                      pendingReceptionStatus.slice(1).replace("_", " ")}
+                    pendingReceptionStatus.slice(1).replace("_", " ")}
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
                   Are you sure you want to update the reception status for{" "}

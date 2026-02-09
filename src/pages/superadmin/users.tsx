@@ -424,6 +424,8 @@ export default function SuperAdminUsersPage() {
         searchTerm={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by name, email, or phone..."
+        enableAutoSearch={true}
+        debounceDelay={500}
         filters={filterOptions}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}

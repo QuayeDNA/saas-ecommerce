@@ -75,10 +75,49 @@ export interface OrderItem {
   processedBy?: string;
 }
 
+export interface StorefrontOrderItem {
+  bundleId: string;
+  bundleName: string;
+  provider?: string;
+  dataVolume?: number;
+  dataUnit?: string;
+  validity?: string | number;
+  validityUnit?: string;
+  quantity: number;
+  customerPhone: string;
+  unitPrice: number;    // Storefront price (what customer pays)
+  tierPrice: number;    // Agent's cost (for wallet deduction)
+  totalPrice: number;   // unitPrice * quantity
+  processingStatus?: "pending" | "processing" | "completed" | "failed";
+  processingError?: string;
+  processedAt?: string;
+  _id?: string;
+}
+
+export interface StorefrontData {
+  storefrontId: string;
+  customerInfo: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  paymentMethod: {
+    type: "mobile_money" | "bank_transfer";
+    reference?: string;
+    paymentProofUrl?: string;
+    verified: boolean;
+    verifiedAt?: string;
+    verificationNotes?: string;
+  };
+  totalMarkup: number;
+  totalTierCost: number;
+  items: StorefrontOrderItem[];
+}
+
 export interface Order {
   _id?: string;
   orderNumber: string;
-  orderType: "single" | "bulk" | "regular";
+  orderType: "single" | "bulk" | "regular" | "storefront";
   customer?: string;
   customerInfo?: {
     name?: string;
@@ -86,6 +125,7 @@ export interface Order {
     phone?: string;
     ghanaCardNumber?: string;
   };
+  storefrontData?: StorefrontData;
   items: OrderItem[];
   subtotal: number;
   tax: number;
@@ -94,6 +134,7 @@ export interface Order {
   status:
     | "draft"
     | "pending"
+    | "pending_payment"
     | "confirmed"
     | "processing"
     | "completed"

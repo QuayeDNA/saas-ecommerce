@@ -26,6 +26,7 @@ interface ToastContextType {
   addToast: (message: string, type: ToastType, duration?: number) => void;
   removeToast: (id: string) => void;
   toasts: Toast[];
+  showToast: (message: string, type: ToastType, duration?: number) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -170,7 +171,7 @@ const ToastItem = forwardRef<HTMLDivElement, ToastItemProps>(
         </button>
       </div>
     );
-  }
+  },
 );
 
 ToastItem.displayName = "ToastItem";
@@ -198,7 +199,7 @@ const ToastContainer = () => {
         />
       ))}
     </div>,
-    document.body
+    document.body,
   );
 };
 
@@ -227,12 +228,20 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
         removeToast(id);
       }, duration);
     },
-    [removeToast]
+    [removeToast],
   );
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => {
-    return { toasts, addToast, removeToast };
+    const showToast = (
+      message: string,
+      type: ToastType = "info",
+      duration?: number,
+    ) => {
+      addToast(message, type, duration);
+    };
+
+    return { toasts, addToast, removeToast, showToast };
   }, [toasts, addToast, removeToast]);
 
   return (

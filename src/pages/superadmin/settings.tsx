@@ -56,6 +56,9 @@ export default function SuperAdminSettingsPage() {
   const [requireApprovalForSignup, setRequireApprovalForSignup] =
     useState(true);
 
+  // Storefront Auto-Approval Setting
+  const [autoApproveStorefronts, setAutoApproveStorefronts] = useState(false);
+
   // API Settings
   const [apiSettings, setApiSettings] = useState<ApiSettings>({
     mtnApiKey: "",
@@ -103,12 +106,13 @@ export default function SuperAdminSettingsPage() {
   useEffect(() => {
     const fetchAllSettings = async () => {
       try {
-        const [siteData, apiData, walletData, signupApprovalData] =
+        const [siteData, apiData, walletData, signupApprovalData, autoApproveData] =
           await Promise.all([
             settingsService.getSiteSettings(),
             settingsService.getApiSettings(),
             settingsService.getWalletSettings(),
             settingsService.getSignupApprovalSetting(),
+            settingsService.getAutoApproveStorefronts(),
           ]);
 
         setSiteSettings(siteData);
@@ -116,6 +120,9 @@ export default function SuperAdminSettingsPage() {
         setWalletSettings(walletData);
         setRequireApprovalForSignup(
           signupApprovalData.requireApprovalForSignup
+        );
+        setAutoApproveStorefronts(
+          autoApproveData.autoApproveStorefronts
         );
       } catch (error) {
         console.error("Failed to fetch settings:", error);
@@ -190,6 +197,26 @@ export default function SuperAdminSettingsPage() {
       setMessage({
         type: "error",
         text: "Failed to update signup approval setting",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAutoApproveToggle = async () => {
+    setLoading(true);
+    try {
+      const newValue = !autoApproveStorefronts;
+      await settingsService.updateAutoApproveStorefronts(newValue);
+      setAutoApproveStorefronts(newValue);
+      setMessage({
+        type: "success",
+        text: `Storefront auto-approval ${newValue ? "enabled" : "disabled"}`,
+      });
+    } catch {
+      setMessage({
+        type: "error",
+        text: "Failed to update storefront auto-approval setting",
       });
     } finally {
       setLoading(false);
@@ -366,6 +393,33 @@ export default function SuperAdminSettingsPage() {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     <span className="ml-3 text-sm font-medium text-gray-900">
                       {requireApprovalForSignup ? "Required" : "Auto"}
+                    </span>
+                  </label>
+                </div>
+
+                {/* Storefront Auto-Approval Toggle */}
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <h3 className="font-medium text-gray-900">
+                      Auto-Approve New Storefronts
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {autoApproveStorefronts
+                        ? "New agent storefronts are approved automatically."
+                        : "New storefronts require admin approval before going live."}
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={autoApproveStorefronts}
+                      onChange={handleAutoApproveToggle}
+                      disabled={loading}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span className="ml-3 text-sm font-medium text-gray-900">
+                      {autoApproveStorefronts ? "Auto" : "Manual"}
                     </span>
                   </label>
                 </div>

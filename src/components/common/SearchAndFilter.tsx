@@ -1,7 +1,8 @@
 // src/components/common/SearchAndFilter.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import { Button, Input, Select, Card, CardBody } from '../../design-system';
+import { useDebounce } from '../../hooks';
 
 export interface FilterOption {
   value: string;
@@ -16,7 +17,12 @@ export interface SearchAndFilterProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
-  
+
+  // Search Configuration
+  debounceDelay?: number; // Delay in ms before triggering search (default: 500)
+  minSearchLength?: number; // Minimum characters before triggering search (default: 0)
+  enableAutoSearch?: boolean; // Whether to auto-search on typing (default: true)
+
   // Filters
   filters: {
     [key: string]: {
@@ -27,7 +33,7 @@ export interface SearchAndFilterProps {
     };
   };
   onFilterChange: (filterKey: string, value: string) => void;
-  
+
   // Date Range
   dateRange?: {
     startDate: string;
@@ -35,20 +41,20 @@ export interface SearchAndFilterProps {
   };
   onDateRangeChange?: (startDate: string, endDate: string) => void;
   showDateRange?: boolean;
-  
+
   // Actions
   onSearch: (e: React.FormEvent) => void;
   onClearFilters: () => void;
-  
+
   // UI Options
   showSearchButton?: boolean;
   showClearButton?: boolean;
   showFilterToggle?: boolean;
   className?: string;
-  
+
   // Loading state
   isLoading?: boolean;
-  
+
   // Custom actions
   customActions?: React.ReactNode;
 }
@@ -57,6 +63,9 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   searchTerm,
   onSearchChange,
   searchPlaceholder = "Search...",
+  debounceDelay = 500,
+  minSearchLength = 0,
+  enableAutoSearch = true,
   filters,
   onFilterChange,
   dateRange,
@@ -72,12 +81,49 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   customActions
 }) => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [immediateSearchTerm, setImmediateSearchTerm] = useState(searchTerm);
+
+  // Debounced search function
+  const debouncedSearch = useDebounce((...args: unknown[]) => {
+    const value = args[0] as string;
+    if (value.length >= minSearchLength || value === '') {
+      onSearchChange(value);
+    }
+  }, debounceDelay);
+
+  // Update immediate search term when prop changes (for external updates)
+  useEffect(() => {
+    setImmediateSearchTerm(searchTerm);
+  }, [searchTerm]);
+
+  // Cleanup pending debounce on unmount
+  useEffect(() => () => debouncedSearch.cleanup(), [debouncedSearch]);
+
+  // Handle immediate input changes
+  const handleSearchInputChange = useCallback((value: string) => {
+    setImmediateSearchTerm(value);
+    if (enableAutoSearch) {
+      debouncedSearch(value);
+    }
+  }, [enableAutoSearch, debouncedSearch]);
+
+  // Handle immediate search (for search button or enter key)
+  const handleImmediateSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    // Cancel any pending debounced search
+    debouncedSearch.cleanup();
+    // Trigger immediate search
+    onSearchChange(immediateSearchTerm);
+    onSearch(e);
+  }, [immediateSearchTerm, onSearchChange, onSearch, debouncedSearch]);
 
   const hasActiveFilters = Object.values(filters).some(filter => filter.value !== '') ||
     (showDateRange && dateRange && (dateRange.startDate || dateRange.endDate));
   const hasSearchTerm = searchTerm.trim() !== '';
+  const hasImmediateSearchTerm = immediateSearchTerm.trim() !== '';
 
   const handleClearAll = () => {
+    setImmediateSearchTerm('');
     onSearchChange('');
     Object.keys(filters).forEach(filterKey => {
       onFilterChange(filterKey, '');
@@ -93,11 +139,11 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
       const newStartDate = field === 'startDate' ? value : dateRange.startDate;
       const newEndDate = field === 'endDate' ? value : dateRange.endDate;
       onDateRangeChange(newStartDate, newEndDate);
-      
+
       // Auto-search when both dates are set or when clearing dates
       if ((newStartDate && newEndDate) || (!newStartDate && !newEndDate)) {
         setTimeout(() => {
-          const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+          const fakeEvent = { preventDefault: () => { } } as React.FormEvent;
           onSearch(fakeEvent);
         }, 100);
       }
@@ -110,12 +156,12 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         {/* Search and Actions Row */}
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search Input */}
-          <form onSubmit={onSearch} className="flex-1">
+          <form onSubmit={handleImmediateSearch} className="flex-1">
             <Input
               type="text"
               placeholder={searchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
+              value={immediateSearchTerm}
+              onChange={(e) => handleSearchInputChange(e.target.value)}
               leftIcon={<FaSearch className="text-gray-400" />}
               disabled={isLoading}
             />
@@ -124,8 +170,8 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
             {showSearchButton && (
-              <Button 
-                onClick={onSearch}
+              <Button
+                onClick={handleImmediateSearch}
                 disabled={isLoading}
                 size="sm"
               >
@@ -146,7 +192,7 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
               </Button>
             )}
 
-            {showClearButton && (hasActiveFilters || hasSearchTerm) && (
+            {showClearButton && (hasActiveFilters || hasSearchTerm || hasImmediateSearchTerm) && (
               <Button
                 variant="outline"
                 onClick={handleClearAll}
@@ -184,7 +230,7 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                   />
                 </div>
               ))}
-              
+
               {/* Date Range Picker */}
               {showDateRange && (
                 <>
@@ -213,21 +259,24 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
         )}
 
         {/* Active Filters Display */}
-        {(hasActiveFilters || hasSearchTerm) && (
+        {(hasActiveFilters || hasSearchTerm || hasImmediateSearchTerm) && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="flex flex-wrap gap-2">
-              {hasSearchTerm && (
+              {(hasSearchTerm || hasImmediateSearchTerm) && (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
-                  Search: "{searchTerm}"
+                  Search: "{hasSearchTerm ? searchTerm : immediateSearchTerm}"
                   <button
-                    onClick={() => onSearchChange('')}
+                    onClick={() => {
+                      setImmediateSearchTerm('');
+                      onSearchChange('');
+                    }}
                     className="ml-2 text-blue-600 hover:text-blue-800"
                   >
                     <FaTimes className="text-xs" />
                   </button>
                 </span>
               )}
-              
+
               {Object.entries(filters).map(([filterKey, filter]) => {
                 if (filter.value) {
                   const selectedOption = filter.options.find(opt => opt.value === filter.value);

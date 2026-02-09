@@ -149,6 +149,8 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     searchTerm,
     onSearchChange: setSearchTerm,
     searchPlaceholder: "Search bundles...",
+    enableAutoSearch: true,
+    debounceDelay: 500,
     filters: {
       ...(!category && !packageId && categories.length > 1
         ? {

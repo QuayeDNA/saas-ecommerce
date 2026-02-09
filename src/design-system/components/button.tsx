@@ -102,15 +102,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Helper function to get theme-based color classes
     const getThemeColorClasses = () => {
-      // Map theme colors to tailwind classes with new primary color #142850
+      // Map theme colors to tailwind classes — all cases have complete static classes
+      // so buttons render correctly even without inline style overrides.
+      // For "blue" and "default", inline styles from getThemeStyles() will override
+      // the bg-* classes with CSS variables for exact theme color matching.
       switch (primaryColor) {
         case "blue":
+        case "default":
           return {
-            solid: "text-white shadow-sm",
-            outline: "bg-transparent border",
-            ghost: "bg-transparent",
-            link: "bg-transparent hover:underline p-0 h-auto",
-            focusRing: "focus:ring-2 focus:ring-offset-2",
+            solid:
+              "bg-blue-950 text-white hover:bg-blue-900 active:bg-blue-950 shadow-sm",
+            outline:
+              "bg-transparent border border-blue-900 text-blue-900 hover:bg-blue-50 active:bg-blue-100",
+            ghost:
+              "bg-transparent text-blue-900 hover:bg-blue-50 active:bg-blue-100",
+            link: "bg-transparent text-blue-900 hover:text-blue-800 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-blue-900",
           };
         case "black":
           return {
@@ -179,7 +186,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             focusRing: "focus:ring-red-500",
           };
         default:
-          return getSemanticColorClasses("info");
+          // For any unrecognized theme, use the same blue/default classes
+          return {
+            solid:
+              "bg-blue-950 text-white hover:bg-blue-900 active:bg-blue-950 shadow-sm",
+            outline:
+              "bg-transparent border border-blue-900 text-blue-900 hover:bg-blue-50 active:bg-blue-100",
+            ghost:
+              "bg-transparent text-blue-900 hover:bg-blue-50 active:bg-blue-100",
+            link: "bg-transparent text-blue-900 hover:text-blue-800 hover:underline p-0 h-auto",
+            focusRing: "focus:ring-blue-900",
+          };
       }
     };
 
@@ -229,9 +246,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           };
         case "info":
           return {
-            solid: "text-white shadow-sm",
-            outline: "bg-transparent border",
-            ghost: "bg-transparent",
+            solid:
+              "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm",
+            outline:
+              "bg-transparent border border-blue-500 text-blue-700 hover:bg-blue-50 active:bg-blue-100",
+            ghost:
+              "bg-transparent text-blue-700 hover:bg-blue-50 active:bg-blue-100",
             link: "bg-transparent text-[#0ea5e9] hover:text-[#0284c7] hover:underline p-0 h-auto",
             focusRing: "focus:ring-[#0ea5e9]",
           };

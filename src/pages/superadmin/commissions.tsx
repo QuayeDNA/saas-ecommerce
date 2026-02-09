@@ -553,6 +553,8 @@ export default function SuperAdminCommissions() {
         searchTerm={agentSearch}
         onSearchChange={setAgentSearch}
         searchPlaceholder="Search by agent name, email, business, or code..."
+        enableAutoSearch={true}
+        debounceDelay={500}
         filters={{
           status: {
             value: statusFilter,

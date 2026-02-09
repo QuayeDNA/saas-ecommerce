@@ -8,6 +8,9 @@ export interface StatCardProps {
   icon: React.ReactNode;
   size?: "sm" | "md" | "lg";
   iconOnly?: boolean;
+  trend?: string | null;
+  trendLabel?: string;
+  trendUp?: boolean;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -17,6 +20,9 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon,
   size = "md",
   iconOnly = false,
+  trend,
+  trendLabel,
+  trendUp,
 }) => {
   const sizeClasses = {
     sm: {
@@ -70,10 +76,26 @@ export const StatCard: React.FC<StatCardProps> = ({
             <p className={`${classes.value} leading-tight`}>{value}</p>
             {subtitle && (
               <p
-                className={`${classes.subtitle} mt-0.5 sm:mt-1 lg:mt-2`}
+                className={`${classes.subtitle} mt-0.5 sm:mt-1`}
                 style={{ color: "var(--color-accent-500, #9ca3af)" }}
               >
                 {subtitle}
+              </p>
+            )}
+            {(trend || trendLabel) && (
+              <p
+                className={`text-xs sm:text-sm mt-1 flex items-center ${
+                  trendUp !== undefined
+                    ? trendUp
+                      ? "text-green-400"
+                      : "text-red-400"
+                    : "text-gray-300"
+                }`}
+              >
+                {trend && <span className="mr-1">{trend}</span>}
+                {trendLabel && (
+                  <span className="text-gray-400">{trendLabel}</span>
+                )}
               </p>
             )}
           </div>

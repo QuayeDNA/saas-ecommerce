@@ -115,6 +115,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const getThemeColorClasses = () => {
       switch (primaryColor) {
         case "blue":
+        case "default":
           return {
             border: "border-blue-500",
             ring: "ring ring-blue-200",
@@ -157,7 +158,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             focus: "focus:border-red-500 focus:ring-red-100",
           };
         default:
-          return getSemanticColorClasses("info");
+          return {
+            border: "border-blue-500",
+            ring: "ring ring-blue-200",
+            focus: "focus:border-blue-500 focus:ring-blue-100",
+          };
       }
     };
 

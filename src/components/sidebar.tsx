@@ -89,8 +89,8 @@ const getAgentNavItems = (): NavItem[] => [
     icon: <FaWallet />,
   },
   {
-    label: "My Store",
-    path: "/agent/dashboard/my-store",
+    label: "My Storefront",
+    path: "/agent/dashboard/storefront",
     icon: <FaStore />,
   },
   {
@@ -213,7 +213,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const { authState, logout } = useAuth();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(
-    new Set(["packages", "wallet"])
+    new Set(["packages", "wallet"]),
   );
 
   // Toggle expanded state for nav items with children
@@ -495,7 +495,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                     {authState.user?.userType ?? "User"}
                   </p>
                   {["agent", "super_agent", "dealer", "super_dealer"].includes(
-                    authState.user?.userType || ""
+                    authState.user?.userType || "",
                   ) &&
                     authState.user?.agentCode && (
                       <div className="ml-2 text-md font-mono font-bold text-white tracking-wide">

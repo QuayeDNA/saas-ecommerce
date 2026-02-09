@@ -91,6 +91,16 @@ class SettingsService {
     return response.data;
   }
 
+  async getAutoApproveStorefronts(): Promise<{ autoApproveStorefronts: boolean }> {
+    const response = await apiClient.get("/api/settings/storefront-auto-approve");
+    return response.data;
+  }
+
+  async updateAutoApproveStorefronts(autoApprove: boolean): Promise<{ autoApproveStorefronts: boolean }> {
+    const response = await apiClient.put("/api/settings/storefront-auto-approve", { autoApproveStorefronts: autoApprove });
+    return response.data;
+  }
+
   // Get site status (public endpoint)
   async getSiteStatus(): Promise<{
     isSiteOpen: boolean;

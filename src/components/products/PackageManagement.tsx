@@ -305,6 +305,8 @@ export const PackageManagement: React.FC<PackageManagementProps> = ({
           searchPlaceholder={`Search ${
             viewMode === "packages" ? "packages" : "bundles"
           }...`}
+          enableAutoSearch={true}
+          debounceDelay={500}
           filters={filterOptions}
           onFilterChange={handleFilterChange}
           onSearch={handleSearch}

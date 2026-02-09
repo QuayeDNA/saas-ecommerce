@@ -27,6 +27,7 @@ import {
   useState,
   useEffect,
   useMemo,
+  useContext,
   type ReactNode,
   useCallback,
 } from "react";
@@ -63,7 +64,7 @@ export interface AuthContextValue {
   login: (
     email: string,
     password: string,
-    rememberMe?: boolean
+    rememberMe?: boolean,
   ) => Promise<void>; // User login
   registerAgent: (data: RegisterAgentData) => Promise<{ agentCode: string }>; // Agent registration
   logout: () => Promise<void>; // User logout
@@ -87,7 +88,7 @@ const defaultAuthState: AuthState = {
 
 // Create auth context
 export const AuthContext = createContext<AuthContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 // Auth provider props
@@ -326,7 +327,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       location.state,
       location.pathname,
       setAuthenticatedState,
-    ]
+    ],
   );
 
   // Register agent method
@@ -351,7 +352,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw error;
       }
     },
-    [addToast]
+    [addToast],
   );
 
   // Forgot password method
@@ -376,7 +377,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw error;
       }
     },
-    [addToast]
+    [addToast],
   );
 
   // Reset password method
@@ -401,7 +402,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw error;
       }
     },
-    [addToast]
+    [addToast],
   );
 
   // Verify account method
@@ -414,7 +415,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setState((prev) => ({ ...prev, isLoading: false }));
         addToast(
           "Account verified successfully! You can now log in.",
-          "success"
+          "success",
         );
         return result;
       } catch (error) {
@@ -430,7 +431,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw error;
       }
     },
-    [addToast]
+    [addToast],
   );
 
   // Logout method with improved error handling
@@ -504,10 +505,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       clearErrors,
       refreshAuth,
       updateFirstTimeFlag,
-    ]
+    ],
   );
 
   return (
     <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
+};
+
+// Custom hook to use the AuthContext
+export const useAuth = (): AuthContextValue => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };
