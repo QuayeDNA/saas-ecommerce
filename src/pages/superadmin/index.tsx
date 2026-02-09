@@ -138,6 +138,7 @@ export default function SuperAdminDashboard() {
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [chartTimeframe, setChartTimeframe] = useState("30d");
 
   // User type carousel data
   const userTypeCarousel = [
@@ -224,7 +225,7 @@ export default function SuperAdminDashboard() {
     const fetchCharts = async () => {
       try {
         setLoadingCharts(true);
-        const chartDataResponse = await userService.fetchChartData();
+        const chartDataResponse = await userService.fetchChartData(chartTimeframe);
         setChartData(chartDataResponse);
       } catch {
         // Chart data error
@@ -234,10 +235,10 @@ export default function SuperAdminDashboard() {
       }
     };
 
-    // Small delay to prioritize stats loading
+    // Small delay to prioritize stats loading on initial load
     const timer = setTimeout(fetchCharts, 100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [chartTimeframe]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-GH", {
@@ -271,10 +272,11 @@ export default function SuperAdminDashboard() {
         position: "top" as const,
         labels: {
           usePointStyle: true,
-          padding: 20,
+          padding: 12,
           font: {
-            size: 12,
+            size: 11,
           },
+          boxWidth: 8,
         },
       },
       title: {
@@ -287,15 +289,25 @@ export default function SuperAdminDashboard() {
           display: false,
         },
         ticks: {
-          maxTicksLimit: 8,
+          maxTicksLimit: 6,
+          maxRotation: 45,
+          minRotation: 0,
+          font: {
+            size: 10,
+          },
         },
       },
       y: {
         beginAtZero: true,
-        min: 0, // Ensure no negative values
-        suggestedMin: 0, // Additional safeguard
+        min: 0,
+        suggestedMin: 0,
         grid: {
           color: "rgba(0, 0, 0, 0.1)",
+        },
+        ticks: {
+          font: {
+            size: 10,
+          },
         },
       },
     },
@@ -320,8 +332,9 @@ export default function SuperAdminDashboard() {
         backgroundColor: "rgba(59, 130, 246, 0.1)",
         tension: 0.4,
         fill: false,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        borderWidth: 2,
       },
       {
         label: "Orders",
@@ -330,8 +343,9 @@ export default function SuperAdminDashboard() {
         backgroundColor: "rgba(245, 158, 11, 0.1)",
         tension: 0.4,
         fill: false,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        borderWidth: 2,
       },
       {
         label: "Revenue (GHS)",
@@ -340,8 +354,9 @@ export default function SuperAdminDashboard() {
         backgroundColor: "rgba(34, 197, 94, 0.1)",
         tension: 0.4,
         fill: false,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        borderWidth: 2,
       },
     ],
   });
@@ -371,10 +386,11 @@ export default function SuperAdminDashboard() {
         position: "bottom" as const,
         labels: {
           usePointStyle: true,
-          padding: 20,
+          padding: 12,
           font: {
-            size: 12,
+            size: 11,
           },
+          boxWidth: 8,
         },
       },
     },
@@ -417,19 +433,95 @@ export default function SuperAdminDashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <Card>
-        <CardBody className="text-center sm:text-left">
-          <h1
-            className="text-xl sm:text-2xl font-bold mb-2"
-            style={{ color: colors.brand.primary }}
-          >
-            Welcome, Super Admin!
-          </h1>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Platform overview and analytics dashboard
-          </p>
-        </CardBody>
-      </Card>
+      {/* Today's Snapshot */}
+      {loadingStats ? (
+        <Card className="animate-pulse">
+          <CardBody className="p-4 sm:p-6">
+            <div className="h-5 bg-gray-200 rounded w-40 mb-4"></div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i}>
+                  <div className="h-3 bg-gray-200 rounded w-20 mb-2"></div>
+                  <div className="h-7 bg-gray-200 rounded w-14 mb-1"></div>
+                  <div className="h-2 bg-gray-200 rounded w-24"></div>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      ) : stats ? (
+        <Card>
+          <CardBody className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+                Today's Snapshot
+              </h2>
+              <span className="text-xs text-gray-400">
+                {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short", year: "numeric" })}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+              {/* Orders Today */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Orders Today</p>
+                <p className="text-2xl sm:text-3xl font-bold" style={{ color: colors.brand.primary }}>
+                  {stats.orders.today.total}
+                </p>
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
+                  {stats.orders.today.completed > 0 && (
+                    <span className="text-[10px] text-green-600">{stats.orders.today.completed} completed</span>
+                  )}
+                  {stats.orders.today.pending > 0 && (
+                    <span className="text-[10px] text-yellow-600">{stats.orders.today.pending} pending</span>
+                  )}
+                  {stats.orders.today.processing > 0 && (
+                    <span className="text-[10px] text-blue-600">{stats.orders.today.processing} processing</span>
+                  )}
+                  {stats.orders.today.failed > 0 && (
+                    <span className="text-[10px] text-red-600">{stats.orders.today.failed} failed</span>
+                  )}
+                  {stats.orders.today.cancelled > 0 && (
+                    <span className="text-[10px] text-gray-500">{stats.orders.today.cancelled} cancelled</span>
+                  )}
+                  {stats.orders.today.total === 0 && (
+                    <span className="text-[10px] text-gray-400">No orders yet</span>
+                  )}
+                </div>
+              </div>
+              {/* Revenue Today */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Revenue Today</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-600">
+                  {formatCurrency(stats.revenue.thisMonth)}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  All-time: {formatCurrency(stats.revenue.total)}
+                </p>
+              </div>
+              {/* New Users */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">New Users This Week</p>
+                <p className="text-2xl sm:text-3xl font-bold text-blue-600">
+                  {stats.users.newThisWeek}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  {stats.users.total} total users
+                </p>
+              </div>
+              {/* Platform Health */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Success Rate</p>
+                <p className="text-2xl sm:text-3xl font-bold" style={{ color: stats.orders.successRate >= 90 ? "#16a34a" : stats.orders.successRate >= 70 ? "#ca8a04" : "#dc2626" }}>
+                  {stats.orders.successRate}%
+                </p>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  {stats.orders.completed.toLocaleString()} of {stats.orders.total.toLocaleString()} orders
+                </p>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
@@ -655,6 +747,21 @@ export default function SuperAdminDashboard() {
       </Card>
 
       {/* Charts Section */}
+      {/* Chart Timeframe Filter */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800">Analytics</h3>
+        <select
+          value={chartTimeframe}
+          onChange={(e) => setChartTimeframe(e.target.value)}
+          className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer"
+        >
+          <option value="7d">Last 7 Days</option>
+          <option value="30d">Last 30 Days</option>
+          <option value="90d">Last 90 Days</option>
+          <option value="365d">Last 365 Days</option>
+        </select>
+      </div>
+
       {loadingCharts ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <ChartSkeleton />
@@ -665,14 +772,14 @@ export default function SuperAdminDashboard() {
           {/* Line Chart - Activity Over Time */}
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
+              <h3 className="text-sm sm:text-lg font-semibold flex items-center gap-2">
                 <FaChartLine style={{ color: "var(--color-primary-600)" }} />
-                Activity Over Time (Last 30 Days)
+                Activity Over Time
               </h3>
             </CardHeader>
             <CardBody>
               {hasChartData ? (
-                <div className="h-auto">
+                <div className="h-60 sm:h-72 lg:h-80">
                   <Line
                     options={lineChartOptions}
                     data={createLineChartData(
@@ -710,7 +817,7 @@ export default function SuperAdminDashboard() {
               </CardHeader>
               <CardBody>
                 {hasPieChartData ? (
-                  <div className="h-60 sm:h-64">
+                  <div className="h-52 sm:h-60 lg:h-64">
                     <Pie
                       data={createPieChartData(
                         ["Completed", "Pending", "Processing", "Failed", "Cancelled"],
@@ -733,7 +840,7 @@ export default function SuperAdminDashboard() {
                     />
                   </div>
                 ) : (
-                  <div className="h-60 sm:h-64 flex items-center justify-center">
+                  <div className="h-52 sm:h-60 lg:h-64 flex items-center justify-center">
                     <div className="text-center">
                       <FaClipboardList className="w-12 h-12 mx-auto text-gray-300 mb-4" />
                       <h3 className="text-sm font-medium text-gray-900 mb-2">

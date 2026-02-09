@@ -289,8 +289,8 @@ export const userService = {
     const resp = await apiClient.get("/api/analytics/summary");
     return resp.data.data;
   },
-  async fetchChartData(): Promise<ChartData> {
-    const resp = await apiClient.get("/api/analytics/charts");
+  async fetchChartData(timeframe: string = "30d"): Promise<ChartData> {
+    const resp = await apiClient.get(`/api/analytics/charts?timeframe=${timeframe}`);
     return resp.data.data;
   },
   // Additional methods for UserContext

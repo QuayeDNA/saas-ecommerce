@@ -4,6 +4,7 @@ import { useWallet } from "../hooks";
 import { useOrder } from "../contexts/OrderContext";
 import { useProvider } from "../hooks/use-provider";
 import { useSiteStatus } from "../contexts/site-status-context";
+import { orderService } from "../services/order.service";
 import { Card, CardHeader, CardBody, Badge, Spinner } from "../design-system";
 import {
   FaPhone,
@@ -11,8 +12,11 @@ import {
   FaShoppingCart,
   FaStar,
   FaTimes,
+  FaClock,
+  FaArrowRight,
 } from "react-icons/fa";
 import type { WalletTransaction } from "../types/wallet";
+import type { Order } from "../types/order";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -150,17 +154,17 @@ export const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
   const [showSiteMessage, setShowSiteMessage] = useState(true);
+  const [activeOrders, setActiveOrders] = useState<Order[]>([]);
+  const [activeOrdersLoading, setActiveOrdersLoading] = useState(true);
 
   const navigate = useNavigate();
 
-  // Auto-hide site message after 1 minute
+  // Auto-dismiss site message after 5 seconds
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSiteMessage(false);
-    }, 60000); // 1 minute
-
+    if (!showSiteMessage || !siteStatus) return;
+    const timer = setTimeout(() => setShowSiteMessage(false), 5000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [showSiteMessage, siteStatus]);
 
   // Get site message
   const getSiteMessage = () => {
@@ -434,6 +438,63 @@ export const DashboardPage = () => {
     loadDashboardData();
   }, [getTransactionHistory, getAgentAnalytics]);
 
+  // Fetch active (pending/processing/confirmed) orders
+  useEffect(() => {
+    const loadActiveOrders = async () => {
+      try {
+        setActiveOrdersLoading(true);
+        // Fetch pending orders first, then processing, then confirmed
+        const [pendingRes, processingRes, confirmedRes] = await Promise.all([
+          orderService.getOrders({ status: "pending" }, { limit: 5, page: 1, sortBy: "createdAt", sortOrder: "desc" }),
+          orderService.getOrders({ status: "processing" }, { limit: 5, page: 1, sortBy: "createdAt", sortOrder: "desc" }),
+          orderService.getOrders({ status: "confirmed" }, { limit: 5, page: 1, sortBy: "createdAt", sortOrder: "desc" }),
+        ]);
+
+        // Combine, sort by createdAt desc, take first 5
+        const combined = [
+          ...pendingRes.orders,
+          ...processingRes.orders,
+          ...confirmedRes.orders,
+        ]
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 5);
+
+        setActiveOrders(combined);
+      } catch (err) {
+        console.error("Failed to load active orders:", err);
+      } finally {
+        setActiveOrdersLoading(false);
+      }
+    };
+
+    loadActiveOrders();
+  }, []);
+
+  // Format time ago
+  const getTimeAgo = (date: Date | string) => {
+    const now = new Date();
+    const d = new Date(date);
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
+  // Get status badge color
+  const getOrderStatusColor = (status: string) => {
+    switch (status) {
+      case "pending": return "warning";
+      case "processing": return "info";
+      case "confirmed": return "success";
+      default: return "default";
+    }
+  };
+
   // Prepare order analytics chart data - Order completion trends
   const prepareOrderAnalyticsChartData = () => {
     const labels = ["Total Orders", "Completed", "Pending"];
@@ -526,13 +587,89 @@ export const DashboardPage = () => {
                   <FaTimes className="w-4 h-4" />
                 </button>
               </div>
-              <div className="text-xs text-gray-500">
-                This message will automatically disappear in 1 minute
-              </div>
             </CardBody>
           </Card>
         </div>
       )}
+
+      {/* Active Orders - Show pending/processing/confirmed */}
+      <div className="active-orders">
+        <div className="flex items-center justify-between mb-3 px-2 sm:px-0">
+          <h2 className="text-lg font-medium text-gray-800 flex items-center gap-2">
+            <FaClock className="text-orange-500" />
+            Active Orders
+          </h2>
+          <Link
+            to="./orders"
+            className="text-sm font-medium flex items-center gap-1 hover:gap-2 transition-all duration-200"
+            style={{ color: "var(--color-primary-600)" }}
+          >
+            View all <FaArrowRight className="text-xs" />
+          </Link>
+        </div>
+
+        {activeOrdersLoading ? (
+          <Card>
+            <CardBody>
+              <div className="flex justify-center items-center h-24">
+                <Spinner />
+              </div>
+            </CardBody>
+          </Card>
+        ) : activeOrders.length === 0 ? (
+          <Card>
+            <CardBody className="text-center py-6">
+              <FaShoppingCart className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+              <p className="text-sm text-gray-500">No active orders</p>
+              <p className="text-xs text-gray-400 mt-1">All your orders are completed or you haven't placed any yet</p>
+            </CardBody>
+          </Card>
+        ) : (
+          <div className="max-h-[136px] overflow-y-auto pr-1 scrollbar-thin">
+            <div className="space-y-2">
+              {activeOrders.map((order) => (
+                <Link
+                  key={order._id}
+                  to={`./orders`}
+                  className="block"
+                >
+                  <Card variant="interactive" size="sm" className="hover:shadow-md transition-shadow">
+                    <CardBody className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-semibold text-sm text-gray-900 truncate">
+                              {order.orderNumber}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? "s" : ""} · {getTimeAgo(order.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge
+                            variant="subtle"
+                            colorScheme={getOrderStatusColor(order.status) as "warning" | "info" | "success" | "default"}
+                            size="xs"
+                          >
+                            {order.status}
+                          </Badge>
+                          <span className="font-semibold text-sm text-gray-900">
+                            ₵{order.total.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            {activeOrders.length > 2 && (
+              <p className="text-[10px] text-gray-400 text-center mt-1">Scroll for more ({activeOrders.length} orders)</p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Quick Actions */}
       <div className="quick-actions">
@@ -541,12 +678,12 @@ export const DashboardPage = () => {
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {loading ? (
-            <div className="col-span-full text-center py-8">
+            <div className="col-span-full flex flex-col items-center justify-center py-8">
               <Spinner />
               <p className="text-gray-500 text-sm mt-2">Loading providers...</p>
             </div>
           ) : providersLoading ? (
-            <div className="col-span-full text-center py-8">
+            <div className="col-span-full flex flex-col items-center justify-center py-8">
               <Spinner />
               <p className="text-sm text-gray-500 mt-2">
                 Loading provider data...
@@ -749,41 +886,43 @@ export const DashboardPage = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {recentTransactions.map((transaction) => (
-                <div
-                  key={transaction._id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium capitalize text-sm">
-                        {transaction.type}
-                      </span>
-                      <Badge
-                        variant="subtle"
-                        colorScheme={getTransactionStatusColor(
-                          transaction.type
-                        )}
-                        size="xs"
-                      >
-                        {transaction.status}
-                      </Badge>
+            <div className="max-h-[240px] overflow-y-auto pr-1 scrollbar-thin">
+              <div className="space-y-3">
+                {recentTransactions.map((transaction) => (
+                  <div
+                    key={transaction._id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium capitalize text-sm">
+                          {transaction.type}
+                        </span>
+                        <Badge
+                          variant="subtle"
+                          colorScheme={getTransactionStatusColor(
+                            transaction.type
+                          )}
+                          size="xs"
+                        >
+                          {transaction.status}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {transaction.description}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {formatDate(transaction.createdAt)}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {transaction.description}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {formatDate(transaction.createdAt)}
+                    <div className="text-right">
+                      <div className="font-semibold text-sm">
+                        {formatAmount(transaction.amount)}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-sm">
-                      {formatAmount(transaction.amount)}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </CardBody>
