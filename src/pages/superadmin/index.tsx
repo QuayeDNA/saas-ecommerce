@@ -436,7 +436,7 @@ export default function SuperAdminDashboard() {
       {/* Today's Snapshot */}
       {loadingStats ? (
         <Card className="animate-pulse">
-          <CardBody className>
+          <CardBody>
             <div className="h-5 bg-gray-200 rounded w-40 mb-4"></div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
