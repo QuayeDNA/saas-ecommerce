@@ -436,7 +436,7 @@ export default function SuperAdminDashboard() {
       {/* Today's Snapshot */}
       {loadingStats ? (
         <Card className="animate-pulse">
-          <CardBody className="p-4 sm:p-6">
+          <CardBody className>
             <div className="h-5 bg-gray-200 rounded w-40 mb-4"></div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
@@ -451,7 +451,7 @@ export default function SuperAdminDashboard() {
         </Card>
       ) : stats ? (
         <Card>
-          <CardBody className="p-4 sm:p-6">
+          <CardBody>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base sm:text-lg font-semibold text-gray-800">
                 Today's Snapshot
@@ -544,7 +544,7 @@ export default function SuperAdminDashboard() {
                 borderColor: "var(--color-primary-600)",
               }}
             >
-              <CardBody className="p-3 sm:p-4 md:p-6">
+              <CardBody>
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
@@ -572,7 +572,7 @@ export default function SuperAdminDashboard() {
                 borderColor: "var(--color-primary-600)",
               }}
             >
-              <CardBody className="p-3 sm:p-4 md:p-6">
+              <CardBody>
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
@@ -600,7 +600,7 @@ export default function SuperAdminDashboard() {
                 borderColor: "var(--color-primary-600)",
               }}
             >
-              <CardBody className="p-3 sm:p-4 md:p-6">
+              <CardBody>
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
@@ -628,7 +628,7 @@ export default function SuperAdminDashboard() {
                 borderColor: "var(--color-primary-600)",
               }}
             >
-              <CardBody className="p-3 sm:p-4 md:p-6">
+              <CardBody>
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
@@ -674,7 +674,7 @@ export default function SuperAdminDashboard() {
                 borderColor: "var(--color-primary-600)",
               }}
             >
-              <CardBody className="p-3 sm:p-4 md:p-6">
+              <CardBody>
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
@@ -702,7 +702,7 @@ export default function SuperAdminDashboard() {
                 borderColor: "var(--color-primary-600)",
               }}
             >
-              <CardBody className="p-3 sm:p-4 md:p-6">
+              <CardBody>
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">

@@ -84,7 +84,7 @@ export const VerifyAccountPage = () => {
         <Container>
           <div className="flex items-center justify-between">
             <Link
-              to="/"
+              to="/home"
               className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
             >
               <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />

@@ -634,7 +634,7 @@ export const DashboardPage = () => {
                   className="block"
                 >
                   <Card variant="interactive" size="sm" className="hover:shadow-md transition-shadow">
-                    <CardBody className="p-3">
+                    <CardBody>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="flex flex-col min-w-0">

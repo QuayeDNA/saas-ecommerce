@@ -148,7 +148,7 @@ const publicRoutes: RouteObject[] = [
     ),
   },
   {
-    path: "/landing",
+    path: "/home",
     element: (
       <Suspense fallback={<PageLoader />}>
         <LandingPage />

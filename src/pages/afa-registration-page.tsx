@@ -341,7 +341,7 @@ export const AfaRegistrationPage: React.FC = () => {
           /* Registration Form */
           <div className="max-w-2xl mx-auto">
             <Card className="shadow-lg">
-              <CardBody className="p-6 sm:p-8">
+              <CardBody>
                 <div className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                     Create AFA Registration
@@ -571,7 +571,7 @@ export const AfaRegistrationPage: React.FC = () => {
           /* AFA Orders Table */
           <div className="max-w-6xl mx-auto">
             <Card className="shadow-lg">
-              <CardBody className="p-6">
+              <CardBody>
                 <div className="mb-6">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                     AFA Registration Orders

@@ -23,7 +23,7 @@ export const NotFoundPage = () => {
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Page Not Found</h2>
           </CardHeader>
           
-          <CardBody className="pb-8 px-6">
+          <CardBody>
             <div className="text-center mb-8">
               <p className="text-sm sm:text-base text-gray-600 mb-2">
                 The page you're looking for doesn't exist or has been moved.

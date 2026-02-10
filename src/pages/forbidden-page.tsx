@@ -26,7 +26,7 @@ export const ForbiddenPage = () => {
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Access Forbidden</h2>
           </CardHeader>
           
-          <CardBody className="pb-8 px-6">
+          <CardBody>
             <div className="text-center mb-8">
               <p className="text-sm sm:text-base text-gray-600 mb-2">
                 You don't have permission to access this page. Please contact your administrator if you believe this is an error.
