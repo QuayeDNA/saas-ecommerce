@@ -186,8 +186,14 @@ export interface PublicBundle {
   validity: number | string;
   validityUnit: string;
   provider?: string;
+  providerName?: string;
+  packageName?: string;
+  packageCategory?: string;
   category?: string;
   price: number; // hasCustomPrice ? customPrice : tierPrice
+  // AFA-specific fields
+  requiresGhanaCard?: boolean;
+  afaRequirements?: string[];
 }
 
 export interface PublicStorefront {

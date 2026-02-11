@@ -153,9 +153,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
   return (
     <header
-      className={`sticky z-10 bg-primary-500 shadow-sm border-b border-primary-600 rounded-b-xl ${
-        isImpersonating ? "top-0" : "top-0"
-      }`}
+      className={`sticky z-10 bg-primary-500 shadow-sm border-b border-primary-600 rounded-b-xl ${isImpersonating ? "top-0" : "top-0"
+        }`}
       style={{
         backgroundColor: "var(--color-primary-500)",
         borderBottomColor: "var(--color-primary-600)",
@@ -235,8 +234,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     isTogglingSite
                       ? "Updating..."
                       : siteStatus?.isSiteOpen
-                      ? "Close Site"
-                      : "Open Site"
+                        ? "Close Site"
+                        : "Open Site"
                   }
                 >
                   {isTogglingSite ? (
@@ -250,8 +249,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     {isTogglingSite
                       ? "Updating..."
                       : siteStatus?.isSiteOpen
-                      ? "Site Open"
-                      : "Site Closed"}
+                        ? "Site Open"
+                        : "Site Closed"}
                   </span>
                 </Button>
               </div>

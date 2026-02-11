@@ -712,7 +712,7 @@ export const DashboardPage = () => {
                     className={`${packageItem.color} text-white rounded-full mx-auto mb-2 w-12 h-12 flex items-center justify-center overflow-hidden`}
                   >
                     {packageItem.logo?.url &&
-                    !failedLogos.has(packageItem.code) ? (
+                      !failedLogos.has(packageItem.code) ? (
                       <img
                         src={packageItem.logo.url}
                         alt={packageItem.logo.alt || packageItem.name}

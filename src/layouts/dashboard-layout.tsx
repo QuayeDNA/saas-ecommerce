@@ -73,9 +73,8 @@ export const DashboardLayout = () => {
   return (
     <TutorialProvider userRole={userRole}>
       <div
-        className={`flex bg-gray-50 overflow-hidden ${
-          isImpersonating ? "" : "h-screen"
-        }`}
+        className={`flex bg-gray-50 overflow-hidden ${isImpersonating ? "" : "h-screen"
+          }`}
       >
         {/* Mobile sidebar overlay */}
         {sidebarOpen && isMobile && (
@@ -99,9 +98,8 @@ export const DashboardLayout = () => {
 
           {/* Content */}
           <main
-            className={`flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 ${
-              isImpersonating ? "min-h-screen" : ""
-            }`}
+            className={`flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 ${isImpersonating ? "min-h-screen" : ""
+              }`}
           >
             <NavigationLoader delay={150}>
               <Outlet />

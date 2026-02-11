@@ -772,10 +772,10 @@ export const StorefrontDashboardPage: React.FC = () => {
         {/* Settings Tab */}
         <TabsContent value="settings">
           <div data-tour="storefront-settings">
-          <StorefrontSettings
-            storefront={storefront}
-            onUpdate={handleStorefrontUpdated}
-          />
+            <StorefrontSettings
+              storefront={storefront}
+              onUpdate={handleStorefrontUpdated}
+            />
           </div>
         </TabsContent>
       </Tabs>

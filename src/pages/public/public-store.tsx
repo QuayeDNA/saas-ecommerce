@@ -470,8 +470,8 @@ const PublicStore: React.FC = () => {
                         <button
                             onClick={() => setSelectedProvider('all')}
                             className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition border ${selectedProvider === 'all'
-                                    ? 'text-white border-transparent shadow-sm'
-                                    : 'text-gray-600 border-gray-200 bg-white hover:bg-gray-50'
+                                ? 'text-white border-transparent shadow-sm'
+                                : 'text-gray-600 border-gray-200 bg-white hover:bg-gray-50'
                                 }`}
                             style={selectedProvider === 'all' ? { backgroundColor: theme.primary } : undefined}
                         >
@@ -485,8 +485,8 @@ const PublicStore: React.FC = () => {
                                     key={prov.code}
                                     onClick={() => setSelectedProvider(prov.code)}
                                     className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition border ${isActive
-                                            ? 'text-white border-transparent shadow-sm'
-                                            : 'border-gray-200 bg-white hover:bg-gray-50'
+                                        ? 'text-white border-transparent shadow-sm'
+                                        : 'border-gray-200 bg-white hover:bg-gray-50'
                                         }`}
                                     style={isActive ? { backgroundColor: pc.primary, color: pc.text } : { color: pc.primary }}
                                 >
@@ -1223,7 +1223,7 @@ const PublicStore: React.FC = () => {
                         <p className="text-xs text-gray-400">{branding.footerText}</p>
                     )}
 
-                    <p className="text-xs text-gray-300">Powered by DataHub</p>
+                    <p className="text-xs text-gray-300">Powered by DNAStudios</p>
                 </div>
             </footer>
         );

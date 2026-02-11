@@ -31,6 +31,12 @@ export const providerColors: ProviderColorMap = {
     background: '#E3F2FD', // Subtle blue-tinted background
     text: '#FFFFFF'
   },
+  AFA: {
+    primary: '#2E7D32', // AFA Green (brand green)
+    secondary: '#1B5E20', // AFA Dark Green
+    background: '#E8F5E9', // Subtle green-tinted background
+    text: '#FFFFFF'
+  },
   default: {
     primary: '#9CA3AF', // Neutral gray
     secondary: '#4B5563', // Darker gray
