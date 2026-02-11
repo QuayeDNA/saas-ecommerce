@@ -1002,12 +1002,41 @@ const PublicStore: React.FC = () => {
                                             📋 Payment Instructions
                                         </h4>
                                         <div className="space-y-1.5 text-sm">
-                                            {Object.entries(selectedPayment.details).map(([key, val]) => (
-                                                <div key={key} className="flex justify-between gap-2">
-                                                    <span className="text-gray-500 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                                    <span className="font-medium text-gray-900 text-right">{String(val)}</span>
-                                                </div>
-                                            ))}
+                                            {/* Mobile Money: details.accounts is an array of {provider, number, accountName} */}
+                                            {Array.isArray(selectedPayment.details?.accounts)
+                                                ? selectedPayment.details.accounts.map((acc: { provider?: string; number?: string; accountName?: string }, i: number) => (
+                                                    <div key={i} className={`${i > 0 ? 'pt-2 mt-2 border-t border-gray-200' : ''}`}>
+                                                        {acc.provider && (
+                                                            <div className="flex justify-between gap-2">
+                                                                <span className="text-gray-500">Provider</span>
+                                                                <span className="font-medium text-gray-900">{acc.provider}</span>
+                                                            </div>
+                                                        )}
+                                                        {acc.number && (
+                                                            <div className="flex justify-between gap-2">
+                                                                <span className="text-gray-500">Number</span>
+                                                                <span className="font-medium text-gray-900">{acc.number}</span>
+                                                            </div>
+                                                        )}
+                                                        {acc.accountName && (
+                                                            <div className="flex justify-between gap-2">
+                                                                <span className="text-gray-500">Account Name</span>
+                                                                <span className="font-medium text-gray-900">{acc.accountName}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))
+                                                : /* Bank Transfer or flat details: render key/value pairs */
+                                                  Object.entries(selectedPayment.details).map(([key, val]) => {
+                                                    if (val == null || typeof val === 'object') return null;
+                                                    return (
+                                                        <div key={key} className="flex justify-between gap-2">
+                                                            <span className="text-gray-500 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                                            <span className="font-medium text-gray-900 text-right">{String(val)}</span>
+                                                        </div>
+                                                    );
+                                                  })
+                                            }
                                         </div>
                                         <div className="mt-3 p-2.5 bg-white rounded-lg">
                                             <p className="text-sm font-bold text-gray-900">Amount to send: {formatPrice(cartTotal)}</p>
