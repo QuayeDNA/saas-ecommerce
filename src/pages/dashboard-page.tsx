@@ -555,7 +555,7 @@ export const DashboardPage = () => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="dashboard-welcome space-y-4 sm:space-y-6">
       {/* Site Status Message - Glassmorphic design */}
       {showSiteMessage && siteStatus && (
         <div

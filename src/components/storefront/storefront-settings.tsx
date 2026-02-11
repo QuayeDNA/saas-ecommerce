@@ -862,7 +862,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         </TabsContent>
 
         {/* ===== Branding & Customization ===== */}
-        <TabsContent value="branding" className="space-y-6">
+        <TabsContent value="branding" className="space-y-6" data-tour="storefront-branding">
           {/* Appearance & Theme */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-200">

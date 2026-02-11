@@ -759,7 +759,9 @@ export const StorefrontDashboardPage: React.FC = () => {
 
         {/* Pricing Tab */}
         <TabsContent value="pricing">
-          <PricingManager storefrontId={storefront._id!} />
+          <div data-tour="storefront-pricing">
+            <PricingManager storefrontId={storefront._id!} />
+          </div>
         </TabsContent>
 
         {/* Orders Tab */}
@@ -769,10 +771,12 @@ export const StorefrontDashboardPage: React.FC = () => {
 
         {/* Settings Tab */}
         <TabsContent value="settings">
+          <div data-tour="storefront-settings">
           <StorefrontSettings
             storefront={storefront}
             onUpdate={handleStorefrontUpdated}
           />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

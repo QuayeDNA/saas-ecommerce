@@ -361,7 +361,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
         {/* Wallet Section - Only for business users */}
         {canShowWallet && (
-          <div className="mt-2">
+          <div className="wallet-balance mt-2">
             <button
               className="bg-white/10 backdrop-blur-sm border border-white/20 text-white p-2 sm:p-3 rounded-lg shadow-sm cursor-pointer hover:bg-white/15 transition-all duration-200 active:scale-95 appearance-none w-full"
               onClick={() => {
