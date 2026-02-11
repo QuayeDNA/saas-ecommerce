@@ -51,6 +51,13 @@ import {
   MessageCircle,
   Palette,
   Eye,
+  Image,
+  Type,
+  Layout,
+  Facebook,
+  Instagram,
+  Twitter,
+  Globe,
 } from "lucide-react";
 
 // --- Types ---
@@ -119,6 +126,23 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     address: storefront.contactInfo?.address || "",
     theme: storefront.settings?.theme || "blue",
     showContact: storefront.settings?.showContact ?? true,
+  });
+
+  // Branding state
+  const [brandingData, setBrandingData] = useState({
+    logoUrl: storefront.branding?.logoUrl || "",
+    bannerUrl: storefront.branding?.bannerUrl || "",
+    tagline: storefront.branding?.tagline || "",
+    primaryColor: storefront.branding?.customColors?.primary || "",
+    secondaryColor: storefront.branding?.customColors?.secondary || "",
+    accentColor: storefront.branding?.customColors?.accent || "",
+    facebook: storefront.branding?.socialLinks?.facebook || "",
+    instagram: storefront.branding?.socialLinks?.instagram || "",
+    twitter: storefront.branding?.socialLinks?.twitter || "",
+    tiktok: storefront.branding?.socialLinks?.tiktok || "",
+    layout: storefront.branding?.layout || "classic",
+    showBanner: storefront.branding?.showBanner ?? true,
+    footerText: storefront.branding?.footerText || "",
   });
 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodForm[]>(
@@ -219,6 +243,10 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  const handleBrandingChange = (field: string, value: unknown) => {
+    setBrandingData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handlePaymentMethodChange = (
@@ -363,6 +391,44 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     } catch (error) {
       addToast(
         getApiErrorMessage(error, "Failed to update payment methods"),
+        "error",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveBrandingSettings = async () => {
+    try {
+      setIsLoading(true);
+      const updateData = {
+        branding: {
+          logoUrl: brandingData.logoUrl.trim() || undefined,
+          bannerUrl: brandingData.bannerUrl.trim() || undefined,
+          tagline: brandingData.tagline.trim() || undefined,
+          customColors: {
+            primary: brandingData.primaryColor.trim() || undefined,
+            secondary: brandingData.secondaryColor.trim() || undefined,
+            accent: brandingData.accentColor.trim() || undefined,
+          },
+          socialLinks: {
+            facebook: brandingData.facebook.trim() || undefined,
+            instagram: brandingData.instagram.trim() || undefined,
+            twitter: brandingData.twitter.trim() || undefined,
+            tiktok: brandingData.tiktok.trim() || undefined,
+          },
+          layout: brandingData.layout,
+          showBanner: brandingData.showBanner,
+          footerText: brandingData.footerText.trim() || undefined,
+        },
+      };
+      const updatedStorefront =
+        await storefrontService.updateStorefront(updateData);
+      onUpdate(updatedStorefront);
+      addToast("Branding settings updated successfully!", "success");
+    } catch (error) {
+      addToast(
+        getApiErrorMessage(error, "Failed to update branding settings"),
         "error",
       );
     } finally {
@@ -643,8 +709,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         <CardBody>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="overflow-x-auto -mx-1 px-1">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 sm:mb-6 min-w-max sm:min-w-0">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 mb-4 sm:mb-6 min-w-max sm:min-w-0">
                 <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="branding">Branding</TabsTrigger>
                 <TabsTrigger value="payment">Payment</TabsTrigger>
                 <TabsTrigger value="sharing">Share</TabsTrigger>
                 <TabsTrigger value="advanced">Advanced</TabsTrigger>
@@ -778,6 +845,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                         { value: "blue", label: "Blue" },
                         { value: "green", label: "Green" },
                         { value: "purple", label: "Purple" },
+                        { value: "red", label: "Red" },
+                        { value: "orange", label: "Orange" },
+                        { value: "teal", label: "Teal" },
+                        { value: "indigo", label: "Indigo" },
+                        { value: "pink", label: "Pink" },
                       ]}
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -862,6 +934,223 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                   leftIcon={<Save className="w-4 h-4" />}
                 >
                   Save General Settings
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* ===== Branding & Customization ===== */}
+            <TabsContent value="branding" className="space-y-4 sm:space-y-6">
+              {/* Logo & Banner */}
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Image className="w-5 h-5 text-gray-600" />
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold">
+                        Logo & Banner
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Add your brand images to personalize your store
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody className="space-y-4">
+                  <FormField label="Logo URL">
+                    <Input
+                      value={brandingData.logoUrl}
+                      onChange={(e) =>
+                        handleBrandingChange("logoUrl", e.target.value)
+                      }
+                      placeholder="https://example.com/logo.png"
+                      leftIcon={<Image className="w-4 h-4" />}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Paste a URL to your logo image (recommended: square, 200x200px)
+                    </p>
+                    {brandingData.logoUrl && (
+                      <div className="mt-2 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
+                        <img
+                          src={brandingData.logoUrl}
+                          alt="Logo preview"
+                          className="w-12 h-12 rounded-lg object-cover border"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <span className="text-sm text-gray-600">Logo preview</span>
+                      </div>
+                    )}
+                  </FormField>
+
+                  <FormField label="Banner Image URL">
+                    <Input
+                      value={brandingData.bannerUrl}
+                      onChange={(e) =>
+                        handleBrandingChange("bannerUrl", e.target.value)
+                      }
+                      placeholder="https://example.com/banner.jpg"
+                      leftIcon={<Image className="w-4 h-4" />}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      A wide banner for your store header (recommended: 1200x300px)
+                    </p>
+                    {brandingData.bannerUrl && (
+                      <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                        <img
+                          src={brandingData.bannerUrl}
+                          alt="Banner preview"
+                          className="w-full h-24 rounded-lg object-cover border"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    )}
+                  </FormField>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Eye className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          Show Banner
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Display the banner image on your public store
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={brandingData.showBanner}
+                      onCheckedChange={(checked) =>
+                        handleBrandingChange("showBanner", checked)
+                      }
+                    />
+                  </div>
+                </CardBody>
+              </Card>
+
+              {/* Tagline & Layout */}
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Layout className="w-5 h-5 text-gray-600" />
+                    <h3 className="text-base sm:text-lg font-semibold">
+                      Tagline & Layout
+                    </h3>
+                  </div>
+                </CardHeader>
+                <CardBody className="space-y-4">
+                  <FormField label="Store Tagline">
+                    <Input
+                      value={brandingData.tagline}
+                      onChange={(e) =>
+                        handleBrandingChange("tagline", e.target.value)
+                      }
+                      placeholder="e.g. Best data deals in town!"
+                      leftIcon={<Type className="w-4 h-4" />}
+                      maxLength={120}
+                    />
+                    <p className="text-xs text-gray-400 mt-1 text-right">
+                      {brandingData.tagline.length}/120
+                    </p>
+                  </FormField>
+
+                  <FormField label="Store Layout">
+                    <Select
+                      value={brandingData.layout}
+                      onChange={(val) => handleBrandingChange("layout", val)}
+                      options={[
+                        { value: "classic", label: "Classic — Standard header with contact info" },
+                        { value: "modern", label: "Modern — Large banner with overlay text" },
+                        { value: "minimal", label: "Minimal — Clean, text-focused design" },
+                      ]}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Choose how your public storefront looks to customers
+                    </p>
+                  </FormField>
+
+                  <FormField label="Footer Text">
+                    <Input
+                      value={brandingData.footerText}
+                      onChange={(e) =>
+                        handleBrandingChange("footerText", e.target.value)
+                      }
+                      placeholder="e.g. © 2025 My Business. All rights reserved."
+                      maxLength={200}
+                    />
+                    <p className="text-xs text-gray-400 mt-1 text-right">
+                      {brandingData.footerText.length}/200 — Shown at the bottom of your store
+                    </p>
+                  </FormField>
+                </CardBody>
+              </Card>
+
+              {/* Social Links */}
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-gray-600" />
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold">
+                        Social Links
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Add social media links to your store footer
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody className="space-y-3">
+                  <FormField label="Facebook">
+                    <Input
+                      value={brandingData.facebook}
+                      onChange={(e) =>
+                        handleBrandingChange("facebook", e.target.value)
+                      }
+                      placeholder="https://facebook.com/yourbusiness"
+                      leftIcon={<Facebook className="w-4 h-4" />}
+                    />
+                  </FormField>
+                  <FormField label="Instagram">
+                    <Input
+                      value={brandingData.instagram}
+                      onChange={(e) =>
+                        handleBrandingChange("instagram", e.target.value)
+                      }
+                      placeholder="https://instagram.com/yourbusiness"
+                      leftIcon={<Instagram className="w-4 h-4" />}
+                    />
+                  </FormField>
+                  <FormField label="Twitter / X">
+                    <Input
+                      value={brandingData.twitter}
+                      onChange={(e) =>
+                        handleBrandingChange("twitter", e.target.value)
+                      }
+                      placeholder="https://x.com/yourbusiness"
+                      leftIcon={<Twitter className="w-4 h-4" />}
+                    />
+                  </FormField>
+                  <FormField label="TikTok">
+                    <Input
+                      value={brandingData.tiktok}
+                      onChange={(e) =>
+                        handleBrandingChange("tiktok", e.target.value)
+                      }
+                      placeholder="https://tiktok.com/@yourbusiness"
+                      leftIcon={<Globe className="w-4 h-4" />}
+                    />
+                  </FormField>
+                </CardBody>
+              </Card>
+
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <Button
+                  onClick={saveBrandingSettings}
+                  isLoading={isLoading}
+                  leftIcon={<Save className="w-4 h-4" />}
+                >
+                  Save Branding Settings
                 </Button>
               </div>
             </TabsContent>
