@@ -16,7 +16,7 @@ import type {
     PublicBundle, PublicStorefront, PublicOrderData, PublicOrderResult, StorefrontBranding,
 } from '../../services/storefront.service';
 import {
-    FaCartShopping, FaPlus, FaMinus, FaTrashCan,
+    FaCartShopping, FaPlus, FaTrashCan,
     FaCircleCheck, FaTriangleExclamation, FaIdCard,
     FaArrowRight, FaArrowLeft, FaPhone, FaEnvelope,
     FaStore, FaGrip, FaList, FaChevronDown, FaChevronUp,
@@ -31,7 +31,6 @@ import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 interface CartItem {
     bundle: PublicBundle;
     customerPhone: string;
-    quantity: number;
 }
 
 type ViewMode = 'grid' | 'list';
@@ -100,7 +99,6 @@ const PublicStore: React.FC = () => {
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [addBundle, setAddBundle] = useState<PublicBundle | null>(null);
     const [addPhone, setAddPhone] = useState('');
-    const [addQty, setAddQty] = useState(1);
 
     // ---- Checkout dialog ----
     const [showCheckout, setShowCheckout] = useState(false);
@@ -211,8 +209,8 @@ const PublicStore: React.FC = () => {
     }, [storeData, searchTerm, selectedProvider]);
 
     // Cart computed
-    const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.bundle.price * i.quantity, 0), [cart]);
-    const cartCount = useMemo(() => cart.reduce((s, i) => s + i.quantity, 0), [cart]);
+    const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.bundle.price, 0), [cart]);
+    const cartCount = cart.length;
 
     const canSubmitOrder = Boolean(
         customerName.trim() &&
@@ -225,26 +223,13 @@ const PublicStore: React.FC = () => {
     // Handlers
     // ==========================================================================
 
-    const addToCart = (bundle: PublicBundle, phone: string, qty: number) => {
+    const addToCart = (bundle: PublicBundle, phone: string) => {
         const normalized = normalizePhone(phone);
-        setCart(prev => {
-            const idx = prev.findIndex(i => i.bundle._id === bundle._id && i.customerPhone === normalized);
-            if (idx >= 0) {
-                const updated = [...prev];
-                updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + qty };
-                return updated;
-            }
-            return [...prev, { bundle, customerPhone: normalized, quantity: qty }];
-        });
+        setCart(prev => [...prev, { bundle, customerPhone: normalized }]);
     };
 
     const removeFromCart = (index: number) => {
         setCart(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const updateCartQty = (index: number, qty: number) => {
-        if (qty <= 0) { removeFromCart(index); return; }
-        setCart(prev => prev.map((item, i) => i === index ? { ...item, quantity: qty } : item));
     };
 
     const togglePackage = (key: string) => {
@@ -259,13 +244,12 @@ const PublicStore: React.FC = () => {
     const openAddDialog = (bundle: PublicBundle) => {
         setAddBundle(bundle);
         setAddPhone('');
-        setAddQty(1);
         setShowAddDialog(true);
     };
 
     const confirmAddToCart = () => {
         if (!addBundle || !isValidPhone(addPhone)) return;
-        addToCart(addBundle, addPhone, addQty);
+        addToCart(addBundle, addPhone);
         setShowAddDialog(false);
         setAddBundle(null);
     };
@@ -289,7 +273,7 @@ const PublicStore: React.FC = () => {
             const orderData: PublicOrderData = {
                 items: cart.map(item => ({
                     bundleId: item.bundle._id,
-                    quantity: item.quantity,
+                    quantity: 1,
                     customerPhone: item.customerPhone,
                 })),
                 customerInfo: {
@@ -830,29 +814,6 @@ const PublicStore: React.FC = () => {
                             )}
                             <p className="text-xs text-gray-400 mt-1">The number that will receive this data bundle</p>
                         </div>
-
-                        {/* Quantity */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Quantity</label>
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setAddQty(q => Math.max(1, q - 1))}
-                                    className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition"
-                                >
-                                    <FaMinus className="w-3 h-3 text-gray-600" />
-                                </button>
-                                <span className="text-lg font-bold text-gray-900 w-8 text-center">{addQty}</span>
-                                <button
-                                    onClick={() => setAddQty(q => q + 1)}
-                                    className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition"
-                                >
-                                    <FaPlus className="w-3 h-3 text-gray-600" />
-                                </button>
-                                <span className="text-sm text-gray-500 ml-auto">
-                                    Total: <strong>{formatPrice(addBundle.price * addQty)}</strong>
-                                </span>
-                            </div>
-                        </div>
                     </div>
                 </DialogBody>
                 <DialogFooter>
@@ -914,23 +875,8 @@ const PublicStore: React.FC = () => {
                                                         {item.bundle.providerName} &bull; {item.customerPhone}
                                                     </p>
                                                 </div>
-                                                <div className="flex items-center gap-1.5 shrink-0">
-                                                    <button
-                                                        onClick={() => updateCartQty(idx, item.quantity - 1)}
-                                                        className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition"
-                                                    >
-                                                        <FaMinus className="w-2.5 h-2.5 text-gray-500" />
-                                                    </button>
-                                                    <span className="text-sm font-bold w-6 text-center">{item.quantity}</span>
-                                                    <button
-                                                        onClick={() => updateCartQty(idx, item.quantity + 1)}
-                                                        className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition"
-                                                    >
-                                                        <FaPlus className="w-2.5 h-2.5 text-gray-500" />
-                                                    </button>
-                                                </div>
                                                 <span className="shrink-0 font-bold text-sm min-w-[70px] text-right" style={{ color: pc.primary }}>
-                                                    {formatPrice(item.bundle.price * item.quantity)}
+                                                    {formatPrice(item.bundle.price)}
                                                 </span>
                                                 <button
                                                     onClick={() => removeFromCart(idx)}
@@ -1304,4 +1250,5 @@ const PublicStore: React.FC = () => {
     );
 };
 
+export { PublicStore as PublicStorePage };
 export default PublicStore;
