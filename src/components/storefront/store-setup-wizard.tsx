@@ -55,15 +55,15 @@ interface FormData {
     type: "mobile_money" | "bank_transfer";
     details: {
       // Mobile Money: { accounts: Array<{ provider: string; number: string; accountName: string }> }
-      // Bank Transfer: { bankName: string; accountNumber: string; accountName: string }
+      // Bank Transfer: { bank: string; account: string; name: string }
       accounts?: Array<{
         provider: string;
         number: string;
         accountName: string;
       }>;
-      bankName?: string;
-      accountNumber?: string;
-      accountName?: string;
+      bank?: string;
+      account?: string;
+      name?: string;
     };
     isActive: boolean;
   }>;
@@ -512,7 +512,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
         }
         if (
           payment.type === "bank_transfer" &&
-          (!payment.details.accountNumber || !payment.details.bankName)
+          (!payment.details.account || !payment.details.bank)
         ) {
           newErrors.paymentMethods = "Bank account details are required";
           break;
@@ -556,7 +556,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
           details:
             type === "mobile_money"
               ? { accounts: [{ provider: "", number: prev.phone, accountName: "" }] }
-              : { bankName: "", accountNumber: "", accountName: "" },
+              : { bank: "", account: "", name: "" },
           isActive: true,
         };
         return { ...prev, paymentMethods: [...prev.paymentMethods, newMethod] };
@@ -1010,11 +1010,11 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                           <div className="space-y-3">
                             <FormField label="Bank Name">
                               <Input
-                                value={String(method.details.bankName || "")}
+                                value={String(method.details.bank || "")}
                                 onChange={(e) =>
                                   updatePaymentDetails(
                                     option.type,
-                                    "bankName",
+                                    "bank",
                                     e.target.value,
                                   )
                                 }
@@ -1024,11 +1024,11 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                             </FormField>
                             <FormField label="Account Number">
                               <Input
-                                value={String(method.details.accountNumber || "")}
+                                value={String(method.details.account || "")}
                                 onChange={(e) =>
                                   updatePaymentDetails(
                                     option.type,
-                                    "accountNumber",
+                                    "account",
                                     e.target.value,
                                   )
                                 }
@@ -1038,11 +1038,11 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                             </FormField>
                             <FormField label="Account Name">
                               <Input
-                                value={String(method.details.accountName || "")}
+                                value={String(method.details.name || "")}
                                 onChange={(e) =>
                                   updatePaymentDetails(
                                     option.type,
-                                    "accountName",
+                                    "name",
                                     e.target.value,
                                   )
                                 }
@@ -1147,10 +1147,10 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                           </div>
                         )}
                         {method.type === "bank_transfer" &&
-                          Boolean(method.details.bankName) && (
+                          Boolean(method.details.bank) && (
                             <span className="text-sm text-gray-600">
-                              ({String(method.details.bankName)} -{" "}
-                              {String(method.details.accountNumber)})
+                              ({String(method.details.bank)} -{" "}
+                              {String(method.details.account)})
                             </span>
                           )}
                       </div>

@@ -555,7 +555,7 @@ export const DashboardPage = () => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="dashboard-welcome space-y-4 sm:space-y-6">
       {/* Site Status Message - Glassmorphic design */}
       {showSiteMessage && siteStatus && (
         <div
@@ -712,7 +712,7 @@ export const DashboardPage = () => {
                     className={`${packageItem.color} text-white rounded-full mx-auto mb-2 w-12 h-12 flex items-center justify-center overflow-hidden`}
                   >
                     {packageItem.logo?.url &&
-                    !failedLogos.has(packageItem.code) ? (
+                      !failedLogos.has(packageItem.code) ? (
                       <img
                         src={packageItem.logo.url}
                         alt={packageItem.logo.alt || packageItem.name}

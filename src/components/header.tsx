@@ -153,9 +153,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
   return (
     <header
-      className={`sticky z-10 bg-primary-500 shadow-sm border-b border-primary-600 rounded-b-xl ${
-        isImpersonating ? "top-0" : "top-0"
-      }`}
+      className={`sticky z-10 bg-primary-500 shadow-sm border-b border-primary-600 rounded-b-xl ${isImpersonating ? "top-0" : "top-0"
+        }`}
       style={{
         backgroundColor: "var(--color-primary-500)",
         borderBottomColor: "var(--color-primary-600)",
@@ -235,8 +234,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     isTogglingSite
                       ? "Updating..."
                       : siteStatus?.isSiteOpen
-                      ? "Close Site"
-                      : "Open Site"
+                        ? "Close Site"
+                        : "Open Site"
                   }
                 >
                   {isTogglingSite ? (
@@ -250,8 +249,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     {isTogglingSite
                       ? "Updating..."
                       : siteStatus?.isSiteOpen
-                      ? "Site Open"
-                      : "Site Closed"}
+                        ? "Site Open"
+                        : "Site Closed"}
                   </span>
                 </Button>
               </div>
@@ -361,7 +360,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
         {/* Wallet Section - Only for business users */}
         {canShowWallet && (
-          <div className="mt-2">
+          <div className="wallet-balance mt-2">
             <button
               className="bg-white/10 backdrop-blur-sm border border-white/20 text-white p-2 sm:p-3 rounded-lg shadow-sm cursor-pointer hover:bg-white/15 transition-all duration-200 active:scale-95 appearance-none w-full"
               onClick={() => {

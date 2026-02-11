@@ -30,13 +30,34 @@ export interface StorefrontData {
     whatsapp?: string;
   };
   settings?: {
-    theme?: 'blue' | 'green' | 'purple';
+    theme?: 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'teal' | 'indigo' | 'pink';
     showContact?: boolean;
   };
+  branding?: StorefrontBranding;
   approvedAt?: string;
   approvedBy?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface StorefrontBranding {
+  logoUrl?: string;
+  bannerUrl?: string;
+  tagline?: string;
+  customColors?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+  };
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    tiktok?: string;
+  };
+  layout?: 'classic' | 'modern' | 'minimal';
+  showBanner?: boolean;
+  footerText?: string;
 }
 
 /** Response shape for getMyStorefront when store is admin-suspended */
@@ -165,8 +186,14 @@ export interface PublicBundle {
   validity: number | string;
   validityUnit: string;
   provider?: string;
+  providerName?: string;
+  packageName?: string;
+  packageCategory?: string;
   category?: string;
   price: number; // hasCustomPrice ? customPrice : tierPrice
+  // AFA-specific fields
+  requiresGhanaCard?: boolean;
+  afaRequirements?: string[];
 }
 
 export interface PublicStorefront {
@@ -183,6 +210,7 @@ export interface PublicStorefront {
       theme?: string;
       showContact?: boolean;
     };
+    branding?: StorefrontBranding;
     paymentMethods: Array<{
       type: 'mobile_money' | 'bank_transfer';
       details: Record<string, unknown>;
