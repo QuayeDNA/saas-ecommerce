@@ -53,7 +53,6 @@ import {
   Eye,
   Image,
   Type,
-  Layout,
   Facebook,
   Instagram,
   Twitter,
@@ -124,8 +123,6 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     email: storefront.contactInfo?.email || "",
     whatsapp: storefront.contactInfo?.whatsapp || "",
     address: storefront.contactInfo?.address || "",
-    theme: storefront.settings?.theme || "blue",
-    showContact: storefront.settings?.showContact ?? true,
   });
 
   // Branding state
@@ -143,6 +140,8 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     layout: storefront.branding?.layout || "classic",
     showBanner: storefront.branding?.showBanner ?? true,
     footerText: storefront.branding?.footerText || "",
+    theme: storefront.settings?.theme || "blue",
+    showContact: storefront.settings?.showContact ?? true,
   });
 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodForm[]>(
@@ -356,10 +355,6 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
           whatsapp: formData.whatsapp.trim() || undefined,
           address: formData.address.trim() || undefined,
         },
-        settings: {
-          theme: formData.theme,
-          showContact: formData.showContact,
-        },
       };
       const updatedStorefront =
         await storefrontService.updateStorefront(updateData);
@@ -420,6 +415,10 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
           layout: brandingData.layout,
           showBanner: brandingData.showBanner,
           footerText: brandingData.footerText.trim() || undefined,
+        },
+        settings: {
+          theme: brandingData.theme,
+          showContact: brandingData.showContact,
         },
       };
       const updatedStorefront =
@@ -826,58 +825,6 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 </CardBody>
               </Card>
 
-              {/* Store Appearance */}
-              <Card variant="outlined">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Palette className="w-5 h-5 text-gray-600" />
-                    <h3 className="text-base sm:text-lg font-semibold">
-                      Store Appearance
-                    </h3>
-                  </div>
-                </CardHeader>
-                <CardBody className="space-y-4">
-                  <FormField label="Store Theme Color">
-                    <Select
-                      value={formData.theme}
-                      onChange={(val) => handleFormChange("theme", val)}
-                      options={[
-                        { value: "blue", label: "Blue" },
-                        { value: "green", label: "Green" },
-                        { value: "purple", label: "Purple" },
-                        { value: "red", label: "Red" },
-                        { value: "orange", label: "Orange" },
-                        { value: "teal", label: "Teal" },
-                        { value: "indigo", label: "Indigo" },
-                        { value: "pink", label: "Pink" },
-                      ]}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Sets the accent color on your public storefront page
-                    </p>
-                  </FormField>
-
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Eye className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Show Contact Info
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Display phone, email, and address on your public store
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={formData.showContact}
-                      onCheckedChange={(checked) =>
-                        handleFormChange("showContact", checked)
-                      }
-                    />
-                  </div>
-                </CardBody>
-              </Card>
 
               {/* Store Status - moved here from inside old card */}
               <Card variant="outlined">
@@ -1027,17 +974,57 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 </CardBody>
               </Card>
 
-              {/* Tagline & Layout */}
+              {/* Appearance & Layout */}
               <Card variant="outlined">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Layout className="w-5 h-5 text-gray-600" />
+                    <Palette className="w-5 h-5 text-gray-600" />
                     <h3 className="text-base sm:text-lg font-semibold">
-                      Tagline & Layout
+                      Appearance & Layout
                     </h3>
                   </div>
                 </CardHeader>
                 <CardBody className="space-y-4">
+                  <FormField label="Store Theme Color">
+                    <Select
+                      value={brandingData.theme}
+                      onChange={(val) => handleBrandingChange("theme", val)}
+                      options={[
+                        { value: "blue", label: "Blue" },
+                        { value: "green", label: "Green" },
+                        { value: "purple", label: "Purple" },
+                        { value: "red", label: "Red" },
+                        { value: "orange", label: "Orange" },
+                        { value: "teal", label: "Teal" },
+                        { value: "indigo", label: "Indigo" },
+                        { value: "pink", label: "Pink" },
+                      ]}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Sets the accent color on your public storefront page
+                    </p>
+                  </FormField>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Eye className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          Show Contact Info
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Display phone, email, and address on your public store
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={brandingData.showContact}
+                      onCheckedChange={(checked) =>
+                        handleBrandingChange("showContact", checked)
+                      }
+                    />
+                  </div>
+
                   <FormField label="Store Tagline">
                     <Input
                       value={brandingData.tagline}
