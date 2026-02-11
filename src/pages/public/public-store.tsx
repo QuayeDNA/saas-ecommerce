@@ -67,7 +67,6 @@ const normalizePhone = (phone: string) => {
 };
 
 const isValidPhone = (phone: string) => /^0\d{9}$/.test(normalizePhone(phone));
-const isValidEmail = (email: string) => !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const formatValidity = (validity: number | string, unit: string) => {
     if (validity === 'unlimited' || unit === 'unlimited') return 'Unlimited';
@@ -105,7 +104,6 @@ const PublicStore: React.FC = () => {
     const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('review');
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
-    const [customerEmail, setCustomerEmail] = useState('');
     const [paymentType, setPaymentType] = useState<'mobile_money' | 'bank_transfer'>('mobile_money');
     const [transactionRef, setTransactionRef] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -215,7 +213,6 @@ const PublicStore: React.FC = () => {
     const canSubmitOrder = Boolean(
         customerName.trim() &&
         isValidPhone(customerPhone) &&
-        isValidEmail(customerEmail) &&
         transactionRef.trim()
     );
 
@@ -279,7 +276,6 @@ const PublicStore: React.FC = () => {
                 customerInfo: {
                     name: customerName.trim(),
                     phone: normalizePhone(customerPhone),
-                    email: customerEmail.trim() || undefined,
                 },
                 paymentMethod: {
                     type: paymentType,
@@ -302,7 +298,6 @@ const PublicStore: React.FC = () => {
         setCheckoutStep('review');
         setCustomerName('');
         setCustomerPhone('');
-        setCustomerEmail('');
         setTransactionRef('');
         setOrderError(null);
         setOrderResult(null);
@@ -945,25 +940,18 @@ const PublicStore: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Phone Number *</label>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Contact Phone *</label>
                                         <Input
                                             type="tel"
                                             placeholder="0XX XXX XXXX"
                                             value={customerPhone}
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerPhone(e.target.value)}
                                         />
-                                        {customerPhone && !isValidPhone(customerPhone) && (
-                                            <p className="text-xs text-red-500 mt-0.5">Enter a valid 10-digit phone number</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Email (optional)</label>
-                                        <Input
-                                            type="email"
-                                            placeholder="your@email.com"
-                                            value={customerEmail}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerEmail(e.target.value)}
-                                        />
+                                        <p className="text-xs text-gray-400 mt-0.5">
+                                            {customerPhone && !isValidPhone(customerPhone)
+                                                ? <span className="text-red-500">Enter a valid 10-digit phone number</span>
+                                                : 'So the seller can reach you if needed'}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -1027,7 +1015,7 @@ const PublicStore: React.FC = () => {
                                                     </div>
                                                 ))
                                                 : /* Bank Transfer or flat details: render key/value pairs */
-                                                  Object.entries(selectedPayment.details).map(([key, val]) => {
+                                                Object.entries(selectedPayment.details).map(([key, val]) => {
                                                     if (val == null || typeof val === 'object') return null;
                                                     return (
                                                         <div key={key} className="flex justify-between gap-2">
@@ -1035,7 +1023,7 @@ const PublicStore: React.FC = () => {
                                                             <span className="font-medium text-gray-900 text-right">{String(val)}</span>
                                                         </div>
                                                     );
-                                                  })
+                                                })
                                             }
                                         </div>
                                         <div className="mt-3 p-2.5 bg-white rounded-lg">
