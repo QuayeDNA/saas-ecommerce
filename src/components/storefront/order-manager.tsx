@@ -205,17 +205,17 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
   // --- Computed ---
   const displayedOrders = searchTerm
     ? orders.filter((order) => {
-        const search = searchTerm.toLowerCase();
-        const name =
-          order.storefrontData?.customerInfo?.name?.toLowerCase() || "";
-        const phone = order.storefrontData?.customerInfo?.phone || "";
-        const orderNum = order.orderNumber?.toLowerCase() || "";
-        return (
-          name.includes(search) ||
-          phone.includes(search) ||
-          orderNum.includes(search)
-        );
-      })
+      const search = searchTerm.toLowerCase();
+      const name =
+        order.storefrontData?.customerInfo?.name?.toLowerCase() || "";
+      const phone = order.storefrontData?.customerInfo?.phone || "";
+      const orderNum = order.orderNumber?.toLowerCase() || "";
+      return (
+        name.includes(search) ||
+        phone.includes(search) ||
+        orderNum.includes(search)
+      );
+    })
     : orders;
 
   const totalPages = Math.ceil(totalOrders / ITEMS_PER_PAGE);
@@ -262,11 +262,10 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                   <button
                     key={mode}
                     onClick={() => setViewMode(mode)}
-                    className={`p-1.5 rounded-md transition-all ${
-                      viewMode === mode
+                    className={`p-1.5 rounded-md transition-all ${viewMode === mode
                         ? "bg-white shadow-sm text-gray-900"
                         : "text-gray-500 hover:text-gray-700"
-                    }`}
+                      }`}
                     title={`${label} view`}
                   >
                     <Icon className="w-4 h-4" />
@@ -346,21 +345,26 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                           <p className="font-medium text-gray-900 text-sm">
                             {order.storefrontData?.customerInfo?.name || "N/A"}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            {order.storefrontData?.customerInfo?.phone || ""}
-                          </p>
+                          {order.storefrontData?.customerInfo?.phone && (
+                            <p className="text-xs text-gray-500">
+                              Contact: {order.storefrontData.customerInfo.phone}
+                            </p>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
                         {(order.storefrontData?.items || []).map((item, idx) => (
-                          <p key={idx} className="text-sm text-gray-900">
-                            {item.bundleName} x{item.quantity}
-                          </p>
+                          <div key={idx} className="text-sm">
+                            <p className="text-gray-900">{item.bundleName} x{item.quantity}</p>
+                            {item.customerPhone && (
+                              <p className="text-xs text-gray-400">→ {item.customerPhone}</p>
+                            )}
+                          </div>
                         ))}
                         {(!order.storefrontData?.items ||
                           order.storefrontData.items.length === 0) && (
-                          <span className="text-sm text-gray-400">—</span>
-                        )}
+                            <span className="text-sm text-gray-400">—</span>
+                          )}
                       </TableCell>
                       <TableCell>
                         <span className="font-bold text-gray-900">
@@ -384,18 +388,18 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                           )}
                           {order.storefrontData?.paymentMethod
                             ?.paymentProofUrl && (
-                            <a
-                              href={
-                                order.storefrontData.paymentMethod
-                                  .paymentProofUrl
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
-                            >
-                              <ExternalLink className="w-3 h-3" /> Proof
-                            </a>
-                          )}
+                              <a
+                                href={
+                                  order.storefrontData.paymentMethod
+                                    .paymentProofUrl
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                              >
+                                <ExternalLink className="w-3 h-3" /> Proof
+                              </a>
+                            )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -489,30 +493,34 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                       </p>
                     </div>
 
-                    {/* Customer - no truncation */}
+                    {/* Customer */}
                     <div className="space-y-1 mb-3">
                       <p className="text-sm font-medium text-gray-900">
                         {order.storefrontData?.customerInfo?.name || "N/A"}
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {order.storefrontData?.customerInfo?.phone || "—"}
-                      </p>
+                      {order.storefrontData?.customerInfo?.phone && (
+                        <p className="text-xs text-gray-500">
+                          Contact: {order.storefrontData.customerInfo.phone}
+                        </p>
+                      )}
                     </div>
 
                     {/* Items - fully visible */}
                     {(order.storefrontData?.items || []).length > 0 && (
-                      <div className="mb-3 space-y-1">
+                      <div className="mb-3 space-y-1.5">
                         {order.storefrontData!.items.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="flex justify-between text-sm"
-                          >
-                            <span className="text-gray-700">
-                              {item.bundleName} x{item.quantity}
-                            </span>
-                            <span className="text-gray-500">
-                              GHS {(item.totalPrice || 0).toFixed(2)}
-                            </span>
+                          <div key={idx} className="text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-700">
+                                {item.bundleName} x{item.quantity}
+                              </span>
+                              <span className="text-gray-500">
+                                GHS {(item.totalPrice || 0).toFixed(2)}
+                              </span>
+                            </div>
+                            {item.customerPhone && (
+                              <p className="text-xs text-gray-400">→ {item.customerPhone}</p>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -530,19 +538,19 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                         </Badge>
                         {order.storefrontData?.paymentMethod
                           ?.paymentProofUrl && (
-                          <a
-                            href={
-                              order.storefrontData.paymentMethod
-                                .paymentProofUrl
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Eye className="w-3 h-3" /> Proof
-                          </a>
-                        )}
+                            <a
+                              href={
+                                order.storefrontData.paymentMethod
+                                  .paymentProofUrl
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Eye className="w-3 h-3" /> Proof
+                            </a>
+                          )}
                       </div>
                       <span>{formatDate(order.createdAt)}</span>
                     </div>
@@ -593,19 +601,18 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                 >
                   {/* Status dot */}
                   <div
-                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                      order.status === "completed"
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${order.status === "completed"
                         ? "bg-green-500"
                         : order.status === "failed" ||
-                            order.status === "cancelled"
+                          order.status === "cancelled"
                           ? "bg-red-500"
                           : order.status === "pending_payment"
                             ? "bg-yellow-500"
                             : order.status === "processing" ||
-                                order.status === "confirmed"
+                              order.status === "confirmed"
                               ? "bg-blue-500"
                               : "bg-gray-400"
-                    }`}
+                      }`}
                   />
 
                   {/* Order number */}
@@ -715,33 +722,35 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
             <DialogBody>
               <div className="space-y-4">
                 {/* Customer */}
-                <div className="p-3 bg-gray-50 rounded-lg space-y-1.5 text-sm">
-                  <h4 className="font-medium text-gray-900">Customer</h4>
-                  <p>
+                <div className="p-3 bg-gray-50 rounded-lg text-sm">
+                  <h4 className="font-medium text-gray-900 mb-1.5">Customer</h4>
+                  <p className="font-medium">
                     {selectedOrder.storefrontData?.customerInfo?.name || "N/A"}
                   </p>
-                  <p className="text-gray-500">
-                    {selectedOrder.storefrontData?.customerInfo?.phone || "—"}
-                  </p>
+                  {selectedOrder.storefrontData?.customerInfo?.phone && (
+                    <p className="text-gray-500 text-xs mt-0.5">
+                      Contact: {selectedOrder.storefrontData.customerInfo.phone}
+                    </p>
+                  )}
                 </div>
 
-                {/* Items */}
+                {/* Items with recipient phones */}
                 {(selectedOrder.storefrontData?.items || []).length > 0 && (
                   <div className="space-y-2">
                     <h4 className="font-medium text-sm text-gray-900">
                       Items
                     </h4>
                     {selectedOrder.storefrontData!.items.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between text-sm"
-                      >
-                        <span>
-                          {item.bundleName} x{item.quantity}
-                        </span>
-                        <span className="font-medium">
-                          GHS {(item.totalPrice || 0).toFixed(2)}
-                        </span>
+                      <div key={idx} className="p-2.5 bg-gray-50 rounded-lg text-sm space-y-1">
+                        <div className="flex justify-between">
+                          <span className="font-medium text-gray-900">{item.bundleName} x{item.quantity}</span>
+                          <span className="font-medium">
+                            GHS {(item.totalPrice || 0).toFixed(2)}
+                          </span>
+                        </div>
+                        {item.customerPhone && (
+                          <p className="text-xs text-gray-500">📱 Recipient: <span className="font-medium text-gray-700">{item.customerPhone}</span></p>
+                        )}
                       </div>
                     ))}
                     <div className="border-t pt-2 flex justify-between font-bold text-sm">
@@ -771,18 +780,18 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                   )}
                   {selectedOrder.storefrontData?.paymentMethod
                     ?.paymentProofUrl && (
-                    <a
-                      href={
-                        selectedOrder.storefrontData.paymentMethod
-                          .paymentProofUrl
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                    >
-                      <Eye className="w-3.5 h-3.5" /> View Payment Proof
-                    </a>
-                  )}
+                      <a
+                        href={
+                          selectedOrder.storefrontData.paymentMethod
+                            .paymentProofUrl
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> View Payment Proof
+                      </a>
+                    )}
                 </div>
 
                 <p className="text-xs text-gray-400">
@@ -878,52 +887,54 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                 </p>
                 {verificationModal.order.storefrontData?.paymentMethod
                   ?.reference && (
-                  <p>
-                    <strong>Reference:</strong>{" "}
-                    {
-                      verificationModal.order.storefrontData.paymentMethod
-                        .reference
-                    }
-                  </p>
-                )}
+                    <p>
+                      <strong>Reference:</strong>{" "}
+                      {
+                        verificationModal.order.storefrontData.paymentMethod
+                          .reference
+                      }
+                    </p>
+                  )}
                 {verificationModal.order.storefrontData?.paymentMethod
                   ?.paymentProofUrl && (
-                  <a
-                    href={
-                      verificationModal.order.storefrontData.paymentMethod
-                        .paymentProofUrl
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" /> View Payment
-                    Proof
-                  </a>
-                )}
+                    <a
+                      href={
+                        verificationModal.order.storefrontData.paymentMethod
+                          .paymentProofUrl
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> View Payment
+                      Proof
+                    </a>
+                  )}
 
-                {/* Items */}
+                {/* Items with recipient phones */}
                 {(verificationModal.order.storefrontData?.items || [])
                   .length > 0 && (
-                  <div className="mt-2 pt-2 border-t space-y-1">
-                    <h5 className="font-medium text-gray-900">Items:</h5>
-                    {verificationModal.order.storefrontData.items.map(
-                      (item, idx) => (
-                        <div
-                          key={idx}
-                          className="flex justify-between"
-                        >
-                          <span>
-                            {item.bundleName} x{item.quantity}
-                          </span>
-                          <span>
-                            GHS {(item.totalPrice || 0).toFixed(2)}
-                          </span>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                )}
+                    <div className="mt-2 pt-2 border-t space-y-1.5">
+                      <h5 className="font-medium text-gray-900">Items:</h5>
+                      {verificationModal.order.storefrontData.items.map(
+                        (item, idx) => (
+                          <div key={idx}>
+                            <div className="flex justify-between">
+                              <span>
+                                {item.bundleName} x{item.quantity}
+                              </span>
+                              <span>
+                                GHS {(item.totalPrice || 0).toFixed(2)}
+                              </span>
+                            </div>
+                            {item.customerPhone && (
+                              <p className="text-xs text-gray-500">📱 Recipient: <span className="font-medium text-gray-700">{item.customerPhone}</span></p>
+                            )}
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
               </div>
 
               {/* Notes */}
