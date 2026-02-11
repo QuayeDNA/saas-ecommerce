@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardHeader,
@@ -47,6 +48,9 @@ import {
   Calendar,
   Info,
   Save,
+  MessageCircle,
+  Palette,
+  Eye,
 } from "lucide-react";
 
 // --- Types ---
@@ -64,9 +68,9 @@ interface PaymentMethodForm {
       number: string;
       accountName: string;
     }>;
-    bankName?: string;
-    accountNumber?: string;
-    accountName?: string;
+    bank?: string;
+    account?: string;
+    name?: string;
   };
   isActive: boolean;
 }
@@ -99,6 +103,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   onUpdate,
 }) => {
   const { addToast } = useToast();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("general");
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -107,9 +112,13 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   // Form state
   const [formData, setFormData] = useState({
     businessName: storefront.businessName || "",
+    description: storefront.description || "",
     phone: storefront.contactInfo?.phone || "",
     email: storefront.contactInfo?.email || "",
+    whatsapp: storefront.contactInfo?.whatsapp || "",
     address: storefront.contactInfo?.address || "",
+    theme: storefront.settings?.theme || "blue",
+    showContact: storefront.settings?.showContact ?? true,
   });
 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodForm[]>(
@@ -189,7 +198,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
       }
       if (
         payment.type === "bank_transfer" &&
-        (!payment.details.accountNumber || !payment.details.bankName)
+        (!payment.details.account || !payment.details.bank)
       ) {
         setErrors({
           paymentMethods:
@@ -260,7 +269,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
       details:
         type === "mobile_money"
           ? { accounts: [{ provider: "", number: "", accountName: "" }] }
-          : { accountNumber: "", bankName: "", accountName: "" },
+          : { account: "", bank: "", name: "" },
       isActive: false,
     };
     setPaymentMethods((prev) => [...prev, newMethod]);
@@ -312,10 +321,16 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
       setIsLoading(true);
       const updateData = {
         businessName: formData.businessName.trim(),
+        description: formData.description.trim() || undefined,
         contactInfo: {
           phone: formData.phone.trim(),
           email: formData.email.trim() || undefined,
+          whatsapp: formData.whatsapp.trim() || undefined,
           address: formData.address.trim() || undefined,
+        },
+        settings: {
+          theme: formData.theme,
+          showContact: formData.showContact,
         },
       };
       const updatedStorefront =
@@ -385,7 +400,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
       setIsLoading(true);
       await storefrontService.deleteStorefront();
       addToast("Storefront deleted successfully", "success");
-      window.location.reload();
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       addToast(
         getApiErrorMessage(error, "Failed to delete storefront"),
@@ -560,11 +575,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
             <div className="space-y-3">
               <FormField label="Bank Name" required>
                 <Input
-                  value={method.details.bankName || ""}
+                  value={method.details.bank || ""}
                   onChange={(e) =>
                     handlePaymentMethodChange(
                       index,
-                      "bankName",
+                      "bank",
                       e.target.value,
                     )
                   }
@@ -574,11 +589,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               </FormField>
               <FormField label="Account Number" required>
                 <Input
-                  value={method.details.accountNumber || ""}
+                  value={method.details.account || ""}
                   onChange={(e) =>
                     handlePaymentMethodChange(
                       index,
-                      "accountNumber",
+                      "account",
                       e.target.value,
                     )
                   }
@@ -588,11 +603,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               </FormField>
               <FormField label="Account Name" required>
                 <Input
-                  value={method.details.accountName || ""}
+                  value={method.details.name || ""}
                   onChange={(e) =>
                     handlePaymentMethodChange(
                       index,
-                      "accountName",
+                      "name",
                       e.target.value,
                     )
                   }
@@ -664,6 +679,21 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                     )}
                   </FormField>
 
+                  <FormField label="Business Description">
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        handleFormChange("description", e.target.value)
+                      }
+                      placeholder="Describe your store — what you sell, why customers should shop here (max 500 chars)"
+                      rows={3}
+                      maxLength={500}
+                    />
+                    <p className="text-xs text-gray-400 mt-1 text-right">
+                      {formData.description.length}/500
+                    </p>
+                  </FormField>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField label="Contact Phone" required>
                       <Input
@@ -716,6 +746,71 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                     </div>
                   </FormField>
 
+                  <FormField label="WhatsApp Number">
+                    <Input
+                      value={formData.whatsapp}
+                      onChange={(e) =>
+                        handleFormChange("whatsapp", e.target.value)
+                      }
+                      placeholder="Optional WhatsApp number"
+                      leftIcon={<MessageCircle className="w-4 h-4" />}
+                    />
+                  </FormField>
+                </CardBody>
+              </Card>
+
+              {/* Store Appearance */}
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-gray-600" />
+                    <h3 className="text-base sm:text-lg font-semibold">
+                      Store Appearance
+                    </h3>
+                  </div>
+                </CardHeader>
+                <CardBody className="space-y-4">
+                  <FormField label="Store Theme Color">
+                    <Select
+                      value={formData.theme}
+                      onChange={(val) => handleFormChange("theme", val)}
+                      options={[
+                        { value: "blue", label: "Blue" },
+                        { value: "green", label: "Green" },
+                        { value: "purple", label: "Purple" },
+                      ]}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Sets the accent color on your public storefront page
+                    </p>
+                  </FormField>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Eye className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          Show Contact Info
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Display phone, email, and address on your public store
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={formData.showContact}
+                      onCheckedChange={(checked) =>
+                        handleFormChange("showContact", checked)
+                      }
+                    />
+                  </div>
+                </CardBody>
+              </Card>
+
+              {/* Store Status - moved here from inside old card */}
+              <Card variant="outlined">
+                <CardBody>
+
                   {/* Store Status */}
                   <div className="p-3 sm:p-4 bg-gray-50 rounded-lg space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -757,16 +852,18 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                       )}
                   </div>
                 </CardBody>
-                <CardFooter>
-                  <Button
-                    onClick={saveGeneralSettings}
-                    isLoading={isLoading}
-                    leftIcon={<Save className="w-4 h-4" />}
-                  >
-                    Save General Settings
-                  </Button>
-                </CardFooter>
               </Card>
+
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <Button
+                  onClick={saveGeneralSettings}
+                  isLoading={isLoading}
+                  leftIcon={<Save className="w-4 h-4" />}
+                >
+                  Save General Settings
+                </Button>
+              </div>
             </TabsContent>
 
             {/* ===== Payment Methods ===== */}

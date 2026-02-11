@@ -106,6 +106,7 @@ export const StorefrontDashboardPage: React.FC = () => {
     try {
       await navigator.clipboard.writeText(getStorefrontUrl());
       setUrlCopied(true);
+      localStorage.setItem(`storefront-shared-${storefront._id}`, "true");
       addToast("Store URL copied!", "success");
       setTimeout(() => setUrlCopied(false), 2000);
     } catch {
@@ -157,11 +158,11 @@ export const StorefrontDashboardPage: React.FC = () => {
     },
     {
       label: "Configure bundle pricing",
-      done: false, // Could check if custom pricing exists
+      done: !!storefront.isApproved,
     },
     {
       label: "Share your store link",
-      done: false,
+      done: !!localStorage.getItem(`storefront-shared-${storefront._id}`),
     },
   ];
 
@@ -289,10 +290,8 @@ export const StorefrontDashboardPage: React.FC = () => {
 
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <Card>
-          <CardBody className="p-0">
-            {/* Scrollable tabs on mobile */}
-            <div className="border-b px-3 sm:px-6 py-3 sm:py-4 overflow-x-auto">
+            {/* Tab bar */}
+            <div className="bg-white rounded-lg border border-gray-200 px-3 sm:px-6 py-3 sm:py-4 overflow-x-auto">
               <TabsList className="inline-flex sm:grid sm:w-full sm:grid-cols-4 gap-1 min-w-max sm:min-w-0">
                 {TABS.map((tab) => (
                   <TabsTrigger
@@ -309,7 +308,7 @@ export const StorefrontDashboardPage: React.FC = () => {
 
             {/* Overview Tab */}
             <TabsContent value="overview">
-              <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                   Storefront Overview
                 </h2>
@@ -462,29 +461,21 @@ export const StorefrontDashboardPage: React.FC = () => {
 
             {/* Pricing Tab */}
             <TabsContent value="pricing">
-              <div className="p-3 sm:p-6">
                 <PricingManager storefrontId={storefront._id!} />
-              </div>
             </TabsContent>
 
             {/* Orders Tab */}
             <TabsContent value="orders">
-              <div className="p-3 sm:p-6">
                 <OrderManager storefrontId={storefront._id!} />
-              </div>
             </TabsContent>
 
             {/* Settings Tab */}
             <TabsContent value="settings">
-              <div className="p-3 sm:p-6">
                 <StorefrontSettings
                   storefront={storefront}
                   onUpdate={handleStorefrontUpdated}
                 />
-              </div>
             </TabsContent>
-          </CardBody>
-        </Card>
       </Tabs>
     </div>
   );

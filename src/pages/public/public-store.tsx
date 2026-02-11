@@ -59,6 +59,7 @@ export const PublicStorePage: React.FC = () => {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [step, setStep] = useState<Step>("browse");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [checkoutError, setCheckoutError] = useState<string | null>(null);
     const [orderResult, setOrderResult] = useState<{ orderId: string; orderNumber: string; total: number } | null>(null);
 
     // Checkout form
@@ -149,15 +150,16 @@ export const PublicStorePage: React.FC = () => {
         if (!businessName || !storeData) return;
 
         // Validation
-        if (!customerName.trim()) { alert("Please enter your name"); return; }
-        if (!customerPhone.trim()) { alert("Please enter your phone number"); return; }
-        if (cart.length === 0) { alert("Your cart is empty"); return; }
+        setCheckoutError(null);
+        if (!customerName.trim()) { setCheckoutError("Please enter your name"); return; }
+        if (!customerPhone.trim()) { setCheckoutError("Please enter your phone number"); return; }
+        if (cart.length === 0) { setCheckoutError("Your cart is empty"); return; }
 
         // Validate each item has a phone number
         for (const item of cart) {
             const phone = item.customerPhone || customerPhone;
             if (!phone.trim()) {
-                alert(`Please provide a recipient phone number for ${item.bundle.name}`);
+                setCheckoutError(`Please provide a recipient phone number for ${item.bundle.name}`);
                 return;
             }
         }
@@ -192,7 +194,7 @@ export const PublicStorePage: React.FC = () => {
                 (err as { response: { data: { message: string } } }).response?.data?.message
                 ? (err as { response: { data: { message: string } } }).response.data.message
                 : "Failed to place order. Please try again.";
-            alert(message);
+            setCheckoutError(message);
         } finally {
             setIsSubmitting(false);
         }
@@ -665,6 +667,14 @@ export const PublicStorePage: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Checkout error */}
+                            {checkoutError && (
+                                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                                    <span>{checkoutError}</span>
+                                </div>
+                            )}
 
                             <button
                                 onClick={handleSubmitOrder}
