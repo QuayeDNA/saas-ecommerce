@@ -30,7 +30,6 @@ import {
   CheckCircle,
   Circle,
   AlertTriangle,
-  CreditCard,
   Phone,
   Share2,
   TrendingUp,
@@ -144,6 +143,7 @@ export const StorefrontDashboardPage: React.FC = () => {
   };
 
   const copyStoreUrl = async () => {
+    if (!storefront) return;
     try {
       await navigator.clipboard.writeText(getStorefrontUrl());
       setUrlCopied(true);
