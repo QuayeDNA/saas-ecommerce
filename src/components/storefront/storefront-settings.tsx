@@ -4,7 +4,6 @@ import {
   Card,
   CardHeader,
   CardBody,
-  CardFooter,
   Button,
   FormField,
   Input,
@@ -690,710 +689,587 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-gray-700 shrink-0" />
-            <div className="min-w-0">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                Storefront Settings
-              </h2>
-              <p className="text-sm text-gray-600 mt-0.5">
-                Manage your storefront configuration and preferences
+      {/* Page header */}
+      <div className="flex items-center gap-3">
+        <Settings className="w-6 h-6 text-gray-700 shrink-0" />
+        <div className="min-w-0">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            Storefront Settings
+          </h2>
+          <p className="text-sm text-gray-500">
+            Manage your storefront configuration and preferences
+          </p>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <div className="overflow-x-auto -mx-1 px-1 sticky top-0 z-10 bg-white pb-2">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 min-w-max sm:min-w-0">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="branding">Branding</TabsTrigger>
+            <TabsTrigger value="payment">Payment</TabsTrigger>
+            <TabsTrigger value="sharing">Share</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* ===== General Settings ===== */}
+        <TabsContent value="general" className="space-y-6">
+          {/* Store Status banner */}
+          <div className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge colorScheme={storeStatusColor}>
+                  {storeStatusLabel}
+                </Badge>
+                <span className="text-sm text-gray-600">
+                  {storefront.suspendedByAdmin
+                    ? "Suspended by an administrator"
+                    : storefront.isActive
+                      ? "Customers can place orders"
+                      : "Customers cannot place orders"}
+                </span>
+              </div>
+              {!storefront.suspendedByAdmin && (
+                <Button
+                  variant={storefront.isActive ? "danger" : "success"}
+                  size="sm"
+                  onClick={toggleStoreStatus}
+                  isLoading={isLoading}
+                >
+                  {storefront.isActive ? "Deactivate Store" : "Reactivate Store"}
+                </Button>
+              )}
+            </div>
+            {storefront.suspendedByAdmin && storefront.suspensionReason && (
+              <Alert status="error" variant="left-accent">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="ml-2">Reason: {storefront.suspensionReason}</span>
+              </Alert>
+            )}
+          </div>
+
+          {/* Business Information */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+              <Store className="w-4 h-4 text-gray-500" />
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Business Information
+              </h3>
+            </div>
+
+            <FormField label="Business Name" required>
+              <Input
+                value={formData.businessName}
+                onChange={(e) => handleFormChange("businessName", e.target.value)}
+                placeholder="Your business name"
+                leftIcon={<Store className="w-4 h-4" />}
+              />
+              {errors.businessName && (
+                <p className="text-sm text-red-600 mt-1">{errors.businessName}</p>
+              )}
+            </FormField>
+
+            <FormField label="Business Description">
+              <Textarea
+                value={formData.description}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  handleFormChange("description", e.target.value)
+                }
+                placeholder="Describe your store — what you sell, why customers should shop here (max 500 chars)"
+                rows={3}
+                maxLength={500}
+              />
+              <p className="text-xs text-gray-400 mt-1 text-right">
+                {formData.description.length}/500
+              </p>
+            </FormField>
+          </section>
+
+          {/* Contact Details */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+              <Phone className="w-4 h-4 text-gray-500" />
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Contact Details
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label="Contact Phone" required>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) => handleFormChange("phone", e.target.value)}
+                  placeholder="Phone number"
+                  leftIcon={<Phone className="w-4 h-4" />}
+                />
+                {errors.phone && (
+                  <p className="text-sm text-red-600 mt-1">{errors.phone}</p>
+                )}
+              </FormField>
+
+              <FormField label="Email Address">
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleFormChange("email", e.target.value)}
+                  placeholder="Optional email"
+                  leftIcon={<Mail className="w-4 h-4" />}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-600 mt-1">{errors.email}</p>
+                )}
+              </FormField>
+
+              <FormField label="WhatsApp Number">
+                <Input
+                  value={formData.whatsapp}
+                  onChange={(e) => handleFormChange("whatsapp", e.target.value)}
+                  placeholder="Optional WhatsApp number"
+                  leftIcon={<MessageCircle className="w-4 h-4" />}
+                />
+              </FormField>
+            </div>
+
+            <FormField label="Business Address">
+              <div className="relative">
+                <div className="absolute top-3 left-3 pointer-events-none">
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                </div>
+                <Textarea
+                  value={formData.address}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    handleFormChange("address", e.target.value)
+                  }
+                  placeholder="Optional business address"
+                  rows={2}
+                  className="pl-10"
+                />
+              </div>
+            </FormField>
+          </section>
+
+          {/* Save */}
+          <div className="flex justify-end pt-2">
+            <Button
+              onClick={saveGeneralSettings}
+              isLoading={isLoading}
+              leftIcon={<Save className="w-4 h-4" />}
+            >
+              Save General Settings
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* ===== Branding & Customization ===== */}
+        <TabsContent value="branding" className="space-y-6">
+          {/* Appearance & Theme */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+              <Palette className="w-4 h-4 text-gray-500" />
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Appearance & Theme
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label="Store Theme Color">
+                <Select
+                  value={brandingData.theme}
+                  onChange={(val) => handleBrandingChange("theme", val)}
+                  options={[
+                    { value: "blue", label: "Blue" },
+                    { value: "green", label: "Green" },
+                    { value: "purple", label: "Purple" },
+                    { value: "red", label: "Red" },
+                    { value: "orange", label: "Orange" },
+                    { value: "teal", label: "Teal" },
+                    { value: "indigo", label: "Indigo" },
+                    { value: "pink", label: "Pink" },
+                  ]}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Sets the accent color on your public storefront page
+                </p>
+              </FormField>
+
+              <FormField label="Store Layout">
+                <Select
+                  value={brandingData.layout}
+                  onChange={(val) => handleBrandingChange("layout", val)}
+                  options={[
+                    { value: "classic", label: "Classic — Standard header" },
+                    { value: "modern", label: "Modern — Large banner overlay" },
+                    { value: "minimal", label: "Minimal — Clean, text-focused" },
+                  ]}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  How your public storefront looks to customers
+                </p>
+              </FormField>
+            </div>
+
+            <FormField label="Store Tagline">
+              <Input
+                value={brandingData.tagline}
+                onChange={(e) => handleBrandingChange("tagline", e.target.value)}
+                placeholder="e.g. Best data deals in town!"
+                leftIcon={<Type className="w-4 h-4" />}
+                maxLength={120}
+              />
+              <p className="text-xs text-gray-400 mt-1 text-right">
+                {brandingData.tagline.length}/120
+              </p>
+            </FormField>
+
+            <FormField label="Footer Text">
+              <Input
+                value={brandingData.footerText}
+                onChange={(e) => handleBrandingChange("footerText", e.target.value)}
+                placeholder="e.g. © 2025 My Business. All rights reserved."
+                maxLength={200}
+              />
+              <p className="text-xs text-gray-400 mt-1 text-right">
+                {brandingData.footerText.length}/200 — Shown at the bottom of your store
+              </p>
+            </FormField>
+
+            {/* Toggle row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Show Contact Info</p>
+                    <p className="text-xs text-gray-500">Phone, email on public store</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={brandingData.showContact}
+                  onCheckedChange={(checked) => handleBrandingChange("showContact", checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Image className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Show Banner</p>
+                    <p className="text-xs text-gray-500">Display banner on public store</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={brandingData.showBanner}
+                  onCheckedChange={(checked) => handleBrandingChange("showBanner", checked)}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Logo & Banner */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+              <Image className="w-4 h-4 text-gray-500" />
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Logo & Banner
+              </h3>
+            </div>
+
+            <FormField label="Logo URL">
+              <Input
+                value={brandingData.logoUrl}
+                onChange={(e) => handleBrandingChange("logoUrl", e.target.value)}
+                placeholder="https://example.com/logo.png"
+                leftIcon={<Image className="w-4 h-4" />}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Paste a URL to your logo image (recommended: square, 200x200px)
+              </p>
+              {brandingData.logoUrl && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
+                  <img
+                    src={brandingData.logoUrl}
+                    alt="Logo preview"
+                    className="w-12 h-12 rounded-lg object-cover border"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                  <span className="text-sm text-gray-600">Logo preview</span>
+                </div>
+              )}
+            </FormField>
+
+            <FormField label="Banner Image URL">
+              <Input
+                value={brandingData.bannerUrl}
+                onChange={(e) => handleBrandingChange("bannerUrl", e.target.value)}
+                placeholder="https://example.com/banner.jpg"
+                leftIcon={<Image className="w-4 h-4" />}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                A wide banner for your store header (recommended: 1200x300px)
+              </p>
+              {brandingData.bannerUrl && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                  <img
+                    src={brandingData.bannerUrl}
+                    alt="Banner preview"
+                    className="w-full h-24 rounded-lg object-cover border"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+              )}
+            </FormField>
+          </section>
+
+          {/* Social Links */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+              <Globe className="w-4 h-4 text-gray-500" />
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Social Links
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField label="Facebook">
+                <Input
+                  value={brandingData.facebook}
+                  onChange={(e) => handleBrandingChange("facebook", e.target.value)}
+                  placeholder="https://facebook.com/yourbusiness"
+                  leftIcon={<Facebook className="w-4 h-4" />}
+                />
+              </FormField>
+              <FormField label="Instagram">
+                <Input
+                  value={brandingData.instagram}
+                  onChange={(e) => handleBrandingChange("instagram", e.target.value)}
+                  placeholder="https://instagram.com/yourbusiness"
+                  leftIcon={<Instagram className="w-4 h-4" />}
+                />
+              </FormField>
+              <FormField label="Twitter / X">
+                <Input
+                  value={brandingData.twitter}
+                  onChange={(e) => handleBrandingChange("twitter", e.target.value)}
+                  placeholder="https://x.com/yourbusiness"
+                  leftIcon={<Twitter className="w-4 h-4" />}
+                />
+              </FormField>
+              <FormField label="TikTok">
+                <Input
+                  value={brandingData.tiktok}
+                  onChange={(e) => handleBrandingChange("tiktok", e.target.value)}
+                  placeholder="https://tiktok.com/@yourbusiness"
+                  leftIcon={<Globe className="w-4 h-4" />}
+                />
+              </FormField>
+            </div>
+          </section>
+
+          {/* Save */}
+          <div className="flex justify-end pt-2">
+            <Button
+              onClick={saveBrandingSettings}
+              isLoading={isLoading}
+              leftIcon={<Save className="w-4 h-4" />}
+            >
+              Save Branding Settings
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* ===== Payment Methods ===== */}
+        <TabsContent value="payment" className="space-y-6">
+          <section className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-gray-500" />
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  Payment Methods
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500 hidden sm:block">
+                Configure how customers can pay
               </p>
             </div>
-          </div>
-        </CardHeader>
 
-        <CardBody>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <div className="overflow-x-auto -mx-1 px-1">
-              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 mb-4 sm:mb-6 min-w-max sm:min-w-0">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="branding">Branding</TabsTrigger>
-                <TabsTrigger value="payment">Payment</TabsTrigger>
-                <TabsTrigger value="sharing">Share</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
-              </TabsList>
+            {errors.paymentMethods && (
+              <Alert status="error" variant="left-accent">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="ml-2">{errors.paymentMethods}</span>
+              </Alert>
+            )}
+
+            <div className="space-y-3">
+              {paymentMethods.map((method, index) =>
+                renderPaymentMethodCard(method, index),
+              )}
             </div>
 
-            {/* ===== General Settings ===== */}
-            <TabsContent value="general" className="space-y-4 sm:space-y-6">
-              <Card variant="outlined">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Store className="w-5 h-5 text-gray-600" />
-                    <h3 className="text-base sm:text-lg font-semibold">
-                      Business Information
-                    </h3>
-                  </div>
-                </CardHeader>
-                <CardBody className="space-y-4">
-                  <FormField label="Business Name" required>
-                    <Input
-                      value={formData.businessName}
-                      onChange={(e) =>
-                        handleFormChange("businessName", e.target.value)
-                      }
-                      placeholder="Your business name"
-                      leftIcon={<Store className="w-4 h-4" />}
-                    />
-                    {errors.businessName && (
-                      <p className="text-sm text-red-600 mt-1">
-                        {errors.businessName}
-                      </p>
-                    )}
-                  </FormField>
-
-                  <FormField label="Business Description">
-                    <Textarea
-                      value={formData.description}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                        handleFormChange("description", e.target.value)
-                      }
-                      placeholder="Describe your store — what you sell, why customers should shop here (max 500 chars)"
-                      rows={3}
-                      maxLength={500}
-                    />
-                    <p className="text-xs text-gray-400 mt-1 text-right">
-                      {formData.description.length}/500
-                    </p>
-                  </FormField>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField label="Contact Phone" required>
-                      <Input
-                        value={formData.phone}
-                        onChange={(e) =>
-                          handleFormChange("phone", e.target.value)
-                        }
-                        placeholder="Phone number"
-                        leftIcon={<Phone className="w-4 h-4" />}
-                      />
-                      {errors.phone && (
-                        <p className="text-sm text-red-600 mt-1">
-                          {errors.phone}
-                        </p>
-                      )}
-                    </FormField>
-
-                    <FormField label="Email Address">
-                      <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) =>
-                          handleFormChange("email", e.target.value)
-                        }
-                        placeholder="Optional email"
-                        leftIcon={<Mail className="w-4 h-4" />}
-                      />
-                      {errors.email && (
-                        <p className="text-sm text-red-600 mt-1">
-                          {errors.email}
-                        </p>
-                      )}
-                    </FormField>
-                  </div>
-
-                  <FormField label="Business Address">
-                    <div className="relative">
-                      <div className="absolute top-3 left-3 pointer-events-none">
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                      </div>
-                      <Textarea
-                        value={formData.address}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                          handleFormChange("address", e.target.value)
-                        }
-                        placeholder="Optional business address"
-                        rows={2}
-                        className="pl-10"
-                      />
-                    </div>
-                  </FormField>
-
-                  <FormField label="WhatsApp Number">
-                    <Input
-                      value={formData.whatsapp}
-                      onChange={(e) =>
-                        handleFormChange("whatsapp", e.target.value)
-                      }
-                      placeholder="Optional WhatsApp number"
-                      leftIcon={<MessageCircle className="w-4 h-4" />}
-                    />
-                  </FormField>
-                </CardBody>
-              </Card>
-
-
-              {/* Store Status - moved here from inside old card */}
-              <Card variant="outlined">
-                <CardBody>
-
-                  {/* Store Status */}
-                  <div className="p-3 sm:p-4 bg-gray-50 rounded-lg space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge colorScheme={storeStatusColor}>
-                          {storeStatusLabel}
-                        </Badge>
-                        <span className="text-sm text-gray-600">
-                          {storefront.suspendedByAdmin
-                            ? "Suspended by an administrator"
-                            : storefront.isActive
-                              ? "Customers can place orders"
-                              : "Customers cannot place orders"}
-                        </span>
-                      </div>
-                      {!storefront.suspendedByAdmin && (
-                        <Button
-                          variant={
-                            storefront.isActive ? "danger" : "success"
-                          }
-                          size="sm"
-                          onClick={toggleStoreStatus}
-                          isLoading={isLoading}
-                        >
-                          {storefront.isActive
-                            ? "Deactivate Store"
-                            : "Reactivate Store"}
-                        </Button>
-                      )}
-                    </div>
-                    {storefront.suspendedByAdmin &&
-                      storefront.suspensionReason && (
-                        <Alert status="error" variant="left-accent">
-                          <AlertTriangle className="w-4 h-4" />
-                          <span className="ml-2">
-                            Reason: {storefront.suspensionReason}
-                          </span>
-                        </Alert>
-                      )}
-                  </div>
-                </CardBody>
-              </Card>
-
-              {/* Save Button */}
-              <div className="flex justify-end">
-                <Button
-                  onClick={saveGeneralSettings}
-                  isLoading={isLoading}
-                  leftIcon={<Save className="w-4 h-4" />}
-                >
-                  Save General Settings
-                </Button>
-              </div>
-            </TabsContent>
-
-            {/* ===== Branding & Customization ===== */}
-            <TabsContent value="branding" className="space-y-4 sm:space-y-6">
-              {/* Logo & Banner */}
-              <Card variant="outlined">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Image className="w-5 h-5 text-gray-600" />
-                    <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-semibold">
-                        Logo & Banner
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Add your brand images to personalize your store
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardBody className="space-y-4">
-                  <FormField label="Logo URL">
-                    <Input
-                      value={brandingData.logoUrl}
-                      onChange={(e) =>
-                        handleBrandingChange("logoUrl", e.target.value)
-                      }
-                      placeholder="https://example.com/logo.png"
-                      leftIcon={<Image className="w-4 h-4" />}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Paste a URL to your logo image (recommended: square, 200x200px)
-                    </p>
-                    {brandingData.logoUrl && (
-                      <div className="mt-2 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
-                        <img
-                          src={brandingData.logoUrl}
-                          alt="Logo preview"
-                          className="w-12 h-12 rounded-lg object-cover border"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <span className="text-sm text-gray-600">Logo preview</span>
-                      </div>
-                    )}
-                  </FormField>
-
-                  <FormField label="Banner Image URL">
-                    <Input
-                      value={brandingData.bannerUrl}
-                      onChange={(e) =>
-                        handleBrandingChange("bannerUrl", e.target.value)
-                      }
-                      placeholder="https://example.com/banner.jpg"
-                      leftIcon={<Image className="w-4 h-4" />}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      A wide banner for your store header (recommended: 1200x300px)
-                    </p>
-                    {brandingData.bannerUrl && (
-                      <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                        <img
-                          src={brandingData.bannerUrl}
-                          alt="Banner preview"
-                          className="w-full h-24 rounded-lg object-cover border"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      </div>
-                    )}
-                  </FormField>
-
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Eye className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Show Banner
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Display the banner image on your public store
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={brandingData.showBanner}
-                      onCheckedChange={(checked) =>
-                        handleBrandingChange("showBanner", checked)
-                      }
-                    />
-                  </div>
-                </CardBody>
-              </Card>
-
-              {/* Appearance & Layout */}
-              <Card variant="outlined">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Palette className="w-5 h-5 text-gray-600" />
-                    <h3 className="text-base sm:text-lg font-semibold">
-                      Appearance & Layout
-                    </h3>
-                  </div>
-                </CardHeader>
-                <CardBody className="space-y-4">
-                  <FormField label="Store Theme Color">
-                    <Select
-                      value={brandingData.theme}
-                      onChange={(val) => handleBrandingChange("theme", val)}
-                      options={[
-                        { value: "blue", label: "Blue" },
-                        { value: "green", label: "Green" },
-                        { value: "purple", label: "Purple" },
-                        { value: "red", label: "Red" },
-                        { value: "orange", label: "Orange" },
-                        { value: "teal", label: "Teal" },
-                        { value: "indigo", label: "Indigo" },
-                        { value: "pink", label: "Pink" },
-                      ]}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Sets the accent color on your public storefront page
-                    </p>
-                  </FormField>
-
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Eye className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Show Contact Info
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Display phone, email, and address on your public store
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={brandingData.showContact}
-                      onCheckedChange={(checked) =>
-                        handleBrandingChange("showContact", checked)
-                      }
-                    />
-                  </div>
-
-                  <FormField label="Store Tagline">
-                    <Input
-                      value={brandingData.tagline}
-                      onChange={(e) =>
-                        handleBrandingChange("tagline", e.target.value)
-                      }
-                      placeholder="e.g. Best data deals in town!"
-                      leftIcon={<Type className="w-4 h-4" />}
-                      maxLength={120}
-                    />
-                    <p className="text-xs text-gray-400 mt-1 text-right">
-                      {brandingData.tagline.length}/120
-                    </p>
-                  </FormField>
-
-                  <FormField label="Store Layout">
-                    <Select
-                      value={brandingData.layout}
-                      onChange={(val) => handleBrandingChange("layout", val)}
-                      options={[
-                        { value: "classic", label: "Classic — Standard header with contact info" },
-                        { value: "modern", label: "Modern — Large banner with overlay text" },
-                        { value: "minimal", label: "Minimal — Clean, text-focused design" },
-                      ]}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Choose how your public storefront looks to customers
-                    </p>
-                  </FormField>
-
-                  <FormField label="Footer Text">
-                    <Input
-                      value={brandingData.footerText}
-                      onChange={(e) =>
-                        handleBrandingChange("footerText", e.target.value)
-                      }
-                      placeholder="e.g. © 2025 My Business. All rights reserved."
-                      maxLength={200}
-                    />
-                    <p className="text-xs text-gray-400 mt-1 text-right">
-                      {brandingData.footerText.length}/200 — Shown at the bottom of your store
-                    </p>
-                  </FormField>
-                </CardBody>
-              </Card>
-
-              {/* Social Links */}
-              <Card variant="outlined">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-gray-600" />
-                    <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-semibold">
-                        Social Links
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Add social media links to your store footer
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardBody className="space-y-3">
-                  <FormField label="Facebook">
-                    <Input
-                      value={brandingData.facebook}
-                      onChange={(e) =>
-                        handleBrandingChange("facebook", e.target.value)
-                      }
-                      placeholder="https://facebook.com/yourbusiness"
-                      leftIcon={<Facebook className="w-4 h-4" />}
-                    />
-                  </FormField>
-                  <FormField label="Instagram">
-                    <Input
-                      value={brandingData.instagram}
-                      onChange={(e) =>
-                        handleBrandingChange("instagram", e.target.value)
-                      }
-                      placeholder="https://instagram.com/yourbusiness"
-                      leftIcon={<Instagram className="w-4 h-4" />}
-                    />
-                  </FormField>
-                  <FormField label="Twitter / X">
-                    <Input
-                      value={brandingData.twitter}
-                      onChange={(e) =>
-                        handleBrandingChange("twitter", e.target.value)
-                      }
-                      placeholder="https://x.com/yourbusiness"
-                      leftIcon={<Twitter className="w-4 h-4" />}
-                    />
-                  </FormField>
-                  <FormField label="TikTok">
-                    <Input
-                      value={brandingData.tiktok}
-                      onChange={(e) =>
-                        handleBrandingChange("tiktok", e.target.value)
-                      }
-                      placeholder="https://tiktok.com/@yourbusiness"
-                      leftIcon={<Globe className="w-4 h-4" />}
-                    />
-                  </FormField>
-                </CardBody>
-              </Card>
-
-              {/* Save Button */}
-              <div className="flex justify-end">
-                <Button
-                  onClick={saveBrandingSettings}
-                  isLoading={isLoading}
-                  leftIcon={<Save className="w-4 h-4" />}
-                >
-                  Save Branding Settings
-                </Button>
-              </div>
-            </TabsContent>
-
-            {/* ===== Payment Methods ===== */}
-            <TabsContent value="payment" className="space-y-4 sm:space-y-6">
-              <Card variant="outlined">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-gray-600" />
-                    <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-semibold">
-                        Payment Methods
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Configure how customers can pay
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  {errors.paymentMethods && (
-                    <Alert
-                      status="error"
-                      variant="left-accent"
-                      className="mb-4"
-                    >
-                      <AlertTriangle className="w-4 h-4" />
-                      <span className="ml-2">{errors.paymentMethods}</span>
-                    </Alert>
-                  )}
-
-                  <div className="space-y-3 sm:space-y-4">
-                    {paymentMethods.map((method, index) =>
-                      renderPaymentMethodCard(method, index),
-                    )}
-                  </div>
-
-                  {/* Add payment method */}
-                  <div className="mt-4 sm:mt-6 pt-4 border-t">
-                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <Plus className="w-4 h-4" />
-                      Add payment method:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {PAYMENT_TYPE_OPTIONS.filter(
-                        (option) =>
-                          !paymentMethods.some(
-                            (pm) => pm.type === option.value,
-                          ),
-                      ).map((option) => (
-                        <Button
-                          key={option.value}
-                          variant="outline"
-                          size="sm"
-                          leftIcon={<Plus className="w-4 h-4" />}
-                          onClick={() =>
-                            addPaymentMethod(
-                              option.value as
-                              | "mobile_money"
-                              | "bank_transfer",
-                            )
-                          }
-                        >
-                          Add {option.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </CardBody>
-                <CardFooter>
+            {/* Add payment method */}
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Add payment method:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {PAYMENT_TYPE_OPTIONS.filter(
+                  (option) =>
+                    !paymentMethods.some((pm) => pm.type === option.value),
+                ).map((option) => (
                   <Button
-                    onClick={savePaymentSettings}
-                    isLoading={isLoading}
-                    leftIcon={<Save className="w-4 h-4" />}
+                    key={option.value}
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Plus className="w-4 h-4" />}
+                    onClick={() =>
+                      addPaymentMethod(
+                        option.value as "mobile_money" | "bank_transfer",
+                      )
+                    }
                   >
-                    Save Payment Methods
+                    Add {option.label}
                   </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
+                ))}
+              </div>
+            </div>
+          </section>
 
-            {/* ===== Share & Promote ===== */}
-            <TabsContent value="sharing" className="space-y-4 sm:space-y-6">
-              <Card variant="outlined">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Share2 className="w-5 h-5 text-gray-600" />
-                    <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-semibold">
-                        Share Your Storefront
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Get links to share with customers
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardBody className="space-y-4">
-                  <FormField label="Your Storefront URL">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Input
-                        value={getStorefrontUrl()}
-                        readOnly
-                        className="flex-1 bg-gray-50"
-                      />
-                      <Button
-                        variant={urlCopied ? "success" : "outline"}
-                        onClick={copyStorefrontUrl}
-                        leftIcon={
-                          urlCopied ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )
-                        }
-                        className="shrink-0"
-                      >
-                        {urlCopied ? "Copied!" : "Copy Link"}
-                      </Button>
-                    </div>
-                  </FormField>
+          {/* Save */}
+          <div className="flex justify-end pt-2">
+            <Button
+              onClick={savePaymentSettings}
+              isLoading={isLoading}
+              leftIcon={<Save className="w-4 h-4" />}
+            >
+              Save Payment Methods
+            </Button>
+          </div>
+        </TabsContent>
 
-                  <Alert status="info" variant="left-accent">
-                    <Info className="w-4 h-4" />
-                    <span className="ml-2">
-                      Share this link with your customers so they can browse
-                      and purchase bundles from your storefront.
-                    </span>
-                  </Alert>
+        {/* ===== Share & Promote ===== */}
+        <TabsContent value="sharing" className="space-y-6">
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+              <Share2 className="w-4 h-4 text-gray-500" />
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Share Your Storefront
+              </h3>
+            </div>
 
-                  <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">
-                      Promotion Tips
-                    </h4>
-                    <ul className="text-sm text-gray-600 space-y-1.5">
-                      <li>
-                        • Share on WhatsApp groups and social media
-                      </li>
-                      <li>
-                        • Include in business cards and promotional materials
-                      </li>
-                      <li>
-                        • Add to your WhatsApp status and social media bios
-                      </li>
-                      <li>
-                        • Send directly to customers who inquire about bundles
-                      </li>
-                    </ul>
-                  </div>
-                </CardBody>
-              </Card>
-            </TabsContent>
+            <FormField label="Your Storefront URL">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  value={getStorefrontUrl()}
+                  readOnly
+                  className="flex-1 bg-gray-50"
+                />
+                <Button
+                  variant={urlCopied ? "success" : "outline"}
+                  onClick={copyStorefrontUrl}
+                  leftIcon={
+                    urlCopied ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )
+                  }
+                  className="shrink-0"
+                >
+                  {urlCopied ? "Copied!" : "Copy Link"}
+                </Button>
+              </div>
+            </FormField>
 
-            {/* ===== Advanced Settings ===== */}
-            <TabsContent value="advanced" className="space-y-4 sm:space-y-6">
-              <Card variant="outlined">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-gray-600" />
-                    <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-semibold">
-                        Advanced Settings
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Configuration and dangerous actions
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardBody className="space-y-4 sm:space-y-6">
-                  {/* Storefront Information */}
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                      <Info className="w-4 h-4 text-gray-600" />
-                      Storefront Information
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-xs sm:text-sm text-gray-600 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          Created
-                        </p>
-                        <p className="font-medium text-sm sm:text-base">
-                          {new Date(
-                            storefront.createdAt!,
-                          ).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm text-gray-600 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          Updated
-                        </p>
-                        <p className="font-medium text-sm sm:text-base">
-                          {new Date(
-                            storefront.updatedAt!,
-                          ).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm text-gray-600">
-                          Status
-                        </p>
-                        <Badge
-                          variant="subtle"
-                          colorScheme={storeStatusColor}
-                        >
-                          {storefront.suspendedByAdmin ? (
-                            "Suspended"
-                          ) : storefront.isActive ? (
-                            <>
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              Active
-                            </>
-                          ) : (
-                            "Inactive"
-                          )}
-                        </Badge>
-                      </div>
-                      <div className="col-span-2 sm:col-span-1">
-                        <p className="text-xs sm:text-sm text-gray-600">
-                          Storefront ID
-                        </p>
-                        <p className="font-mono text-xs sm:text-sm truncate">
-                          {storefront._id}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+            <Alert status="info" variant="left-accent">
+              <Info className="w-4 h-4" />
+              <span className="ml-2">
+                Share this link with your customers so they can browse and
+                purchase bundles from your storefront.
+              </span>
+            </Alert>
 
-                  {/* Danger Zone */}
-                  <div className="border border-red-200 rounded-lg p-3 sm:p-4 bg-red-50">
-                    <h4 className="font-medium text-red-900 mb-2 flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5" />
-                      Danger Zone
-                    </h4>
-                    <p className="text-sm text-red-700 mb-4">
-                      Deleting your storefront is permanent and cannot be
-                      undone. All custom pricing and order history will be
-                      lost.
-                    </p>
-                    <Button
-                      variant="danger"
-                      leftIcon={<Trash2 className="w-4 h-4" />}
-                      onClick={() => setShowDeleteDialog(true)}
-                    >
-                      Delete Storefront
-                    </Button>
-                  </div>
-                </CardBody>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </CardBody>
-      </Card>
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-2">Promotion Tips</h4>
+              <ul className="text-sm text-gray-600 space-y-1.5">
+                <li>• Share on WhatsApp groups and social media</li>
+                <li>• Include in business cards and promotional materials</li>
+                <li>• Add to your WhatsApp status and social media bios</li>
+                <li>• Send directly to customers who inquire about bundles</li>
+              </ul>
+            </div>
+          </section>
+        </TabsContent>
+
+        {/* ===== Advanced Settings ===== */}
+        <TabsContent value="advanced" className="space-y-6">
+          {/* Storefront Information */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+              <Info className="w-4 h-4 text-gray-500" />
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Storefront Information
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <div>
+                <p className="text-xs text-gray-500 flex items-center gap-1 mb-0.5">
+                  <Calendar className="w-3 h-3" /> Created
+                </p>
+                <p className="font-medium text-sm">
+                  {new Date(storefront.createdAt!).toLocaleDateString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 flex items-center gap-1 mb-0.5">
+                  <Calendar className="w-3 h-3" /> Updated
+                </p>
+                <p className="font-medium text-sm">
+                  {new Date(storefront.updatedAt!).toLocaleDateString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Status</p>
+                <Badge variant="subtle" colorScheme={storeStatusColor}>
+                  {storefront.suspendedByAdmin ? (
+                    "Suspended"
+                  ) : storefront.isActive ? (
+                    <>
+                      <CheckCircle2 className="w-3 h-3 mr-1" /> Active
+                    </>
+                  ) : (
+                    "Inactive"
+                  )}
+                </Badge>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="text-xs text-gray-500 mb-0.5">Storefront ID</p>
+                <p className="font-mono text-xs truncate">{storefront._id}</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Danger Zone */}
+          <section>
+            <div className="border border-red-200 rounded-xl p-4 bg-red-50">
+              <h4 className="font-medium text-red-900 mb-2 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" /> Danger Zone
+              </h4>
+              <p className="text-sm text-red-700 mb-4">
+                Deleting your storefront is permanent and cannot be undone. All
+                custom pricing and order history will be lost.
+              </p>
+              <Button
+                variant="danger"
+                leftIcon={<Trash2 className="w-4 h-4" />}
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                Delete Storefront
+              </Button>
+            </div>
+          </section>
+        </TabsContent>
+      </Tabs>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
