@@ -12,8 +12,6 @@ import {
 import { EditProfileDialog } from "../components/common/edit-profile-dialog";
 import { ChangePasswordDialog } from "../components/common/change-password-dialog";
 import {
-  FaEdit,
-  FaKey,
   FaUser,
   FaEnvelope,
   FaPhone,
@@ -26,6 +24,7 @@ import {
   FaRedo,
   FaBell,
 } from "react-icons/fa";
+import { UserPen, Key } from "lucide-react";
 import type { User } from "../types";
 import { isBusinessUser } from "../utils/userTypeHelpers";
 import { ColorSchemeSelector } from "../components/common/color-scheme-selector";
@@ -599,20 +598,22 @@ export const ProfilePage: React.FC = () => {
                 Quick Actions
               </h3>
             </CardHeader>
-            <CardBody>
+            <CardBody className="space-y-3">
               <Button
                 variant="outline"
                 fullWidth
-                leftIcon={<FaEdit />}
-                className="justify-start h-10"
+                leftIcon={<UserPen className="w-4 h-4" />}
+                className="justify-start h-11 sm:h-10"
+                onClick={() => setIsEditProfileOpen(true)}
               >
                 Edit Profile
               </Button>
               <Button
                 variant="outline"
                 fullWidth
-                leftIcon={<FaKey />}
-                className="justify-start h-10"
+                leftIcon={<Key className="w-4 h-4" />}
+                className="justify-start h-11 sm:h-10"
+                onClick={() => setIsChangePasswordOpen(true)}
               >
                 Change Password
               </Button>
@@ -622,7 +623,7 @@ export const ProfilePage: React.FC = () => {
                   variant="outline"
                   fullWidth
                   onClick={handleLogout}
-                  className="justify-start h-10"
+                  className="justify-start h-11 sm:h-10"
                 >
                   Sign Out
                 </Button>
@@ -1062,7 +1063,7 @@ export const ProfilePage: React.FC = () => {
                 <Button
                   variant="outline"
                   fullWidth
-                  leftIcon={<FaEdit />}
+                  leftIcon={<UserPen className="w-4 h-4" />}
                   className="justify-start h-10"
                   onClick={() => setIsEditProfileOpen(true)}
                 >
@@ -1071,13 +1072,13 @@ export const ProfilePage: React.FC = () => {
                 <Button
                   variant="outline"
                   fullWidth
-                  leftIcon={<FaKey />}
+                  leftIcon={<Key className="w-4 h-4" />}
                   className="justify-start h-10"
                   onClick={() => setIsChangePasswordOpen(true)}
                 >
                   Change Password
                 </Button>
-                <div className="border-t border-gray-200 pt-3 mt-3">
+                <div className="border-t border-gray-200">
                   <Button
                     color="red"
                     variant="outline"

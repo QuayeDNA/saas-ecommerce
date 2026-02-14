@@ -435,11 +435,10 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                       <button
                         key={option.value}
                         onClick={() => handleStatusChange(option.value)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${
-                          option.value === order.status
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${option.value === order.status
                             ? "bg-blue-50 text-blue-700"
                             : "text-gray-700"
-                        }`}
+                          }`}
                       >
                         {option.label}
                       </button>
@@ -617,20 +616,20 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
           order.items?.[0]?.bundleSize
             ? `${order.items[0].bundleSize.value} ${order.items[0].bundleSize.unit}`
             : order.items?.[0]?.packageDetails?.dataVolume
-            ? `${order.items[0].packageDetails.dataVolume} GB`
-            : undefined
+              ? `${order.items[0].packageDetails.dataVolume} GB`
+              : undefined
         }
         provider={order.items?.[0]?.packageDetails?.provider || undefined}
         orderDate={
           order.createdAt
             ? new Date(order.createdAt).toLocaleString("en-GB", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              })
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })
             : undefined
         }
       />

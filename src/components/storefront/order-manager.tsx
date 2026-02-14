@@ -872,6 +872,13 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                     ?.phone || ""}
                   )
                 </p>
+                {verificationModal.order.storefrontData?.customerInfo
+                  ?.ghanaCardNumber && (
+                  <p>
+                    <strong>Ghana Card:</strong>{" "}
+                    {verificationModal.order.storefrontData.customerInfo.ghanaCardNumber}
+                  </p>
+                )}
                 <p>
                   <strong>Amount:</strong> GHS{" "}
                   {(verificationModal.order.total || 0).toFixed(2)}
