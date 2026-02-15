@@ -1,7 +1,7 @@
 // src/utils/impersonation.ts
 
 import Cookies from "js-cookie";
-import type { User } from "../services/user.service";
+import type { User } from "../types/auth";
 
 export interface ImpersonationData {
   adminToken: string;
