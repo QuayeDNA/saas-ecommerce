@@ -32,7 +32,8 @@ export class ImpersonationService {
     adminToken: string,
     adminUser: User,
     impersonatedUser: User,
-    impersonatedToken: string
+    impersonatedToken: string,
+    impersonatedRefreshToken?: string
   ): void {
     try {
       // Store admin data for later restoration
@@ -51,7 +52,7 @@ export class ImpersonationService {
       // Set impersonated user's token
       localStorage.setItem(this.USER_TOKEN_KEY, impersonatedToken);
 
-      // Set cookies for the impersonated user
+      // Set cookies for the impersonated user (access token + user)
       Cookies.set("authToken", impersonatedToken, {
         secure: import.meta.env.PROD,
         sameSite: "strict",
@@ -65,6 +66,21 @@ export class ImpersonationService {
         path: "/",
         expires: 7,
       });
+
+      // If backend provided a refresh token for impersonation, set it so
+      // the impersonated session can refresh normally. Also save a local
+      // copy (helps with cleanup/debugging).
+      if (impersonatedRefreshToken) {
+        Cookies.set("refreshToken", impersonatedRefreshToken, {
+          secure: import.meta.env.PROD,
+          sameSite: "strict",
+          path: "/",
+          expires: 7,
+        });
+        try {
+          localStorage.setItem("impersonatedRefreshToken", impersonatedRefreshToken);
+        } catch {}
+      }
 
       console.log("✅ Impersonation started successfully");
     } catch (error) {
@@ -94,27 +110,34 @@ export class ImpersonationService {
         const adminUser = JSON.parse(adminUserData);
         let tokenToUse = adminToken;
 
-        // If we have a refresh token but no valid access token, try to refresh
-        if (!tokenToUse && adminRefreshToken) {
-          console.log("🔄 Refreshing admin token...");
+        // If we have an admin refresh token, prefer refreshing the admin access
+        // token using it (handles the case where the stored access token is expired).
+        if (adminRefreshToken) {
+          console.log("🔄 Attempting to refresh admin token using stored refresh token...");
           try {
             const authService = (await import("../services/auth.service")).authService;
-            // Temporarily set the refresh token to get a new access token
+
+            // Temporarily set the refresh token cookie so refreshAccessToken() can use it
             Cookies.set("refreshToken", adminRefreshToken, {
               secure: import.meta.env.PROD,
               sameSite: "strict",
               path: "/",
               expires: 7,
             });
-            tokenToUse = await authService.refreshAccessToken();
-            console.log("✅ Got fresh admin token");
+
+            const refreshed = await authService.refreshAccessToken();
+            if (refreshed) {
+              tokenToUse = refreshed;
+              console.log("✅ Refreshed admin access token using refresh token");
+            }
           } catch (refreshError) {
             console.warn("⚠️ Failed to refresh admin token:", refreshError);
+            // fall through to try stored adminToken below
           }
         }
 
-        // If we still don't have a token, try to use the stored one
-        if (!tokenToUse) {
+        // If refresh didn't yield a token, fall back to the stored admin access token
+        if (!tokenToUse && adminToken) {
           tokenToUse = adminToken;
         }
 
@@ -155,6 +178,13 @@ export class ImpersonationService {
         localStorage.removeItem("adminUser");
         localStorage.removeItem("adminRefreshToken");
         localStorage.removeItem(this.IMPERSONATION_KEY);
+        localStorage.removeItem("impersonatedRefreshToken");
+
+        // If we didn't restore an admin refresh token, remove any lingering
+        // impersonated refresh token cookie so background refresh won't run
+        if (!adminRefreshToken) {
+          Cookies.remove("refreshToken", { path: "/" });
+        }
 
         // Dispatch auth refresh event to trigger auth context refresh
         console.log("📡 Dispatching auth refresh event...");

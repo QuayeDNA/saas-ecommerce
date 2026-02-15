@@ -284,7 +284,7 @@ export const userService = {
   async deleteUser(id: string): Promise<void> {
     await apiClient.delete(`/api/auth/users/${id}`);
   },
-  async impersonateUser(id: string): Promise<{ token: string; user: User }> {
+  async impersonateUser(id: string): Promise<{ token: string; refreshToken: string; user: User }> {
     const resp = await apiClient.post(`/api/auth/users/${id}/impersonate`);
     return resp.data;
   },
