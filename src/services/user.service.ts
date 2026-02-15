@@ -26,6 +26,8 @@ export interface FetchUsersParams {
   status?: string;
   userType?: string;
   search?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface UpdateProfileData {
@@ -317,11 +319,11 @@ export const userService = {
     return resp.data;
   },
   async getUsers(params: FetchUsersParams = {}): Promise<UsersResponse> {
-    const resp = await apiClient.get("/api/auth/users", { params });
+    const resp = await apiClient.get("/api/users", { params });
     return resp.data;
   },
   async getUserById(id: string): Promise<User> {
-    const resp = await apiClient.get(`/api/auth/users/${id}`);
+    const resp = await apiClient.get(`/api/users/${id}`);
     return resp.data.user;
   },
   async getProfile(): Promise<User> {
@@ -329,11 +331,11 @@ export const userService = {
     return resp.data.user;
   },
   async getUserStats(): Promise<UserStats> {
-    const resp = await apiClient.get("/api/auth/users/stats");
+    const resp = await apiClient.get("/api/users/stats");
     return resp.data.stats;
   },
   async updateUserStatus(id: string, data: { status: string }): Promise<User> {
-    const resp = await apiClient.patch(`/api/auth/users/${id}/status`, data);
+    const resp = await apiClient.patch(`/api/users/${id}/status`, data);
     return resp.data.user;
   },
 };
