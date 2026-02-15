@@ -27,9 +27,9 @@ import { Pagination } from "../../design-system/components/pagination";
 import type { WalletTransaction, WalletAnalytics } from "../../types/wallet";
 import { walletService } from "../../services/wallet-service";
 import { websocketService } from "../../services/websocket.service";
-import { apiClient } from "../../utils/api-client";
 import { Card, CardHeader } from "@/design-system";
 import { type User } from "../../services/user.service";
+import { userService } from "../../services/user.service";
 
 interface WalletTransactionModalProps {
   isOpen: boolean;
@@ -544,7 +544,7 @@ export default function SuperAdminWalletPage() {
           <StatCard
             title="Total Users"
             value={analytics.users.total}
-            subtitle={`${analytics.users.newThisPeriod || 0} new this period`}
+            subtitle={`${analytics.users.withBalance} with balance`}
             icon={<FaUsers />}
             size="md"
           />
@@ -552,7 +552,7 @@ export default function SuperAdminWalletPage() {
           <StatCard
             title="Total Balance"
             value={formatCurrency(analytics.balance.total)}
-            subtitle={`${analytics.wallet?.transactions?.credits?.count || 0} credits`}
+            subtitle={`${analytics.transactions.credits.count} credits`}
             icon={<FaMoneyBillWave />}
             size="md"
           />
@@ -891,8 +891,8 @@ export default function SuperAdminWalletPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${transaction.type === "credit"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
                           }`}
                       >
                         {transaction.type === "credit" ? (
@@ -906,12 +906,12 @@ export default function SuperAdminWalletPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${transaction.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : transaction.status === "rejected"
-                              ? "bg-red-100 text-red-800"
-                              : transaction.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
+                          ? "bg-green-100 text-green-800"
+                          : transaction.status === "rejected"
+                            ? "bg-red-100 text-red-800"
+                            : transaction.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
                           }`}
                       >
                         {transaction.status.toUpperCase()}

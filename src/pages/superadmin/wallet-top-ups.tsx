@@ -443,7 +443,7 @@ export default function WalletTopUpsPage() {
           <StatCard
             title="Total Users"
             value={analytics.users.total}
-            subtitle={`${analytics.users.newThisPeriod || 0} new this period`}
+            subtitle={`${analytics.users.withBalance} with balance`}
             icon={<FaUsers />}
             size="md"
           />
@@ -451,7 +451,7 @@ export default function WalletTopUpsPage() {
           <StatCard
             title="Total Balance"
             value={formatCurrency(analytics.balance.total)}
-            subtitle={`${analytics.wallet?.transactions?.credits?.count || 0} credits`}
+            subtitle={`${analytics.transactions.credits.count} credits`}
             icon={<FaMoneyBillWave />}
             size="md"
           />
