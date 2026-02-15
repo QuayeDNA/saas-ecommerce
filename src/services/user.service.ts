@@ -322,6 +322,15 @@ export const userService = {
     const resp = await apiClient.get("/api/users", { params });
     return resp.data;
   },
+
+  async getUsersWithWallet(params: FetchUsersParams & { includeWallet?: boolean; userTypes?: string } = {}): Promise<UsersResponse> {
+    const { includeWallet = true, userTypes, ...rest } = params as any;
+    const query: any = { ...rest };
+    if (typeof includeWallet !== "undefined") query.includeWallet = includeWallet ? "true" : "false";
+    if (userTypes) query.userTypes = userTypes;
+    const resp = await apiClient.get("/api/users/with-wallet", { params: query });
+    return resp.data;
+  },
   async getUserById(id: string): Promise<User> {
     const resp = await apiClient.get(`/api/users/${id}`);
     return resp.data.user;

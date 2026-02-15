@@ -20,6 +20,8 @@ import { Form } from "../../design-system/components/form";
 import { FormField } from "../../design-system/components/form-field";
 import { Select } from "../../design-system/components/select";
 import { colors } from "../../design-system/tokens";
+import { StatCard } from "../../design-system/components/stats-card";
+import { Pagination } from "../../design-system/components/pagination";
 import type { WalletTransaction, WalletAnalytics } from "../../types/wallet";
 import { walletService } from "../../services/wallet-service";
 import { websocketService } from "../../services/websocket.service";
@@ -166,17 +168,16 @@ function WalletTransactionModal({
 
 export default function WalletTopUpsPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [usersPagination, setUsersPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [userTypeFilter, setUserTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [itemsPerPage, setItemsPerPage] = useState<number>(20);
   const [analytics, setAnalytics] = useState<WalletAnalytics | null>(null);
-  const [pendingRequests, setPendingRequests] = useState<WalletTransaction[]>(
-    []
-  );
+  const [pendingRequests, setPendingRequests] = useState<WalletTransaction[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [transactionModal, setTransactionModal] = useState<{
     isOpen: boolean;
@@ -193,31 +194,13 @@ export default function WalletTopUpsPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Filter users based on search and filters
+  // Fetch users whenever filters/search/pagination change
   useEffect(() => {
-    let filtered = users;
+    fetchUsers(usersPagination.page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm, userTypeFilter, statusFilter, usersPagination.page, itemsPerPage]);
 
-    if (debouncedSearchTerm) {
-      const searchLower = debouncedSearchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (user) =>
-          user.fullName.toLowerCase().includes(searchLower) ||
-          user.email.toLowerCase().includes(searchLower) ||
-          user._id.toLowerCase().includes(searchLower) ||
-          (user.agentCode && user.agentCode.toLowerCase().includes(searchLower))
-      );
-    }
 
-    if (userTypeFilter) {
-      filtered = filtered.filter((user) => user.userType === userTypeFilter);
-    }
-
-    if (statusFilter) {
-      filtered = filtered.filter((user) => user.status === statusFilter);
-    }
-
-    setFilteredUsers(filtered);
-  }, [users, debouncedSearchTerm, userTypeFilter, statusFilter]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -231,32 +214,37 @@ export default function WalletTopUpsPage() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [debouncedSearchTerm, userTypeFilter, statusFilter]);
 
-  // Memoized search statistics
+  // Memoized search statistics (server-driven)
   const searchStats = useMemo(() => {
-    const hasFilters = debouncedSearchTerm || userTypeFilter || statusFilter;
+    const hasFilters = Boolean(debouncedSearchTerm || userTypeFilter || statusFilter);
+    const total = usersPagination.total || 0;
+    const filtered = users.length;
     return {
-      total: users.length,
-      filtered: filteredUsers.length,
+      total,
+      filtered,
       hasFilters,
-      percentage:
-        users.length > 0
-          ? Math.round((filteredUsers.length / users.length) * 100)
-          : 0,
+      percentage: total > 0 ? Math.round((filtered / total) * 100) : 0,
     };
-  }, [
-    users.length,
-    filteredUsers.length,
-    debouncedSearchTerm,
-    userTypeFilter,
-    statusFilter,
-  ]);
+  }, [users.length, usersPagination.total, debouncedSearchTerm, userTypeFilter, statusFilter]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await userService.getUsers();
-      setUsers(response.users);
+      const resp = await userService.getUsers({
+        page,
+        limit: itemsPerPage,
+        search: debouncedSearchTerm || undefined,
+        userType: userTypeFilter || undefined,
+        status: statusFilter || undefined,
+      });
+      setUsers(resp.users);
+      setUsersPagination({
+        page: resp.pagination.page,
+        limit: resp.pagination.limit,
+        total: resp.pagination.total,
+        pages: resp.pagination.pages,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch users");
     } finally {
@@ -319,6 +307,7 @@ export default function WalletTopUpsPage() {
     setSearchTerm("");
     setUserTypeFilter("");
     setStatusFilter("");
+    setUsersPagination((p) => ({ ...p, page: 1 }));
   };
 
   const handleTransaction = async (
@@ -448,71 +437,40 @@ export default function WalletTopUpsPage() {
         </div>
       </Card>
 
-      {/* Analytics Cards */}
+      {/* Analytics Cards (2x2 grid using StatCard) */}
       {analytics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {analytics.users.total}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <FaUsers className="text-blue-600 text-xl" />
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+          <StatCard
+            title="Total Users"
+            value={analytics.users.total}
+            subtitle={`${analytics.users.newThisPeriod || 0} new this period`}
+            icon={<FaUsers />}
+            size="md"
+          />
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Balance
-                </p>
-                <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(analytics.balance.total)}
-                </p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <FaMoneyBillWave className="text-green-600 text-xl" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="Total Balance"
+            value={formatCurrency(analytics.balance.total)}
+            subtitle={`${analytics.wallet?.transactions?.credits?.count || 0} credits`}
+            icon={<FaMoneyBillWave />}
+            size="md"
+          />
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Pending Requests
-                </p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {pendingRequests.length}
-                </p>
-              </div>
-              <div className="p-3 bg-orange-100 rounded-full">
-                <FaClock className="text-orange-600 text-xl" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="Pending Top-ups"
+            value={pendingRequests.length}
+            subtitle="Requests awaiting review"
+            icon={<FaClock />}
+            size="md"
+          />
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Today's Transactions
-                </p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {analytics.transactions.credits.count +
-                    analytics.transactions.debits.count}
-                </p>
-              </div>
-              <div className="p-3 bg-purple-100 rounded-full">
-                <FaWallet className="text-purple-600 text-xl" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="Today's Transactions"
+            value={analytics.transactions.credits.count + analytics.transactions.debits.count}
+            subtitle="Transactions today"
+            icon={<FaWallet />}
+            size="md"
+          />
         </div>
       )}
 
@@ -678,11 +636,9 @@ export default function WalletTopUpsPage() {
       {!loading && (
         <div className="flex justify-between items-center bg-gray-50 px-6 py-3 border-b">
           <div className="text-sm text-gray-700">
-            Showing {searchStats.filtered} of {searchStats.total} users
+            Showing {(usersPagination.page - 1) * usersPagination.limit + 1} to {Math.min(usersPagination.page * usersPagination.limit, usersPagination.total)} of {usersPagination.total} users
             {searchStats.hasFilters && (
-              <span className="ml-2 text-blue-600">
-                ({searchStats.percentage}% filtered)
-              </span>
+              <span className="ml-2 text-blue-600">(filters applied)</span>
             )}
           </div>
           {searchStats.hasFilters && (
@@ -723,7 +679,7 @@ export default function WalletTopUpsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
+                {users.map((user) => (
                   <tr key={user._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -809,7 +765,7 @@ export default function WalletTopUpsPage() {
           </div>
         )}
 
-        {!loading && filteredUsers.length === 0 && (
+        {!loading && users.length === 0 && (
           <div className="text-center py-12">
             <FaUsers className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">
@@ -823,6 +779,27 @@ export default function WalletTopUpsPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination for users */}
+      {usersPagination.pages > 1 && (
+        <div className="px-6 py-4 border-t border-gray-200">
+          <Pagination
+            currentPage={usersPagination.page}
+            totalPages={usersPagination.pages}
+            totalItems={usersPagination.total}
+            itemsPerPage={usersPagination.limit}
+            onPageChange={(p) => {
+              setUsersPagination((prev) => ({ ...prev, page: p }));
+              fetchUsers(p);
+            }}
+            onItemsPerPageChange={(n) => {
+              setItemsPerPage(n);
+              setUsersPagination((prev) => ({ ...prev, limit: n, page: 1 }));
+              fetchUsers(1);
+            }}
+          />
+        </div>
+      )}
 
       {/* Transaction Modal */}
       <WalletTransactionModal

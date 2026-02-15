@@ -22,6 +22,8 @@ import { Form } from "../../design-system/components/form";
 import { FormField } from "../../design-system/components/form-field";
 import { Select } from "../../design-system/components/select";
 import { colors } from "../../design-system/tokens";
+import { StatCard } from "../../design-system/components/stats-card";
+import { Pagination } from "../../design-system/components/pagination";
 import type { WalletTransaction, WalletAnalytics } from "../../types/wallet";
 import { walletService } from "../../services/wallet-service";
 import { websocketService } from "../../services/websocket.service";
@@ -66,7 +68,7 @@ function WalletTransactionModal({
         user._id,
         parseFloat(amount),
         description ||
-          `${mode === "credit" ? "Top-up" : "Debit"} by super admin`,
+        `${mode === "credit" ? "Top-up" : "Debit"} by super admin`,
         mode
       );
       setAmount("");
@@ -166,20 +168,27 @@ export default function SuperAdminWalletPage() {
   const { refreshWallet } = useWallet();
   const { addToast } = useToast();
 
-  // State for users
+  // State for users (server-side pagination + search)
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [usersPagination, setUsersPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // State for analytics
   const [analytics, setAnalytics] = useState<WalletAnalytics | null>(null);
 
-  // State for filters and search
+  // State for filters and search (server-side)
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [userTypeFilter, setUserTypeFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [itemsPerPage, setItemsPerPage] = useState<number>(20);
+
 
   // State for modals
   const [showTransactionModal, setShowTransactionModal] = useState(false);
@@ -233,42 +242,7 @@ export default function SuperAdminWalletPage() {
     []
   );
 
-  // Filter users based on search term and filters
-  const filterUsers = useCallback(
-    (usersList: User[], search: string, userType: string, status: string) => {
-      return usersList.filter((user) => {
-        // Search matching - check name, email, ID, and agent code
-        const searchLower = search.toLowerCase().trim();
-        const matchesSearch =
-          !searchLower ||
-          user.fullName.toLowerCase().includes(searchLower) ||
-          user.email.toLowerCase().includes(searchLower) ||
-          user._id.toLowerCase().includes(searchLower) ||
-          (user.agentCode &&
-            user.agentCode.toLowerCase().includes(searchLower));
 
-        // Filter matching
-        const matchesUserType =
-          !userType || user.userType.toLowerCase() === userType.toLowerCase();
-        const matchesStatus =
-          !status || user.status.toLowerCase() === status.toLowerCase();
-
-        return matchesSearch && matchesUserType && matchesStatus;
-      });
-    },
-    []
-  );
-
-  // Update filtered users when users or filters change
-  useEffect(() => {
-    const filtered = filterUsers(
-      users,
-      debouncedSearchTerm,
-      userTypeFilter,
-      statusFilter
-    );
-    setFilteredUsers(filtered);
-  }, [users, debouncedSearchTerm, userTypeFilter, statusFilter, filterUsers]);
 
   // Debounce search term
   useEffect(() => {
@@ -279,12 +253,19 @@ export default function SuperAdminWalletPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Fetch users whenever filters/search/pagination change
+  useEffect(() => {
+    fetchUsers(usersPagination.page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm, userTypeFilter, statusFilter, usersPagination.page, itemsPerPage]);
+
   // Clear filters function
   const handleClearFilters = useCallback(() => {
     setSearchTerm("");
     setDebouncedSearchTerm("");
     setUserTypeFilter("");
     setStatusFilter("");
+    setUsersPagination((p) => ({ ...p, page: 1 }));
     addToast("Filters cleared", "info", 2000);
   }, [addToast]);
 
@@ -304,25 +285,18 @@ export default function SuperAdminWalletPage() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [debouncedSearchTerm, userTypeFilter, statusFilter, handleClearFilters]);
 
-  // Memoized search statistics
+  // Memoized search statistics (server-driven)
   const searchStats = useMemo(() => {
-    const hasFilters = debouncedSearchTerm || userTypeFilter || statusFilter;
+    const hasFilters = Boolean(debouncedSearchTerm || userTypeFilter || statusFilter);
+    const total = usersPagination.total || 0;
+    const filtered = users.length;
     return {
-      total: users.length,
-      filtered: filteredUsers.length,
+      total,
+      filtered,
       hasFilters,
-      percentage:
-        users.length > 0
-          ? Math.round((filteredUsers.length / users.length) * 100)
-          : 0,
+      percentage: total > 0 ? Math.round((filtered / total) * 100) : 0,
     };
-  }, [
-    users.length,
-    filteredUsers.length,
-    debouncedSearchTerm,
-    userTypeFilter,
-    statusFilter,
-  ]);
+  }, [users.length, usersPagination.total, debouncedSearchTerm, userTypeFilter, statusFilter]);
 
   const fetchAdminTransactions = useCallback(
     async (page = 1) => {
@@ -368,25 +342,28 @@ export default function SuperAdminWalletPage() {
     };
   }, [handleWalletUpdate, fetchAdminTransactions]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get("/api/users/with-wallet", {
-        params: {
-          userTypes: "agent,super_agent,dealer,super_dealer", // Include all wallet-enabled user types
-          includeWallet: "true",
-          page: 1,
-          limit: 100,
-        },
+      const resp = await userService.getUsersWithWallet({
+        page,
+        limit: itemsPerPage,
+        search: debouncedSearchTerm || undefined,
+        userTypes: "agent,super_agent,dealer,super_dealer",
+        status: statusFilter || undefined,
+        includeWallet: true,
       });
-      if (response.data.success) {
-        setUsers(response.data.users);
-      } else {
-        setError(response.data.message || "Failed to fetch users");
-      }
-    } catch {
-      setError("Failed to fetch users");
+
+      setUsers(resp.users);
+      setUsersPagination({
+        page: resp.pagination.page,
+        limit: resp.pagination.limit,
+        total: resp.pagination.total,
+        pages: resp.pagination.pages,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch users");
     } finally {
       setLoading(false);
     }
@@ -478,8 +455,7 @@ export default function SuperAdminWalletPage() {
 
     if (activeFilters.length > 0) {
       addToast(
-        `Found ${searchStats.filtered} user${
-          searchStats.filtered !== 1 ? "s" : ""
+        `Found ${searchStats.filtered} user${searchStats.filtered !== 1 ? "s" : ""
         } matching ${activeFilters.join(", ")} (${searchStats.percentage}%)`,
         "info",
         3000
@@ -562,68 +538,40 @@ export default function SuperAdminWalletPage() {
         </div>
       </Card>
 
-      {/* Analytics Cards */}
+      {/* Analytics Cards (2x2 grid using StatCard) */}
       {analytics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {analytics.users.total}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <FaUsers className="text-blue-600 text-xl" />
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+          <StatCard
+            title="Total Users"
+            value={analytics.users.total}
+            subtitle={`${analytics.users.newThisPeriod || 0} new this period`}
+            icon={<FaUsers />}
+            size="md"
+          />
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Balance
-                </p>
-                <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(analytics.balance.total)}
-                </p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <FaMoneyBillWave className="text-green-600 text-xl" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="Total Balance"
+            value={formatCurrency(analytics.balance.total)}
+            subtitle={`${analytics.wallet?.transactions?.credits?.count || 0} credits`}
+            icon={<FaMoneyBillWave />}
+            size="md"
+          />
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Pending Requests
-                </p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {analytics.transactions.pendingRequests}
-                </p>
-              </div>
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <FaClock className="text-yellow-600 text-xl" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="Pending Top-ups"
+            value={pendingRequests.length}
+            subtitle="Requests awaiting review"
+            icon={<FaClock />}
+            size="md"
+          />
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Avg Balance</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {formatCurrency(analytics.balance.average)}
-                </p>
-              </div>
-              <div className="p-3 bg-purple-100 rounded-full">
-                <FaWallet className="text-purple-600 text-xl" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="Avg Balance"
+            value={formatCurrency(analytics.balance.average)}
+            subtitle="Average wallet balance"
+            icon={<FaWallet />}
+            size="md"
+          />
         </div>
       )}
 
@@ -772,14 +720,12 @@ export default function SuperAdminWalletPage() {
       {!loading && (
         <div className="flex justify-between items-center bg-gray-50 px-6 py-3 border-b">
           <div className="text-sm text-gray-700">
-            Showing {searchStats.filtered} of {searchStats.total} users
-            {searchStats.hasFilters && (
-              <span className="ml-2 text-blue-600">
-                ({searchStats.percentage}% filtered)
-              </span>
+            Showing {(usersPagination.page - 1) * usersPagination.limit + 1} to {Math.min(usersPagination.page * usersPagination.limit, usersPagination.total)} of {usersPagination.total} users
+            {(searchStats.hasFilters) && (
+              <span className="ml-2 text-blue-600">(filters applied)</span>
             )}
           </div>
-          {searchStats.hasFilters && (
+          {(searchStats.hasFilters) && (
             <Button size="xs" variant="outline" onClick={handleClearFilters}>
               Clear all filters
             </Button>
@@ -927,28 +873,27 @@ export default function SuperAdminWalletPage() {
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {typeof transaction.user === "object" &&
-                            transaction.user?.fullName
+                              transaction.user?.fullName
                               ? transaction.user.fullName
                               : "Unknown User"}
                           </div>
                           <div className="text-sm text-gray-500">
                             {typeof transaction.user === "object" &&
-                            transaction.user?.email
+                              transaction.user?.email
                               ? transaction.user.email
                               : typeof transaction.user === "object"
-                              ? transaction.user?._id
-                              : transaction.user}
+                                ? transaction.user?._id
+                                : transaction.user}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          transaction.type === "credit"
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${transaction.type === "credit"
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
-                        }`}
+                          }`}
                       >
                         {transaction.type === "credit" ? (
                           <FaPlus className="mr-1" />
@@ -960,15 +905,14 @@ export default function SuperAdminWalletPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          transaction.status === "completed"
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${transaction.status === "completed"
                             ? "bg-green-100 text-green-800"
                             : transaction.status === "rejected"
-                            ? "bg-red-100 text-red-800"
-                            : transaction.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
+                              ? "bg-red-100 text-red-800"
+                              : transaction.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                          }`}
                       >
                         {transaction.status.toUpperCase()}
                       </span>
@@ -1000,7 +944,7 @@ export default function SuperAdminWalletPage() {
               to{" "}
               {Math.min(
                 adminTransactionsPagination.page *
-                  adminTransactionsPagination.limit,
+                adminTransactionsPagination.limit,
                 adminTransactionsPagination.total
               )}{" "}
               of {adminTransactionsPagination.total} transactions
@@ -1063,26 +1007,26 @@ export default function SuperAdminWalletPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center">
+                  <td colSpan={6} className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                       <span className="ml-2">Loading users...</span>
                     </div>
                   </td>
                 </tr>
-              ) : filteredUsers.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-6 py-4 text-center text-gray-500"
                   >
-                    {users.length === 0
+                    {usersPagination.total === 0
                       ? "No users found."
                       : "No users match your search criteria."}
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                users.map((user) => (
                   <tr key={user._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div>
@@ -1152,6 +1096,27 @@ export default function SuperAdminWalletPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination for users */}
+        {usersPagination.pages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <Pagination
+              currentPage={usersPagination.page}
+              totalPages={usersPagination.pages}
+              totalItems={usersPagination.total}
+              itemsPerPage={usersPagination.limit}
+              onPageChange={(p) => {
+                setUsersPagination((prev) => ({ ...prev, page: p }));
+                fetchUsers(p);
+              }}
+              onItemsPerPageChange={(n) => {
+                setItemsPerPage(n);
+                setUsersPagination((prev) => ({ ...prev, limit: n, page: 1 }));
+                fetchUsers(1);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Wallet Transaction Modal */}

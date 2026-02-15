@@ -218,7 +218,20 @@ export interface PublicStorefront {
       isActive: boolean;
     }>;
   };
+  // backward-compatible flat list
   bundles: PublicBundle[];
+  // grouped providers -> packages -> bundles (optional; added for provider-first UI)
+  providers?: Array<{
+    code: string;
+    name: string;
+    logo?: { url?: string; alt?: string } | undefined;
+    packages: Array<{
+      _id?: string;
+      name: string;
+      category?: string;
+      bundles: PublicBundle[];
+    }>;
+  }>;
 }
 
 export interface PublicOrderData {

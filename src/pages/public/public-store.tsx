@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     Card, CardBody,
-    Button, Badge, Alert, Spinner,
+    Button, Badge, Alert, Skeleton,
     Dialog, DialogHeader, DialogBody, DialogFooter,
     Input,
 } from '../../design-system';
@@ -120,24 +120,24 @@ const PublicStore: React.FC = () => {
     // Effects
     // ==========================================================================
 
-    useEffect(() => {
+    const fetchStore = React.useCallback(async () => {
         if (!businessName) return;
-        let cancelled = false;
-        const fetchStore = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                const data = await storefrontService.getPublicStorefront(businessName);
-                if (!cancelled) setStoreData(data);
-            } catch (err: unknown) {
-                if (!cancelled) setError(err instanceof Error ? err.message : 'Store not found');
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        };
-        fetchStore();
-        return () => { cancelled = true; };
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await storefrontService.getPublicStorefront(businessName);
+            setStoreData(data);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Store not found');
+            setStoreData(null);
+        } finally {
+            setLoading(false);
+        }
     }, [businessName]);
+
+    useEffect(() => {
+        fetchStore();
+    }, [fetchStore]);
 
     // Page title
     useEffect(() => {
@@ -170,9 +170,15 @@ const PublicStore: React.FC = () => {
     const branding: StorefrontBranding = storeData?.storefront.branding || {};
     const storeLayout = branding.layout || 'modern';
 
-    // Unique providers
-    const providers = useMemo(() => {
+    // Unique providers (prefer grouped `storeData.providers` returned by the backend)
+    // logo shape comes from the shared `Provider` type (object with `url` + `alt`) or a string URL
+    const providers = useMemo<Array<{ code: string; name: string; logo?: { url?: string; alt?: string } | string }>>(() => {
         if (!storeData) return [];
+        if (Array.isArray(storeData.providers) && storeData.providers.length > 0) {
+            return storeData.providers.map(p => ({ code: p.code, name: p.name, logo: p.logo }));
+        }
+
+        // fallback — derive from flat bundles list
         const map = new Map<string, string>();
         for (const b of storeData.bundles) {
             const code = b.provider || 'Unknown';
@@ -180,6 +186,12 @@ const PublicStore: React.FC = () => {
         }
         return Array.from(map.entries()).map(([code, name]) => ({ code, name }));
     }, [storeData]);
+
+    // Helper: normalize logo value (object or string) to a URL string or undefined
+    const getLogoUrl = (logo?: { url?: string; alt?: string } | string) => {
+        if (!logo) return undefined;
+        return typeof logo === 'string' ? logo : logo.url;
+    };
 
     // Grouped bundles: provider → package → bundles[]
     const groupedBundles = useMemo(() => {
@@ -354,10 +366,55 @@ const PublicStore: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <Spinner size="lg" />
-                    <p className="mt-4 text-gray-600 font-medium">Loading store...</p>
+            <div className="min-h-screen bg-gray-50 pb-safe">
+                <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+                    {/* Header skeleton */}
+                    <div className="rounded-2xl p-6" style={{ background: `linear-gradient(135deg, ${DEFAULT_THEME.primary}, ${DEFAULT_THEME.secondary})` }}>
+                        <div className="max-w-4xl mx-auto text-center">
+                            <Skeleton variant="circular" width={80} height={80} />
+                            <div className="mt-4">
+                                <Skeleton height="1.75rem" width="360px" />
+                                <Skeleton height="1rem" width="280px" className="mt-3" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Providers skeleton */}
+                    <div>
+                        <Skeleton height="1rem" width="160px" />
+                        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className="p-3 bg-white rounded-2xl shadow-sm">
+                                    <Skeleton variant="circular" width={48} height={48} />
+                                    <Skeleton height="0.75rem" width="70%" className="mt-3" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Search + products skeleton */}
+                    <div>
+                        <Skeleton height="2.5rem" width="100%" />
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <Card key={i}>
+                                    <CardBody className="p-4">
+                                        <div className="flex gap-3">
+                                            <Skeleton variant="rectangular" width={96} height={80} />
+                                            <div className="flex-1">
+                                                <Skeleton height="1rem" width="70%" />
+                                                <Skeleton height="0.75rem" width="50%" className="mt-2" />
+                                                <div className="mt-4 flex items-end justify-between">
+                                                    <Skeleton height="1.25rem" width="90px" />
+                                                    <Skeleton height="2rem" width="80px" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardBody>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -365,12 +422,16 @@ const PublicStore: React.FC = () => {
 
     if (error || !storeData) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-                <Card className="max-w-md w-full">
-                    <CardBody className="text-center py-12">
-                        <FaStore className="mx-auto h-16 w-16 text-gray-300 mb-4" />
-                        <h2 className="text-xl font-bold text-gray-900 mb-2">Store Not Found</h2>
-                        <p className="text-gray-500">{error || 'This store is not available.'}</p>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+                <Card className="max-w-lg w-full">
+                    <CardBody className="text-center py-10 space-y-4">
+                        <FaTriangleExclamation className="mx-auto h-12 w-12 text-red-400" />
+                        <h2 className="text-lg font-semibold text-gray-900">Couldn’t load this store</h2>
+                        <p className="text-sm text-gray-500">{error ?? 'The storefront is not available.'}</p>
+                        <div className="flex items-center justify-center gap-3 pt-2">
+                            <Button onClick={() => fetchStore()} size="md">Retry</Button>
+                            <Button variant="ghost" onClick={() => window.location.href = '/'}>Back to home</Button>
+                        </div>
                     </CardBody>
                 </Card>
             </div>
@@ -504,36 +565,55 @@ const PublicStore: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Provider filter pills */}
+                {/* Provider selector (visual carousel cards) */}
                 {providers.length > 1 && (
-                    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-                        <button
-                            onClick={() => setSelectedProvider('all')}
-                            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition border ${selectedProvider === 'all'
-                                ? 'text-white border-transparent shadow-sm'
-                                : 'text-gray-600 border-gray-200 bg-white hover:bg-gray-50'
-                                }`}
-                            style={selectedProvider === 'all' ? { backgroundColor: theme.primary } : undefined}
-                        >
-                            All Providers
-                        </button>
-                        {providers.map(prov => {
-                            const pc = getProviderColors(prov.code);
-                            const isActive = selectedProvider === prov.code;
-                            return (
-                                <button
-                                    key={prov.code}
-                                    onClick={() => setSelectedProvider(prov.code)}
-                                    className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition border ${isActive
-                                        ? 'text-white border-transparent shadow-sm'
-                                        : 'border-gray-200 bg-white hover:bg-gray-50'
-                                        }`}
-                                    style={isActive ? { backgroundColor: pc.primary, color: pc.text } : { color: pc.primary }}
-                                >
-                                    {prov.name}
-                                </button>
-                            );
-                        })}
+                    <div className="-mx-4 px-4">
+                        <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-3 snap-x snap-mandatory">
+                            {/* All providers card */}
+                            <button
+                                onClick={() => setSelectedProvider('all')}
+                                className={`shrink-0 w-36 sm:w-44 flex-none p-3 rounded-2xl border transition transform-gpu ${selectedProvider === 'all' ? 'scale-105 shadow-lg' : 'bg-white hover:shadow-sm'}`}
+                                style={selectedProvider === 'all' ? { borderColor: theme.primary } : undefined}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gray-100 text-sm font-bold text-gray-700">All</div>
+                                    <div className="text-left">
+                                        <div className="text-sm font-semibold text-gray-900">All Providers</div>
+                                        <div className="text-xs text-gray-500">{storeData?.bundles?.length ?? 0} bundles</div>
+                                    </div>
+                                </div>
+                            </button>
+
+                            {providers.map((prov) => {
+                                const pc = getProviderColors(prov.code);
+                                const isActive = selectedProvider === prov.code;
+                                const provMap = groupedBundles.get(prov.code);
+                                const count = provMap ? Array.from(provMap.values()).reduce((s, arr) => s + arr.length, 0) : 0;
+
+                                return (
+                                    <button
+                                        key={prov.code}
+                                        onClick={() => setSelectedProvider(prov.code)}
+                                        className={`shrink-0 w-36 sm:w-44 flex-none p-3 rounded-2xl transition transform-gpu text-left ${isActive ? 'scale-105 shadow-lg' : 'bg-white hover:shadow-sm'}`}
+                                        style={isActive ? { border: `1px solid ${pc.primary}`, backgroundColor: pc.primary + '08' } : undefined}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center font-bold text-white" style={{ backgroundColor: pc.primary }}>
+                                                {getLogoUrl(prov.logo) ? (
+                                                    <img src={getLogoUrl(prov.logo)} alt={prov.logo && typeof prov.logo === 'object' ? prov.logo.alt || prov.name : prov.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="text-sm">{prov.name.charAt(0)}</span>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-semibold text-gray-900">{prov.name}</div>
+                                                <div className="text-xs text-gray-500">{count} bundles</div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>
@@ -556,13 +636,22 @@ const PublicStore: React.FC = () => {
                 <div className="h-1" style={{ backgroundColor: pc.primary }} />
                 <CardBody className="p-4">
                     <div className="flex flex-col h-full">
-                        {/* Name + cart badge */}
-                        <div className="flex items-start justify-between gap-2 mb-3">
-                            <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">{bundle.name}</h3>
+                        {/* Highlight: data volume + title */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex items-start gap-3">
+                                <div className="flex flex-col items-start">
+                                    {hasData ? (
+                                        <div className="text-2xl font-extrabold" style={{ color: pc.primary }}>{bundle.dataVolume}{bundle.dataUnit}</div>
+                                    ) : null}
+                                    <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 mt-1">{bundle.name}</h3>
+                                    {bundle.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{bundle.description}</p>}
+                                </div>
+                            </div>
+
                             {inCart && <Badge colorScheme="success" size="xs" variant="solid">In Cart</Badge>}
                         </div>
 
-                        {/* Data / validity badges */}
+                        {/* Data / validity badges (compact) */}
                         <div className="flex flex-wrap gap-1.5 mb-3">
                             {hasData && (
                                 <Badge colorScheme="info" size="xs">
@@ -642,20 +731,21 @@ const PublicStore: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Price */}
-                <span className="shrink-0 font-bold text-sm" style={{ color: pc.primary }}>
-                    {formatPrice(bundle.price)}
-                </span>
+                <div className="flex items-center gap-3 mt-3">
+                    <div className="flex-1">
+                        <div className="text-lg font-extrabold" style={{ color: pc.primary }}>{formatPrice(bundle.price)}</div>
+                        <div className="text-xs text-gray-400">{bundle.packageName || bundle.category || 'General'}</div>
+                    </div>
 
-                {/* Add button */}
-                <Button
-                    size="sm"
-                    className="shrink-0"
-                    style={{ backgroundColor: pc.primary, color: pc.text }}
-                    onClick={() => openAddDialog(bundle)}
-                >
-                    <FaPlus className="w-3 h-3" />
-                </Button>
+                    <div className="flex gap-2 items-center">
+                        <Button size="md" style={{ backgroundColor: pc.primary, color: pc.text }} onClick={() => openAddDialog(bundle)}>
+                            Buy
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => openAddDialog(bundle)} aria-label="Add to cart">
+                            <FaPlus className="w-3 h-3" />
+                        </Button>
+                    </div>
+                </div>
             </div>
         );
     };
@@ -666,6 +756,37 @@ const PublicStore: React.FC = () => {
 
     const renderBundleSections = () => {
         if (groupedBundles.size === 0) {
+            // If there was a search query, show a helpful empty-search UI
+            if (searchTerm.trim()) {
+                return (
+                    <div className="max-w-5xl mx-auto px-4 py-16 text-center">
+                        <FaMagnifyingGlass className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                        <h3 className="text-lg font-semibold text-gray-900">No results for “{searchTerm}”</h3>
+                        <p className="text-sm text-gray-500 mt-2">Try different keywords or clear the search to see all bundles.</p>
+                        <div className="mt-4 flex items-center justify-center gap-3">
+                            <Button onClick={() => setSearchTerm('')}>Clear search</Button>
+                            <Button variant="outline" onClick={() => setSelectedProvider('all')}>Show all providers</Button>
+                        </div>
+                        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {/* Suggestions: show top bundles or provider cards */}
+                            {providers.slice(0, 3).map(p => (
+                                <Card key={p.code} className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: getProviderColors(p.code).primary }}>
+                                            {getLogoUrl(p.logo) ? <img src={getLogoUrl(p.logo)} alt={p.logo && typeof p.logo === 'object' ? p.logo.alt || p.name : p.name} className="w-full h-full object-cover rounded-lg" /> : p.name.charAt(0)}
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-sm font-semibold">{p.name}</div>
+                                            <div className="text-xs text-gray-400">View packages</div>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+
             return (
                 <div className="max-w-5xl mx-auto px-4 py-16 text-center">
                     <FaWifi className="mx-auto h-12 w-12 text-gray-300 mb-3" />
@@ -675,6 +796,99 @@ const PublicStore: React.FC = () => {
             );
         }
 
+        // Prefer backend-provided providers/packages structure when available
+        if (Array.isArray(storeData.providers) && storeData.providers.length > 0) {
+            return (
+                <div className="max-w-5xl mx-auto px-4 py-6 space-y-8">
+                    {storeData.providers
+                        .filter(p => selectedProvider === 'all' ? true : p.code === selectedProvider)
+                        .map((prov) => {
+                            const pc = getProviderColors(prov.code);
+
+                            // filter packages/bundles by search term
+                            const filteredPackages = (prov.packages || []).map(pkg => ({
+                                ...pkg,
+                                bundles: (pkg.bundles || []).filter(b => {
+                                    if (!searchTerm.trim()) return true;
+                                    const term = searchTerm.toLowerCase();
+                                    return (
+                                        b.name.toLowerCase().includes(term) ||
+                                        (b.description?.toLowerCase() || '').includes(term) ||
+                                        (b.providerName?.toLowerCase() || '').includes(term) ||
+                                        (b.packageName?.toLowerCase() || '').includes(term)
+                                    );
+                                })
+                            })).filter(p => (p.bundles || []).length > 0);
+
+                            const totalBundles = filteredPackages.reduce((s, pkg) => s + (pkg.bundles?.length || 0), 0);
+                            if (totalBundles === 0) return null;
+
+                            return (
+                                <section key={prov.code}>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm" style={{ backgroundColor: pc.primary, color: pc.text }}>
+                                            {getLogoUrl(prov.logo) ? (
+                                                <img src={getLogoUrl(prov.logo)} alt={prov.logo && typeof prov.logo === 'object' ? prov.logo.alt || prov.name : prov.name} className="w-full h-full object-cover rounded-xl" />
+                                            ) : (
+                                                prov.name.charAt(0)
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h2 className="text-lg font-bold text-gray-900">{prov.name}</h2>
+                                            <p className="text-xs text-gray-500">{totalBundles} bundle{totalBundles !== 1 ? 's' : ''} available</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-5 ml-2 border-l-2 pl-4" style={{ borderColor: pc.primary + '30' }}>
+                                        {filteredPackages.map((pkg) => {
+                                            const pkgKey = `${prov.code}-${pkg.name}`;
+                                            const isCollapsed = collapsedPackages.has(pkgKey);
+
+                                            return (
+                                                <div key={pkgKey}>
+                                                    <div className="mb-3">
+                                                        <div
+                                                            onClick={() => togglePackage(pkgKey)}
+                                                            className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: pc.primary }}>
+                                                                    <FaStore className="w-4 h-4" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-sm font-semibold text-gray-900">{pkg.name}</div>
+                                                                    <div className="text-xs text-gray-500">{pkg.bundles.length} bundle{pkg.bundles.length !== 1 ? 's' : ''}</div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-gray-400">
+                                                                {isCollapsed ? <FaChevronDown className="w-4 h-4" /> : <FaChevronUp className="w-4 h-4" />}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {!isCollapsed && (
+                                                        viewMode === 'grid' ? (
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                                {pkg.bundles.map(renderBundleCard)}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                {pkg.bundles.map(renderBundleRow)}
+                                                            </div>
+                                                        )
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </section>
+                            );
+                        })}
+                </div>
+            );
+        }
+
+        // fallback to groupedBundles (derived from flat bundles)
         return (
             <div className="max-w-5xl mx-auto px-4 py-6 space-y-8">
                 {Array.from(groupedBundles.entries()).map(([provCode, pkgMap]) => {
@@ -707,24 +921,25 @@ const PublicStore: React.FC = () => {
                                     return (
                                         <div key={pkgKey}>
                                             {/* Package sub-header */}
-                                            <button
-                                                onClick={() => togglePackage(pkgKey)}
-                                                className="flex items-center gap-2 mb-3 w-full text-left group/pkg"
-                                            >
+                                            <div className="mb-3">
                                                 <div
-                                                    className="w-6 h-6 rounded-lg flex items-center justify-center"
-                                                    style={{ backgroundColor: pc.primary + '15' }}
+                                                    onClick={() => togglePackage(pkgKey)}
+                                                    className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition"
                                                 >
-                                                    {isCollapsed
-                                                        ? <FaChevronDown className="w-3 h-3" style={{ color: pc.primary }} />
-                                                        : <FaChevronUp className="w-3 h-3" style={{ color: pc.primary }} />
-                                                    }
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: pc.primary }}>
+                                                            <FaStore className="w-4 h-4" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-semibold text-gray-900">{pkgName}</div>
+                                                            <div className="text-xs text-gray-500">{pkgBundles.length} bundle{pkgBundles.length !== 1 ? 's' : ''}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-gray-400">
+                                                        {isCollapsed ? <FaChevronDown className="w-4 h-4" /> : <FaChevronUp className="w-4 h-4" />}
+                                                    </div>
                                                 </div>
-                                                <span className="font-medium text-sm text-gray-700 group-hover/pkg:text-gray-900 transition">
-                                                    {pkgName}
-                                                </span>
-                                                <Badge colorScheme="gray" size="xs">{pkgBundles.length}</Badge>
-                                            </button>
+                                            </div>
 
                                             {/* Bundle grid or list */}
                                             {!isCollapsed && (
