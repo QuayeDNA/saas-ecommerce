@@ -9,6 +9,16 @@ import App from "./App.tsx";
 // Create a client for React Query
 const queryClient = new QueryClient();
 
+// SECURITY: silence verbose console output in PRODUCTION builds to avoid leaking tokens or user data
+// (keep full console during development for debugging)
+if (import.meta.env.PROD) {
+  // No-op non-critical console methods in production — allow warn/error to surface
+  console.log = (..._args: any[]) => { };
+  console.info = (..._args: any[]) => { };
+  console.debug = (..._args: any[]) => { };
+  console.table = (..._args: any[]) => { };
+}
+
 // Version check and cache busting for iPhone users
 const APP_VERSION = import.meta.env.VITE_APP_VERSION;
 const STORAGE_KEY = "app_version";

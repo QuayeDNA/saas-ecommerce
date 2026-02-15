@@ -55,7 +55,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <Card
-      className="transition-colors duration-200"
+      className="transition-colors duration-200 h-full"
       style={{
         backgroundColor: "var(--color-primary-500)",
         borderColor: "var(--color-primary-700)",
@@ -67,7 +67,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         e.currentTarget.style.backgroundColor = "var(--color-primary-500)";
       }}
     >
-      <CardBody className={classes.cardPadding}>
+      <CardBody className={`${classes.cardPadding} h-full`}>
         <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4">
           <div className="flex-1 min-w-0">
             <p className={`${classes.title} mb-0.5 sm:mb-1 lg:mb-2 truncate`}>
@@ -84,13 +84,12 @@ export const StatCard: React.FC<StatCardProps> = ({
             )}
             {(trend || trendLabel) && (
               <p
-                className={`text-xs sm:text-sm mt-1 flex items-center ${
-                  trendUp !== undefined
+                className={`text-xs sm:text-sm mt-1 flex items-center ${trendUp !== undefined
                     ? trendUp
                       ? "text-green-400"
                       : "text-red-400"
                     : "text-gray-300"
-                }`}
+                  }`}
               >
                 {trend && <span className="mr-1">{trend}</span>}
                 {trendLabel && (
@@ -144,9 +143,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
 
   return (
     <div
-      className={`grid ${
-        gridClasses[effectiveColumns as keyof typeof gridClasses]
-      } ${gapClasses[gap]} w-full`}
+      className={`grid ${gridClasses[effectiveColumns as keyof typeof gridClasses]
+        } ${gapClasses[gap]} w-full`}
     >
       {stats.map((stat, index) => (
         <StatCard key={`${stat.title}-${index}`} {...stat} />

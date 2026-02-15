@@ -232,7 +232,11 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
   const toggleBulkSelection = (bundleId: string, selected: boolean) => {
     setSelectedBundleIds((prev) => {
       const next = new Set(prev);
-      selected ? next.add(bundleId) : next.delete(bundleId);
+      if (selected) {
+        next.add(bundleId);
+      } else {
+        next.delete(bundleId);
+      }
       return next;
     });
   };
@@ -733,11 +737,10 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                                     parseFloat(e.target.value) || 0,
                                   )
                                 }
-                                className={`w-full px-2 py-1 text-sm text-center border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                  isChanged
-                                    ? "border-yellow-400 bg-yellow-50"
-                                    : "border-gray-300"
-                                }`}
+                                className={`w-full px-2 py-1 text-sm text-center border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${isChanged
+                                  ? "border-yellow-400 bg-yellow-50"
+                                  : "border-gray-300"
+                                  }`}
                               />
                             </td>
                             <td className="px-3 py-2.5 text-center">
@@ -812,11 +815,10 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                   return (
                     <div
                       key={bundle._id}
-                      className={`border rounded-lg p-3 sm:p-4 space-y-3 transition-all ${
-                        isChanged
-                          ? "border-yellow-300 bg-yellow-50/50"
-                          : "border-gray-200"
-                      } ${!edit.isEnabled ? "opacity-60" : ""}`}
+                      className={`border rounded-lg p-3 sm:p-4 space-y-3 transition-all ${isChanged
+                        ? "border-yellow-300 bg-yellow-50/50"
+                        : "border-gray-200"
+                        } ${!edit.isEnabled ? "opacity-60" : ""}`}
                     >
                       {/* Name + toggle */}
                       <div className="flex items-start justify-between gap-2">
@@ -867,11 +869,10 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                                 parseFloat(e.target.value) || 0,
                               )
                             }
-                            className={`w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                              isChanged
-                                ? "border-yellow-400 bg-yellow-50"
-                                : "border-gray-300"
-                            }`}
+                            className={`w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${isChanged
+                              ? "border-yellow-400 bg-yellow-50"
+                              : "border-gray-300"
+                              }`}
                           />
                         </div>
                       </div>

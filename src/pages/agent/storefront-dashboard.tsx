@@ -12,6 +12,7 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
+  StatsGrid,
 } from "../../design-system";
 import { useToast } from "../../design-system";
 import {
@@ -362,61 +363,40 @@ export const StorefrontDashboardPage: React.FC = () => {
         <TabsContent value="overview">
           <div className="space-y-4 sm:space-y-6">
             {/* Analytics Stats Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              <Card variant="outlined" className="relative overflow-hidden">
-                <CardBody className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Total Orders</span>
-                    <ShoppingCart className="w-4 h-4 text-blue-500" />
-                  </div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {analyticsLoading ? "—" : (analytics?.totalOrders ?? 0)}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {analytics?.completedOrders ?? 0} completed
-                  </p>
-                </CardBody>
-              </Card>
-
-              <Card variant="outlined" className="relative overflow-hidden">
-                <CardBody className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Revenue</span>
-                    <DollarSign className="w-4 h-4 text-green-500" />
-                  </div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0)}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">Lifetime earnings</p>
-                </CardBody>
-              </Card>
-
-              <Card variant="outlined" className="relative overflow-hidden">
-                <CardBody className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Profit</span>
-                    <TrendingUp className="w-4 h-4 text-emerald-500" />
-                  </div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {analyticsLoading ? "—" : formatCurrency(analytics?.totalProfit ?? 0)}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">From markups</p>
-                </CardBody>
-              </Card>
-
-              <Card variant="outlined" className="relative overflow-hidden">
-                <CardBody className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Pending</span>
-                    <Clock className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {analyticsLoading ? "—" : (analytics?.pendingOrders ?? 0)}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">Awaiting action</p>
-                </CardBody>
-              </Card>
-            </div>
+            <StatsGrid
+              stats={[
+                {
+                  title: "Total Orders",
+                  value: analyticsLoading ? "—" : (analytics?.totalOrders ?? 0),
+                  subtitle: `${analytics?.completedOrders ?? 0} completed`,
+                  icon: <ShoppingCart className="w-4 h-4" />,
+                  size: "md",
+                },
+                {
+                  title: "Revenue",
+                  value: analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0),
+                  subtitle: "Lifetime earnings",
+                  icon: <DollarSign className="w-4 h-4" />,
+                  size: "md",
+                },
+                {
+                  title: "Profit",
+                  value: analyticsLoading ? "—" : formatCurrency(analytics?.totalProfit ?? 0),
+                  subtitle: "From markups",
+                  icon: <TrendingUp className="w-4 h-4" />,
+                  size: "md",
+                },
+                {
+                  title: "Pending",
+                  value: analyticsLoading ? "—" : (analytics?.pendingOrders ?? 0),
+                  subtitle: "Awaiting action",
+                  icon: <Clock className="w-4 h-4" />,
+                  size: "md",
+                },
+              ]}
+              columns={4}
+              gap="md"
+            />
 
             {/* Additional analytics row */}
             {analytics && !analyticsLoading && (
@@ -633,7 +613,13 @@ export const StorefrontDashboardPage: React.FC = () => {
                                 </Badge>
                               </div>
                               <p className="text-xs text-gray-500 mt-0.5 truncate">
-                                {order.storefrontData?.customerInfo?.name || "Customer"} &bull;{" "}
+                                {order.storefrontData?.customerInfo?.name || "Customer"}
+                                {order.storefrontData?.customerInfo?.ghanaCardNumber && (
+                                  <span className="ml-1 text-blue-600">
+                                    • {order.storefrontData.customerInfo.ghanaCardNumber}
+                                  </span>
+                                )}
+                                {" • "}
                                 {order.storefrontData?.items?.length ?? 0} item
                                 {(order.storefrontData?.items?.length ?? 0) !== 1 ? "s" : ""}
                               </p>

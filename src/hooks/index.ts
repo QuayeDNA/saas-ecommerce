@@ -9,3 +9,4 @@ export { useDailySpending } from './use-daily-spending';
 export { useNavigationLoader } from './use-navigation-loader';
 export * from './use-debounce';
 export { useTutorial } from './use-tutorial';
+export { useProvider } from './use-provider';

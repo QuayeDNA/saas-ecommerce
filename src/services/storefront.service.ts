@@ -148,6 +148,7 @@ export interface StorefrontOrder {
       name: string;
       phone: string;
       email?: string;
+      ghanaCardNumber?: string;
     };
     paymentMethod: {
       type: 'mobile_money' | 'bank_transfer';
@@ -230,6 +231,7 @@ export interface PublicOrderData {
     name: string;
     phone: string;
     email?: string; // optional
+    ghanaCardNumber?: string; // AFA-specific
   };
   paymentMethod: {
     type: 'mobile_money' | 'bank_transfer';

@@ -31,6 +31,9 @@ import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 interface CartItem {
     bundle: PublicBundle;
     customerPhone: string;
+    // AFA-specific fields
+    customerName?: string;
+    ghanaCardNumber?: string;
 }
 
 type ViewMode = 'grid' | 'list';
@@ -98,6 +101,9 @@ const PublicStore: React.FC = () => {
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [addBundle, setAddBundle] = useState<PublicBundle | null>(null);
     const [addPhone, setAddPhone] = useState('');
+    // AFA-specific fields
+    const [addCustomerName, setAddCustomerName] = useState('');
+    const [addGhanaCardNumber, setAddGhanaCardNumber] = useState('');
 
     // ---- Checkout dialog ----
     const [showCheckout, setShowCheckout] = useState(false);
@@ -220,9 +226,14 @@ const PublicStore: React.FC = () => {
     // Handlers
     // ==========================================================================
 
-    const addToCart = (bundle: PublicBundle, phone: string) => {
+    const addToCart = (bundle: PublicBundle, phone: string, customerName?: string, ghanaCardNumber?: string) => {
         const normalized = normalizePhone(phone);
-        setCart(prev => [...prev, { bundle, customerPhone: normalized }]);
+        setCart(prev => [...prev, {
+            bundle,
+            customerPhone: normalized,
+            customerName,
+            ghanaCardNumber
+        }]);
     };
 
     const removeFromCart = (index: number) => {
@@ -241,12 +252,22 @@ const PublicStore: React.FC = () => {
     const openAddDialog = (bundle: PublicBundle) => {
         setAddBundle(bundle);
         setAddPhone('');
+        setAddCustomerName('');
+        setAddGhanaCardNumber('');
         setShowAddDialog(true);
     };
 
     const confirmAddToCart = () => {
         if (!addBundle || !isValidPhone(addPhone)) return;
-        addToCart(addBundle, addPhone);
+
+        // For AFA bundles, validate required fields
+        const isAfa = addBundle.provider?.toUpperCase() === 'AFA';
+        if (isAfa && addBundle.requiresGhanaCard) {
+            if (!addCustomerName.trim()) return;
+            if (!addGhanaCardNumber.trim()) return;
+        }
+
+        addToCart(addBundle, addPhone, isAfa ? addCustomerName : undefined, isAfa ? addGhanaCardNumber : undefined);
         setShowAddDialog(false);
         setAddBundle(null);
     };
@@ -254,6 +275,22 @@ const PublicStore: React.FC = () => {
     // Checkout
     const openCheckout = () => {
         if (cart.length === 0) return;
+
+        // Pre-fill customer info from AFA items (if all items have same customer)
+        const afaItems = cart.filter(item => item.bundle.provider?.toUpperCase() === 'AFA' && item.customerName);
+        if (afaItems.length > 0) {
+            const firstAfaItem = afaItems[0];
+            const allSameCustomer = afaItems.every(item =>
+                item.customerName === firstAfaItem.customerName &&
+                item.customerPhone === firstAfaItem.customerPhone
+            );
+
+            if (allSameCustomer) {
+                setCustomerName(firstAfaItem.customerName || '');
+                setCustomerPhone(firstAfaItem.customerPhone);
+            }
+        }
+
         setCheckoutStep('review');
         setOrderError(null);
         setOrderResult(null);
@@ -267,6 +304,13 @@ const PublicStore: React.FC = () => {
         setSubmitting(true);
         setOrderError(null);
         try {
+            // Get Ghana Card number from AFA items (use the first one if multiple)
+            const afaGhanaCard = cart.find(item =>
+                item.bundle.provider?.toUpperCase() === 'AFA' &&
+                item.bundle.requiresGhanaCard &&
+                item.ghanaCardNumber
+            )?.ghanaCardNumber;
+
             const orderData: PublicOrderData = {
                 items: cart.map(item => ({
                     bundleId: item.bundle._id,
@@ -276,6 +320,7 @@ const PublicStore: React.FC = () => {
                 customerInfo: {
                     name: customerName.trim(),
                     phone: normalizePhone(customerPhone),
+                    ...(afaGhanaCard && { ghanaCardNumber: afaGhanaCard }),
                 },
                 paymentMethod: {
                     type: paymentType,
@@ -752,6 +797,14 @@ const PublicStore: React.FC = () => {
         const pc = getProviderColors(addBundle.provider);
         const isAfa = addBundle.provider?.toUpperCase() === 'AFA';
         const phoneValid = isValidPhone(addPhone);
+        const afaValid = !isAfa || (
+            addCustomerName.trim() &&
+            (!addBundle.requiresGhanaCard || (
+                addGhanaCardNumber.trim() &&
+                /^[A-Z]{3}-?\d{9}-?\d$/i.test(addGhanaCardNumber)
+            ))
+        );
+        const canAddToCart = phoneValid && afaValid;
         const hasData = addBundle.dataVolume != null && addBundle.dataVolume > 0;
 
         return (
@@ -809,6 +862,51 @@ const PublicStore: React.FC = () => {
                             )}
                             <p className="text-xs text-gray-400 mt-1">The number that will receive this data bundle</p>
                         </div>
+
+                        {/* AFA Customer Information */}
+                        {isAfa && (
+                            <>
+                                {/* Customer Name */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                        <FaIdCard className="inline w-3 h-3 mr-1.5 text-gray-400" />
+                                        Full Name *
+                                    </label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter recipient's full name"
+                                        value={addCustomerName}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCustomerName(e.target.value)}
+                                    />
+                                    {addBundle.requiresGhanaCard && !addCustomerName.trim() && (
+                                        <p className="text-xs text-red-500 mt-1">Full name is required for AFA registration</p>
+                                    )}
+                                </div>
+
+                                {/* Ghana Card Number */}
+                                {addBundle.requiresGhanaCard && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                            <FaIdCard className="inline w-3 h-3 mr-1.5 text-gray-400" />
+                                            Ghana Card Number *
+                                        </label>
+                                        <Input
+                                            type="text"
+                                            placeholder="GHA-XXXXXXXXX-X"
+                                            value={addGhanaCardNumber}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddGhanaCardNumber(e.target.value)}
+                                        />
+                                        {!addGhanaCardNumber.trim() && (
+                                            <p className="text-xs text-red-500 mt-1">Ghana Card number is required</p>
+                                        )}
+                                        {addGhanaCardNumber && !/^[A-Z]{3}-?\d{9}-?\d$/i.test(addGhanaCardNumber) && (
+                                            <p className="text-xs text-red-500 mt-1">Format: GHA-XXXXXXXXX-X (9 digits in middle, 1 at end)</p>
+                                        )}
+                                        <p className="text-xs text-gray-400 mt-1">Must be registered with NIA for AFA services</p>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </DialogBody>
                 <DialogFooter>
@@ -818,8 +916,8 @@ const PublicStore: React.FC = () => {
                         </Button>
                         <Button
                             className="flex-1 font-semibold"
-                            disabled={!phoneValid}
-                            style={{ backgroundColor: phoneValid ? pc.primary : '#9CA3AF', color: '#FFFFFF' }}
+                            disabled={!canAddToCart}
+                            style={{ backgroundColor: canAddToCart ? pc.primary : '#9CA3AF', color: '#FFFFFF' }}
                             onClick={confirmAddToCart}
                         >
                             <FaCartShopping className="w-4 h-4 mr-1.5" /> Add to Cart
