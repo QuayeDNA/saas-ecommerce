@@ -61,6 +61,22 @@ a, button, input, select, textarea {
   animation: slide-in-from-bottom 0.5s ease-out;
 }
 
+/* Marquee animation for scrolling text */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 10s linear infinite;
+  /* Ensure the text is wide enough to scroll */
+  min-width: max-content;
+}
+
 /* Excel View Custom Styles */
 .rdg-light {
   --rdg-color: #374151;

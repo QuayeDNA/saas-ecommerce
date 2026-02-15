@@ -239,12 +239,13 @@ export default function SuperAdminUserDetailsPage() {
     if (!user) return;
     setImpersonateLoading(true);
     try {
-      // Get current admin token from cookies (auth service uses cookies)
-      const Cookies = (await import("js-cookie")).default;
-      const adminToken = Cookies.get("authToken");
+      // Get current admin data from auth service
+      const authService = (await import("../../services/auth.service")).authService;
+      const adminToken = authService.getToken();
+      const adminUser = authService.getCurrentUser();
 
-      if (!adminToken) {
-        throw new Error("No admin token found");
+      if (!adminToken || !adminUser) {
+        throw new Error("No admin authentication data found");
       }
 
       // Call the impersonation API
@@ -256,6 +257,7 @@ export default function SuperAdminUserDetailsPage() {
         .default;
       ImpersonationService.startImpersonation(
         adminToken,
+        adminUser,
         impersonatedUser,
         token
       );

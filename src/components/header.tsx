@@ -4,7 +4,7 @@ import { useSiteStatus } from "../contexts/site-status-context";
 import { settingsService } from "../services/settings.service";
 import { useToast } from "../design-system/components/toast";
 import { Button } from "../design-system";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaPowerOff,
   FaCheck,
@@ -25,12 +25,13 @@ interface HeaderProps {
 }
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
-  const { authState, logout } = useAuth();
+  const { authState, logout, refreshAuth } = useAuth();
   const { walletBalance, refreshWallet, isLoading, connectionStatus } =
     useWallet();
   const { dailySpending, isLoading: dailySpendingLoading } = useDailySpending();
   const { siteStatus, refreshSiteStatus } = useSiteStatus();
   const { addToast } = useToast();
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showSiteMessage, setShowSiteMessage] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
@@ -140,6 +141,32 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteStatus?.isSiteOpen, authState.user, addToast, prevSiteStatus]);
 
+  const handleReturnToAdmin = async () => {
+    try {
+      console.log("🔄 Starting return to admin process...");
+
+      // Use the proper impersonation service to end impersonation
+      await ImpersonationService.endImpersonation();
+
+      console.log("✅ Impersonation service completed");
+
+      // Close dropdown
+      setIsDropdownOpen(false);
+
+      // Directly refresh auth state instead of relying on event system
+      console.log("🔄 Refreshing auth state...");
+      await refreshAuth();
+
+      // Navigate to superadmin dashboard
+      console.log("🔄 Navigating to /superadmin...");
+      navigate("/superadmin");
+
+    } catch (error) {
+      console.error("❌ Failed to return to admin:", error);
+      addToast("Failed to return to admin", "error");
+    }
+  };
+
   // Get site message for agents
   const getSiteMessage = () => {
     if (!siteStatus) return "";
@@ -190,9 +217,13 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       <div className="bg-green-50 text-green-600 p-1.5 rounded-md flex-shrink-0">
                         <FaStar className="w-4 h-4" />
                       </div>
-                      <span className="text-sm sm:text-base font-medium text-green-700 truncate">
-                        {getSiteMessage()}
-                      </span>
+                      <div className="overflow-hidden whitespace-nowrap">
+                        <div className="inline-block animate-marquee">
+                          <span className="text-sm sm:text-base font-medium text-green-700 px-4">
+                            {getSiteMessage()}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : showGreeting ? (
@@ -267,7 +298,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="p-1.5 text-white"
+                className="p-1.5 text-white relative"
                 style={
                   {
                     "--hover-bg": "var(--color-primary-600)",
@@ -275,9 +306,13 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 }
                 aria-label="User menu"
               >
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-medium shadow-sm text-sm">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-medium shadow-sm text-sm relative">
                   {authState.user?.fullName.charAt(0)}
                   {authState.user?.fullName.split(" ")[1]?.charAt(0) ?? ""}
+                  {/* Impersonation indicator dot */}
+                  {ImpersonationService.isImpersonating() && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 border-2 border-white rounded-full animate-pulse" title="Impersonating User"></div>
+                  )}
                 </div>
               </Button>
 
@@ -299,6 +334,20 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       <div className="text-xs text-gray-500 truncate mt-0.5">
                         {authState.user?.email}
                       </div>
+                      {/* Impersonation Indicator */}
+                      {ImpersonationService.isImpersonating() && (
+                        <div className="mt-2 px-2 py-1 bg-yellow-50 border border-yellow-200 rounded-md">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                            <span className="text-xs font-medium text-yellow-800">
+                              Impersonating User
+                            </span>
+                          </div>
+                          <div className="text-xs text-yellow-600 mt-0.5">
+                            You are acting as another user
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Profile Link - Only for business users */}
@@ -338,6 +387,19 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     )}
 
                     <div className="border-t border-gray-100 my-1"></div>
+
+                    {/* Return to Admin - Only when impersonating */}
+                    {ImpersonationService.isImpersonating() && (
+                      <Button
+                        variant="warning"
+                        size="sm"
+                        onClick={handleReturnToAdmin}
+                        className="w-full justify-start mb-2 mx-2"
+                      >
+                        <FaSignOutAlt className="w-4 h-4 mr-3" />
+                        Return to Admin
+                      </Button>
+                    )}
 
                     <Button
                       variant="ghost"

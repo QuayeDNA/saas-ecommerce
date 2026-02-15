@@ -20,14 +20,12 @@ import { TutorialLauncher } from "../components/tutorials/tutorial-launcher";
 import { TutorialAutoTrigger } from "../components/tutorials/tutorial-auto-trigger";
 import { AnnouncementPopupHandler } from "../components/announcements/announcement-popup-handler";
 import { useAuth } from "../hooks";
-import ImpersonationService from "../utils/impersonation";
 
 export const DashboardLayout = () => {
   const { authState, updateFirstTimeFlag } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const location = useLocation();
-  const isImpersonating = ImpersonationService.isImpersonating();
 
   const userRole = (authState.user?.userType ?? "agent") as string;
 
@@ -72,10 +70,7 @@ export const DashboardLayout = () => {
 
   return (
     <TutorialProvider userRole={userRole}>
-      <div
-        className={`flex bg-gray-50 overflow-hidden ${isImpersonating ? "" : "h-screen"
-          }`}
-      >
+      <div className="flex bg-gray-50 overflow-hidden h-screen">
         {/* Mobile sidebar overlay */}
         {sidebarOpen && isMobile && (
           <button
@@ -98,8 +93,7 @@ export const DashboardLayout = () => {
 
           {/* Content */}
           <main
-            className={`flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 ${isImpersonating ? "min-h-screen" : ""
-              }`}
+            className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50"
           >
             <NavigationLoader delay={150}>
               <Outlet />

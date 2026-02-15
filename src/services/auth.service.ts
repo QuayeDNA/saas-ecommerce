@@ -88,7 +88,11 @@ class AuthService {
         try {
           await this.refreshAccessToken();
           return true;
-        } catch {
+        } catch (error: unknown) {
+          // If backend is not available, don't clear auth data - user might still be valid
+          if (this.isNetworkError(error)) {
+            return false;
+          }
           this.clearAuthData();
           return false;
         }
@@ -103,7 +107,11 @@ class AuthService {
           try {
             await this.refreshAccessToken();
             return true;
-          } catch {
+          } catch (error: unknown) {
+            // If backend is not available, don't clear auth data - user might still be valid
+            if (this.isNetworkError(error)) {
+              return false;
+            }
             this.clearAuthData();
             return false;
           }
@@ -112,7 +120,12 @@ class AuthService {
 
       // Case 3: No tokens available
       return false;
-    } catch {
+    } catch (error: unknown) {
+      // If backend is not available during initialization, don't clear auth data
+      // This allows the app to work in offline mode or when backend is temporarily down
+      if (this.isNetworkError(error)) {
+        return false;
+      }
       this.clearAuthData();
       return false;
     }
@@ -121,6 +134,18 @@ class AuthService {
   // =============================================================================
   // UTILITY METHODS
   // =============================================================================
+
+  /**
+   * Check if error is a network error
+   */
+  private isNetworkError(error: unknown): boolean {
+    if (axios.isAxiosError(error)) {
+      return error.code === 'ERR_NETWORK' ||
+             error.response?.status === 404 ||
+             (error.response?.status ?? 0) >= 500;
+    }
+    return false;
+  }
 
   /**
    * Extracts error message and errors array from an Axios error
@@ -220,7 +245,11 @@ class AuthService {
       }
 
       return accessToken;
-    } catch {
+    } catch (error: unknown) {
+      // Handle network errors gracefully - don't clear auth data if backend is unavailable
+      if (this.isNetworkError(error)) {
+        throw error; // Re-throw so calling code can handle appropriately
+      }
       this.clearAuthData();
       throw new Error("Failed to refresh access token");
     }
@@ -258,8 +287,8 @@ class AuthService {
       localStorage.removeItem("authToken");
       localStorage.removeItem("user");
       localStorage.removeItem("refreshToken");
-    } catch (error) {
-      console.warn("Failed to clean localStorage:", error);
+    } catch {
+      // Silently fail if localStorage is not available
     }
   }
 
@@ -367,37 +396,14 @@ class AuthService {
   }
 
   /**
-   * Verify JWT token with the server
-   */
-  async verifyToken(): Promise<{ valid: boolean; user?: User }> {
-    try {
-      const token = this.getToken();
-      if (!token) {
-        return { valid: false };
-      }
-
-      const response = await api.post("/api/auth/verify-token");
-      return {
-        valid: response.data.valid,
-        user: response.data.user,
-      };
-    } catch {
-      return { valid: false };
-    }
-  }
-
-  /**
    * Logout user
    */
   async logout(): Promise<void> {
     try {
       // Call logout endpoint to invalidate tokens on server
       await api.post("/api/auth/logout");
-    } catch (error) {
-      console.warn(
-        "Logout API call failed, continuing with local logout:",
-        error
-      );
+    } catch {
+      // Continue with local logout even if API call fails
     } finally {
       this.clearAuthData();
     }
@@ -410,8 +416,7 @@ class AuthService {
     try {
       const userCookie = Cookies.get("user");
       return userCookie ? JSON.parse(userCookie) : null;
-    } catch (error) {
-      console.error("Failed to parse user from cookie:", error);
+    } catch {
       return null;
     }
   }
@@ -447,17 +452,31 @@ class AuthService {
   }
 
   /**
+   * Verify current token validity
+   */
+  async verifyToken(): Promise<{ valid: boolean; user?: User }> {
+    try {
+      const response = await api.post("/api/auth/verify-token");
+      return {
+        valid: response.data.valid,
+        user: response.data.user,
+      };
+    } catch (error: unknown) {
+      // Handle network errors gracefully - if backend is not available, treat as invalid token
+      if (this.isNetworkError(error)) {
+        return { valid: false };
+      }
+      return { valid: false };
+    }
+  }
+
+  /**
    * Update user's first-time flag after completing guided tour
    */
   async updateFirstTimeFlag(): Promise<void> {
     try {
       await api.post("/api/auth/update-first-time");
-    } catch (err: unknown) {
-      const { message } = this.extractErrorMessage(
-        err,
-        "Failed to update user preferences"
-      );
-      console.error("Error updating first-time flag:", message);
+    } catch {
       // Silently fail as this is not critical
     }
   }

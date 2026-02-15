@@ -13,12 +13,19 @@ import { MaintenanceBanner } from "./components/maintenance-banner";
 import { InstallPrompt } from "./components/install-prompt";
 import { AnnouncementPopupHandler } from "./components/announcements/announcement-popup-handler";
 import PushNotificationInitializer from "./components/PushNotificationInitializer";
+import { useLocation } from "react-router-dom";
 
 function App() {
   const routeElement = useRoutes(routes);
+  const location = useLocation();
   const isImpersonating =
     typeof window !== "undefined" &&
     localStorage.getItem("impersonation") === "true";
+
+  // Check if current route is authenticated (not public/auth routes)
+  const isAuthenticatedRoute = location.pathname.startsWith('/agent') ||
+                               location.pathname.startsWith('/admin') ||
+                               location.pathname.startsWith('/superadmin');
 
   const handleReturnToAdmin = async () => {
     const adminToken = localStorage.getItem("adminToken");
@@ -44,12 +51,17 @@ function App() {
 
   return (
     <>
-      {isImpersonating && (
-        <div className="bg-yellow-100 border-b border-yellow-300 p-2 flex flex-col sm:flex-row sm:items-center justify-between z-50 w-full">
-          <span className="text-yellow-800 font-semibold text-sm">
+      {isImpersonating && isAuthenticatedRoute && (
+        <div className="sticky top-0 z-50 w-full bg-yellow-100 border-b border-yellow-300 p-2 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between shadow-sm">
+          <span className="text-yellow-800 font-semibold text-sm sm:text-base mb-2 sm:mb-0">
             Impersonation Active: You are acting as another user.
           </span>
-          <Button variant="danger" size="sm" onClick={handleReturnToAdmin}>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleReturnToAdmin}
+            className="self-start sm:self-auto"
+          >
             Return to Admin
           </Button>
         </div>
@@ -61,7 +73,7 @@ function App() {
               <NotificationProvider>
                 <AnnouncementProvider>
                   <PushNotificationInitializer />
-                  <div className="min-h-screen flex flex-col">
+                  <div className={`min-h-screen flex flex-col ${isImpersonating && isAuthenticatedRoute ? 'pt-0' : ''}`}>
                     <MaintenanceBanner />
                     <div className="flex-1">{routeElement}</div>
                     <NetworkStatusIndicator />
