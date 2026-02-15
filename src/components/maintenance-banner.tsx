@@ -13,11 +13,15 @@ export const MaintenanceBanner: React.FC = () => {
   return (
     <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
-        <div className="flex items-center space-x-2">
-          <FaExclamationTriangle className="w-4 h-4 text-yellow-600" />
-          <span className="text-sm text-yellow-800 font-medium">
-            {siteStatus.customMessage}
-          </span>
+        <div className="flex items-center space-x-2 flex-1 min-w-0">
+          <FaExclamationTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+          <div className="overflow-hidden whitespace-nowrap flex-1 min-w-0">
+            <div className="inline-block animate-marquee">
+              <span className="text-sm text-yellow-800 font-medium px-4">
+                {siteStatus.customMessage}
+              </span>
+            </div>
+          </div>
         </div>
         <div className="text-xs text-yellow-800 bg-yellow-100 px-2 py-1 rounded font-medium">
           🚫 SITE CLOSED

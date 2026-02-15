@@ -13,39 +13,36 @@ import { MaintenanceBanner } from "./components/maintenance-banner";
 import { InstallPrompt } from "./components/install-prompt";
 import { AnnouncementPopupHandler } from "./components/announcements/announcement-popup-handler";
 import PushNotificationInitializer from "./components/PushNotificationInitializer";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import ImpersonationService from "./utils/impersonation";
 
 function App() {
   const routeElement = useRoutes(routes);
   const location = useLocation();
+  const navigate = useNavigate();
   const isImpersonating =
     typeof window !== "undefined" &&
     localStorage.getItem("impersonation") === "true";
 
   // Check if current route is authenticated (not public/auth routes)
   const isAuthenticatedRoute = location.pathname.startsWith('/agent') ||
-                               location.pathname.startsWith('/admin') ||
-                               location.pathname.startsWith('/superadmin');
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/superadmin');
 
   const handleReturnToAdmin = async () => {
-    const adminToken = localStorage.getItem("adminToken");
-    if (adminToken) {
-      // Restore admin token to localStorage
-      localStorage.setItem("token", adminToken);
-
-      // Clear impersonation flags
+    try {
+      // Use centralized cleanup so cookies/localStorage are restored consistently
+      await ImpersonationService.endImpersonation();
+      // endImpersonation dispatches auth:refresh — navigate to superadmin
+      navigate("/superadmin");
+    } catch (error) {
+      console.error("Failed to end impersonation from banner:", error);
+      // Fallback: best-effort local restore + navigate
+      const adminToken = localStorage.getItem("adminToken");
+      if (adminToken) localStorage.setItem("token", adminToken);
       localStorage.removeItem("adminToken");
       localStorage.removeItem("impersonation");
-
-      // Clear cookies (auth service will handle this)
-      const Cookies = (await import("js-cookie")).default;
-      Cookies.remove("authToken", { path: "/" });
-      Cookies.remove("user", { path: "/" });
-      Cookies.remove("refreshToken", { path: "/" });
-      Cookies.remove("rememberMe", { path: "/" });
-
-      // Redirect to super admin dashboard
-      window.location.href = "/superadmin";
+      navigate("/superadmin");
     }
   };
 

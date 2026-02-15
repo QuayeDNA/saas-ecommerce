@@ -13,7 +13,6 @@ import {
   FaSignOutAlt,
   FaWallet,
   FaSync,
-  FaStar,
   FaWifi,
 } from "react-icons/fa";
 import { NotificationDropdown } from "./notifications/NotificationDropdown";
@@ -33,8 +32,6 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [showSiteMessage, setShowSiteMessage] = useState(false);
-  const [showGreeting, setShowGreeting] = useState(true);
   const [isTogglingSite, setIsTogglingSite] = useState(false);
 
   // Check if user can have a wallet (all business users)
@@ -102,23 +99,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     }
   };
 
-  // Show site message animation for business users and toast notifications for all users
-  useEffect(() => {
-    if (canShowWallet && siteStatus) {
-      setShowGreeting(false);
-      setTimeout(() => {
-        setShowSiteMessage(true);
-      }, 300); // Wait for greeting to slide out
 
-      const timer = setTimeout(() => {
-        setShowSiteMessage(false);
-        setTimeout(() => {
-          setShowGreeting(true);
-        }, 300); // Wait for site message to slide out
-      }, 5000); // Show for 5 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [siteStatus, canShowWallet]);
 
   // Track previous site status to show toast only on changes
   const [prevSiteStatus, setPrevSiteStatus] = useState<boolean | null>(null);
@@ -167,13 +148,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     }
   };
 
-  // Get site message for agents
-  const getSiteMessage = () => {
-    if (!siteStatus) return "";
-    return siteStatus.isSiteOpen
-      ? "Hi! We are currently open for business! 🎉"
-      : "Sorry, store is currently closed for business 😔";
-  };
+
 
   // Check if impersonating to adjust header position
   const isImpersonating = ImpersonationService.isImpersonating();
@@ -211,41 +186,19 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             {/* Greeting Section */}
             <div className="min-w-0 flex-1">
               <div className="relative overflow-hidden">
-                {showSiteMessage && canShowWallet ? (
-                  <div className="transform transition-all duration-500 ease-in-out animate-slide-up">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-green-50 text-green-600 p-1.5 rounded-md flex-shrink-0">
-                        <FaStar className="w-4 h-4" />
+                <div className="transform transition-all duration-500 ease-in-out animate-slide-in-from-bottom">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0">
+                      <span className="text-lg sm:text-xl">{getGreeting().emoji}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm sm:text-base lg:text-lg font-semibold text-white truncate">
+                        {getGreeting().text},{" "}{authState.user?.fullName.split(" ")[0]}
                       </div>
-                      <div className="overflow-hidden whitespace-nowrap">
-                        <div className="inline-block animate-marquee">
-                          <span className="text-sm sm:text-base font-medium text-green-700 px-4">
-                            {getSiteMessage()}
-                          </span>
-                        </div>
-                      </div>
+                      <div className="text-xs sm:text-sm text-gray-200 truncate">Welcome back! 👋</div>
                     </div>
                   </div>
-                ) : showGreeting ? (
-                  <div className="transform transition-all duration-500 ease-in-out animate-slide-in-from-bottom">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0">
-                        <span className="text-lg sm:text-xl">
-                          {getGreeting().emoji}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm sm:text-base lg:text-lg font-semibold text-white truncate">
-                          {getGreeting().text},{" "}
-                          {authState.user?.fullName.split(" ")[0]}
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-200 truncate">
-                          Welcome back! 👋
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
+                </div>
               </div>
             </div>
           </div>
