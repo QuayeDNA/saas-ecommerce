@@ -65,6 +65,11 @@ export default function SuperAdminSettingsPage() {
     telecelApiKey: "",
     airtelTigoApiKey: "",
     apiEndpoint: "",
+    paystackEnabled: false,
+    paystackTestPublicKey: "",
+    paystackTestSecretKey: "",
+    paystackLivePublicKey: "",
+    paystackLiveSecretKey: "",
   });
 
   // Wallet Settings

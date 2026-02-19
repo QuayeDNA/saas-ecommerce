@@ -23,6 +23,12 @@ export interface ApiSettings {
   telecelApiKey: string;
   airtelTigoApiKey: string;
   apiEndpoint: string;
+  // Paystack
+  paystackEnabled?: boolean;
+  paystackTestPublicKey?: string;
+  paystackTestSecretKey?: string;
+  paystackLivePublicKey?: string;
+  paystackLiveSecretKey?: string;
 }
 
 export interface SystemInfo {

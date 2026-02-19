@@ -34,6 +34,8 @@ export interface StorefrontData {
     showContact?: boolean;
   };
   branding?: StorefrontBranding;
+  // Optional Paystack subaccount code for direct payouts to the agent via Paystack
+  paystackSubaccountId?: string;
   approvedAt?: string;
   approvedBy?: string;
   createdAt?: string;
@@ -352,6 +354,16 @@ class StorefrontService {
   async deleteStorefront(): Promise<{ message: string }> {
     const response = await apiClient.delete(`${this.basePath}/agent/storefront`);
     return { message: response.data.message };
+  }
+
+  /**
+   * Create Paystack subaccount for the authenticated agent's storefront.
+   * Returns the updated storefront object and the Paystack subaccount payload.
+   * Backend validation: agent must have an active bank_transfer payment method with account details.
+   */
+  async createPaystackSubaccount(): Promise<{ storefront: StorefrontData; subaccount: any }> {
+    const response = await apiClient.post(`${this.basePath}/agent/storefront/paystack/subaccount`);
+    return response.data.data;
   }
 
   // =========================================================================

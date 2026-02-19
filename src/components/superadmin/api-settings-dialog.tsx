@@ -33,6 +33,8 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     mtn: false,
     telecel: false,
     airtelTigo: false,
+    paystackTestSecret: false,
+    paystackLiveSecret: false,
   });
 
   useEffect(() => {
@@ -213,6 +215,69 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                           {showKeys.airtelTigo ? "🙈" : "👁️"}
                         </button>
                       }
+                    />
+                  </FormField>
+                </div>
+              </div>
+
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-900">Paystack (Payment Gateway)</h3>
+
+              <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">💳</div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Paystack</h4>
+                    <p className="text-sm text-gray-600">Enable Paystack and configure test/live keys</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={formData.paystackEnabled || false}
+                      onChange={(checked) => setFormData(prev => ({ ...prev, paystackEnabled: checked }))}
+                    />
+                    <span className="text-sm text-gray-700">Enable Paystack</span>
+                  </div>
+
+                  <FormField label="Test Public Key">
+                    <Input
+                      value={formData.paystackTestPublicKey || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paystackTestPublicKey: e.target.value }))}
+                      placeholder="pk_test_..."
+                      className="font-mono"
+                    />
+                  </FormField>
+
+                  <FormField label="Test Secret Key">
+                    <Input
+                      type={showKeys.paystackTestSecret ? 'text' : 'password'}
+                      value={formData.paystackTestSecretKey || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paystackTestSecretKey: e.target.value }))}
+                      placeholder="sk_test_..."
+                      className="font-mono"
+                      rightIcon={<button type="button" onClick={() => setShowKeys(prev => ({ ...prev, paystackTestSecret: !prev.paystackTestSecret }))}>{showKeys.paystackTestSecret ? '🙈' : '👁️'}</button>}
+                    />
+                  </FormField>
+
+                  <FormField label="Live Public Key (optional)">
+                    <Input
+                      value={formData.paystackLivePublicKey || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paystackLivePublicKey: e.target.value }))}
+                      placeholder="pk_live_..."
+                      className="font-mono"
+                    />
+                  </FormField>
+
+                  <FormField label="Live Secret Key (optional)">
+                    <Input
+                      type={showKeys.paystackLiveSecret ? 'text' : 'password'}
+                      value={formData.paystackLiveSecretKey || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paystackLiveSecretKey: e.target.value }))}
+                      placeholder="sk_live_..."
+                      className="font-mono"
+                      rightIcon={<button type="button" onClick={() => setShowKeys(prev => ({ ...prev, paystackLiveSecret: !prev.paystackLiveSecret }))}>{showKeys.paystackLiveSecret ? '🙈' : '👁️'}</button>}
                     />
                   </FormField>
                 </div>

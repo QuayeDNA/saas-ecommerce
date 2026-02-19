@@ -100,6 +100,42 @@ export const walletService = {
   },
 
   /**
+   * Initiate Paystack checkout for instant wallet top-up (agent-facing)
+   * Calls backend POST /api/wallet/paystack/initiate and returns Paystack init data
+   */
+  initiatePaystackTopUp: async (
+    amount: number
+  ): Promise<{ authorizationUrl: string; reference: string; access_code?: string; amount?: number }> => {
+    const response = await apiClient.post<{ success: boolean; data: any }>("/api/wallet/paystack/initiate", { amount });
+    return response.data.data;
+  },
+
+  /**
+   * Verify a paystack transaction by reference (used by frontend callback)
+   */
+  verifyPaystackReference: async (reference: string) => {
+    const response = await apiClient.get<{ success: boolean; message?: string }>(`/api/wallet/paystack/verify?reference=${encodeURIComponent(reference)}`);
+    return response.data;
+  },
+
+  /**
+   * Get Paystack public key + server-side configured status
+   * Calls GET /api/wallet/paystack/public-key and returns { publicKey, configured }
+   */
+  getPaystackPublicKey: async (): Promise<{ publicKey: string; configured: boolean }> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      publicKey?: string;
+      configured?: boolean;
+    }>("/api/wallet/paystack/public-key");
+
+    return {
+      publicKey: response.data?.publicKey || "",
+      configured: Boolean(response.data?.configured),
+    };
+  },
+
+  /**
    * Admin: Top up a user's wallet
    * @param userId User ID to credit
    * @param amount Amount to credit

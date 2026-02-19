@@ -110,7 +110,7 @@ const PublicStore: React.FC = () => {
     const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('review');
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
-    const [paymentType, setPaymentType] = useState<'mobile_money' | 'bank_transfer'>('mobile_money');
+    const [paymentType, setPaymentType] = useState<'mobile_money'>('mobile_money');
     const [transactionRef, setTransactionRef] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [orderError, setOrderError] = useState<string | null>(null);
@@ -307,8 +307,8 @@ const PublicStore: React.FC = () => {
         setOrderError(null);
         setOrderResult(null);
         setShowCheckout(true);
-        const methods = storeData?.storefront.paymentMethods || [];
-        if (methods.length > 0) setPaymentType(methods[0].type);
+        const methods = (storeData?.storefront.paymentMethods || []).filter(m => m.type === 'mobile_money');
+        if (methods.length > 0) setPaymentType('mobile_money');
     };
 
     const submitOrder = async () => {

@@ -91,7 +91,6 @@ interface FormErrors {
 
 const PAYMENT_TYPE_OPTIONS = [
   { value: "mobile_money", label: "Mobile Money" },
-  { value: "bank_transfer", label: "Bank Transfer" },
 ];
 
 const MOMO_PROVIDER_OPTIONS = [
@@ -144,10 +143,12 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   });
 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodForm[]>(
-    storefront.paymentMethods || [],
+    (storefront.paymentMethods || []).filter((pm: PaymentMethodForm) => pm.type === "mobile_money"),
   );
 
   const [errors, setErrors] = useState<FormErrors>({});
+  // Paystack subaccount creation state
+  const [isCreatingSubaccount, setIsCreatingSubaccount] = useState(false);
 
   // --- Validation ---
 
@@ -1091,6 +1092,8 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 Configure how customers can pay
               </p>
             </div>
+
+
 
             {errors.paymentMethods && (
               <Alert status="error" variant="left-accent">

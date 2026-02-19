@@ -371,13 +371,6 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
       available: true,
     },
     {
-      type: "bank_transfer",
-      label: "Bank Transfer",
-      description: "Accept direct bank transfers from customers (Coming Soon)",
-      icon: Building2,
-      available: false,
-    },
-    {
       type: "cash",
       label: "Cash on Delivery",
       description: "Customers pay you directly in cash (Coming Soon)",

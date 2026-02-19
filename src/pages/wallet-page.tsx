@@ -6,6 +6,7 @@ import {
   type CommissionRecord,
   type CurrentMonthStatistics,
   type CommissionMonthlySummary,
+  type CommissionFilters,
 } from "../services/commission.service";
 import { websocketService } from "../services/websocket.service";
 import {
@@ -14,7 +15,6 @@ import {
   FaArrowUp,
   FaArrowDown,
   FaSync,
-  FaWifi,
   FaCoins,
   FaCalendarAlt,
   FaClock,
@@ -23,8 +23,9 @@ import {
   FaChevronUp,
   FaCheckCircle,
 } from "react-icons/fa";
-import { Alert } from "../design-system";
+import { Alert, Button, Tabs, TabsList, TabsTrigger, Spinner, Pagination, StatsGrid, Card, CardHeader, CardBody } from "../design-system";
 import { TopUpRequestModal } from "../components/wallet/TopUpRequestModal";
+import { SearchAndFilter } from "../components/common/SearchAndFilter";
 
 export const WalletPage = () => {
   const {
@@ -34,7 +35,6 @@ export const WalletPage = () => {
     error,
     getTransactionHistory,
     requestTopUp,
-    connectionStatus,
   } = useWallet();
 
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
@@ -64,9 +64,12 @@ export const WalletPage = () => {
 
   // Commission filters
   const [commissionStatusFilter, setCommissionStatusFilter] =
-    useState<string>("all");
+    useState<CommissionFilters['status'] | 'all'>("all");
   const [commissionPeriodFilter, setCommissionPeriodFilter] =
-    useState<string>("all");
+    useState<CommissionFilters['period'] | 'all'>("all");
+
+  // Search + date range for filters (used by SearchAndFilter)
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Monthly history expansion
   const [expandedMonthlyHistory, setExpandedMonthlyHistory] = useState(false);
@@ -91,8 +94,15 @@ export const WalletPage = () => {
   const loadCommissions = useCallback(async () => {
     setIsLoadingCommissions(true);
     try {
+      const filters: Partial<CommissionFilters> = {};
+      if (commissionStatusFilter && commissionStatusFilter !== "all")
+        filters.status = commissionStatusFilter;
+      if (commissionPeriodFilter && commissionPeriodFilter !== "all")
+        filters.period = commissionPeriodFilter;
+      if (searchTerm && searchTerm.trim()) filters.search = searchTerm.trim();
+
       const [commissionsData, statsData, summariesData] = await Promise.all([
-        commissionService.getAgentCommissions(),
+        commissionService.getAgentCommissions(filters),
         commissionService.getCurrentMonthStatistics(),
         commissionService.getAgentMonthlySummaries({ limit: 12 }),
       ]);
@@ -116,7 +126,7 @@ export const WalletPage = () => {
     } finally {
       setIsLoadingCommissions(false);
     }
-  }, []);
+  }, [commissionStatusFilter, commissionPeriodFilter, searchTerm]);
 
   // Fetch transaction history on page load and when page changes
   useEffect(() => {
@@ -214,35 +224,7 @@ export const WalletPage = () => {
   };
 
   // Get connection status indicator
-  const getConnectionStatusIndicator = () => {
-    const statusColors = {
-      websocket: "text-green-500",
-      polling: "text-yellow-500",
-      disconnected: "text-red-500",
-    };
 
-    const statusText = {
-      websocket: "Real-time (WebSocket)",
-      polling: "Polling (Fallback)",
-      disconnected: "Disconnected",
-    };
-
-    return (
-      <div className="flex items-center gap-2 text-xs sm:text-sm">
-        <FaWifi className={statusColors[connectionStatus]} />
-        <span className={`${statusColors[connectionStatus]} hidden sm:inline`}>
-          {statusText[connectionStatus]}
-        </span>
-        <span className={`${statusColors[connectionStatus]} sm:hidden`}>
-          {connectionStatus === "websocket"
-            ? "Live"
-            : connectionStatus === "polling"
-            ? "Polling"
-            : "Offline"}
-        </span>
-      </div>
-    );
-  };
 
   const handleTopUpRequest = async (amount: number, description: string) => {
     setIsSubmittingRequest(true);
@@ -264,490 +246,458 @@ export const WalletPage = () => {
     }
   };
 
-  return (
-    <div className="max-w-6xl mx-auto sm:p-4 space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-          <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              Wallet & Commissions
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600">
-              Manage your wallet balance and view commission earnings
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            {getConnectionStatusIndicator()}
-            <button
-              onClick={() => refreshWallet()}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto justify-center"
-            >
-              <FaSync className={isLoading ? "animate-spin" : ""} />
-              <span className="hidden sm:inline">Refresh</span>
-              <span className="sm:hidden">Sync</span>
-            </button>
-          </div>
+  return (<>
+    {/* Header */}
+    <Card className="mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            Wallet & Commissions
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            Manage your wallet balance and view commission earnings
+          </p>
         </div>
-
-        {/* Tab Navigation */}
-        <div className="mt-6 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab("wallet")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "wallet"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <FaWallet className="inline mr-2" />
-              Wallet
-            </button>
-            <button
-              onClick={() => setActiveTab("commissions")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === "commissions"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <FaCoins className="inline mr-2" />
-              Commissions
-            </button>
-          </nav>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Button
+            variant="primary"
+            size="md"
+            leftIcon={<FaSync className={isLoading ? "animate-spin" : ""} />}
+            onClick={() => refreshWallet()}
+            isLoading={isLoading}
+          >
+            <span className="hidden sm:inline">Refresh</span>
+            <span className="sm:hidden">Sync</span>
+          </Button>
         </div>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === "wallet" ? (
-        <>
-          {/* Error Alert */}
-          {error && (
-            <Alert status="error" title="Error">
-              {error}
-            </Alert>
-          )}
+      {/* Tab Navigation */}
+      <div className="mt-6 border-b border-gray-200">
+        <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as 'wallet' | 'commissions')}>
+          <TabsList className="w-full justify-center space-x-8">
+            <TabsTrigger value="wallet">
+              <FaWallet className="inline mr-2" />
+              Wallet
+            </TabsTrigger>
+            <TabsTrigger value="commissions">
+              <FaCoins className="inline mr-2" />
+              Commissions
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+    </Card>
 
-          {/* Success Message */}
-          {successMessage && (
-            <Alert status="success" title="Success">
-              {successMessage}
-            </Alert>
-          )}
+    {/* Tab Content */}
+    {activeTab === "wallet" ? (
+      <>
+        {/* Error Alert */}
+        {error && (
+          <Alert status="error" title="Error">
+            {error}
+          </Alert>
+        )}
 
-          {/* Wallet Balance Card */}
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-                Current Balance
-              </h2>
-              <button
-                onClick={() => setShowTopUpModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm sm:text-base w-full sm:w-auto justify-center"
-              >
-                <FaPlus />
-                <span className="hidden sm:inline">Request Top-up</span>
-                <span className="sm:hidden">Top-up</span>
-              </button>
+        {/* Success Message */}
+        {successMessage && (
+          <Alert status="success" title="Success">
+            {successMessage}
+          </Alert>
+        )}
+
+        {/* Wallet Balance Card (design-system) */}
+        <Card>
+          <CardHeader className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Current Balance</h2>
             </div>
+            <Button
+              variant="success"
+              size="md"
+              leftIcon={<FaPlus />}
+              onClick={() => setShowTopUpModal(true)}
+              isLoading={isSubmittingRequest}
+            >
+              <span className="hidden sm:inline">Request Top-up</span>
+              <span className="sm:hidden">Top-up</span>
+            </Button>
+          </CardHeader>
+          <CardBody className="py-3">
+            <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">{formatCurrency(walletBalance)}</div>
+            <p className="text-sm text-gray-600">Available for transactions and purchases</p>
+          </CardBody>
+        </Card>
 
-            <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-              {formatCurrency(walletBalance)}
-            </div>
+        {/* Transaction History */}
+        <Card className="mb-6">
+          <CardHeader className="p-4 border-b border-gray-200">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Transaction History</h2>
+          </CardHeader>
 
-            <p className="text-sm sm:text-base text-gray-600">
-              Available for transactions and purchases
-            </p>
-          </div>
-
-          {/* Transaction History */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 sm:p-6 border-b border-gray-200">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-                Transaction History
-              </h2>
-            </div>
-
-            <div className="p-4 sm:p-6">
-              {isLoadingTransactions ? (
-                <div className="flex items-center justify-center py-8">
-                  <FaSync className="animate-spin text-blue-600 text-xl" />
-                  <span className="ml-2 text-gray-600">
-                    Loading transactions...
-                  </span>
-                </div>
-              ) : transactions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FaWallet className="text-4xl mx-auto mb-4 text-gray-300" />
-                  <p>No transactions found</p>
-                </div>
-              ) : (
-                <div className="space-y-3 sm:space-y-4">
-                  {transactions.map((transaction) => {
-                    const styles = getTransactionTypeStyles(transaction.type);
-                    return (
-                      <div
-                        key={transaction._id}
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors ${styles.borderColor}`}
-                      >
-                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                          <div
-                            className={`flex items-center justify-center w-10 h-10 rounded-full ${styles.bgColor} flex-shrink-0`}
-                          >
-                            {styles.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${styles.badgeBg} ${styles.badgeText}`}
-                              >
-                                {transaction.type === "credit"
-                                  ? "Credit"
-                                  : transaction.type === "debit"
+          <CardBody className="p-4">
+            {isLoadingTransactions ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner size="lg" color="primary" />
+                <span className="ml-3 text-gray-600">Loading transactions...</span>
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <FaWallet className="text-4xl mx-auto mb-4 text-gray-300" />
+                <p>No transactions found</p>
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                {transactions.map((transaction) => {
+                  const styles = getTransactionTypeStyles(transaction.type);
+                  return (
+                    <div
+                      key={transaction._id}
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors ${styles.borderColor}`}
+                    >
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full ${styles.bgColor} flex-shrink-0`}
+                        >
+                          {styles.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${styles.badgeBg} ${styles.badgeText}`}
+                            >
+                              {transaction.type === "credit"
+                                ? "Credit"
+                                : transaction.type === "debit"
                                   ? "Debit"
                                   : "Transaction"}
-                              </span>
-                            </div>
-                            <p className="font-medium text-gray-900 text-sm sm:text-base truncate">
-                              {transaction.description}
-                            </p>
-                            <p className="text-xs sm:text-sm text-gray-500">
-                              {formatDate(transaction.createdAt)}
-                            </p>
+                            </span>
                           </div>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-1 mt-3 sm:mt-0 sm:ml-4">
-                          <p
-                            className={`font-semibold text-sm sm:text-base ${styles.amountColor}`}
-                          >
-                            {transaction.type === "credit" ? "+" : "-"}
-                            {formatCurrency(transaction.amount)}
+                          <p className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                            {transaction.description}
                           </p>
                           <p className="text-xs sm:text-sm text-gray-500">
-                            Balance: {formatCurrency(transaction.balanceAfter)}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-6">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.max(1, prev - 1))
-                      }
-                      disabled={currentPage === 1}
-                      className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 text-sm"
-                    >
-                      Previous
-                    </button>
-
-                    <span className="px-3 py-2 text-gray-600 text-sm">
-                      Page {currentPage} of {totalPages}
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                      }
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 text-sm"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      ) : (
-        /* Commissions Tab Content */
-        <>
-          {/* Current Month Daily Accumulation */}
-          {currentMonthAccumulating.length > 0 && (
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow p-4 sm:p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                    This Month's Commission Progress
-                  </h2>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Daily commission accumulation from completed orders
-                  </p>
-                </div>
-                <div className="p-3 bg-white rounded-lg shadow-sm">
-                  <FaCoins className="text-green-600 text-xl" />
-                </div>
-              </div>
-
-              {/* Monthly Total Summary */}
-              <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      Month-to-Date Total
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {currentMonthAccumulating.reduce(
-                        (sum, c) => sum + c.totalOrders,
-                        0
-                      )}{" "}
-                      orders processed
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-green-600">
-                      {formatCurrency(
-                        currentMonthAccumulating.reduce(
-                          (sum, c) => sum + c.amount,
-                          0
-                        )
-                      )}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {formatCurrency(
-                        currentMonthAccumulating.reduce(
-                          (sum, c) => sum + c.totalRevenue,
-                          0
-                        )
-                      )}{" "}
-                      revenue
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Daily Breakdown */}
-              <div className="space-y-2">
-                <h3 className="font-medium text-gray-900 text-sm">
-                  Daily Breakdown
-                </h3>
-                {currentMonthAccumulating
-                  .filter((c) => c.period === "daily")
-                  .sort(
-                    (a, b) =>
-                      new Date(b.periodStart).getTime() -
-                      new Date(a.periodStart).getTime()
-                  )
-                  .map((commission) => (
-                    <div
-                      key={commission._id}
-                      className="flex items-center justify-between p-3 border border-green-200 rounded-lg bg-white hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 flex-shrink-0">
-                          <FaCoins className="text-green-600 text-sm" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">
-                            {new Date(
-                              commission.periodStart
-                            ).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {commission.totalOrders} orders •{" "}
-                            {formatCurrency(commission.totalRevenue)} revenue
+                            {formatDate(transaction.createdAt)}
                           </p>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <p className="font-semibold text-green-600">
-                          {formatCurrency(commission.amount)}
+                      <div className="flex flex-col items-end gap-1 mt-3 sm:mt-0 sm:ml-4">
+                        <p
+                          className={`font-semibold text-sm sm:text-base ${styles.amountColor}`}
+                        >
+                          {transaction.type === "credit" ? "+" : "-"}
+                          {formatCurrency(transaction.amount)}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {commission.formattedRate} rate
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          Balance: {formatCurrency(transaction.balanceAfter)}
                         </p>
                       </div>
                     </div>
-                  ))}
-
-                {/* Monthly accumulating record (if exists) */}
-                {currentMonthAccumulating
-                  .filter((c) => c.period === "monthly")
-                  .map((commission) => (
-                    <div
-                      key={commission._id}
-                      className="flex items-center justify-between p-3 border border-blue-200 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 flex-shrink-0">
-                          <FaCalendarAlt className="text-blue-600 text-sm" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">
-                            Monthly Total (Real-time)
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {commission.totalOrders} orders •{" "}
-                            {formatCurrency(commission.totalRevenue)} revenue
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="font-semibold text-blue-600">
-                          {formatCurrency(commission.amount)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {commission.formattedRate} rate
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                  );
+                })}
               </div>
+            )}
 
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-xs text-blue-800">
-                  <FaClock className="inline mr-1" />
-                  Commissions accumulate daily and will be finalized at the end
-                  of {new Date().toLocaleDateString("en-US", { month: "long" })}
-                  . You'll receive notifications for each day's earnings!
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-6 w-full">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalPages * 20}
+                  itemsPerPage={20}
+                  onPageChange={(p) => setCurrentPage(p)}
+                  variant="compact"
+                />
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      </>
+    ) : (
+      /* Commissions Tab Content */
+      <>
+        {/* Current Month Daily Accumulation */}
+        {currentMonthAccumulating.length > 0 && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                  This Month's Commission Progress
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Daily commission accumulation from completed orders
                 </p>
               </div>
+              <div className="p-3 bg-white rounded-lg shadow-sm">
+                <FaCoins className="text-green-600 text-xl" />
+              </div>
             </div>
-          )}
 
-          {/* Current Month Statistics */}
-          {currentMonthStats && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow p-4 sm:p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
+            {/* Monthly Total Summary */}
+            <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                    {currentMonthStats.currentMonth.month}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Finalized Commission Performance
-                  </p>
-                </div>
-                <div className="p-3 bg-white rounded-lg shadow-sm">
-                  <FaCalendarAlt className="text-blue-600 text-xl" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FaCoins className="text-green-600 text-sm" />
-                    <p className="text-xs text-gray-600">Earned</p>
-                  </div>
-                  <p className="text-base sm:text-lg font-bold text-green-600">
-                    {formatCurrency(currentMonthStats.currentMonth.totalEarned)}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FaCheckCircle className="text-blue-600 text-sm" />
-                    <p className="text-xs text-gray-600">Paid</p>
-                  </div>
-                  <p className="text-base sm:text-lg font-bold text-blue-600">
-                    {formatCurrency(currentMonthStats.currentMonth.totalPaid)}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FaClock className="text-yellow-600 text-sm" />
-                    <p className="text-xs text-gray-600">
-                      Pending ({currentMonthStats.currentMonth.pendingCount})
-                    </p>
-                  </div>
-                  <p className="text-base sm:text-lg font-bold text-yellow-600">
-                    {formatCurrency(
-                      currentMonthStats.currentMonth.totalPending
-                    )}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FaTimesCircle className="text-red-600 text-sm" />
-                    <p className="text-xs text-gray-600">Rejected</p>
-                  </div>
-                  <p className="text-base sm:text-lg font-bold text-red-600">
-                    {formatCurrency(
-                      currentMonthStats.currentMonth.totalRejected
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              {currentMonthStats.currentMonth.pendingCount > 0 && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-xs text-yellow-800">
-                    <FaClock className="inline mr-1" />
-                    You have{" "}
-                    {formatCurrency(
-                      currentMonthStats.currentMonth.totalPending
+                  <h3 className="font-semibold text-gray-900">
+                    Month-to-Date Total
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {currentMonthAccumulating.reduce(
+                      (sum, c) => sum + c.totalOrders,
+                      0
                     )}{" "}
-                    in pending commissions. These will be processed by the
-                    admin.
+                    orders processed
                   </p>
                 </div>
-              )}
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(
+                      currentMonthAccumulating.reduce(
+                        (sum, c) => sum + c.amount,
+                        0
+                      )
+                    )}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {formatCurrency(
+                      currentMonthAccumulating.reduce(
+                        (sum, c) => sum + c.totalRevenue,
+                        0
+                      )
+                    )}{" "}
+                    revenue
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
 
-          {/* Filters */}
-          <div className="bg-white rounded-lg shadow p-3 sm:p-4 mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  Status Filter
-                </label>
-                <select
-                  value={commissionStatusFilter}
-                  onChange={(e) => setCommissionStatusFilter(e.target.value)}
-                  className="w-full rounded-lg border-gray-300 text-sm"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="paid">Paid</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
+            {/* Daily Breakdown */}
+            <div className="space-y-2">
+              <h3 className="font-medium text-gray-900 text-sm">
+                Daily Breakdown
+              </h3>
+              {currentMonthAccumulating
+                .filter((c) => c.period === "daily")
+                .sort(
+                  (a, b) =>
+                    new Date(b.periodStart).getTime() -
+                    new Date(a.periodStart).getTime()
+                )
+                .map((commission) => (
+                  <div
+                    key={commission._id}
+                    className="flex items-center justify-between p-3 border border-green-200 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 flex-shrink-0">
+                        <FaCoins className="text-green-600 text-sm" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">
+                          {new Date(
+                            commission.periodStart
+                          ).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {commission.totalOrders} orders •{" "}
+                          {formatCurrency(commission.totalRevenue)} revenue
+                        </p>
+                      </div>
+                    </div>
 
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  Period Filter
-                </label>
-                <select
-                  value={commissionPeriodFilter}
-                  onChange={(e) => setCommissionPeriodFilter(e.target.value)}
-                  className="w-full rounded-lg border-gray-300 text-sm"
-                >
-                  <option value="all">All Periods</option>
-                  <option value="daily">Daily</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="weekly">Weekly</option>
-                </select>
-              </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-green-600">
+                        {formatCurrency(commission.amount)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {commission.formattedRate} rate
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+              {/* Monthly accumulating record (if exists) */}
+              {currentMonthAccumulating
+                .filter((c) => c.period === "monthly")
+                .map((commission) => (
+                  <div
+                    key={commission._id}
+                    className="flex items-center justify-between p-3 border border-blue-200 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 flex-shrink-0">
+                        <FaCalendarAlt className="text-blue-600 text-sm" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">
+                          Monthly Total (Real-time)
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {commission.totalOrders} orders •{" "}
+                          {formatCurrency(commission.totalRevenue)} revenue
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="font-semibold text-blue-600">
+                        {formatCurrency(commission.amount)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {commission.formattedRate} rate
+                      </p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-800">
+                <FaClock className="inline mr-1" />
+                Commissions accumulate daily and will be finalized at the end
+                of {new Date().toLocaleDateString("en-US", { month: "long" })}
+                . You'll receive notifications for each day's earnings!
+              </p>
             </div>
           </div>
+        )}
 
-          {/* Finalized Commission Records */}
-          <div className="bg-white rounded-lg shadow mb-6">
-            <div className="p-4 sm:p-6 border-b border-gray-200">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-                Finalized Commission Records
-              </h2>
-              <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                {
-                  finalizedCommissions.filter((c) => {
+        {/* Current Month Statistics */}
+        {currentMonthStats && (
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                  {currentMonthStats.currentMonth.month}
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Finalized Commission Performance
+                </p>
+              </div>
+              <div className="p-3 bg-white rounded-lg shadow-sm">
+                <FaCalendarAlt className="text-blue-600 text-xl" />
+              </div>
+            </div>
+
+            <StatsGrid
+              stats={[
+                { title: 'Earned', value: formatCurrency(currentMonthStats.currentMonth.totalEarned), subtitle: 'Month-to-date', icon: <FaCoins /> },
+                { title: 'Paid', value: formatCurrency(currentMonthStats.currentMonth.totalPaid), subtitle: 'Paid so far', icon: <FaWallet /> },
+                { title: `Pending (${currentMonthStats.currentMonth.pendingCount})`, value: formatCurrency(currentMonthStats.currentMonth.totalPending), subtitle: 'Awaiting finalization', icon: <FaClock /> },
+                { title: 'Rejected', value: formatCurrency(currentMonthStats.currentMonth.totalRejected), subtitle: 'Rejected', icon: <FaTimesCircle /> },
+              ]}
+              columns={4}
+              gap="sm"
+            />
+
+            {currentMonthStats.currentMonth.pendingCount > 0 && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-xs text-yellow-800">
+                  <FaClock className="inline mr-1" />
+                  You have{" "}
+                  {formatCurrency(
+                    currentMonthStats.currentMonth.totalPending
+                  )}{" "}
+                  in pending commissions. These will be processed by the
+                  admin.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Filters */}
+        <SearchAndFilter
+          searchTerm={searchTerm}
+          onSearchChange={(v) => setSearchTerm(v)}
+          onSearch={(e) => { e.preventDefault(); /* searchTerm change will trigger loadCommissions via effect */ }}
+          filters={{
+            status: {
+              value: (commissionStatusFilter || 'all') as string,
+              label: 'Status',
+              placeholder: 'All Statuses',
+              options: [
+                { value: 'pending', label: 'Pending' },
+                { value: 'paid', label: 'Paid' },
+                { value: 'rejected', label: 'Rejected' },
+              ],
+            },
+            period: {
+              value: (commissionPeriodFilter || 'all') as string,
+              label: 'Period',
+              placeholder: 'All Periods',
+              options: [
+                { value: 'daily', label: 'Daily' },
+                { value: 'weekly', label: 'Weekly' },
+                { value: 'monthly', label: 'Monthly' },
+              ],
+            },
+          }}
+          onFilterChange={(key, value) => {
+            if (key === 'status') setCommissionStatusFilter(value as CommissionFilters['status'] | 'all');
+            if (key === 'period') setCommissionPeriodFilter(value as CommissionFilters['period'] | 'all');
+          }}
+          onClearFilters={() => {
+            setSearchTerm('');
+            setCommissionStatusFilter('all');
+            setCommissionPeriodFilter('all');
+          }}
+          showFilterToggle={false}
+          isLoading={isLoadingCommissions}
+        />
+
+        {/* Finalized Commission Records */}
+        <Card className="mb-6">
+          <CardHeader className="p-4 sm:p-6 border-b border-gray-200">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+              Finalized Commission Records
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              {
+                finalizedCommissions.filter((c) => {
+                  if (
+                    commissionStatusFilter !== "all" &&
+                    c.status !== commissionStatusFilter
+                  )
+                    return false;
+                  if (
+                    commissionPeriodFilter !== "all" &&
+                    c.period !== commissionPeriodFilter
+                  )
+                    return false;
+                  return true;
+                }).length
+              }{" "}
+              of {finalizedCommissions.length} finalized commissions
+            </p>
+          </CardHeader>
+
+          <CardBody className="p-4 sm:p-6">
+            {isLoadingCommissions ? (
+              <div className="flex items-center justify-center py-8">
+                <FaSync className="animate-spin text-blue-600 text-xl" />
+                <span className="ml-2 text-gray-600">
+                  Loading commissions...
+                </span>
+              </div>
+            ) : finalizedCommissions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <FaCoins className="text-4xl mx-auto mb-4 text-gray-300" />
+                <p>No finalized commissions yet</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Finalized commissions will appear here at the end of each
+                  month
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                {finalizedCommissions
+                  .filter((c) => {
                     if (
                       commissionStatusFilter !== "all" &&
                       c.status !== commissionStatusFilter
@@ -759,259 +709,217 @@ export const WalletPage = () => {
                     )
                       return false;
                     return true;
-                  }).length
-                }{" "}
-                of {finalizedCommissions.length} finalized commissions
-              </p>
-            </div>
-
-            <div className="p-4 sm:p-6">
-              {isLoadingCommissions ? (
-                <div className="flex items-center justify-center py-8">
-                  <FaSync className="animate-spin text-blue-600 text-xl" />
-                  <span className="ml-2 text-gray-600">
-                    Loading commissions...
-                  </span>
-                </div>
-              ) : finalizedCommissions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FaCoins className="text-4xl mx-auto mb-4 text-gray-300" />
-                  <p>No finalized commissions yet</p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Finalized commissions will appear here at the end of each
-                    month
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3 sm:space-y-4">
-                  {finalizedCommissions
-                    .filter((c) => {
-                      if (
-                        commissionStatusFilter !== "all" &&
-                        c.status !== commissionStatusFilter
-                      )
-                        return false;
-                      if (
-                        commissionPeriodFilter !== "all" &&
-                        c.period !== commissionPeriodFilter
-                      )
-                        return false;
-                      return true;
-                    })
-                    .map((commission) => (
-                      <div
-                        key={commission._id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                          <div
-                            className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 ${
-                              commission.status === "paid"
-                                ? "bg-green-100"
-                                : commission.status === "pending"
-                                ? "bg-yellow-100"
-                                : "bg-red-100"
+                  })
+                  .map((commission) => (
+                    <div
+                      key={commission._id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 ${commission.status === "paid"
+                            ? "bg-green-100"
+                            : commission.status === "pending"
+                              ? "bg-yellow-100"
+                              : "bg-red-100"
                             }`}
-                          >
-                            {commission.status === "paid" ? (
-                              <FaCheckCircle className="text-green-600" />
-                            ) : commission.status === "pending" ? (
-                              <FaClock className="text-yellow-600" />
-                            ) : (
-                              <FaTimesCircle className="text-red-600" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  commission.status === "paid"
-                                    ? "bg-green-100 text-green-800"
-                                    : commission.status === "pending"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {commission.status.toUpperCase()}
-                              </span>
-                              <span className="text-xs text-gray-500 capitalize">
-                                {commission.period}
-                              </span>
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                FINALIZED
-                              </span>
-                            </div>
-                            <p className="font-medium text-gray-900 text-sm sm:text-base">
-                              {commission.totalOrders} orders •{" "}
-                              {formatCurrency(commission.totalRevenue)} revenue
-                            </p>
-                            <p className="text-xs sm:text-sm text-gray-500">
-                              {formatDate(commission.periodStart)} -{" "}
-                              {formatDate(commission.periodEnd).split(",")[0]}
-                            </p>
-                            {commission.finalizedAt && (
-                              <p className="text-xs text-blue-600 mt-1">
-                                Finalized on{" "}
-                                {formatDate(commission.finalizedAt)}
-                              </p>
-                            )}
-                            {commission.status === "paid" &&
-                              commission.paidAt && (
-                                <p className="text-xs text-green-600 mt-1">
-                                  Paid on {formatDate(commission.paidAt)}
-                                  {commission.paymentReference &&
-                                    ` • Ref: ${commission.paymentReference}`}
-                                </p>
-                              )}
-                            {commission.status === "rejected" &&
-                              commission.rejectionReason && (
-                                <p className="text-xs text-red-600 mt-1">
-                                  Rejected: {commission.rejectionReason}
-                                </p>
-                              )}
-                          </div>
+                        >
+                          {commission.status === "paid" ? (
+                            <FaCheckCircle className="text-green-600" />
+                          ) : commission.status === "pending" ? (
+                            <FaClock className="text-yellow-600" />
+                          ) : (
+                            <FaTimesCircle className="text-red-600" />
+                          )}
                         </div>
-
-                        <div className="flex flex-col items-end gap-1 mt-3 sm:mt-0 sm:ml-4">
-                          <p
-                            className={`font-semibold text-base sm:text-lg ${
-                              commission.status === "paid"
-                                ? "text-green-600"
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${commission.status === "paid"
+                                ? "bg-green-100 text-green-800"
                                 : commission.status === "pending"
-                                ? "text-yellow-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {formatCurrency(commission.amount)}
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                                }`}
+                            >
+                              {commission.status.toUpperCase()}
+                            </span>
+                            <span className="text-xs text-gray-500 capitalize">
+                              {commission.period}
+                            </span>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              FINALIZED
+                            </span>
+                          </div>
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">
+                            {commission.totalOrders} orders •{" "}
+                            {formatCurrency(commission.totalRevenue)} revenue
                           </p>
                           <p className="text-xs sm:text-sm text-gray-500">
-                            {commission.formattedRate} rate
+                            {formatDate(commission.periodStart)} -{" "}
+                            {formatDate(commission.periodEnd).split(",")[0]}
                           </p>
+                          {commission.finalizedAt && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              Finalized on{" "}
+                              {formatDate(commission.finalizedAt)}
+                            </p>
+                          )}
+                          {commission.status === "paid" &&
+                            commission.paidAt && (
+                              <p className="text-xs text-green-600 mt-1">
+                                Paid on {formatDate(commission.paidAt)}
+                                {commission.paymentReference &&
+                                  ` • Ref: ${commission.paymentReference}`}
+                              </p>
+                            )}
+                          {commission.status === "rejected" &&
+                            commission.rejectionReason && (
+                              <p className="text-xs text-red-600 mt-1">
+                                Rejected: {commission.rejectionReason}
+                              </p>
+                            )}
                         </div>
                       </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* Monthly History Section */}
-          {monthlySummaries.length > 0 && (
-            <div className="bg-white rounded-lg shadow">
-              <div className="p-4 sm:p-6 border-b border-gray-200">
-                <button
-                  onClick={() =>
-                    setExpandedMonthlyHistory(!expandedMonthlyHistory)
-                  }
-                  className="w-full flex items-center justify-between"
-                >
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-left">
-                      Monthly History
-                    </h2>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1 text-left">
-                      {monthlySummaries.length} archived month(s)
-                    </p>
-                  </div>
-                  {expandedMonthlyHistory ? (
-                    <FaChevronUp className="text-gray-600" />
-                  ) : (
-                    <FaChevronDown className="text-gray-600" />
-                  )}
-                </button>
+                      <div className="flex flex-col items-end gap-1 mt-3 sm:mt-0 sm:ml-4">
+                        <p
+                          className={`font-semibold text-base sm:text-lg ${commission.status === "paid"
+                            ? "text-green-600"
+                            : commission.status === "pending"
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                            }`}
+                        >
+                          {formatCurrency(commission.amount)}
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          {commission.formattedRate} rate
+                        </p>
+                      </div>
+                    </div>
+                  ))}
               </div>
+            )}
+          </CardBody>
+        </Card>
 
-              {expandedMonthlyHistory && (
-                <div className="p-4 sm:p-6">
-                  <div className="space-y-3 sm:space-y-4">
-                    {monthlySummaries.map((summary) => (
-                      <div
-                        key={summary._id}
-                        className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <h3 className="font-semibold text-gray-900">
-                              {summary.monthName}
-                            </h3>
-                            <p className="text-xs text-gray-500">
-                              {summary.recordCount} record(s) •{" "}
-                              {summary.orderCount} orders
-                            </p>
-                          </div>
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              summary.paymentStatus === "fully_paid"
-                                ? "bg-green-100 text-green-800"
-                                : summary.paymentStatus === "partially_paid"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : summary.paymentStatus === "unpaid"
+        {/* Monthly History Section */}
+        {monthlySummaries.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader className="p-4 sm:p-6 border-b border-gray-200">
+              <button
+                onClick={() =>
+                  setExpandedMonthlyHistory(!expandedMonthlyHistory)
+                }
+                className="w-full flex items-center justify-between"
+              >
+                <div>
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-left">
+                    Monthly History
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1 text-left">
+                    {monthlySummaries.length} archived month(s)
+                  </p>
+                </div>
+                {expandedMonthlyHistory ? (
+                  <FaChevronUp className="text-gray-600" />
+                ) : (
+                  <FaChevronDown className="text-gray-600" />
+                )}
+              </button>
+            </CardHeader>
+
+            {expandedMonthlyHistory && (
+              <CardBody className="p-4 sm:p-6">
+                <div className="space-y-3 sm:space-y-4">
+                  {monthlySummaries.map((summary) => (
+                    <div
+                      key={summary._id}
+                      className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {summary.monthName}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {summary.recordCount} record(s) •{" "}
+                            {summary.orderCount} orders
+                          </p>
+                        </div>
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${summary.paymentStatus === "fully_paid"
+                            ? "bg-green-100 text-green-800"
+                            : summary.paymentStatus === "partially_paid"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : summary.paymentStatus === "unpaid"
                                 ? "bg-red-100 text-red-800"
                                 : "bg-gray-100 text-gray-800"
                             }`}
-                          >
-                            {summary.paymentStatus.replace("_", " ")}
-                          </span>
-                        </div>
+                        >
+                          {summary.paymentStatus.replace("_", " ")}
+                        </span>
+                      </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          <div>
-                            <p className="text-xs text-gray-500">
-                              Total Earned
-                            </p>
-                            <p className="font-semibold text-gray-900 text-sm">
-                              {formatCurrency(summary.totalEarned)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Paid</p>
-                            <p className="font-semibold text-green-600 text-sm">
-                              {formatCurrency(summary.totalPaid)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Pending</p>
-                            <p className="font-semibold text-yellow-600 text-sm">
-                              {formatCurrency(summary.totalPending)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Rejected</p>
-                            <p className="font-semibold text-red-600 text-sm">
-                              {formatCurrency(summary.totalRejected)}
-                            </p>
-                          </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Total Earned
+                          </p>
+                          <p className="font-semibold text-gray-900 text-sm">
+                            {formatCurrency(summary.totalEarned)}
+                          </p>
                         </div>
-
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>
-                              Revenue: {formatCurrency(summary.revenue)}
-                            </span>
-                            <span>Rate: {summary.formattedRate}</span>
-                            <span>
-                              Payment: {summary.paymentPercentage.toFixed(0)}%
-                            </span>
-                          </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Paid</p>
+                          <p className="font-semibold text-green-600 text-sm">
+                            {formatCurrency(summary.totalPaid)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Pending</p>
+                          <p className="font-semibold text-yellow-600 text-sm">
+                            {formatCurrency(summary.totalPending)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Rejected</p>
+                          <p className="font-semibold text-red-600 text-sm">
+                            {formatCurrency(summary.totalRejected)}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
 
-      {/* Top-up Request Modal */}
-      <TopUpRequestModal
-        isOpen={showTopUpModal}
-        onClose={() => setShowTopUpModal(false)}
-        onSubmit={handleTopUpRequest}
-        isSubmitting={isSubmittingRequest}
-        error={error}
-      />
-    </div>
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>
+                            Revenue: {formatCurrency(summary.revenue)}
+                          </span>
+                          <span>Rate: {summary.formattedRate}</span>
+                          <span>
+                            Payment: {summary.paymentPercentage.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            )}
+          </Card>
+        )}
+      </>
+    )}
+
+    {/* Top-up Request Modal */}
+    <TopUpRequestModal
+      isOpen={showTopUpModal}
+      onClose={() => setShowTopUpModal(false)}
+      onSubmit={handleTopUpRequest}
+      isSubmitting={isSubmittingRequest}
+      error={error}
+    />
+  </>
   );
 };
