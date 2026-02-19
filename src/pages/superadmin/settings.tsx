@@ -1,839 +1,472 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  FaUserShield,
-  FaEdit,
-  FaDatabase,
-  FaKey,
-  FaGlobe,
-  FaBox,
-  FaMobile,
-  FaInfoCircle,
-  FaMoneyBillWave,
-  FaPalette,
-} from "react-icons/fa";
+import React, { useEffect, useState, useCallback } from "react";
+import { Edit, Key as KeyIcon, Eye, EyeOff, Smartphone, CreditCard } from "lucide-react";
 import { Button } from "../../design-system/components/button";
 import { Card } from "../../design-system/components/card";
 import { Badge } from "../../design-system/components/badge";
-import {
-  settingsService,
-  type SiteSettings,
-  type ApiSettings,
-  type WalletSettings,
-} from "../../services/settings.service";
 import { Alert } from "../../design-system/components/alert";
+import { Spinner, Tabs, TabsList, TabsTrigger } from "../../design-system";
 import { ColorSchemeSelector } from "../../components/common/color-scheme-selector";
-import { apiClient } from "../../utils/api-client";
-import {
-  SiteSettingsDialog,
-  ApiSettingsDialog,
-  WalletSettingsDialog,
-  AdminPasswordDialog,
-} from "../../components/superadmin";
+import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type SystemInfo } from "../../services/settings.service";
+import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog } from "../../components/superadmin";
 
 export default function SuperAdminSettingsPage() {
-  const navigate = useNavigate();
 
-  // Active Tab State
-  const [activeTab, setActiveTab] = useState("general");
-
-  // Tab configuration
-  const tabs = [
-    { id: "general", label: "General", icon: FaGlobe },
-    { id: "api", label: "API", icon: FaDatabase },
-    { id: "finance", label: "Finance", icon: FaMoneyBillWave },
-    { id: "system", label: "System", icon: FaInfoCircle },
-  ];
-
-  // Site Management
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>({
-    isSiteOpen: true,
-    customMessage:
-      "We're currently performing maintenance. Please check back later.",
-  });
-
-  // Signup Approval Setting
-  const [requireApprovalForSignup, setRequireApprovalForSignup] =
-    useState(true);
-
-  // Storefront Auto-Approval Setting
-  const [autoApproveStorefronts, setAutoApproveStorefronts] = useState(false);
-
-  // API Settings
-  const [apiSettings, setApiSettings] = useState<ApiSettings>({
-    mtnApiKey: "",
-    telecelApiKey: "",
-    airtelTigoApiKey: "",
-    apiEndpoint: "",
-    paystackEnabled: false,
-    paystackTestPublicKey: "",
-    paystackTestSecretKey: "",
-    paystackLivePublicKey: "",
-    paystackLiveSecretKey: "",
-  });
-
-  // Wallet Settings
-  const [walletSettings, setWalletSettings] = useState<WalletSettings>({
-    minimumTopUpAmounts: {
-      agent: 10,
-      super_agent: 50,
-      dealer: 100,
-      super_dealer: 200,
-      default: 10,
-    },
-  });
-
-  // Form States
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error" | "info";
-    text: string;
+  // combined settings object to minimize re-renders and network calls
+  const [data, setData] = useState<{
+    siteSettings: SiteSettings;
+    apiSettings: ApiSettings;
+    walletSettings: WalletSettings;
+    signupApproval: { requireApprovalForSignup: boolean };
+    autoApproveStorefronts: { autoApproveStorefronts: boolean };
+    systemInfo: SystemInfo;
   } | null>(null);
 
-  // Dialog States
+  const [loading, setLoading] = useState(true);
+  const [busyKeys, setBusyKeys] = useState<Record<string, boolean>>({});
+  const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
+
+  // dialogs
   const [siteDialogOpen, setSiteDialogOpen] = useState(false);
   const [apiDialogOpen, setApiDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
-  // System Information
-  const [systemInfo, setSystemInfo] = useState({
-    version: "Loading...",
-    lastUpdated: "Loading...",
-    databaseStatus: "checking",
-    apiStatus: "checking",
-    cacheStatus: "checking",
-    sslStatus: "checking",
-  });
-  const [systemInfoLoading, setSystemInfoLoading] = useState(true);
-
-  // Fetch all settings on component mount
+  // single load + client cache via settingsService.getAllSettings()
   useEffect(() => {
-    const fetchAllSettings = async () => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
       try {
-        const [siteData, apiData, walletData, signupApprovalData, autoApproveData] =
-          await Promise.all([
-            settingsService.getSiteSettings(),
-            settingsService.getApiSettings(),
-            settingsService.getWalletSettings(),
-            settingsService.getSignupApprovalSetting(),
-            settingsService.getAutoApproveStorefronts(),
-          ]);
-
-        setSiteSettings(siteData);
-        setApiSettings(apiData);
-        setWalletSettings(walletData);
-        setRequireApprovalForSignup(
-          signupApprovalData.requireApprovalForSignup
-        );
-        setAutoApproveStorefronts(
-          autoApproveData.autoApproveStorefronts
-        );
-      } catch (error) {
-        console.error("Failed to fetch settings:", error);
-        setMessage({ type: "error", text: "Failed to load settings" });
-      }
-    };
-
-    fetchAllSettings();
-  }, []);
-
-  // Fetch system information on component mount
-  useEffect(() => {
-    const fetchSystemInfo = async () => {
-      setSystemInfoLoading(true);
-      try {
-        const response = await apiClient.get("/api/system/info");
-        const data = response.data;
-        setSystemInfo({
-          version: data.version || "v1.0.0",
-          lastUpdated: data.lastUpdated || "2024-01-15",
-          databaseStatus: data.databaseStatus || "connected",
-          apiStatus: data.apiStatus || "healthy",
-          cacheStatus: data.cacheStatus || "active",
-          sslStatus: data.sslStatus || "valid",
-        });
-      } catch (error) {
-        console.error("Failed to fetch system info:", error);
-        // Keep default values on error
-        setSystemInfo({
-          version: "v1.0.0",
-          lastUpdated: "2024-01-15",
-          databaseStatus: "unknown",
-          apiStatus: "unknown",
-          cacheStatus: "unknown",
-          sslStatus: "unknown",
-        });
+        const all = await settingsService.getAllSettings();
+        if (!mounted) return;
+        setData(all);
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+        if (mounted) setMessage({ type: "error", text: "Failed to load settings" });
       } finally {
-        setSystemInfoLoading(false);
+        if (mounted) setLoading(false);
       }
-    };
-
-    fetchSystemInfo();
+    })();
+    return () => { mounted = false; };
   }, []);
 
-  const handleSiteToggle = async () => {
-    setLoading(true);
+  const setBusy = useCallback((key: string, v: boolean) => setBusyKeys(prev => ({ ...prev, [key]: v })), []);
+
+  const clearMessage = useCallback(() => setMessage(null), []);
+
+  // Optimistic toggle helpers — update local state first, then call API; revert on error
+  const handleToggleSite = useCallback(async () => {
+    if (!data) return;
+    const prev = data.siteSettings.isSiteOpen;
+    setData(d => d ? { ...d, siteSettings: { ...d.siteSettings, isSiteOpen: !prev } } : d);
+    setBusy("siteToggle", true);
     try {
-      const result = await settingsService.toggleSiteStatus();
-      setSiteSettings((prev) => ({ ...prev, isSiteOpen: result.isSiteOpen }));
-      setMessage({
-        type: "success",
-        text: `Site ${result.isSiteOpen ? "opened" : "closed"} successfully`,
-      });
+      const res = await settingsService.toggleSiteStatus();
+      setData(d => d ? { ...d, siteSettings: { ...d.siteSettings, isSiteOpen: res.isSiteOpen } } : d);
+      setMessage({ type: "success", text: `Site ${res.isSiteOpen ? "opened" : "closed"} successfully` });
     } catch {
+      setData(d => d ? { ...d, siteSettings: { ...d.siteSettings, isSiteOpen: prev } } : d);
       setMessage({ type: "error", text: "Failed to update site status" });
     } finally {
-      setLoading(false);
+      setBusy("siteToggle", false);
     }
-  };
+  }, [data, setBusy]);
 
-  const handleSignupApprovalToggle = async () => {
-    setLoading(true);
+  const handleToggleSignupApproval = useCallback(async () => {
+    if (!data) return;
+    const prev = data.signupApproval.requireApprovalForSignup;
+    setData(d => d ? { ...d, signupApproval: { requireApprovalForSignup: !prev } } : d);
+    setBusy("signupToggle", true);
     try {
-      const newValue = !requireApprovalForSignup;
-      await settingsService.updateSignupApprovalSetting(newValue);
-      setRequireApprovalForSignup(newValue);
-      setMessage({
-        type: "success",
-        text: `Signup approval ${newValue ? "required" : "disabled"}`,
-      });
+      await settingsService.updateSignupApprovalSetting(!prev);
+      setMessage({ type: "success", text: `Signup approval ${!prev ? "required" : "disabled"}` });
     } catch {
-      setMessage({
-        type: "error",
-        text: "Failed to update signup approval setting",
-      });
+      setData(d => d ? { ...d, signupApproval: { requireApprovalForSignup: prev } } : d);
+      setMessage({ type: "error", text: "Failed to update signup approval setting" });
     } finally {
-      setLoading(false);
+      setBusy("signupToggle", false);
     }
-  };
+  }, [data, setBusy]);
 
-  const handleAutoApproveToggle = async () => {
-    setLoading(true);
+  const handleToggleAutoApprove = useCallback(async () => {
+    if (!data) return;
+    const prev = data.autoApproveStorefronts.autoApproveStorefronts;
+    setData(d => d ? { ...d, autoApproveStorefronts: { autoApproveStorefronts: !prev } } : d);
+    setBusy("autoApproveToggle", true);
     try {
-      const newValue = !autoApproveStorefronts;
-      await settingsService.updateAutoApproveStorefronts(newValue);
-      setAutoApproveStorefronts(newValue);
-      setMessage({
-        type: "success",
-        text: `Storefront auto-approval ${newValue ? "enabled" : "disabled"}`,
-      });
+      await settingsService.updateAutoApproveStorefronts(!prev);
+      setMessage({ type: "success", text: `Storefront auto-approval ${!prev ? "enabled" : "disabled"}` });
     } catch {
-      setMessage({
-        type: "error",
-        text: "Failed to update storefront auto-approval setting",
-      });
+      setData(d => d ? { ...d, autoApproveStorefronts: { autoApproveStorefronts: prev } } : d);
+      setMessage({ type: "error", text: "Failed to update storefront auto-approval setting" });
     } finally {
-      setLoading(false);
+      setBusy("autoApproveToggle", false);
+    }
+  }, [data, setBusy]);
+
+  // Dialog callbacks update the combined `data` object — prevents refetching
+  const handleSiteSettingsSuccess = useCallback((settings: SiteSettings) => {
+    setData(d => d ? { ...d, siteSettings: settings } : d);
+    setMessage({ type: "success", text: "Site settings updated" });
+  }, []);
+
+  const handleApiSettingsSuccess = useCallback((settings: ApiSettings) => {
+    setData(d => d ? { ...d, apiSettings: settings } : d);
+    setMessage({ type: "success", text: "API settings updated" });
+  }, []);
+
+  const handleWalletSettingsSuccess = useCallback((settings: WalletSettings) => {
+    setData(d => d ? { ...d, walletSettings: settings } : d);
+    setMessage({ type: "success", text: "Wallet settings updated" });
+  }, []);
+
+  const handlePasswordChangeSuccess = useCallback(() => {
+    setMessage({ type: "success", text: "Admin password changed successfully. Please log in again." });
+  }, []);
+
+  // derived values for compact templates
+  const siteOpen = data?.siteSettings?.isSiteOpen ?? false;
+  const signupRequired = data?.signupApproval?.requireApprovalForSignup ?? false;
+  const autoApprove = data?.autoApproveStorefronts?.autoApproveStorefronts ?? false;
+
+  // compact responsive layout pieces
+  const SectionHeader: React.FC<{ title: string; subtitle?: string; action?: React.ReactNode }> = ({ title, subtitle, action }) => (
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  );
+
+  // Reveal state for sensitive keys shown in the API tab (display only)
+  const [revealKeys, setRevealKeys] = useState<Record<string, boolean>>({
+    mtn: false,
+    telecel: false,
+    airtelTigo: false,
+    paystackTestPublic: false,
+    paystackTestSecret: false,
+    paystackLivePublic: false,
+    paystackLiveSecret: false,
+  });
+  const toggleRevealKey = (k: string) => setRevealKeys(p => ({ ...p, [k]: !p[k] }));
+  const formatMasked = (val?: string) => {
+    if (!val) return 'Not configured';
+    if (val.length <= 10) return '••••••••';
+    return `${val.slice(0, 6)}…${val.slice(-4)}`;
+  };
+
+  // Tab state (lazy-render each section when selected)
+  const [activeTab, setActiveTab] = useState<'general' | 'api' | 'finance' | 'system'>('general');
+  const [visitedTabs, setVisitedTabs] = useState<Record<string, boolean>>({ general: true });
+  const handleTabChange = (value: string) => {
+    if (value === 'general' || value === 'api' || value === 'finance' || value === 'system') {
+      setActiveTab(value);
+      setVisitedTabs(prev => ({ ...prev, [value]: true }));
     }
   };
 
-  const handleSiteSettingsSuccess = (settings: SiteSettings) => {
-    setSiteSettings(settings);
-    setMessage({
-      type: "success",
-      text: "Site settings updated successfully",
-    });
-  };
-
-  const handleApiSettingsSuccess = (settings: ApiSettings) => {
-    setApiSettings(settings);
-    setMessage({
-      type: "success",
-      text: "API settings updated successfully",
-    });
-  };
-
-  const handleWalletSettingsSuccess = (settings: WalletSettings) => {
-    setWalletSettings(settings);
-    setMessage({
-      type: "success",
-      text: "Wallet settings updated successfully",
-    });
-  };
-
-  const handlePasswordChangeSuccess = () => {
-    setMessage({
-      type: "success",
-      text: "Admin password changed successfully. Please log in again.",
-    });
-  };
-
-  const clearMessage = () => setMessage(null);
+  if (loading || !data) {
+    return (
+      <div className="min-h-[240px] flex items-center justify-center">
+        <Spinner size="lg" color="primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-          <p className="text-gray-600 mt-1">
-            Manage site configuration, user permissions, and system preferences
-          </p>
+          <p className="text-sm text-gray-600 mt-1">Manage site, API and wallet configuration</p>
         </div>
       </div>
 
-      {/* Message Display */}
       {message && (
-        <Alert
-          status={
-            message.type === "success"
-              ? "success"
-              : message.type === "error"
-              ? "error"
-              : "info"
-          }
-          onClose={clearMessage}
-          title={
-            message.type === "success"
-              ? "Success"
-              : message.type === "error"
-              ? "Error"
-              : "Info"
-          }
-        >
+        <Alert status={message.type === "error" ? "error" : message.type === "success" ? "success" : "info"} onClose={clearMessage} title={message.type === "error" ? "Error" : message.type === "success" ? "Success" : "Info"}>
           {message.text}
         </Alert>
       )}
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      {/* Tabs (mobile-first) */}
+      <div className="">
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="w-full overflow-auto">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="api">API</TabsTrigger>
+            <TabsTrigger value="finance">Finance</TabsTrigger>
+            <TabsTrigger value="system">System</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-      {/* Tab Content */}
-      <div className="space-y-6">
-        {activeTab === "general" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Site Management */}
-            <Card>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <FaGlobe className="text-blue-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Site Management
-                  </h2>
-                </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setSiteDialogOpen(true)}
-                >
-                  <FaEdit className="w-3 h-3 mr-1" />
-                  Configure
-                </Button>
-              </div>
+        <div className="mt-4">
+          {/* render only active or visited tabs (lazy) */}
 
-              <div className="space-y-4">
-                {/* Site Status Toggle */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Site Status</h3>
-                    <p className="text-sm text-gray-600">
-                      {siteSettings.isSiteOpen
-                        ? "Site is currently open to users"
-                        : "Site is currently closed to users"}
-                    </p>
+          {(activeTab === 'general' || visitedTabs.general) && (
+            <div className={`space-y-6 ${activeTab === 'general' ? '' : 'hidden'}`}>
+              <Card>
+                <SectionHeader title="Site Management" subtitle="Control availability and maintenance message" action={<Button size="sm" variant="secondary" onClick={() => setSiteDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
+
+                <div className="mt-4 space-y-4">
+                  <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Site status</div>
+                      <div className="text-xs text-gray-500 mt-1">{siteOpen ? 'Open to users' : 'Closed for maintenance'}</div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm font-medium ${siteOpen ? 'text-green-600' : 'text-red-600'}`}>{siteOpen ? 'Open' : 'Closed'}</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={siteOpen} onChange={handleToggleSite} disabled={!!busyKeys['siteToggle']} />
+                        <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                      </label>
+                    </div>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={siteSettings.isSiteOpen}
-                      onChange={handleSiteToggle}
-                      disabled={loading}
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    <span className="ml-3 text-sm font-medium text-gray-900">
-                      {siteSettings.isSiteOpen ? "Open" : "Closed"}
-                    </span>
-                  </label>
-                </div>
 
-                {/* Custom Message Display */}
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    Maintenance Message
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {siteSettings.customMessage || "No custom message set"}
-                  </p>
-                </div>
-
-                {/* Signup Approval Toggle */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      Require Admin Approval for New Signups
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {requireApprovalForSignup
-                        ? "New users must be approved before access."
-                        : "New users are auto-approved."}
-                    </p>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-900">Maintenance message</div>
+                    <div className="text-xs text-gray-500 mt-1">{data.siteSettings.customMessage || 'No custom message set'}</div>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={requireApprovalForSignup}
-                      onChange={handleSignupApprovalToggle}
-                      disabled={loading}
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    <span className="ml-3 text-sm font-medium text-gray-900">
-                      {requireApprovalForSignup ? "Required" : "Auto"}
-                    </span>
-                  </label>
-                </div>
 
-                {/* Storefront Auto-Approval Toggle */}
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      Auto-Approve New Storefronts
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {autoApproveStorefronts
-                        ? "New agent storefronts are approved automatically."
-                        : "New storefronts require admin approval before going live."}
-                    </p>
+                  <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Require admin approval for signups</div>
+                      <div className="text-xs text-gray-500 mt-1">{signupRequired ? 'Approval required' : 'Auto-approve new users'}</div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" checked={signupRequired} onChange={handleToggleSignupApproval} disabled={!!busyKeys['signupToggle']} />
+                      <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={autoApproveStorefronts}
-                      onChange={handleAutoApproveToggle}
-                      disabled={loading}
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    <span className="ml-3 text-sm font-medium text-gray-900">
-                      {autoApproveStorefronts ? "Auto" : "Manual"}
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </Card>
 
-            {/* User Management */}
-            <Card>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <FaUserShield className="text-green-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    User Management
-                  </h2>
+                  <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Auto-approve storefronts</div>
+                      <div className="text-xs text-gray-500 mt-1">{autoApprove ? 'Auto' : 'Manual'}</div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" checked={autoApprove} onChange={handleToggleAutoApprove} disabled={!!busyKeys['autoApproveToggle']} />
+                      <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                    </label>
+                  </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setPasswordDialogOpen(true)}
-                >
-                  <FaKey className="w-3 h-3 mr-1" />
-                  Change Password
-                </Button>
-              </div>
+              </Card>
 
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="font-medium text-green-900 mb-2">
-                    Admin Account Security
-                  </h3>
-                  <p className="text-sm text-green-800">
-                    Change your admin password regularly to maintain account
-                    security. You will need to log in again after changing your
-                    password.
-                  </p>
+              <Card>
+                <SectionHeader title="User Management" subtitle="Admin & security settings" action={<Button size="sm" variant="secondary" onClick={() => setPasswordDialogOpen(true)}><KeyIcon className="w-3 h-3 mr-1" />Change Password</Button>} />
+                <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                  <div className="text-sm font-medium text-green-900">Admin account security</div>
+                  <div className="text-xs text-green-800 mt-1">Change your admin password regularly. You'll be required to log in again after changing it.</div>
                 </div>
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === "api" && (
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <FaDatabase className="text-orange-600" />
-                <h2 className="text-lg font-semibold text-gray-900">
-                  API Settings
-                </h2>
-              </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setApiDialogOpen(true)}
-              >
-                <FaEdit className="w-3 h-3 mr-1" />
-                Configure
-              </Button>
+              </Card>
             </div>
+          )}
 
-            <div className="space-y-4">
-              <div className="p-3 bg-orange-50 rounded-lg">
-                <h3 className="font-medium text-orange-900 mb-2">
-                  API Endpoint
-                </h3>
-                <p className="text-sm text-orange-800 font-mono">
-                  {apiSettings.apiEndpoint || "Not configured"}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">MTN API</h3>
-                    <p className="text-sm text-gray-600">
-                      {apiSettings.mtnApiKey ? "Configured" : "Not configured"}
-                    </p>
+          {(activeTab === 'api' || visitedTabs.api) && (
+            <div className={`space-y-6 ${activeTab === 'api' ? '' : 'hidden'}`}>
+              <Card>
+                <SectionHeader title="API Settings" subtitle="External integrations & keys" action={<Button size="sm" variant="secondary" onClick={() => setApiDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
+                <div className="mt-4 space-y-3">
+                  <div className="p-3 bg-orange-50 rounded-lg">
+                    <div className="text-sm font-medium text-orange-900">API Endpoint</div>
+                    <div className="text-xs text-orange-800 font-mono mt-1">{data.apiSettings.apiEndpoint || 'Not configured'}</div>
                   </div>
-                  <Badge
-                    colorScheme={apiSettings.mtnApiKey ? "success" : "error"}
-                  >
-                    {apiSettings.mtnApiKey ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Telecel API</h3>
-                    <p className="text-sm text-gray-600">
-                      {apiSettings.telecelApiKey
-                        ? "Configured"
-                        : "Not configured"}
-                    </p>
-                  </div>
-                  <Badge
-                    colorScheme={
-                      apiSettings.telecelApiKey ? "success" : "error"
-                    }
-                  >
-                    {apiSettings.telecelApiKey ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* MTN key (masked, reveal) */}
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4 text-yellow-600" />MTN API Key</div>
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <div className="font-mono text-sm text-gray-700 break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.mtn ? (data.apiSettings.mtnApiKey || 'Not configured') : formatMasked(data.apiSettings.mtnApiKey)}</div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="ghost" leftIcon={revealKeys.mtn ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('mtn')}>{revealKeys.mtn ? 'Hide' : 'Reveal'}</Button>
+                          <Badge colorScheme={data.apiSettings.mtnApiKey ? 'success' : 'error'}>{data.apiSettings.mtnApiKey ? 'Active' : 'Inactive'}</Badge>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      AirtelTigo API
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {apiSettings.airtelTigoApiKey
-                        ? "Configured"
-                        : "Not configured"}
-                    </p>
+                    {/* Telecel key (masked, reveal) */}
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4 text-blue-600" />Telecel API Key</div>
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <div className="font-mono text-sm text-gray-700 break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.telecel ? (data.apiSettings.telecelApiKey || 'Not configured') : formatMasked(data.apiSettings.telecelApiKey)}</div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="ghost" leftIcon={revealKeys.telecel ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('telecel')}>{revealKeys.telecel ? 'Hide' : 'Reveal'}</Button>
+                          <Badge colorScheme={data.apiSettings.telecelApiKey ? 'success' : 'error'}>{data.apiSettings.telecelApiKey ? 'Active' : 'Inactive'}</Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AirtelTigo key (masked, reveal) */}
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4 text-red-600" />AirtelTigo API Key</div>
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <div className="font-mono text-sm text-gray-700 break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.airtelTigo ? (data.apiSettings.airtelTigoApiKey || 'Not configured') : formatMasked(data.apiSettings.airtelTigoApiKey)}</div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="ghost" leftIcon={revealKeys.airtelTigo ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('airtelTigo')}>{revealKeys.airtelTigo ? 'Hide' : 'Reveal'}</Button>
+                          <Badge colorScheme={data.apiSettings.airtelTigoApiKey ? 'success' : 'error'}>{data.apiSettings.airtelTigoApiKey ? 'Active' : 'Inactive'}</Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Paystack block (show enabled + public/secret keys) */}
+                    <div className="p-3 bg-blue-50 rounded-lg col-span-full sm:col-span-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-medium flex items-center gap-2"><CreditCard className="w-4 h-4 text-blue-600" />Paystack</div>
+                          <div className="text-xs text-gray-500 mt-1">Payment gateway configuration (test & live keys)</div>
+                        </div>
+                        <Badge colorScheme={data.apiSettings.paystackEnabled ? 'success' : 'warning'}>{data.apiSettings.paystackEnabled ? 'Enabled' : 'Disabled'}</Badge>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-3 bg-white rounded border">
+                          <div className="text-xs text-gray-500">Test public key</div>
+                          <div className="mt-1 flex items-center justify-between gap-3">
+                            <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackTestPublic ? (data.apiSettings.paystackTestPublicKey || 'Not configured') : formatMasked(data.apiSettings.paystackTestPublicKey)}</div>
+                            <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackTestPublic ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackTestPublic')}>{revealKeys.paystackTestPublic ? 'Hide' : 'Reveal'}</Button>
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-white rounded border">
+                          <div className="text-xs text-gray-500">Test secret key</div>
+                          <div className="mt-1 flex items-center justify-between gap-3">
+                            {data.apiSettings.paystackTestSecretKey !== undefined ? (
+                              // dev: secret value returned — allow reveal
+                              <>
+                                <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackTestSecret ? (data.apiSettings.paystackTestSecretKey || 'Not configured') : formatMasked(data.apiSettings.paystackTestSecretKey)}</div>
+                                <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackTestSecret ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackTestSecret')}>{revealKeys.paystackTestSecret ? 'Hide' : 'Reveal'}</Button>
+                              </>
+                            ) : (
+                              // prod: secret redacted — show existence and let admin open dialog to replace
+                              <>
+                                <div className="text-sm text-gray-700">{data.apiSettings.paystackTestSecretExists ? 'Stored on server' : 'Not configured'}</div>
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="ghost" leftIcon={<KeyIcon className="w-3 h-3" />} onClick={() => setApiDialogOpen(true)}>{data.apiSettings.paystackTestSecretExists ? 'Replace' : 'Set'}</Button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-white rounded border">
+                          <div className="text-xs text-gray-500">Live public key</div>
+                          <div className="mt-1 flex items-center justify-between gap-3">
+                            <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackLivePublic ? (data.apiSettings.paystackLivePublicKey || 'Not configured') : formatMasked(data.apiSettings.paystackLivePublicKey)}</div>
+                            <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackLivePublic ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackLivePublic')}>{revealKeys.paystackLivePublic ? 'Hide' : 'Reveal'}</Button>
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-white rounded border">
+                          <div className="text-xs text-gray-500">Live secret key</div>
+                          <div className="mt-1 flex items-center justify-between gap-3">
+                            {data.apiSettings.paystackLiveSecretKey !== undefined ? (
+                              // dev: secret value returned — allow reveal
+                              <>
+                                <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackLiveSecret ? (data.apiSettings.paystackLiveSecretKey || 'Not configured') : formatMasked(data.apiSettings.paystackLiveSecretKey)}</div>
+                                <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackLiveSecret ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackLiveSecret')}>{revealKeys.paystackLiveSecret ? 'Hide' : 'Reveal'}</Button>
+                              </>
+                            ) : (
+                              // prod: secret redacted — show existence and let admin open dialog to replace
+                              <>
+                                <div className="text-sm text-gray-700">{data.apiSettings.paystackLiveSecretExists ? 'Stored on server' : 'Not configured'}</div>
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="ghost" onClick={() => setApiDialogOpen(true)}>{data.apiSettings.paystackLiveSecretExists ? 'Replace' : 'Set'}</Button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <Badge
-                    colorScheme={
-                      apiSettings.airtelTigoApiKey ? "success" : "error"
-                    }
-                  >
-                    {apiSettings.airtelTigoApiKey ? "Active" : "Inactive"}
-                  </Badge>
                 </div>
-              </div>
+              </Card>
             </div>
-          </Card>
-        )}
+          )}
 
-        {activeTab === "finance" && (
-          <div className="space-y-6">
-            {/* Wallet Settings */}
-            <Card>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <FaMoneyBillWave className="text-green-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Wallet Settings
-                  </h2>
-                </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setWalletDialogOpen(true)}
-                >
-                  <FaEdit className="w-3 h-3 mr-1" />
-                  Configure
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <h3 className="font-medium text-green-900 mb-2">
-                    Minimum Top-up Amounts
-                  </h3>
-                  <p className="text-sm text-green-800">
-                    Set the minimum amounts users can top-up their wallets with
-                    for each user type.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">Agent Minimum</span>
-                    <span className="font-medium">
-                      GH₵{walletSettings.minimumTopUpAmounts.agent}
-                    </span>
+          {(activeTab === 'finance' || visitedTabs.finance) && (
+            <div className={`space-y-6 ${activeTab === 'finance' ? '' : 'hidden'}`}>
+              <Card>
+                <SectionHeader title="Wallet Settings" subtitle="Top-up limits & behaviour" action={<Button size="sm" variant="secondary" onClick={() => setWalletDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Agent Minimum</div>
+                    <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.agent}</div>
                   </div>
-                  <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">Super Agent Minimum</span>
-                    <span className="font-medium">
-                      GH₵{walletSettings.minimumTopUpAmounts.super_agent}
-                    </span>
+                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Super Agent Minimum</div>
+                    <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.super_agent}</div>
                   </div>
-                  <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">Dealer Minimum</span>
-                    <span className="font-medium">
-                      GH₵{walletSettings.minimumTopUpAmounts.dealer}
-                    </span>
+                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Dealer Minimum</div>
+                    <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.dealer}</div>
                   </div>
-                  <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">Super Dealer Minimum</span>
-                    <span className="font-medium">
-                      GH₵{walletSettings.minimumTopUpAmounts.super_dealer}
-                    </span>
+                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Super Dealer Minimum</div>
+                    <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.super_dealer}</div>
                   </div>
-                  <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-600">Default Minimum</span>
-                    <span className="font-medium">
-                      GH₵{walletSettings.minimumTopUpAmounts.default}
-                    </span>
+                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between col-span-full sm:col-span-1">
+                    <div className="text-sm text-gray-600">Default Minimum</div>
+                    <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.default}</div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
+          )}
 
-            {/* Product Management Section */}
-            <Card>
-              <div className="flex items-center gap-2 mb-4">
-                <FaBox className="text-indigo-600" />
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Product & Service Management
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FaMobile className="text-yellow-600" />
-                    <h3 className="font-medium text-gray-900">MTN Bundles</h3>
+          {(activeTab === 'system' || visitedTabs.system) && (
+            <div className={`space-y-6 ${activeTab === 'system' ? '' : 'hidden'}`}>
+              <Card>
+                <SectionHeader title="System Information" subtitle="Health & metadata" />
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm text-gray-600">Version</div>
+                    <div className="font-medium mt-1">{data.systemInfo.version}</div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Manage MTN data bundles and pricing
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigate("/superadmin/packages")}
-                  >
-                    <FaEdit className="w-3 h-3 mr-1" />
-                    Manage Bundles
-                  </Button>
-                </div>
-
-                <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FaMobile className="text-blue-600" />
-                    <h3 className="font-medium text-gray-900">
-                      Telecel Bundles
-                    </h3>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm text-gray-600">Last updated</div>
+                    <div className="font-medium mt-1">{data.systemInfo.lastUpdated}</div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Manage Telecel data bundles and pricing
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigate("/superadmin/packages")}
-                  >
-                    <FaEdit className="w-3 h-3 mr-1" />
-                    Manage Bundles
-                  </Button>
-                </div>
 
-                <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FaMobile className="text-red-600" />
-                    <h3 className="font-medium text-gray-900">
-                      AirtelTigo Bundles
-                    </h3>
+                  <div className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-gray-600">API Status</div>
+                      <div className="text-xs text-gray-500 mt-1">{data.systemInfo.apiStatus}</div>
+                    </div>
+                    <Badge colorScheme={data.systemInfo.apiStatus === 'healthy' ? 'success' : 'warning'}>{data.systemInfo.apiStatus}</Badge>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Manage AirtelTigo data bundles and pricing
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigate("/superadmin/packages")}
-                  >
-                    <FaEdit className="w-3 h-3 mr-1" />
-                    Manage Bundles
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
 
-        {activeTab === "system" && (
-          <div className="space-y-6">
-            {/* Color Scheme */}
-            <Card>
-              <div className="flex items-center gap-2 mb-4">
-                <FaPalette className="text-purple-600" />
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Appearance
-                </h2>
-              </div>
-              <ColorSchemeSelector />
-            </Card>
-
-            {/* System Information */}
-            <Card>
-              <div className="flex items-center gap-2 mb-4">
-                <FaInfoCircle className="text-blue-600" />
-                <h2 className="text-lg font-semibold text-gray-900">
-                  System Information
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">System Version</span>
-                    <span className="font-medium">
-                      {systemInfoLoading ? "Loading..." : systemInfo.version}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Last Updated</span>
-                    <span className="font-medium">
-                      {systemInfoLoading
-                        ? "Loading..."
-                        : systemInfo.lastUpdated}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Database Status</span>
-                    <Badge
-                      colorScheme={
-                        systemInfo.databaseStatus === "connected"
-                          ? "success"
-                          : systemInfo.databaseStatus === "disconnected"
-                          ? "error"
-                          : "warning"
-                      }
-                    >
-                      {systemInfoLoading
-                        ? "Checking..."
-                        : systemInfo.databaseStatus.charAt(0).toUpperCase() +
-                          systemInfo.databaseStatus.slice(1)}
-                    </Badge>
+                  <div className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-gray-600">DB Status</div>
+                      <div className="text-xs text-gray-500 mt-1">{data.systemInfo.databaseStatus}</div>
+                    </div>
+                    <Badge colorScheme={data.systemInfo.databaseStatus === 'connected' ? 'success' : 'warning'}>{data.systemInfo.databaseStatus}</Badge>
                   </div>
                 </div>
+              </Card>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">API Status</span>
-                    <Badge
-                      colorScheme={
-                        systemInfo.apiStatus === "healthy"
-                          ? "success"
-                          : systemInfo.apiStatus === "unhealthy"
-                          ? "error"
-                          : "warning"
-                      }
-                    >
-                      {systemInfoLoading
-                        ? "Checking..."
-                        : systemInfo.apiStatus.charAt(0).toUpperCase() +
-                          systemInfo.apiStatus.slice(1)}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Cache Status</span>
-                    <Badge
-                      colorScheme={
-                        systemInfo.cacheStatus === "active"
-                          ? "success"
-                          : systemInfo.cacheStatus === "inactive"
-                          ? "error"
-                          : "warning"
-                      }
-                    >
-                      {systemInfoLoading
-                        ? "Checking..."
-                        : systemInfo.cacheStatus.charAt(0).toUpperCase() +
-                          systemInfo.cacheStatus.slice(1)}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">SSL Certificate</span>
-                    <Badge
-                      colorScheme={
-                        systemInfo.sslStatus === "valid"
-                          ? "success"
-                          : systemInfo.sslStatus === "invalid"
-                          ? "error"
-                          : "warning"
-                      }
-                    >
-                      {systemInfoLoading
-                        ? "Checking..."
-                        : systemInfo.sslStatus.charAt(0).toUpperCase() +
-                          systemInfo.sslStatus.slice(1)}
-                    </Badge>
-                  </div>
+              <Card>
+                <SectionHeader title="Appearance" subtitle="Theme & color" />
+                <div className="mt-4">
+                  <ColorSchemeSelector />
                 </div>
-              </div>
-            </Card>
-          </div>
-        )}
+              </Card>
+            </div>
+          )}
+        </div>
+
+        {/* Dialogs (receive props from cached `data` to avoid re-fetch) */}
+        <SiteSettingsDialog isOpen={siteDialogOpen} onClose={() => setSiteDialogOpen(false)} currentSettings={data.siteSettings} onSuccess={handleSiteSettingsSuccess} />
+
+        <ApiSettingsDialog isOpen={apiDialogOpen} onClose={() => setApiDialogOpen(false)} currentSettings={data.apiSettings} onSuccess={handleApiSettingsSuccess} />
+
+        <WalletSettingsDialog isOpen={walletDialogOpen} onClose={() => setWalletDialogOpen(false)} currentSettings={data.walletSettings} onSuccess={handleWalletSettingsSuccess} />
+
+        <AdminPasswordDialog isOpen={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)} onSuccess={handlePasswordChangeSuccess} />
       </div>
-
-      {/* Dialog Components */}
-      <SiteSettingsDialog
-        isOpen={siteDialogOpen}
-        onClose={() => setSiteDialogOpen(false)}
-        currentSettings={siteSettings}
-        onSuccess={handleSiteSettingsSuccess}
-      />
-
-      <ApiSettingsDialog
-        isOpen={apiDialogOpen}
-        onClose={() => setApiDialogOpen(false)}
-        currentSettings={apiSettings}
-        onSuccess={handleApiSettingsSuccess}
-      />
-
-      <WalletSettingsDialog
-        isOpen={walletDialogOpen}
-        onClose={() => setWalletDialogOpen(false)}
-        currentSettings={walletSettings}
-        onSuccess={handleWalletSettingsSuccess}
-      />
-
-      <AdminPasswordDialog
-        isOpen={passwordDialogOpen}
-        onClose={() => setPasswordDialogOpen(false)}
-        onSuccess={handlePasswordChangeSuccess}
-      />
     </div>
   );
 }

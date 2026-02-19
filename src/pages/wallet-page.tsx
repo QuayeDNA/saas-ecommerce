@@ -24,6 +24,7 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 import { Alert, Button, Tabs, TabsList, TabsTrigger, Spinner, Pagination, StatsGrid, Card, CardHeader, CardBody } from "../design-system";
+import { useToast } from "../design-system/components/toast";
 import { TopUpRequestModal } from "../components/wallet/TopUpRequestModal";
 import { SearchAndFilter } from "../components/common/SearchAndFilter";
 
@@ -36,6 +37,8 @@ export const WalletPage = () => {
     getTransactionHistory,
     requestTopUp,
   } = useWallet();
+
+  const { addToast } = useToast();
 
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -160,6 +163,34 @@ export const WalletPage = () => {
       websocketService.off("commission_finalized", handleCommissionFinalized);
     };
   }, [loadCommissions]);
+
+  // Listen for postMessage events from payment popups (Paystack)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Only accept messages from same origin
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string; status?: string; reference?: string; message?: string } | undefined;
+      if (!data || data.type !== "PAYSTACK_TOPUP") return;
+
+      if (data.status === "success") {
+        addToast("Payment completed — wallet updated.", "success");
+        // Refresh wallet and transactions
+        refreshWallet();
+        loadTransactions();
+      } else {
+        addToast(data.message || "Payment pending — webhook will reconcile.", "info");
+      }
+
+      try {
+        window.focus();
+      } catch {
+        /* ignore */
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [refreshWallet, loadTransactions, addToast]);
 
   // Listen for wallet balance changes and refresh transactions
   useEffect(() => {
