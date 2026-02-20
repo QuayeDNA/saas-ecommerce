@@ -208,11 +208,9 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
       const search = searchTerm.toLowerCase();
       const name =
         order.storefrontData?.customerInfo?.name?.toLowerCase() || "";
-      const phone = order.storefrontData?.customerInfo?.phone || "";
       const orderNum = order.orderNumber?.toLowerCase() || "";
       return (
         name.includes(search) ||
-        phone.includes(search) ||
         orderNum.includes(search)
       );
     })
@@ -287,7 +285,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Name, phone, or order #..."
+                  placeholder="Name or order #..."
                   leftIcon={<Search className="w-4 h-4" />}
                 />
               </FormField>
@@ -345,11 +343,6 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                           <p className="font-medium text-gray-900 text-sm">
                             {order.storefrontData?.customerInfo?.name || "N/A"}
                           </p>
-                          {order.storefrontData?.customerInfo?.phone && (
-                            <p className="text-xs text-gray-500">
-                              Contact: {order.storefrontData.customerInfo.phone}
-                            </p>
-                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -498,11 +491,6 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                       <p className="text-sm font-medium text-gray-900">
                         {order.storefrontData?.customerInfo?.name || "N/A"}
                       </p>
-                      {order.storefrontData?.customerInfo?.phone && (
-                        <p className="text-xs text-gray-500">
-                          Contact: {order.storefrontData.customerInfo.phone}
-                        </p>
-                      )}
                     </div>
 
                     {/* Items - fully visible */}
@@ -727,11 +715,6 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                   <p className="font-medium">
                     {selectedOrder.storefrontData?.customerInfo?.name || "N/A"}
                   </p>
-                  {selectedOrder.storefrontData?.customerInfo?.phone && (
-                    <p className="text-gray-500 text-xs mt-0.5">
-                      Contact: {selectedOrder.storefrontData.customerInfo.phone}
-                    </p>
-                  )}
                 </div>
 
                 {/* Items with recipient phones */}
@@ -866,11 +849,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                 <p>
                   <strong>Customer:</strong>{" "}
                   {verificationModal.order.storefrontData?.customerInfo
-                    ?.name || "N/A"}{" "}
-                  (
-                  {verificationModal.order.storefrontData?.customerInfo
-                    ?.phone || ""}
-                  )
+                    ?.name || "N/A"}
                 </p>
                 {verificationModal.order.storefrontData?.customerInfo
                   ?.ghanaCardNumber && (

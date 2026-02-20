@@ -109,12 +109,15 @@ const PublicStore: React.FC = () => {
     const [showCheckout, setShowCheckout] = useState(false);
     const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('review');
     const [customerName, setCustomerName] = useState('');
-    const [customerPhone, setCustomerPhone] = useState('');
-    const [paymentType, setPaymentType] = useState<'mobile_money'>('mobile_money');
+    const [customerEmail, setCustomerEmail] = useState('');
+    const [paymentType, setPaymentType] = useState<'paystack' | 'mobile_money'>('paystack');
+    // Reference for manual Mobile Money payments (transaction/transfer ID)
     const [transactionRef, setTransactionRef] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [orderError, setOrderError] = useState<string | null>(null);
     const [orderResult, setOrderResult] = useState<PublicOrderResult | null>(null);
+    // Paystack popup -> opener status (used to update confirmation UI when Paystack redirects back)
+    const [paystackCallbackStatus, setPaystackCallbackStatus] = useState<'idle' | 'success' | 'failed'>('idle');
 
     // ==========================================================================
     // Effects
@@ -228,10 +231,16 @@ const PublicStore: React.FC = () => {
     const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.bundle.price, 0), [cart]);
     const cartCount = cart.length;
 
+    const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    // Email is only required for Paystack payments (backend enforces this as well)
+    const requiresEmail = paymentType === 'paystack';
+    const isEmailOkay = !requiresEmail ? true : isValidEmail(customerEmail);
+
     const canSubmitOrder = Boolean(
         customerName.trim() &&
-        isValidPhone(customerPhone) &&
-        transactionRef.trim()
+        isEmailOkay &&
+        (paymentType !== 'mobile_money' || transactionRef.trim().length > 0)
     );
 
     // ==========================================================================
@@ -247,6 +256,32 @@ const PublicStore: React.FC = () => {
             ghanaCardNumber
         }]);
     };
+
+    // Listen for messages from Paystack popup callback (storefront flow)
+    React.useEffect(() => {
+        const handler = (event: MessageEvent) => {
+            try {
+                if (event.origin !== window.location.origin) return;
+                const data = event.data || {};
+                if (!data || data.type !== 'PAYSTACK_STOREFRONT') return;
+
+                // If we have an orderResult with a reference, ensure it matches
+                if (orderResult?.paystack?.reference && data.reference && data.reference !== orderResult.paystack.reference) return;
+
+                setPaystackCallbackStatus(data.status === 'success' ? 'success' : 'failed');
+                if (data.status === 'success') {
+                    // show confirmation UI
+                    setCheckoutStep('confirmation');
+                } else {
+                    setOrderError(data.message || 'Payment verification failed');
+                }
+            } catch (err) {
+                /* ignore */
+            }
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
+    }, [orderResult]);
 
     const removeFromCart = (index: number) => {
         setCart(prev => prev.filter((_, i) => i !== index));
@@ -299,7 +334,6 @@ const PublicStore: React.FC = () => {
 
             if (allSameCustomer) {
                 setCustomerName(firstAfaItem.customerName || '');
-                setCustomerPhone(firstAfaItem.customerPhone);
             }
         }
 
@@ -315,6 +349,9 @@ const PublicStore: React.FC = () => {
         if (!businessName || !storeData || !canSubmitOrder) return;
         setSubmitting(true);
         setOrderError(null);
+        // Open a blank popup synchronously so navigation to Paystack won't be blocked by popup blockers
+        const popup = window.open("", "_blank");
+
         try {
             // Get Ghana Card number from AFA items (use the first one if multiple)
             const afaGhanaCard = cart.find(item =>
@@ -331,20 +368,40 @@ const PublicStore: React.FC = () => {
                 })),
                 customerInfo: {
                     name: customerName.trim(),
-                    phone: normalizePhone(customerPhone),
+                    email: customerEmail.trim() || undefined,
                     ...(afaGhanaCard && { ghanaCardNumber: afaGhanaCard }),
                 },
+                // include payment method so backend validation succeeds
                 paymentMethod: {
-                    type: paymentType,
-                    reference: transactionRef.trim(),
+                    type: paymentType as 'paystack' | 'mobile_money' | 'bank_transfer',
+                    // include reference for mobile_money (if provided)
+                    reference: transactionRef.trim() || undefined,
                 },
             };
+
             const result = await storefrontService.createPublicOrder(businessName, orderData);
+
+            // If backend returned Paystack init data, navigate the popup to Paystack checkout
+            const paystackUrl = result?.paystack?.authorizationUrl || result?.paystack?.authorization_url;
+            if (paystackUrl) {
+                try {
+                    popup!.location.href = paystackUrl;
+                } catch {
+                    // Fallback when assigning href on cross-origin popup fails
+                    popup?.close();
+                    window.open(paystackUrl, "_blank");
+                }
+            } else {
+                // Close the blank popup if it is not needed
+                try { if (popup && !popup.closed) popup.close(); } catch { /* ignore */ }
+            }
+
             setOrderResult(result);
             setCheckoutStep('confirmation');
             setCart([]);
         } catch (err: unknown) {
             setOrderError(err instanceof Error ? err.message : 'Failed to place order. Please try again.');
+            try { if (popup && !popup.closed) popup.close(); } catch { /* ignore */ }
         } finally {
             setSubmitting(false);
         }
@@ -354,10 +411,11 @@ const PublicStore: React.FC = () => {
         setShowCheckout(false);
         setCheckoutStep('review');
         setCustomerName('');
-        setCustomerPhone('');
+        setCustomerEmail('');
         setTransactionRef('');
         setOrderError(null);
         setOrderResult(null);
+        setPaystackCallbackStatus('idle');
     };
 
     // ==========================================================================
@@ -1148,8 +1206,18 @@ const PublicStore: React.FC = () => {
     // ==========================================================================
 
     const renderCheckoutDialog = () => {
-        const paymentMethods = storefront.paymentMethods || [];
-        const selectedPayment = paymentMethods.find(pm => pm.type === paymentType);
+        // Always surface a Paystack option for public checkout (platform routing)
+        const rawPaymentMethods = storefront.paymentMethods || [];
+        const paymentMethods = (() => {
+            const copy = [...rawPaymentMethods];
+            if (!copy.some(pm => pm.type === 'paystack')) {
+                // synthetic Paystack option (no merchant config required for platform routing)
+                copy.unshift({ type: 'paystack', details: {}, isActive: true } as { type: 'paystack'; details: Record<string, unknown>; isActive: boolean });
+            }
+            return copy;
+        })();
+
+        const selectedPayment = paymentMethods.find(pm => pm.type === paymentType) || paymentMethods[0];
 
         return (
             <Dialog
@@ -1252,19 +1320,29 @@ const PublicStore: React.FC = () => {
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value)}
                                         />
                                     </div>
+
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Contact Phone *</label>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                            Email {paymentType === 'paystack' ? <span className="">*</span> : <span className="text-xs text-gray-400 font-normal ml-1">(optional)</span>}
+                                        </label>
                                         <Input
-                                            type="tel"
-                                            placeholder="0XX XXX XXXX"
-                                            value={customerPhone}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerPhone(e.target.value)}
+                                            placeholder="you@example.com"
+                                            value={customerEmail}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerEmail(e.target.value)}
+                                            type="email"
                                         />
-                                        <p className="text-xs text-gray-400 mt-0.5">
-                                            {customerPhone && !isValidPhone(customerPhone)
-                                                ? <span className="text-red-500">Enter a valid 10-digit phone number</span>
-                                                : 'So the seller can reach you if needed'}
-                                        </p>
+
+                                        {/* Show required hint when Paystack is selected, otherwise validate only when non-empty */}
+                                        {paymentType === 'paystack' && customerEmail.trim() === '' && (
+                                            <p className="text-xs text-rose-600 mt-1">Email is required for Paystack payments</p>
+                                        )}
+                                        {!isValidEmail(customerEmail) && customerEmail.trim() !== '' && (
+                                            <p className="text-xs text-rose-600 mt-1">Please enter a valid email address</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <p className="text-xs text-gray-400 mt-0.5">We only collect your name and email here; email is required only for Paystack checkout. Recipient phone numbers are provided per item for delivery.</p>
                                     </div>
                                 </div>
 
@@ -1282,10 +1360,10 @@ const PublicStore: React.FC = () => {
                                                     style={paymentType === pm.type ? { borderColor: theme.primary, backgroundColor: theme.bg } : undefined}
                                                 >
                                                     <p className="font-medium text-sm text-gray-900">
-                                                        {pm.type === 'mobile_money' ? '📱 Mobile Money' : '🏦 Bank Transfer'}
+                                                        {pm.type === 'paystack' ? '⚡ Pay with Paystack' : pm.type === 'mobile_money' ? '📱 Mobile Money' : '🏦 Bank Transfer'}
                                                     </p>
                                                     <p className="text-xs text-gray-500 mt-0.5">
-                                                        {pm.type === 'mobile_money' ? 'Pay via MoMo or mobile wallet' : 'Pay via bank transfer'}
+                                                        {pm.type === 'paystack' ? 'Online checkout via Paystack (recommended)' : pm.type === 'mobile_money' ? 'Pay via MoMo or mobile wallet' : 'Pay via bank transfer'}
                                                     </p>
                                                 </button>
                                             ))}
@@ -1304,7 +1382,9 @@ const PublicStore: React.FC = () => {
                                         </h4>
                                         <div className="space-y-1.5 text-sm">
                                             {/* Mobile Money: details.accounts is an array of {provider, number, accountName} */}
-                                            {Array.isArray(selectedPayment.details?.accounts)
+                                            {selectedPayment.type === 'paystack' ? (
+                                                <div className="text-sm text-gray-700">You will be redirected to Paystack to complete payment. Payment confirmation is automatic.</div>
+                                            ) : Array.isArray(selectedPayment.details?.accounts)
                                                 ? selectedPayment.details.accounts.map((acc: { provider?: string; number?: string; accountName?: string }, i: number) => (
                                                     <div key={i} className={`${i > 0 ? 'pt-2 mt-2 border-t border-gray-200' : ''}`}>
                                                         {acc.provider && (
@@ -1345,21 +1425,23 @@ const PublicStore: React.FC = () => {
                                     </div>
                                 )}
 
-                                {/* Transaction reference — REQUIRED */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-800 mb-1.5">
-                                        <FaTriangleExclamation className="inline w-3.5 h-3.5 mr-1 text-amber-500" />
-                                        Transaction Reference / ID *
-                                    </label>
-                                    <Input
-                                        placeholder="Enter your payment reference or transaction ID"
-                                        value={transactionRef}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTransactionRef(e.target.value)}
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Send payment first, then enter the reference here. This is required to place your order.
-                                    </p>
-                                </div>
+                                {/* Transaction reference — REQUIRED for manual Mobile Money only */}
+                                {paymentType === 'mobile_money' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-800 mb-1.5">
+                                            <FaTriangleExclamation className="inline w-3.5 h-3.5 mr-1 text-amber-500" />
+                                            Transaction Reference / ID *
+                                        </label>
+                                        <Input
+                                            placeholder="Enter your payment reference or transaction ID"
+                                            value={transactionRef}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTransactionRef(e.target.value)}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Send payment first, then enter the reference here. This is required to place your order.
+                                        </p>
+                                    </div>
+                                )}
 
                                 {/* Order summary line */}
                                 <div className="flex items-center justify-between pt-3 border-t border-gray-200">
@@ -1431,10 +1513,52 @@ const PublicStore: React.FC = () => {
                                                 <span className="text-gray-500">Total</span>
                                                 <span className="font-bold">{formatPrice(orderResult.total)}</span>
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-500">Status</span>
-                                                <Badge colorScheme="warning" size="xs">Pending Verification</Badge>
-                                            </div>
+
+                                            {orderResult.paystack?.authorizationUrl ? (
+                                                <div className="flex justify-between items-center gap-3">
+                                                    <div>
+                                                        <span className="text-gray-500">Status</span>
+                                                        <div className="mt-1">
+                                                            {paystackCallbackStatus === 'success' ? (
+                                                                <Badge colorScheme="success" size="xs">Payment received</Badge>
+                                                            ) : paystackCallbackStatus === 'failed' ? (
+                                                                <Badge colorScheme="error" size="xs">Payment failed</Badge>
+                                                            ) : (
+                                                                <Badge colorScheme="blue" size="xs">Awaiting Payment</Badge>
+                                                            )}
+                                                            <div className="text-xs text-gray-500 mt-1">
+                                                                {paystackCallbackStatus === 'success'
+                                                                    ? 'Payment confirmed — your order will be processed.'
+                                                                    : paystackCallbackStatus === 'failed'
+                                                                        ? 'Payment failed or verification pending.'
+                                                                        : 'Complete payment in the Paystack checkout that opened.'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="text-right">
+                                                        {paystackCallbackStatus === 'success' ? (
+                                                            <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
+                                                                Refresh
+                                                            </Button>
+                                                        ) : (
+                                                            <a
+                                                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm"
+                                                                href={orderResult.paystack.authorizationUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                            >
+                                                                Continue to Paystack
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-500">Status</span>
+                                                    <Badge colorScheme="warning" size="xs">Pending Verification</Badge>
+                                                </div>
+                                            )}
                                         </div>
                                     </CardBody>
                                 </Card>
@@ -1443,9 +1567,19 @@ const PublicStore: React.FC = () => {
                                 <div className="text-left p-4 bg-blue-50 rounded-xl">
                                     <h4 className="font-semibold text-blue-900 text-sm mb-2">What happens next?</h4>
                                     <ol className="text-xs text-blue-800 space-y-1.5 list-decimal list-inside">
-                                        <li>The store owner will verify your payment</li>
-                                        <li>Your data bundles will be processed automatically</li>
-                                        <li>You&apos;ll receive the bundles on the phone numbers provided</li>
+                                        {orderResult.paystack?.authorizationUrl ? (
+                                            <>
+                                                <li>You will complete payment on Paystack.</li>
+                                                <li>Payment confirmation is automatic — your order will be processed as soon as we receive confirmation.</li>
+                                                <li>You&apos;ll receive the bundles on the phone numbers provided.</li>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <li>The store owner will verify your payment.</li>
+                                                <li>Your data bundles will be processed automatically after verification.</li>
+                                                <li>You&apos;ll receive the bundles on the phone numbers provided.</li>
+                                            </>
+                                        )}
                                     </ol>
                                 </div>
 

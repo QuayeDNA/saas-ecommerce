@@ -52,7 +52,7 @@ interface FormData {
   email: string;
   address: string;
   paymentMethods: Array<{
-    type: "mobile_money" | "bank_transfer";
+    type: "mobile_money" | "bank_transfer" | "paystack";
     details: {
       // Mobile Money: { accounts: Array<{ provider: string; number: string; accountName: string }> }
       // Bank Transfer: { bank: string; account: string; name: string }
@@ -64,6 +64,7 @@ interface FormData {
       bank?: string;
       account?: string;
       name?: string;
+      subaccountId?: string;
     };
     isActive: boolean;
   }>;
@@ -363,6 +364,13 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
   // Payment method options
   const PAYMENT_OPTIONS = [
     {
+      type: "paystack",
+      label: "Paystack (online)",
+      description: "Online checkout via Paystack (recommended)",
+      icon: CreditCard,
+      available: true,
+    },
+    {
       type: "mobile_money",
       label: "Mobile Money",
       description:
@@ -503,6 +511,12 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
           }
           if (newErrors.paymentMethods) break;
         }
+
+        // Paystack requires no storefront-level credentials for platform checkout
+        if (payment.type === 'paystack') {
+          continue;
+        }
+
         if (
           payment.type === "bank_transfer" &&
           (!payment.details.account || !payment.details.bank)
@@ -525,7 +539,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
     }
   };
 
-  const togglePaymentMethod = (type: "mobile_money" | "bank_transfer") => {
+  const togglePaymentMethod = (type: "mobile_money" | "bank_transfer" | "paystack") => {
     // Only allow toggling for available payment methods
     const option = PAYMENT_OPTIONS.find(opt => opt.type === type);
     if (!option?.available) return;

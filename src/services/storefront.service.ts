@@ -19,7 +19,7 @@ export interface StorefrontData {
   suspendedAt?: string;
   suspendedBy?: string;
   paymentMethods: Array<{
-    type: 'mobile_money' | 'bank_transfer';
+    type: 'mobile_money' | 'bank_transfer' | 'paystack';
     details: Record<string, unknown>;
     isActive: boolean;
   }>;
@@ -215,7 +215,7 @@ export interface PublicStorefront {
     };
     branding?: StorefrontBranding;
     paymentMethods: Array<{
-      type: 'mobile_money' | 'bank_transfer';
+      type: 'mobile_money' | 'bank_transfer' | 'paystack';
       details: Record<string, unknown>;
       isActive: boolean;
     }>;
@@ -249,7 +249,7 @@ export interface PublicOrderData {
     ghanaCardNumber?: string; // AFA-specific
   };
   paymentMethod: {
-    type: 'mobile_money' | 'bank_transfer';
+    type: 'mobile_money' | 'bank_transfer' | 'paystack';
     reference?: string;
     paymentProofUrl?: string;
   };
@@ -260,6 +260,12 @@ export interface PublicOrderResult {
   orderNumber: string;
   total: number;
   status: string;
+  // When paymentMethod.type === 'paystack' the server may return Paystack init data
+  paystack?: {
+    authorizationUrl?: string;
+    reference?: string;
+    accessCode?: string;
+  };
 }
 
 // Admin types
@@ -361,7 +367,7 @@ class StorefrontService {
    * Returns the updated storefront object and the Paystack subaccount payload.
    * Backend validation: agent must have an active bank_transfer payment method with account details.
    */
-  async createPaystackSubaccount(): Promise<{ storefront: StorefrontData; subaccount: any }> {
+  async createPaystackSubaccount(): Promise<{ storefront: StorefrontData; subaccount: Record<string, unknown> }> {
     const response = await apiClient.post(`${this.basePath}/agent/storefront/paystack/subaccount`);
     return response.data.data;
   }
@@ -470,6 +476,14 @@ class StorefrontService {
   async createPublicOrder(businessName: string, orderData: PublicOrderData): Promise<PublicOrderResult> {
     const response = await apiClient.post(`${this.basePath}/${businessName}/order`, orderData);
     return response.data.data;
+  }
+
+  /**
+   * Verify a Paystack transaction reference for a storefront order (used by frontend callback)
+   */
+  async verifyPaystackReference(reference: string): Promise<{ success: boolean; message?: string }> {
+    const response = await apiClient.get(`${this.basePath}/paystack/verify?reference=${encodeURIComponent(reference)}`);
+    return response.data;
   }
 
   // =========================================================================

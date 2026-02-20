@@ -66,7 +66,7 @@ interface StorefrontSettingsProps {
 }
 
 interface PaymentMethodForm {
-  type: "mobile_money" | "bank_transfer";
+  type: "mobile_money" | "bank_transfer" | "paystack";
   details: {
     accounts?: Array<{
       provider: string;
@@ -76,6 +76,7 @@ interface PaymentMethodForm {
     bank?: string;
     account?: string;
     name?: string;
+    subaccountId?: string;
   };
   isActive: boolean;
 }
@@ -90,7 +91,9 @@ interface FormErrors {
 // --- Constants ---
 
 const PAYMENT_TYPE_OPTIONS = [
+  { value: "paystack", label: "Paystack (online)" },
   { value: "mobile_money", label: "Mobile Money" },
+  { value: "bank_transfer", label: "Bank Transfer" },
 ];
 
 const MOMO_PROVIDER_OPTIONS = [
@@ -143,7 +146,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   });
 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodForm[]>(
-    (storefront.paymentMethods || []).filter((pm: PaymentMethodForm) => pm.type === "mobile_money"),
+    storefront.paymentMethods && storefront.paymentMethods.length > 0
+      ? (storefront.paymentMethods as PaymentMethodForm[])
+      : [{ type: 'paystack', details: {}, isActive: false }],
   );
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -219,6 +224,13 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
           }
         }
       }
+
+      // Paystack (platform checkout) requires no storefront-level credentials by default
+      if (payment.type === 'paystack') {
+        // Accept as valid — optional storefront `paystackSubaccountId` may be present but not required
+        continue;
+      }
+
       if (
         payment.type === "bank_transfer" &&
         (!payment.details.account || !payment.details.bank)
@@ -290,13 +302,15 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     [errors.paymentMethods],
   );
 
-  const addPaymentMethod = (type: "mobile_money" | "bank_transfer") => {
+  const addPaymentMethod = (type: "mobile_money" | "bank_transfer" | "paystack") => {
     const newMethod: PaymentMethodForm = {
       type,
       details:
         type === "mobile_money"
           ? { accounts: [{ provider: "", number: "", accountName: "" }] }
-          : { account: "", bank: "", name: "" },
+          : type === 'bank_transfer'
+            ? { account: "", bank: "", name: "" }
+            : {},
       isActive: false,
     };
     setPaymentMethods((prev) => [...prev, newMethod]);
@@ -525,6 +539,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               {method.type === "bank_transfer" && (
                 <Banknote className="w-3 h-3 mr-1" />
               )}
+              {method.type === "paystack" && (
+                <CreditCard className="w-3 h-3 mr-1" />
+              )}
               {
                 PAYMENT_TYPE_OPTIONS.find((opt) => opt.value === method.type)
                   ?.label
@@ -679,6 +696,22 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                   placeholder="Account holder name"
                 />
               </FormField>
+            </div>
+          )}
+
+          {method.type === 'paystack' && (
+            <div className="space-y-3 text-sm">
+              <FormField label="Paystack Subaccount (optional)">
+                <Input
+                  value={method.details.subaccountId || storefront.paystackSubaccountId || ''}
+                  onChange={(e) => handlePaymentMethodChange(index, 'subaccountId', e.target.value)}
+                  placeholder="e.g., SB123_xxx (optional)"
+                  size="sm"
+                />
+              </FormField>
+              <p className="text-xs text-gray-500">
+                When enabled, public customers will pay via Paystack (platform checkout). You may optionally provide a Paystack subaccount id for direct payouts; otherwise funds flow to the platform.
+              </p>
             </div>
           )}
         </CardBody>
@@ -1126,7 +1159,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                     leftIcon={<Plus className="w-4 h-4" />}
                     onClick={() =>
                       addPaymentMethod(
-                        option.value as "mobile_money" | "bank_transfer",
+                        option.value as "mobile_money" | "bank_transfer" | "paystack",
                       )
                     }
                   >
