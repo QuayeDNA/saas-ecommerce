@@ -277,6 +277,7 @@ export interface AdminStorefrontData extends StorefrontData {
     phone: string;
     userType: string;
     walletBalance: number;
+    earningsBalance?: number;
   };
 }
 

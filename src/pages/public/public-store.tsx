@@ -110,7 +110,7 @@ const PublicStore: React.FC = () => {
     const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('review');
     const [customerName, setCustomerName] = useState('');
     const [customerEmail, setCustomerEmail] = useState('');
-    const [paymentType, setPaymentType] = useState<'paystack' | 'mobile_money'>('paystack');
+    const [paymentType, setPaymentType] = useState<'paystack' | 'mobile_money' | 'bank_transfer'>('paystack');
     // Reference for manual Mobile Money payments (transaction/transfer ID)
     const [transactionRef, setTransactionRef] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -368,6 +368,7 @@ const PublicStore: React.FC = () => {
                 })),
                 customerInfo: {
                     name: customerName.trim(),
+                    phone: cart[0]?.customerPhone || '',
                     email: customerEmail.trim() || undefined,
                     ...(afaGhanaCard && { ghanaCardNumber: afaGhanaCard }),
                 },
@@ -382,7 +383,7 @@ const PublicStore: React.FC = () => {
             const result = await storefrontService.createPublicOrder(businessName, orderData);
 
             // If backend returned Paystack init data, navigate the popup to Paystack checkout
-            const paystackUrl = result?.paystack?.authorizationUrl || result?.paystack?.authorization_url;
+            const paystackUrl = result?.paystack?.authorizationUrl || (result?.paystack as unknown as { authorization_url?: string })?.authorization_url;
             if (paystackUrl) {
                 try {
                     popup!.location.href = paystackUrl;
@@ -1524,7 +1525,7 @@ const PublicStore: React.FC = () => {
                                                             ) : paystackCallbackStatus === 'failed' ? (
                                                                 <Badge colorScheme="error" size="xs">Payment failed</Badge>
                                                             ) : (
-                                                                <Badge colorScheme="blue" size="xs">Awaiting Payment</Badge>
+                                                                <Badge colorScheme="info" size="xs">Awaiting Payment</Badge>
                                                             )}
                                                             <div className="text-xs text-gray-500 mt-1">
                                                                 {paystackCallbackStatus === 'success'

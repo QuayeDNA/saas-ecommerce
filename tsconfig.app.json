@@ -25,6 +25,7 @@
 
     /* Path aliases for cleaner imports */
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["src/*"],
       "@design-system/*": ["src/design-system/*"],

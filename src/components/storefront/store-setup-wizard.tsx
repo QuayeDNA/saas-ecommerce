@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   X,
   Smartphone,
-  Building2,
   Banknote,
   Loader2,
   Plus,

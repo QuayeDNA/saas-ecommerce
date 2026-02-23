@@ -4,6 +4,9 @@ import type {
   TransactionHistoryResponse,
   WalletTransaction,
   WalletAnalytics,
+  EarningsDashboard,
+  PayoutRequestItem,
+  PayoutDestination,
 } from "../types/wallet";
 import { canHaveWallet } from "../utils/userTypeHelpers";
 
@@ -244,6 +247,45 @@ export const walletService = {
     }>(`/api/wallet/analytics?${params.toString()}`);
 
     return response.data.analytics;
+  },
+
+  /* Earnings & Payouts (agent-facing) */
+  getEarningsDashboard: async (): Promise<EarningsDashboard> => {
+    const response = await apiClient.get<{ success: boolean; data: EarningsDashboard }>("/api/wallet/earnings/dashboard");
+    return response.data.data;
+  },
+
+  getPayouts: async (status?: string): Promise<PayoutRequestItem[]> => {
+    const params = new URLSearchParams();
+    if (status) params.append("status", status);
+    const response = await apiClient.get<{ success: boolean; data: PayoutRequestItem[] }>(`/api/wallet/payouts?${params.toString()}`);
+    return response.data.data;
+  },
+
+  requestPayout: async (amount: number, destination: PayoutDestination): Promise<PayoutRequestItem> => {
+    const response = await apiClient.post<{ success: boolean; data: PayoutRequestItem }>("/api/wallet/payouts/request", { amount, destination });
+    return response.data.data;
+  },
+
+  /* Admin: payout queue & actions */
+  getPendingPayouts: async (): Promise<PayoutRequestItem[]> => {
+    const response = await apiClient.get<{ success: boolean; data: PayoutRequestItem[] }>("/api/wallet/admin/payouts");
+    return response.data.data;
+  },
+
+  approvePayout: async (payoutId: string, transferReference?: string) => {
+    const response = await apiClient.put<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/approve`, { transferReference });
+    return response.data.data;
+  },
+
+  rejectPayout: async (payoutId: string, reason?: string) => {
+    const response = await apiClient.put<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/reject`, { reason });
+    return response.data.data;
+  },
+
+  processPayout: async (payoutId: string) => {
+    const response = await apiClient.post<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/process`);
+    return response.data.data;
   },
 
   /**

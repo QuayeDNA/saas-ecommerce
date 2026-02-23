@@ -66,3 +66,43 @@ export interface WalletAnalytics {
     pendingRequests: number;
   };
 }
+
+// Earnings & Payout types (storefront payouts)
+export type PayoutDestinationType = 'mobile_money' | 'bank_account';
+
+export interface PayoutDestination {
+  type: PayoutDestinationType;
+  mobileProvider?: string; // MTN|VOD|ATL
+  phoneNumber?: string; // e.g. 0244123456
+  bankCode?: string; // free-text bank code/name
+  accountNumber?: string;
+  accountName?: string;
+  recipientName?: string;
+  recipientCode?: string;
+}
+
+export type PayoutStatus = 'pending' | 'approved' | 'processing' | 'completed' | 'failed' | 'rejected';
+
+export interface PayoutRequestItem {
+  _id: string;
+  user: string | { _id: string; fullName?: string; email?: string; phone?: string; earningsBalance?: number };
+  amount: number;
+  currency: string;
+  status: PayoutStatus;
+  destination: PayoutDestination;
+  transferFee?: number;
+  netAmount?: number;
+  paystackTransfer?: Record<string, any> | null;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
+}
+
+export interface EarningsDashboard {
+  availableBalance: number;
+  walletBalance: number;
+  totalEarned: number;
+  totalWithdrawn: number;
+  recentPayouts: PayoutRequestItem[];
+  canRequestPayout: boolean;
+}
+

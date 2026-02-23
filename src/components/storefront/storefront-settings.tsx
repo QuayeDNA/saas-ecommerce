@@ -21,6 +21,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from "../../design-system";
+import { EarningsManager } from './earnings-manager';
 import { useToast } from "../../design-system";
 import {
   storefrontService,
@@ -152,8 +153,6 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   );
 
   const [errors, setErrors] = useState<FormErrors>({});
-  // Paystack subaccount creation state
-  const [isCreatingSubaccount, setIsCreatingSubaccount] = useState(false);
 
   // --- Validation ---
 
@@ -742,6 +741,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="payment">Payment</TabsTrigger>
+            <TabsTrigger value="earnings">Earnings</TabsTrigger>
             <TabsTrigger value="sharing">Share</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
@@ -898,6 +898,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         {/* ===== Branding & Customization ===== */}
         <TabsContent value="branding" className="space-y-6" data-tour="storefront-branding">
           {/* Appearance & Theme */}
+
+          {/* ===== Earnings / Payouts ===== */}
+          <TabsContent value="earnings" className="space-y-6">
+            <EarningsManager />
+          </TabsContent>
           <section className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
               <Palette className="w-4 h-4 text-gray-500" />

@@ -25,6 +25,7 @@ import {
   TableCell,
 } from "../../design-system";
 import { useToast } from "../../design-system";
+import { walletService } from '../../services/wallet-service';
 import {
   storefrontService,
   type AdminStorefrontData,
@@ -97,6 +98,7 @@ function StoreDetailDialog({
   onToggleStatus,
   onDelete,
   isProcessing,
+  onViewPayouts,
 }: {
   store: AdminStorefrontData | null;
   isOpen: boolean;
@@ -105,6 +107,7 @@ function StoreDetailDialog({
   onToggleStatus: (store: AdminStorefrontData) => void;
   onDelete: (store: AdminStorefrontData) => void;
   isProcessing: boolean;
+  onViewPayouts?: (agentId: string) => void;
 }) {
   if (!store) return null;
   const agent = typeof store.agentId === "object" ? store.agentId : null;
@@ -152,24 +155,42 @@ function StoreDetailDialog({
 
           {/* Agent Info */}
           {agent && (
-            <Card variant="flat" className="bg-gray-50">
-              <CardBody>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Agent Information</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <span className="font-medium text-gray-900">{agent.fullName}</span>
-                    <Badge colorScheme="info" variant="subtle" size="xs">
-                      {agent.userType.replace("_", " ")}
-                    </Badge>
+            <>
+              <Card variant="flat" className="bg-gray-50">
+                <CardBody>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Agent Information</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="font-medium text-gray-900">{agent.fullName}</span>
+                      <Badge colorScheme="info" variant="subtle" size="xs">
+                        {agent.userType.replace("_", " ")}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{agent.email}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <span className="truncate">{agent.email}</span>
+                </CardBody>
+              </Card>
+
+              {/* Earnings summary (admin) */}
+              <Card variant="flat" className="bg-white border border-gray-100">
+                <CardBody>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-xs text-gray-500">Agent earnings</div>
+                      <div className="text-lg font-bold">GH₵ {typeof agent.earningsBalance === 'number' ? Number(agent.earningsBalance).toFixed(2) : '—'}</div>
+                      <div className="text-xs text-gray-400 mt-1">Balance available for payout</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => onViewPayouts?.((agent as any)._id)} disabled={!agent?._id}>View Payouts</Button>
+                    </div>
                   </div>
-                </div>
-              </CardBody>
-            </Card>
+                </CardBody>
+              </Card>
+            </>
           )}
 
           {/* Store Details */}
@@ -275,6 +296,12 @@ export default function StoresPage() {
   const [autoApprove, setAutoApprove] = useState(false);
   const [autoApproveLoading, setAutoApproveLoading] = useState(false);
 
+  // Payouts modal (admin)
+  const [payoutsModalOpen, setPayoutsModalOpen] = useState(false);
+  const [payoutsLoading, setPayoutsLoading] = useState(false);
+  const [agentPayouts, setAgentPayouts] = useState<any[]>([]);
+  const [payoutActionLoading, setPayoutActionLoading] = useState<string | null>(null);
+
   // Fetch data
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -365,6 +392,73 @@ export default function StoresPage() {
       addToast("Failed to delete store", "error");
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // --- Admin: fetch pending payouts for the selected agent ---
+  const openPayoutsForAgent = async (agentId: string) => {
+    try {
+      setPayoutsModalOpen(true);
+      setPayoutsLoading(true);
+      const allPending = await walletService.getPendingPayouts();
+      const filtered = allPending.filter(p => (p.user as any)?._id === agentId || (p.user as any) === agentId);
+      setAgentPayouts(filtered || []);
+    } catch (err) {
+      addToast('Failed to load payouts', 'error');
+    } finally {
+      setPayoutsLoading(false);
+    }
+  };
+
+  const handleApprovePayout = async (payoutId: string) => {
+    if (!confirm('Approve this payout?')) return;
+    try {
+      setPayoutActionLoading(payoutId);
+      await walletService.approvePayout(payoutId);
+      addToast('Payout approved', 'success');
+      // refresh
+      if (selectedStore && typeof selectedStore.agentId === 'object') {
+        await openPayoutsForAgent((selectedStore.agentId as any)._id);
+        await fetchData();
+      }
+    } catch (err) {
+      addToast('Failed to approve payout', 'error');
+    } finally {
+      setPayoutActionLoading(null);
+    }
+  };
+
+  const handleRejectPayout = async (payoutId: string) => {
+    const reason = prompt('Rejection reason (optional):');
+    try {
+      setPayoutActionLoading(payoutId);
+      await walletService.rejectPayout(payoutId, reason || undefined);
+      addToast('Payout rejected', 'success');
+      if (selectedStore && typeof selectedStore.agentId === 'object') {
+        await openPayoutsForAgent((selectedStore.agentId as any)._id);
+        await fetchData();
+      }
+    } catch (err) {
+      addToast('Failed to reject payout', 'error');
+    } finally {
+      setPayoutActionLoading(null);
+    }
+  };
+
+  const handleProcessPayout = async (payoutId: string) => {
+    if (!confirm('Trigger transfer for this payout?')) return;
+    try {
+      setPayoutActionLoading(payoutId);
+      await walletService.processPayout(payoutId);
+      addToast('Payout processing started', 'success');
+      if (selectedStore && typeof selectedStore.agentId === 'object') {
+        await openPayoutsForAgent((selectedStore.agentId as any)._id);
+        await fetchData();
+      }
+    } catch (err) {
+      addToast('Failed to process payout', 'error');
+    } finally {
+      setPayoutActionLoading(null);
     }
   };
 
@@ -734,6 +828,66 @@ export default function StoresPage() {
         </CardBody>
       </Card>
 
+      {/* Payouts modal (admin) */}
+      <Dialog isOpen={payoutsModalOpen} onClose={() => setPayoutsModalOpen(false)} size="lg">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">Pending Payouts</h3>
+            <span className="text-sm text-gray-500">{selectedStore ? `for ${selectedStore.displayName || selectedStore.businessName}` : ''}</span>
+          </div>
+        </DialogHeader>
+        <DialogBody>
+          {payoutsLoading ? (
+            <div className="py-6 text-center text-gray-500">Loading…</div>
+          ) : (
+            <div className="space-y-3">
+              {agentPayouts.length === 0 ? (
+                <div className="text-sm text-gray-500">No pending payouts for this agent.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHeaderCell>Requested</TableHeaderCell>
+                        <TableHeaderCell>Amount</TableHeaderCell>
+                        <TableHeaderCell>Destination</TableHeaderCell>
+                        <TableHeaderCell>Status</TableHeaderCell>
+                        <TableHeaderCell>Actions</TableHeaderCell>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {agentPayouts.map(p => (
+                        <TableRow key={p._id}>
+                          <TableCell>{new Date(p.requestedAt || p.createdAt).toLocaleString()}</TableCell>
+                          <TableCell>GH₵ {p.amount.toFixed(2)}</TableCell>
+                          <TableCell className="text-xs truncate max-w-[260px]">{p.destination.type === 'mobile_money' ? `${p.destination.mobileProvider} • ${p.destination.phoneNumber}` : `${p.destination.bankCode || ''} • ${p.destination.accountNumber || ''}`}</TableCell>
+                          <TableCell><Badge colorScheme={p.status === 'pending' ? 'warning' : p.status === 'completed' ? 'success' : 'error'}>{p.status}</Badge></TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {p.status === 'pending' && (
+                                <>
+                                  <Button size="xs" onClick={() => handleApprovePayout(p._id)} isLoading={payoutActionLoading === p._id}>Approve</Button>
+                                  <Button size="xs" variant="danger" onClick={() => handleRejectPayout(p._id)} isLoading={payoutActionLoading === p._id}>Reject</Button>
+                                  <Button size="xs" variant="outline" onClick={() => handleProcessPayout(p._id)} isLoading={payoutActionLoading === p._id}>Process</Button>
+                                </>
+                              )}
+                              {p.status !== 'pending' && <span className="text-xs text-gray-500">No actions</span>}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => setPayoutsModalOpen(false)}>Close</Button>
+        </DialogFooter>
+      </Dialog>
+
       {/* Store Detail Dialog */}
       <StoreDetailDialog
         store={selectedStore}
@@ -743,6 +897,7 @@ export default function StoresPage() {
         onToggleStatus={handleToggleStatus}
         onDelete={handleDelete}
         isProcessing={!!actionLoading}
+        onViewPayouts={openPayoutsForAgent}
       />
     </div>
   );

@@ -78,6 +78,11 @@ const quickLinks = [
     icon: <FaWallet className="text-purple-600 text-xl sm:text-2xl" />,
   },
   {
+    to: "/superadmin/payouts",
+    label: "Payouts",
+    icon: <FaMoneyBillWave className="text-green-600 text-xl sm:text-2xl" />,
+  },
+  {
     to: "/superadmin/settings",
     label: "Settings",
     icon: <FaCog className="text-gray-600 text-xl sm:text-2xl" />,
@@ -412,13 +417,13 @@ export default function SuperAdminDashboard() {
   // Filter out negative values from chart data and ensure all values are non-negative
   const sanitizedChartData = chartData
     ? {
-        ...chartData,
-        userRegistrations: chartData.userRegistrations.map((val) =>
-          Math.max(0, val || 0)
-        ),
-        orders: chartData.orders.map((val) => Math.max(0, val || 0)),
-        revenue: chartData.revenue.map((val) => Math.max(0, val || 0)),
-      }
+      ...chartData,
+      userRegistrations: chartData.userRegistrations.map((val) =>
+        Math.max(0, val || 0)
+      ),
+      orders: chartData.orders.map((val) => Math.max(0, val || 0)),
+      revenue: chartData.revenue.map((val) => Math.max(0, val || 0)),
+    }
     : null;
 
   if (error && !stats) {
@@ -656,9 +661,8 @@ export default function SuperAdminDashboard() {
                     <button
                       key={index}
                       onClick={() => setCarouselIndex(index)}
-                      className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors duration-200 ${
-                        index === carouselIndex ? "bg-white" : "bg-white/30"
-                      }`}
+                      className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors duration-200 ${index === carouselIndex ? "bg-white" : "bg-white/30"
+                        }`}
                       aria-label={`Go to ${userTypeCarousel[index].label}`}
                     />
                   ))}

@@ -4,8 +4,6 @@ import {
   CardHeader,
   CardBody,
   Button,
-  Input,
-  Select,
   Table,
   TableHeader,
   TableHeaderCell,
@@ -24,14 +22,13 @@ import {
   Textarea,
 } from "../../design-system";
 import { useToast } from "../../design-system";
+import { SearchAndFilter } from "../common/SearchAndFilter";
 import {
   storefrontService,
   type StorefrontOrder,
 } from "../../services/storefront.service";
 import { getApiErrorMessage } from "../../utils/error-helpers";
 import {
-  Search,
-  RotateCcw,
   CheckCircle,
   XCircle,
   ExternalLink,
@@ -261,8 +258,8 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                     key={mode}
                     onClick={() => setViewMode(mode)}
                     className={`p-1.5 rounded-md transition-all ${viewMode === mode
-                        ? "bg-white shadow-sm text-gray-900"
-                        : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white shadow-sm text-gray-900"
+                      : "text-gray-500 hover:text-gray-700"
                       }`}
                     title={`${label} view`}
                   >
@@ -279,37 +276,34 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
 
         <CardBody>
           {/* Filters */}
-          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <FormField label="Search">
-                <Input
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Name or order #..."
-                  leftIcon={<Search className="w-4 h-4" />}
-                />
-              </FormField>
-
-              <FormField label="Status">
-                <Select
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  options={STATUS_OPTIONS}
-                />
-              </FormField>
-
-              <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={resetFilters}
-                  leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
-                >
-                  Reset
-                </Button>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500">
+          <div className="mb-4 sm:mb-6">
+            <SearchAndFilter
+              searchTerm={searchTerm}
+              onSearchChange={(v) => setSearchTerm(v)}
+              searchPlaceholder="Name or order #..."
+              filters={{
+                status: {
+                  value: statusFilter,
+                  options: STATUS_OPTIONS.map(o => ({ value: o.value, label: o.label })),
+                  label: 'Status',
+                  placeholder: 'All Statuses',
+                },
+              }}
+              onFilterChange={(key, v) => {
+                if (key === 'status') setStatusFilter(v);
+              }}
+              onSearch={(e) => {
+                e.preventDefault();
+                setCurrentPage(1);
+                loadOrders();
+              }}
+              onClearFilters={() => {
+                resetFilters();
+              }}
+              showSearchButton={true}
+              showClearButton={true}
+            />
+            <p className="text-xs text-gray-500 mt-2">
               Showing {displayedOrders.length} of {totalOrders} orders
             </p>
           </div>
@@ -590,16 +584,16 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                   {/* Status dot */}
                   <div
                     className={`w-2.5 h-2.5 rounded-full shrink-0 ${order.status === "completed"
-                        ? "bg-green-500"
-                        : order.status === "failed" ||
-                          order.status === "cancelled"
-                          ? "bg-red-500"
-                          : order.status === "pending_payment"
-                            ? "bg-yellow-500"
-                            : order.status === "processing" ||
-                              order.status === "confirmed"
-                              ? "bg-blue-500"
-                              : "bg-gray-400"
+                      ? "bg-green-500"
+                      : order.status === "failed" ||
+                        order.status === "cancelled"
+                        ? "bg-red-500"
+                        : order.status === "pending_payment"
+                          ? "bg-yellow-500"
+                          : order.status === "processing" ||
+                            order.status === "confirmed"
+                            ? "bg-blue-500"
+                            : "bg-gray-400"
                       }`}
                   />
 
@@ -853,11 +847,11 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                 </p>
                 {verificationModal.order.storefrontData?.customerInfo
                   ?.ghanaCardNumber && (
-                  <p>
-                    <strong>Ghana Card:</strong>{" "}
-                    {verificationModal.order.storefrontData.customerInfo.ghanaCardNumber}
-                  </p>
-                )}
+                    <p>
+                      <strong>Ghana Card:</strong>{" "}
+                      {verificationModal.order.storefrontData.customerInfo.ghanaCardNumber}
+                    </p>
+                  )}
                 <p>
                   <strong>Amount:</strong> GHS{" "}
                   {(verificationModal.order.total || 0).toFixed(2)}
