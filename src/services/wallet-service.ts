@@ -139,6 +139,16 @@ export const walletService = {
   },
 
   /**
+   * Cancel a pending Paystack top-up request by reference (cleanup on failure)
+   */
+  cancelPaystackTopUp: async (reference: string) => {
+    const response = await apiClient.delete<{ success: boolean; message?: string }>(
+      `/api/wallet/paystack/cancel?reference=${encodeURIComponent(reference)}`
+    );
+    return response.data;
+  },
+
+  /**
    * Admin: Top up a user's wallet
    * @param userId User ID to credit
    * @param amount Amount to credit

@@ -5,7 +5,7 @@ import type { User } from "../types";
 import { apiClient } from "../utils/api-client";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5050";
+  import.meta.env.VITE_API_BASE_URL ?? "https://localhost:5050";
 
 // Cookie configuration
 const COOKIE_OPTIONS = {
@@ -221,15 +221,9 @@ class AuthService {
         throw new Error("No refresh token available");
       }
 
-      const response = await axios.post(
-        `${API_BASE_URL}/api/auth/refresh`,
-        {
-          refreshToken,
-        },
-        {
-          withCredentials: true,
-        }
-      );
+      // Use refreshClient to avoid interceptor recursion and centralize baseURL
+      const { refreshClient } = await import("../utils/api-client");
+      const response = await refreshClient.post(`/api/auth/refresh`, { refreshToken });
 
       const {
         accessToken,

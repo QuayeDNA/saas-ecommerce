@@ -1,26 +1,29 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // =============================================================================
-// Public Storefront — Customer-facing store for browsing & ordering data bundles
+// PublicStore — Customer-facing storefront for browsing & ordering data bundles
+// Mobile-first, theme-aware, performance-optimised
 // =============================================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-    Card, CardBody,
-    Button, Badge, Alert, Skeleton,
-    Dialog, DialogHeader, DialogBody, DialogFooter,
-    Input,
+    Button, Alert, Skeleton,
+    Dialog, DialogHeader, DialogBody, DialogFooter, Input,
 } from '../../design-system';
 import { getProviderColors } from '../../utils/provider-colors';
 import storefrontService from '../../services/storefront.service';
+import { walletService } from '../../services/wallet-service';
+import { useToast } from '../../design-system/components/toast';
 import type {
-    PublicBundle, PublicStorefront, PublicOrderData, PublicOrderResult, StorefrontBranding,
+    PublicBundle, PublicStorefront, PublicOrderData,
+    PublicOrderResult, StorefrontBranding,
 } from '../../services/storefront.service';
 import {
-    FaCartShopping, FaPlus, FaTrashCan,
-    FaCircleCheck, FaTriangleExclamation, FaIdCard,
-    FaArrowRight, FaArrowLeft, FaPhone, FaEnvelope,
-    FaStore, FaGrip, FaList, FaChevronDown, FaChevronUp,
-    FaWifi, FaMagnifyingGlass,
+    FaCartShopping, FaPlus, FaTrashCan, FaCircleCheck,
+    FaTriangleExclamation, FaIdCard, FaArrowRight, FaArrowLeft,
+    FaPhone, FaEnvelope, FaStore, FaGrip, FaList,
+    FaChevronDown, FaWifi, FaMagnifyingGlass,
+    FaFire, FaBolt,
 } from 'react-icons/fa6';
 import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 
@@ -28,10 +31,26 @@ import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 // Types
 // =============================================================================
 
+// ─── Paystack Inline Helper ───────────────────────────────────────────────────
+
+async function loadPaystackScript(): Promise<void> {
+
+    if ((window as any).PaystackPop) return;
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://js.paystack.co/v1/inline.js';
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Failed to load Paystack script'));
+        document.head.appendChild(s);
+    });
+}
+
+
+
 interface CartItem {
     bundle: PublicBundle;
     customerPhone: string;
-    // AFA-specific fields
     customerName?: string;
     ghanaCardNumber?: string;
 }
@@ -39,122 +58,518 @@ interface CartItem {
 type ViewMode = 'grid' | 'list';
 type CheckoutStep = 'review' | 'payment' | 'confirmation';
 
+// minimal shape of a generic payment account description returned by the API
+// we can't predict all fields so allow optional ones used in the UI
+interface PaymentAccount {
+    provider?: string;
+    number?: string;
+    accountName?: string;
+    account_number?: string;
+    bank_name?: string;
+    [key: string]: unknown;
+}
+
+interface ThemeConfig {
+    primary: string;
+    secondary: string;
+    accent: string;
+    bg: string;
+    text: string;
+    gradient: string;
+    cardBorder: string;
+    heroBg: string;
+}
+
 // =============================================================================
-// Constants
+// Constants & Theme System
 // =============================================================================
 
-const THEME_COLORS: Record<string, { primary: string; secondary: string; accent: string; bg: string; text: string }> = {
-    blue: { primary: '#3B82F6', secondary: '#1E40AF', accent: '#93C5FD', bg: '#EFF6FF', text: '#1E3A5F' },
-    green: { primary: '#22C55E', secondary: '#15803D', accent: '#86EFAC', bg: '#F0FDF4', text: '#14532D' },
-    purple: { primary: '#8B5CF6', secondary: '#6D28D9', accent: '#C4B5FD', bg: '#FAF5FF', text: '#3B0764' },
-    orange: { primary: '#F97316', secondary: '#C2410C', accent: '#FDBA74', bg: '#FFF7ED', text: '#7C2D12' },
-    red: { primary: '#EF4444', secondary: '#B91C1C', accent: '#FCA5A5', bg: '#FEF2F2', text: '#7F1D1D' },
-    teal: { primary: '#14B8A6', secondary: '#0D9488', accent: '#5EEAD4', bg: '#F0FDFA', text: '#134E4A' },
-    indigo: { primary: '#6366F1', secondary: '#4338CA', accent: '#A5B4FC', bg: '#EEF2FF', text: '#312E81' },
-    rose: { primary: '#F43F5E', secondary: '#BE123C', accent: '#FDA4AF', bg: '#FFF1F2', text: '#881337' },
+const THEMES: Record<string, ThemeConfig> = {
+    blue: {
+        primary: '#2563EB', secondary: '#1E40AF', accent: '#60A5FA',
+        bg: '#EFF6FF', text: '#1E3A5F', gradient: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 50%, #1e3a8a 100%)',
+        cardBorder: '#BFDBFE', heroBg: '#EFF6FF',
+    },
+    green: {
+        primary: '#16A34A', secondary: '#15803D', accent: '#4ADE80',
+        bg: '#F0FDF4', text: '#14532D', gradient: 'linear-gradient(135deg, #15803D 0%, #166534 50%, #14532d 100%)',
+        cardBorder: '#BBF7D0', heroBg: '#F0FDF4',
+    },
+    purple: {
+        primary: '#7C3AED', secondary: '#6D28D9', accent: '#A78BFA',
+        bg: '#FAF5FF', text: '#3B0764', gradient: 'linear-gradient(135deg, #6D28D9 0%, #5B21B6 50%, #4c1d95 100%)',
+        cardBorder: '#DDD6FE', heroBg: '#FAF5FF',
+    },
+    orange: {
+        primary: '#EA580C', secondary: '#C2410C', accent: '#FB923C',
+        bg: '#FFF7ED', text: '#7C2D12', gradient: 'linear-gradient(135deg, #C2410C 0%, #B45309 50%, #92400e 100%)',
+        cardBorder: '#FED7AA', heroBg: '#FFF7ED',
+    },
+    red: {
+        primary: '#DC2626', secondary: '#B91C1C', accent: '#F87171',
+        bg: '#FEF2F2', text: '#7F1D1D', gradient: 'linear-gradient(135deg, #B91C1C 0%, #991B1B 50%, #7f1d1d 100%)',
+        cardBorder: '#FECACA', heroBg: '#FEF2F2',
+    },
+    teal: {
+        primary: '#0D9488', secondary: '#0F766E', accent: '#2DD4BF',
+        bg: '#F0FDFA', text: '#134E4A', gradient: 'linear-gradient(135deg, #0F766E 0%, #115E59 50%, #134e4a 100%)',
+        cardBorder: '#99F6E4', heroBg: '#F0FDFA',
+    },
+    indigo: {
+        primary: '#4F46E5', secondary: '#4338CA', accent: '#818CF8',
+        bg: '#EEF2FF', text: '#312E81', gradient: 'linear-gradient(135deg, #4338CA 0%, #3730A3 50%, #312e81 100%)',
+        cardBorder: '#C7D2FE', heroBg: '#EEF2FF',
+    },
+    rose: {
+        primary: '#E11D48', secondary: '#BE123C', accent: '#FB7185',
+        bg: '#FFF1F2', text: '#881337', gradient: 'linear-gradient(135deg, #BE123C 0%, #9F1239 50%, #881337 100%)',
+        cardBorder: '#FECDD3', heroBg: '#FFF1F2',
+    },
 };
 
-const DEFAULT_THEME = THEME_COLORS.blue;
+const DEFAULT_THEME = THEMES.blue;
+
+// Placeholder popular bundles (replace with API data when available)
+const POPULAR_BUNDLE_PLACEHOLDERS = [
+    { label: '1GB', sub: 'Daily · 24hrs', badge: '🔥 Top Pick' },
+    { label: '5GB', sub: 'Weekly · 7 days', badge: '⚡ Fast Seller' },
+    { label: '10GB', sub: 'Monthly · 30 days', badge: '💎 Best Value' },
+    { label: '2GB', sub: 'Night · 12hrs', badge: '🌙 Night Owl' },
+    { label: '20GB', sub: 'Monthly · 30 days', badge: '🚀 Power User' },
+];
 
 // =============================================================================
-// Helpers
+// Pure Helpers (no hooks — safe to call anywhere)
 // =============================================================================
 
-const formatPrice = (amount: number) => `GH₵ ${amount.toFixed(2)}`;
+const fmt = (n: number) => `GH₵ ${n.toFixed(2)}`;
 
-const normalizePhone = (phone: string) => {
-    const cleaned = phone.replace(/\s+/g, '');
-    if (cleaned.startsWith('+233')) return '0' + cleaned.slice(4);
-    if (cleaned.startsWith('233')) return '0' + cleaned.slice(3);
-    return cleaned;
+const normalizePhone = (p: string) => {
+    const c = p.replace(/\s+/g, '');
+    if (c.startsWith('+233')) return '0' + c.slice(4);
+    if (c.startsWith('233')) return '0' + c.slice(3);
+    return c;
 };
 
-const isValidPhone = (phone: string) => /^0\d{9}$/.test(normalizePhone(phone));
+const isValidPhone = (p: string) => /^0\d{9}$/.test(normalizePhone(p));
+const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+const fmtValidity = (v: number | string, u: string) =>
+    v === 'unlimited' || u === 'unlimited' ? 'Unlimited' : `${v} ${u}`;
 
-const formatValidity = (validity: number | string, unit: string) => {
-    if (validity === 'unlimited' || unit === 'unlimited') return 'Unlimited';
-    return `${validity} ${unit}`;
-};
+const getLogoUrl = (logo?: { url?: string; alt?: string } | string) =>
+    !logo ? undefined : typeof logo === 'string' ? logo : logo.url;
 
 // =============================================================================
-// Component
+// Micro-components (memoised for perf)
+// =============================================================================
+
+/** Shimmering skeleton that exactly mirrors final card shape */
+const BundleCardSkeleton = memo(() => (
+    <div className="rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
+        <div className="h-1 bg-gray-100" />
+        <div className="p-4 space-y-3">
+            <Skeleton height="1.75rem" width="60%" />
+            <Skeleton height="0.9rem" width="80%" />
+            <div className="flex gap-2 pt-1">
+                <Skeleton height="1.3rem" width="3rem" />
+                <Skeleton height="1.3rem" width="4rem" />
+            </div>
+            <div className="flex justify-between items-center pt-2">
+                <Skeleton height="1.5rem" width="5rem" />
+                <Skeleton height="2rem" width="4.5rem" />
+            </div>
+        </div>
+    </div>
+));
+
+/** Compact "in-cart" pill indicator */
+const InCartBadge = memo(() => (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+        <FaCircleCheck className="w-2.5 h-2.5" /> In Cart
+    </span>
+));
+
+/** Animated quantity badge for cart */
+const CartCountBadge = memo(({ count }: { count: number }) => (
+    <span
+        className="absolute -top-2 -right-2 min-w-[20px] h-5 rounded-full text-xs font-bold text-white flex items-center justify-center px-1 shadow-lg"
+        style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)' }}
+    >
+        {count > 99 ? '99+' : count}
+    </span>
+));
+
+// =============================================================================
+// Popular Bundles Flashcard Carousel
+// =============================================================================
+
+const PopularCarousel = memo(({
+    theme,
+    bundles,
+    onSelect,
+}: { theme: ThemeConfig; bundles: PublicBundle[]; onSelect?: (b: PublicBundle) => void }) => {
+    // Use real bundles if available, otherwise placeholders
+    const items = bundles.length > 0 ? bundles.slice(0, 8) : null;
+
+    return (
+        <div className="py-4">
+            <div className="flex items-center gap-2 px-4 mb-3">
+                <FaFire className="w-4 h-4" style={{ color: theme.primary }} />
+                <h2 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Popular Right Now</h2>
+            </div>
+            <div className="flex gap-3 overflow-x-auto px-4 pb-3 hide-scrollbar snap-x snap-mandatory">
+                {items
+                    ? items.map((b) => {
+                        const pc = getProviderColors(b.provider);
+                        return (
+                            <div
+                                key={b._id}
+                                onClick={() => onSelect?.(b)}
+                                className="shrink-0 snap-start w-36 rounded-2xl overflow-hidden shadow-md cursor-pointer active:scale-95 transition-transform duration-150"
+                                style={{ background: `linear-gradient(145deg, ${pc.primary}ee, ${pc.primary}99)` }}
+                            >
+                                <div className="p-3 text-white">
+                                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-70">{b.providerName}</div>
+                                    <div className="text-2xl font-black mt-1 leading-none">
+                                        {b.dataVolume}{b.dataUnit}
+                                    </div>
+                                    <div className="text-[10px] opacity-80 mt-1">{fmtValidity(b.validity, b.validityUnit)}</div>
+                                    <div className="mt-3 flex items-end justify-between">
+                                        <span className="text-sm font-extrabold">{fmt(b.price)}</span>
+                                    </div>
+                                    <div className="mt-2 text-[9px] bg-white/20 rounded-full px-2 py-0.5 inline-block">
+                                        🔥 Popular
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                    : POPULAR_BUNDLE_PLACEHOLDERS.map((p, i) => (
+                        <div
+                            key={i}
+                            className="shrink-0 snap-start w-36 rounded-2xl overflow-hidden shadow-md"
+                            style={{
+                                background: `linear-gradient(145deg, ${theme.primary}dd, ${theme.secondary}cc)`,
+                                opacity: 0.85,
+                            }}
+                        >
+                            <div className="p-3 text-white">
+                                <div className="text-[10px] font-bold uppercase tracking-widest opacity-60">Data Bundle</div>
+                                <div className="text-2xl font-black mt-1 leading-none">{p.label}</div>
+                                <div className="text-[10px] opacity-80 mt-1">{p.sub}</div>
+                                <div className="mt-3">
+                                    <div className="h-4 bg-white/20 rounded w-16 animate-pulse" />
+                                </div>
+                                <div className="mt-2 text-[9px] bg-white/20 rounded-full px-2 py-0.5 inline-block">
+                                    {p.badge}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+            </div>
+        </div>
+    );
+});
+
+// =============================================================================
+// Bundle Card — Grid View
+// =============================================================================
+
+const BundleCard = memo(({ bundle, inCart, onAdd }: {
+    bundle: PublicBundle; inCart: boolean; onAdd: (b: PublicBundle) => void;
+}) => {
+    const pc = getProviderColors(bundle.provider);
+    const isAfa = bundle.provider?.toUpperCase() === 'AFA';
+    const hasData = bundle.dataVolume != null && bundle.dataVolume > 0;
+
+    return (
+        <article className="group relative rounded-2xl bg-white border shadow-sm hover:shadow-xl transition-all duration-200 overflow-hidden flex flex-col"
+            style={{ borderColor: inCart ? pc.primary + '60' : '#F1F5F9' }}
+        >
+            {/* Top provider accent bar */}
+            <div className="h-1 shrink-0" style={{ backgroundColor: pc.primary }} />
+
+            <div className="p-4 flex flex-col flex-1">
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                        {hasData && (
+                            <div className="text-3xl font-black leading-none tracking-tight"
+                                style={{ color: pc.primary }}>
+                                {bundle.dataVolume}<span className="text-lg font-bold ml-0.5 opacity-80">{bundle.dataUnit}</span>
+                            </div>
+                        )}
+                        <h3 className="text-sm font-semibold text-gray-800 mt-1 leading-snug line-clamp-2">{bundle.name}</h3>
+                    </div>
+                    {inCart && (
+                        <div className="shrink-0 mt-0.5">
+                            <InCartBadge />
+                        </div>
+                    )}
+                </div>
+
+                {/* Validity + AFA badge */}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                        {fmtValidity(bundle.validity, bundle.validityUnit)}
+                    </span>
+                    {isAfa && bundle.requiresGhanaCard && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium flex items-center gap-1">
+                            <FaIdCard className="w-2.5 h-2.5" /> Ghana Card
+                        </span>
+                    )}
+                </div>
+
+                {bundle.description && (
+                    <p className="text-xs text-gray-400 line-clamp-2 mb-3 flex-1">{bundle.description}</p>
+                )}
+
+                {/* Price + CTA */}
+                <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-50">
+                    <span className="text-lg font-extrabold" style={{ color: pc.primary }}>{fmt(bundle.price)}</span>
+                    <button
+                        onClick={() => onAdd(bundle)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-all duration-150 active:scale-95 shadow-sm hover:shadow"
+                        style={{ backgroundColor: pc.primary }}
+                        aria-label={`Add ${bundle.name} to cart`}
+                    >
+                        <FaPlus className="w-3 h-3" /> Add
+                    </button>
+                </div>
+            </div>
+        </article>
+    );
+});
+
+// =============================================================================
+// Bundle Row — List View
+// =============================================================================
+
+const BundleRow = memo(({ bundle, inCart, onAdd }: {
+    bundle: PublicBundle; inCart: boolean; onAdd: (b: PublicBundle) => void;
+}) => {
+    const pc = getProviderColors(bundle.provider);
+    const hasData = bundle.dataVolume != null && bundle.dataVolume > 0;
+
+    return (
+        <div className="flex items-center gap-3 p-3 bg-white rounded-xl border transition-all hover:shadow-sm active:scale-[0.99]"
+            style={{ borderColor: inCart ? pc.primary + '50' : '#F1F5F9' }}
+        >
+            <div className="shrink-0 w-1 h-10 rounded-full" style={{ backgroundColor: pc.primary }} />
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                    {hasData && (
+                        <span className="font-extrabold text-base leading-none" style={{ color: pc.primary }}>
+                            {bundle.dataVolume}{bundle.dataUnit}
+                        </span>
+                    )}
+                    <span className="font-semibold text-sm text-gray-800 truncate">{bundle.name}</span>
+                    {inCart && <InCartBadge />}
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">{fmtValidity(bundle.validity, bundle.validityUnit)}</div>
+            </div>
+            <div className="shrink-0 text-right">
+                <div className="font-extrabold text-base" style={{ color: pc.primary }}>{fmt(bundle.price)}</div>
+            </div>
+            <button
+                onClick={() => onAdd(bundle)}
+                className="shrink-0 p-2 rounded-xl text-white transition-all active:scale-90"
+                style={{ backgroundColor: pc.primary }}
+                aria-label={`Add ${bundle.name}`}
+            >
+                <FaPlus className="w-3.5 h-3.5" />
+            </button>
+        </div>
+    );
+});
+
+// =============================================================================
+// Package Section Header (collapsible)
+// =============================================================================
+
+const PackageHeader = memo(({ pkgName, count, collapsed, onToggle, color }: {
+    pkgName: string; count: number; collapsed: boolean; onToggle: () => void; color: string;
+}) => (
+    <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-all text-left"
+        aria-expanded={!collapsed}
+    >
+        <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
+                style={{ backgroundColor: color }}>
+                <FaStore className="w-3.5 h-3.5" />
+            </div>
+            <div>
+                <div className="text-sm font-bold text-gray-900">{pkgName}</div>
+                <div className="text-xs text-gray-400">{count} bundle{count !== 1 ? 's' : ''}</div>
+            </div>
+        </div>
+        <div className="text-gray-400 transition-transform duration-200" style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
+            <FaChevronDown className="w-4 h-4" />
+        </div>
+    </button>
+));
+
+// =============================================================================
+// Full Loading Skeleton
+// =============================================================================
+
+const StoreSkeleton = memo(({ theme }: { theme: ThemeConfig }) => (
+    <div className="min-h-screen bg-gray-50">
+        {/* Hero skeleton */}
+        <div className="h-48 sm:h-64" style={{ background: theme.gradient, opacity: 0.15 }} />
+        <div className="max-w-5xl mx-auto px-4 -mt-8 space-y-6">
+            {/* Popular row skeleton */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+                <Skeleton height="1rem" width="160px" className="mb-3" />
+                <div className="flex gap-3 overflow-hidden">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="shrink-0 w-36 h-28 rounded-2xl bg-gray-100 animate-pulse" />
+                    ))}
+                </div>
+            </div>
+            {/* Bundle cards skeleton */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => <BundleCardSkeleton key={i} />)}
+            </div>
+        </div>
+    </div>
+));
+
+// =============================================================================
+// Error / Empty States
+// =============================================================================
+
+const StoreError = memo(({ error, onRetry }: { error: string; onRetry: () => void }) => (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="max-w-sm w-full text-center space-y-5">
+            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
+                <FaTriangleExclamation className="w-8 h-8 text-red-400" />
+            </div>
+            <div>
+                <h2 className="text-xl font-bold text-gray-900">Store unavailable</h2>
+                <p className="text-sm text-gray-500 mt-2">{error}</p>
+            </div>
+            <div className="flex gap-3 justify-center">
+                <button onClick={onRetry}
+                    className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm bg-gray-900 hover:bg-gray-800 transition active:scale-95">
+                    Try again
+                </button>
+                <button onClick={() => window.location.href = '/'}
+                    className="px-5 py-2.5 rounded-xl font-semibold text-sm border border-gray-200 hover:bg-gray-50 transition">
+                    Go home
+                </button>
+            </div>
+        </div>
+    </div>
+));
+
+const EmptyBundles = memo(({ searchTerm, onClear }: { searchTerm: string; onClear: () => void }) => (
+    <div className="py-20 text-center px-4">
+        <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <FaWifi className="w-8 h-8 text-gray-300" />
+        </div>
+        {searchTerm ? (
+            <>
+                <h3 className="text-lg font-bold text-gray-800">No results for "{searchTerm}"</h3>
+                <p className="text-sm text-gray-400 mt-1 mb-4">Try different keywords or clear the search.</p>
+                <button onClick={onClear}
+                    className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition">
+                    Clear search
+                </button>
+            </>
+        ) : (
+            <p className="text-gray-400 font-medium">No bundles available right now</p>
+        )}
+    </div>
+));
+
+// =============================================================================
+// Main Component
 // =============================================================================
 
 const PublicStore: React.FC = () => {
     const { businessName } = useParams<{ businessName: string }>();
+    const { addToast } = useToast();
 
-    // ---- Data state ----
+    // ── Data ─────────────────────────────────────────────────────────────────────
     const [storeData, setStoreData] = useState<PublicStorefront | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // ---- UI state ----
+    // ── UI ───────────────────────────────────────────────────────────────────────
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedProvider, setSelectedProvider] = useState<string>('all');
     const [viewMode, setViewMode] = useState<ViewMode>('grid');
     const [collapsedPackages, setCollapsedPackages] = useState<Set<string>>(new Set());
 
-    // ---- Cart state ----
+    // ── Cart ─────────────────────────────────────────────────────────────────────
     const [cart, setCart] = useState<CartItem[]>([]);
 
-    // ---- Add-to-cart dialog ----
-    const [showAddDialog, setShowAddDialog] = useState(false);
+    // ── Add-to-cart dialog ───────────────────────────────────────────────────────
     const [addBundle, setAddBundle] = useState<PublicBundle | null>(null);
     const [addPhone, setAddPhone] = useState('');
-    // AFA-specific fields
     const [addCustomerName, setAddCustomerName] = useState('');
     const [addGhanaCardNumber, setAddGhanaCardNumber] = useState('');
 
-    // ---- Checkout dialog ----
+    // ── Checkout ─────────────────────────────────────────────────────────────────
     const [showCheckout, setShowCheckout] = useState(false);
     const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('review');
     const [customerName, setCustomerName] = useState('');
     const [customerEmail, setCustomerEmail] = useState('');
     const [paymentType, setPaymentType] = useState<'paystack' | 'mobile_money' | 'bank_transfer'>('paystack');
-    // Reference for manual Mobile Money payments (transaction/transfer ID)
     const [transactionRef, setTransactionRef] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [orderError, setOrderError] = useState<string | null>(null);
     const [orderResult, setOrderResult] = useState<PublicOrderResult | null>(null);
-    // Paystack popup -> opener status (used to update confirmation UI when Paystack redirects back)
-    const [paystackCallbackStatus, setPaystackCallbackStatus] = useState<'idle' | 'success' | 'failed'>('idle');
+    const [paystackStatus, setPaystackStatus] = useState<'idle' | 'success' | 'failed'>('idle');
 
     // ==========================================================================
-    // Effects
+    // Data fetching
     // ==========================================================================
 
-    const fetchStore = React.useCallback(async () => {
+    const fetchStore = useCallback(async () => {
         if (!businessName) return;
         setLoading(true);
         setError(null);
         try {
             const data = await storefrontService.getPublicStorefront(businessName);
             setStoreData(data);
-        } catch (err: unknown) {
+        } catch (err) {
             setError(err instanceof Error ? err.message : 'Store not found');
-            setStoreData(null);
         } finally {
             setLoading(false);
         }
     }, [businessName]);
 
-    useEffect(() => {
-        fetchStore();
-    }, [fetchStore]);
+    useEffect(() => { fetchStore(); }, [fetchStore]);
 
-    // Page title
     useEffect(() => {
-        if (storeData) {
-            document.title = `${storeData.storefront.displayName} | Data Bundles`;
-        }
+        if (storeData) document.title = `${storeData.storefront.displayName} | Data Bundles`;
         return () => { document.title = 'DataHub'; };
     }, [storeData]);
 
+    // Paystack popup message listener
+    useEffect(() => {
+        const handler = (e: MessageEvent) => {
+            if (e.origin !== window.location.origin) return;
+            const d = e.data || {};
+            if (d.type !== 'PAYSTACK_STOREFRONT') return;
+            if (orderResult?.paystack?.reference && d.reference && d.reference !== orderResult.paystack.reference) return;
+            setPaystackStatus(d.status === 'success' ? 'success' : 'failed');
+            if (d.status === 'success') setCheckoutStep('confirmation');
+            else setOrderError(d.message || 'Payment verification failed');
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
+    }, [orderResult]);
+
     // ==========================================================================
-    // Computed
+    // Derived state (memoised)
     // ==========================================================================
 
-    const theme = useMemo(() => {
+    const theme = useMemo<ThemeConfig>(() => {
         if (!storeData) return DEFAULT_THEME;
         const b = storeData.storefront.branding;
         if (b?.customColors?.primary) {
@@ -162,45 +577,36 @@ const PublicStore: React.FC = () => {
                 primary: b.customColors.primary,
                 secondary: b.customColors.secondary || b.customColors.primary,
                 accent: b.customColors.accent || b.customColors.primary + '40',
-                bg: b.customColors.primary + '10',
+                bg: b.customColors.primary + '12',
                 text: '#FFFFFF',
+                gradient: `linear-gradient(135deg, ${b.customColors.primary}, ${b.customColors.secondary || b.customColors.primary})`,
+                cardBorder: b.customColors.primary + '30',
+                heroBg: b.customColors.primary + '10',
             };
         }
         const key = storeData.storefront.settings?.theme || 'blue';
-        return THEME_COLORS[key] || DEFAULT_THEME;
+        return THEMES[key] || DEFAULT_THEME;
     }, [storeData]);
 
     const branding: StorefrontBranding = storeData?.storefront.branding || {};
     const storeLayout = branding.layout || 'modern';
 
-    // Unique providers (prefer grouped `storeData.providers` returned by the backend)
-    // logo shape comes from the shared `Provider` type (object with `url` + `alt`) or a string URL
-    const providers = useMemo<Array<{ code: string; name: string; logo?: { url?: string; alt?: string } | string }>>(() => {
+    const providers = useMemo(() => {
         if (!storeData) return [];
         if (Array.isArray(storeData.providers) && storeData.providers.length > 0) {
             return storeData.providers.map(p => ({ code: p.code, name: p.name, logo: p.logo }));
         }
-
-        // fallback — derive from flat bundles list
         const map = new Map<string, string>();
         for (const b of storeData.bundles) {
             const code = b.provider || 'Unknown';
             if (!map.has(code)) map.set(code, b.providerName || code);
         }
-        return Array.from(map.entries()).map(([code, name]) => ({ code, name }));
+        return Array.from(map.entries()).map(([code, name]) => ({ code, name, logo: undefined }));
     }, [storeData]);
 
-    // Helper: normalize logo value (object or string) to a URL string or undefined
-    const getLogoUrl = (logo?: { url?: string; alt?: string } | string) => {
-        if (!logo) return undefined;
-        return typeof logo === 'string' ? logo : logo.url;
-    };
-
-    // Grouped bundles: provider → package → bundles[]
     const groupedBundles = useMemo(() => {
         if (!storeData) return new Map<string, Map<string, PublicBundle[]>>();
         let filtered = storeData.bundles;
-
         if (searchTerm.trim()) {
             const term = searchTerm.toLowerCase();
             filtered = filtered.filter(b =>
@@ -210,11 +616,7 @@ const PublicStore: React.FC = () => {
                 (b.packageName?.toLowerCase() || '').includes(term)
             );
         }
-
-        if (selectedProvider !== 'all') {
-            filtered = filtered.filter(b => b.provider === selectedProvider);
-        }
-
+        if (selectedProvider !== 'all') filtered = filtered.filter(b => b.provider === selectedProvider);
         const result = new Map<string, Map<string, PublicBundle[]>>();
         for (const bundle of filtered) {
             const provCode = bundle.provider || 'Unknown';
@@ -227,188 +629,80 @@ const PublicStore: React.FC = () => {
         return result;
     }, [storeData, searchTerm, selectedProvider]);
 
-    // Cart computed
+    // Top 8 bundles sorted by some heuristic (price asc for now; swap for purchase_count when API provides it)
+    const popularBundles = useMemo(() => {
+        if (!storeData?.bundles.length) return [];
+        return [...storeData.bundles].sort((a, b) => a.price - b.price).slice(0, 8);
+    }, [storeData]);
+
     const cartTotal = useMemo(() => cart.reduce((s, i) => s + i.bundle.price, 0), [cart]);
     const cartCount = cart.length;
+    const cartSet = useMemo(() => new Set(cart.map(i => i.bundle._id)), [cart]);
 
-    const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-    // Email is only required for Paystack payments (backend enforces this as well)
     const requiresEmail = paymentType === 'paystack';
-    const isEmailOkay = !requiresEmail ? true : isValidEmail(customerEmail);
-
+    const isEmailOkay = requiresEmail ? isValidEmail(customerEmail) : (!customerEmail || isValidEmail(customerEmail));
     const canSubmitOrder = Boolean(
-        customerName.trim() &&
-        isEmailOkay &&
-        (paymentType !== 'mobile_money' || transactionRef.trim().length > 0)
+        customerName.trim() && isEmailOkay &&
+        (paymentType !== 'mobile_money' || transactionRef.trim())
     );
 
     // ==========================================================================
-    // Handlers
+    // Handlers (stable refs via useCallback)
     // ==========================================================================
 
-    const addToCart = (bundle: PublicBundle, phone: string, customerName?: string, ghanaCardNumber?: string) => {
-        const normalized = normalizePhone(phone);
-        setCart(prev => [...prev, {
-            bundle,
-            customerPhone: normalized,
-            customerName,
-            ghanaCardNumber
-        }]);
-    };
-
-    // Listen for messages from Paystack popup callback (storefront flow)
-    React.useEffect(() => {
-        const handler = (event: MessageEvent) => {
-            try {
-                if (event.origin !== window.location.origin) return;
-                const data = event.data || {};
-                if (!data || data.type !== 'PAYSTACK_STOREFRONT') return;
-
-                // If we have an orderResult with a reference, ensure it matches
-                if (orderResult?.paystack?.reference && data.reference && data.reference !== orderResult.paystack.reference) return;
-
-                setPaystackCallbackStatus(data.status === 'success' ? 'success' : 'failed');
-                if (data.status === 'success') {
-                    // show confirmation UI
-                    setCheckoutStep('confirmation');
-                } else {
-                    setOrderError(data.message || 'Payment verification failed');
-                }
-            } catch (err) {
-                /* ignore */
-            }
-        };
-        window.addEventListener('message', handler);
-        return () => window.removeEventListener('message', handler);
-    }, [orderResult]);
-
-    const removeFromCart = (index: number) => {
-        setCart(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const togglePackage = (key: string) => {
-        setCollapsedPackages(prev => {
-            const next = new Set(prev);
-            if (next.has(key)) next.delete(key); else next.add(key);
-            return next;
-        });
-    };
-
-    // Add-to-cart dialog
-    const openAddDialog = (bundle: PublicBundle) => {
+    const openAddDialog = useCallback((bundle: PublicBundle) => {
         setAddBundle(bundle);
         setAddPhone('');
         setAddCustomerName('');
         setAddGhanaCardNumber('');
-        setShowAddDialog(true);
-    };
+    }, []);
 
-    const confirmAddToCart = () => {
+    const closeAddDialog = useCallback(() => setAddBundle(null), []);
+
+    const confirmAddToCart = useCallback(() => {
         if (!addBundle || !isValidPhone(addPhone)) return;
-
-        // For AFA bundles, validate required fields
         const isAfa = addBundle.provider?.toUpperCase() === 'AFA';
-        if (isAfa && addBundle.requiresGhanaCard) {
-            if (!addCustomerName.trim()) return;
-            if (!addGhanaCardNumber.trim()) return;
-        }
-
-        addToCart(addBundle, addPhone, isAfa ? addCustomerName : undefined, isAfa ? addGhanaCardNumber : undefined);
-        setShowAddDialog(false);
+        if (isAfa && addBundle.requiresGhanaCard && (!addCustomerName.trim() || !addGhanaCardNumber.trim())) return;
+        setCart(prev => [...prev, {
+            bundle: addBundle,
+            customerPhone: normalizePhone(addPhone),
+            customerName: isAfa ? addCustomerName : undefined,
+            ghanaCardNumber: isAfa ? addGhanaCardNumber : undefined,
+        }]);
         setAddBundle(null);
-    };
+    }, [addBundle, addPhone, addCustomerName, addGhanaCardNumber]);
 
-    // Checkout
-    const openCheckout = () => {
-        if (cart.length === 0) return;
+    const removeFromCart = useCallback((idx: number) => {
+        setCart(prev => prev.filter((_, i) => i !== idx));
+    }, []);
 
-        // Pre-fill customer info from AFA items (if all items have same customer)
-        const afaItems = cart.filter(item => item.bundle.provider?.toUpperCase() === 'AFA' && item.customerName);
-        if (afaItems.length > 0) {
-            const firstAfaItem = afaItems[0];
-            const allSameCustomer = afaItems.every(item =>
-                item.customerName === firstAfaItem.customerName &&
-                item.customerPhone === firstAfaItem.customerPhone
-            );
-
-            if (allSameCustomer) {
-                setCustomerName(firstAfaItem.customerName || '');
+    const togglePackage = useCallback((key: string) => {
+        setCollapsedPackages(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) {
+                next.delete(key);
+            } else {
+                next.add(key);
             }
-        }
+            return next;
+        });
+    }, []);
 
+    const openCheckout = useCallback(() => {
+        if (!cart.length) return;
+        const afaItem = cart.find(i => i.bundle.provider?.toUpperCase() === 'AFA' && i.customerName);
+        if (afaItem) setCustomerName(afaItem.customerName || '');
         setCheckoutStep('review');
         setOrderError(null);
         setOrderResult(null);
+        setPaystackStatus('idle');
         setShowCheckout(true);
-        const methods = (storeData?.storefront.paymentMethods || []).filter(m => m.type === 'mobile_money');
-        if (methods.length > 0) setPaymentType('mobile_money');
-    };
+        const methods = storeData?.storefront.paymentMethods || [];
+        if (methods.some(m => m.type === 'mobile_money')) setPaymentType('mobile_money');
+        else setPaymentType('paystack');
+    }, [cart, storeData]);
 
-    const submitOrder = async () => {
-        if (!businessName || !storeData || !canSubmitOrder) return;
-        setSubmitting(true);
-        setOrderError(null);
-        // Open a blank popup synchronously so navigation to Paystack won't be blocked by popup blockers
-        const popup = window.open("", "_blank");
-
-        try {
-            // Get Ghana Card number from AFA items (use the first one if multiple)
-            const afaGhanaCard = cart.find(item =>
-                item.bundle.provider?.toUpperCase() === 'AFA' &&
-                item.bundle.requiresGhanaCard &&
-                item.ghanaCardNumber
-            )?.ghanaCardNumber;
-
-            const orderData: PublicOrderData = {
-                items: cart.map(item => ({
-                    bundleId: item.bundle._id,
-                    quantity: 1,
-                    customerPhone: item.customerPhone,
-                })),
-                customerInfo: {
-                    name: customerName.trim(),
-                    phone: cart[0]?.customerPhone || '',
-                    email: customerEmail.trim() || undefined,
-                    ...(afaGhanaCard && { ghanaCardNumber: afaGhanaCard }),
-                },
-                // include payment method so backend validation succeeds
-                paymentMethod: {
-                    type: paymentType as 'paystack' | 'mobile_money' | 'bank_transfer',
-                    // include reference for mobile_money (if provided)
-                    reference: transactionRef.trim() || undefined,
-                },
-            };
-
-            const result = await storefrontService.createPublicOrder(businessName, orderData);
-
-            // If backend returned Paystack init data, navigate the popup to Paystack checkout
-            const paystackUrl = result?.paystack?.authorizationUrl || (result?.paystack as unknown as { authorization_url?: string })?.authorization_url;
-            if (paystackUrl) {
-                try {
-                    popup!.location.href = paystackUrl;
-                } catch {
-                    // Fallback when assigning href on cross-origin popup fails
-                    popup?.close();
-                    window.open(paystackUrl, "_blank");
-                }
-            } else {
-                // Close the blank popup if it is not needed
-                try { if (popup && !popup.closed) popup.close(); } catch { /* ignore */ }
-            }
-
-            setOrderResult(result);
-            setCheckoutStep('confirmation');
-            setCart([]);
-        } catch (err: unknown) {
-            setOrderError(err instanceof Error ? err.message : 'Failed to place order. Please try again.');
-            try { if (popup && !popup.closed) popup.close(); } catch { /* ignore */ }
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const resetCheckout = () => {
+    const resetCheckout = useCallback(() => {
         setShowCheckout(false);
         setCheckoutStep('review');
         setCustomerName('');
@@ -416,112 +710,123 @@ const PublicStore: React.FC = () => {
         setTransactionRef('');
         setOrderError(null);
         setOrderResult(null);
-        setPaystackCallbackStatus('idle');
-    };
+        setPaystackStatus('idle');
+    }, []);
+
+    const submitOrder = useCallback(async () => {
+        if (!businessName || !storeData || !canSubmitOrder) return;
+        setSubmitting(true);
+        setOrderError(null);
+        // keep a popup reference around for fallback only
+        let popup: Window | null = null;
+        try {
+            const afaGhanaCard = cart.find(i =>
+                i.bundle.provider?.toUpperCase() === 'AFA' && i.bundle.requiresGhanaCard && i.ghanaCardNumber
+            )?.ghanaCardNumber;
+
+            const orderData: PublicOrderData = {
+                items: cart.map(i => ({ bundleId: i.bundle._id, quantity: 1, customerPhone: i.customerPhone })),
+                customerInfo: {
+                    name: customerName.trim(),
+                    phone: cart[0]?.customerPhone || '',
+                    email: customerEmail.trim() || undefined,
+                    ...(afaGhanaCard && { ghanaCardNumber: afaGhanaCard }),
+                },
+                paymentMethod: {
+                    type: paymentType,
+                    reference: transactionRef.trim() || undefined,
+                },
+            };
+
+            const result = await storefrontService.createPublicOrder(businessName, orderData);
+            const paystackData = result?.paystack as ({ authorizationUrl?: string; authorization_url?: string; reference?: string; } | undefined);
+            const paystackUrl = paystackData?.authorizationUrl || paystackData?.authorization_url;
+            const reference = paystackData?.reference;
+
+            setOrderResult(result);
+            setCheckoutStep('confirmation');
+            setCart([]);
+
+            if (paystackUrl && reference) {
+                // attempt inline checkout
+                try {
+                    await loadPaystackScript();
+                    const { publicKey } = await walletService.getPaystackPublicKey();
+                    if (!publicKey) throw new Error('Paystack public key not available');
+
+                    const PaystackPop = (window as any).PaystackPop;
+                    if (!PaystackPop) throw new Error('Paystack script failed to load');
+                    const handler = PaystackPop.setup({
+                        key: publicKey,
+                        email: customerEmail || undefined,
+                        amount: Math.round(cartTotal * 100),
+                        currency: 'GHS',
+                        ref: reference,
+                        onClose: () => {
+                            addToast('Payment window closed. No charge was made.', 'info', 4000);
+                        },
+                        callback: (response: { reference: string }) => {
+                            walletService
+                                .verifyPaystackReference(response.reference)
+                                .then(() => {
+                                    setPaystackStatus('success');
+                                    addToast('Payment successful! Order is processing.', 'success', 5000);
+                                })
+                                .catch(() => {
+                                    setPaystackStatus('failed');
+                                    addToast('Payment received but verification pending.', 'warning', 8000);
+                                });
+                        },
+                    });
+                    handler.openIframe();
+                } catch {
+                    // fallback to new tab if inline fails
+                    popup = window.open('', '_blank');
+                    if (popup) {
+                        try { popup.location.href = paystackUrl; } catch {
+                            (popup as any).close();
+                            window.open(paystackUrl, '_blank');
+                        }
+                    } else {
+                        window.open(paystackUrl, '_blank');
+                    }
+                }
+            }
+        } catch (err) {
+            setOrderError(err instanceof Error ? err.message : 'Failed to place order. Please try again.');
+            if (popup && !(popup as any).closed) {
+                try { (popup as any).close(); } catch { /* */ }
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    }, [businessName, storeData, canSubmitOrder, cart, customerName, customerEmail, paymentType, transactionRef, cartTotal, addToast]);
 
     // ==========================================================================
-    // Loading / Error
+    // Conditional renders
     // ==========================================================================
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 pb-safe">
-                <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-                    {/* Header skeleton */}
-                    <div className="rounded-2xl p-6" style={{ background: `linear-gradient(135deg, ${DEFAULT_THEME.primary}, ${DEFAULT_THEME.secondary})` }}>
-                        <div className="max-w-4xl mx-auto text-center">
-                            <Skeleton variant="circular" width={80} height={80} />
-                            <div className="mt-4">
-                                <Skeleton height="1.75rem" width="360px" />
-                                <Skeleton height="1rem" width="280px" className="mt-3" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Providers skeleton */}
-                    <div>
-                        <Skeleton height="1rem" width="160px" />
-                        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <div key={i} className="p-3 bg-white rounded-2xl shadow-sm">
-                                    <Skeleton variant="circular" width={48} height={48} />
-                                    <Skeleton height="0.75rem" width="70%" className="mt-3" />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Search + products skeleton */}
-                    <div>
-                        <Skeleton height="2.5rem" width="100%" />
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <Card key={i}>
-                                    <CardBody className="p-4">
-                                        <div className="flex gap-3">
-                                            <Skeleton variant="rectangular" width={96} height={80} />
-                                            <div className="flex-1">
-                                                <Skeleton height="1rem" width="70%" />
-                                                <Skeleton height="0.75rem" width="50%" className="mt-2" />
-                                                <div className="mt-4 flex items-end justify-between">
-                                                    <Skeleton height="1.25rem" width="90px" />
-                                                    <Skeleton height="2rem" width="80px" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardBody>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (error || !storeData) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-                <Card className="max-w-lg w-full">
-                    <CardBody className="text-center py-10 space-y-4">
-                        <FaTriangleExclamation className="mx-auto h-12 w-12 text-red-400" />
-                        <h2 className="text-lg font-semibold text-gray-900">Couldn’t load this store</h2>
-                        <p className="text-sm text-gray-500">{error ?? 'The storefront is not available.'}</p>
-                        <div className="flex items-center justify-center gap-3 pt-2">
-                            <Button onClick={() => fetchStore()} size="md">Retry</Button>
-                            <Button variant="ghost" onClick={() => window.location.href = '/'}>Back to home</Button>
-                        </div>
-                    </CardBody>
-                </Card>
-            </div>
-        );
-    }
+    if (loading) return <StoreSkeleton theme={DEFAULT_THEME} />;
+    if (error || !storeData) return <StoreError error={error ?? 'Store not available'} onRetry={fetchStore} />;
 
     const { storefront } = storeData;
 
     // ==========================================================================
-    // Render: Store Header
+    // Header renderers (layout-specific)
     // ==========================================================================
 
     const renderHeader = () => {
-        const showBanner = branding.showBanner !== false && branding.bannerUrl;
-
         if (storeLayout === 'minimal') {
             return (
-                <header className="py-8 px-4">
-                    <div className="max-w-4xl mx-auto text-center">
-                        {branding.logoUrl && (
-                            <img
-                                src={branding.logoUrl}
-                                alt={storefront.displayName}
-                                className="h-16 w-16 rounded-full mx-auto mb-4 object-cover border-2 shadow-sm"
-                                style={{ borderColor: theme.primary }}
-                            />
-                        )}
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{storefront.displayName}</h1>
-                        {branding.tagline && <p className="mt-2 text-gray-500">{branding.tagline}</p>}
-                        {storefront.description && <p className="mt-1 text-sm text-gray-400">{storefront.description}</p>}
-                    </div>
+                <header className="pt-10 pb-6 px-4 text-center" style={{ backgroundColor: theme.heroBg }}>
+                    {branding.logoUrl && (
+                        <img src={branding.logoUrl} alt={storefront.displayName}
+                            className="h-14 w-14 rounded-2xl mx-auto mb-4 object-cover shadow"
+                            style={{ border: `2px solid ${theme.primary}40` }}
+                        />
+                    )}
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">{storefront.displayName}</h1>
+                    {branding.tagline && <p className="text-sm text-gray-500 mt-1">{branding.tagline}</p>}
                 </header>
             );
         }
@@ -529,26 +834,22 @@ const PublicStore: React.FC = () => {
         if (storeLayout === 'classic') {
             return (
                 <header>
-                    {showBanner && (
-                        <div className="w-full h-40 sm:h-56 overflow-hidden">
-                            <img src={branding.bannerUrl} alt="Store banner" className="w-full h-full object-cover" />
+                    {branding.bannerUrl && branding.showBanner !== false && (
+                        <div className="h-36 overflow-hidden">
+                            <img src={branding.bannerUrl} alt="" className="w-full h-full object-cover" />
                         </div>
                     )}
-                    <div className="px-4 py-6" style={{ backgroundColor: theme.bg }}>
+                    <div className="px-4 py-5 border-b-4" style={{ backgroundColor: theme.bg, borderColor: theme.primary }}>
                         <div className="max-w-5xl mx-auto flex items-center gap-4">
                             {branding.logoUrl && (
-                                <img
-                                    src={branding.logoUrl}
-                                    alt={storefront.displayName}
-                                    className="h-14 w-14 rounded-xl object-cover border-2 shadow"
+                                <img src={branding.logoUrl} alt={storefront.displayName}
+                                    className="h-14 w-14 rounded-xl object-cover border-2 shadow-md"
                                     style={{ borderColor: theme.primary }}
                                 />
                             )}
                             <div>
-                                <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: theme.secondary }}>
-                                    {storefront.displayName}
-                                </h1>
-                                {branding.tagline && <p className="text-sm text-gray-600">{branding.tagline}</p>}
+                                <h1 className="text-2xl font-black" style={{ color: theme.secondary }}>{storefront.displayName}</h1>
+                                {branding.tagline && <p className="text-sm" style={{ color: theme.secondary + 'aa' }}>{branding.tagline}</p>}
                             </div>
                         </div>
                     </div>
@@ -556,29 +857,30 @@ const PublicStore: React.FC = () => {
             );
         }
 
-        // Modern (default)
+        // Modern (default) — bold gradient hero
         return (
-            <header
-                className="relative overflow-hidden"
-                style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }}
-            >
-                {showBanner && (
-                    <img src={branding.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+            <header className="relative overflow-hidden" style={{ background: theme.gradient }}>
+                {branding.bannerUrl && branding.showBanner !== false && (
+                    <img src={branding.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15 mix-blend-overlay" />
                 )}
-                <div className="relative px-4 py-10 sm:py-16 text-center">
+                {/* Decorative circles */}
+                <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/5" />
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5" />
+
+                <div className="relative px-4 pt-10 pb-12 sm:pt-16 sm:pb-20 text-center">
                     {branding.logoUrl && (
-                        <img
-                            src={branding.logoUrl}
-                            alt={storefront.displayName}
-                            className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl mx-auto mb-4 object-cover border-2 border-white/30 shadow-lg"
+                        <img src={branding.logoUrl} alt={storefront.displayName}
+                            className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl mx-auto mb-4 object-cover border-2 border-white/30 shadow-xl"
                         />
                     )}
-                    <h1 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-sm">
+                    <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-none">
                         {storefront.displayName}
                     </h1>
-                    {branding.tagline && <p className="mt-2 text-white/80 text-sm sm:text-base">{branding.tagline}</p>}
+                    {branding.tagline && (
+                        <p className="mt-3 text-white/70 text-sm sm:text-base max-w-xs mx-auto">{branding.tagline}</p>
+                    )}
                     {storefront.description && (
-                        <p className="mt-1 text-white/60 text-sm max-w-lg mx-auto">{storefront.description}</p>
+                        <p className="mt-1 text-white/50 text-xs max-w-sm mx-auto">{storefront.description}</p>
                     )}
                 </div>
             </header>
@@ -586,89 +888,75 @@ const PublicStore: React.FC = () => {
     };
 
     // ==========================================================================
-    // Render: Toolbar (Search + Layout Toggle + Provider Tabs)
+    // Toolbar: Search + View Toggle + Provider Carousel
     // ==========================================================================
 
     const renderToolbar = () => (
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-4 py-3">
-            <div className="max-w-5xl mx-auto space-y-3">
-                {/* Search + View Toggle */}
+        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+            <div className="max-w-5xl mx-auto px-4 py-3 space-y-3">
+                {/* Search + view toggle row */}
                 <div className="flex items-center gap-2">
                     <div className="relative flex-1">
-                        <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
                         <input
-                            type="text"
-                            placeholder="Search bundles..."
+                            type="search"
+                            placeholder="Search bundles…"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition"
+                            className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent transition placeholder:text-gray-400"
+                            style={{ '--tw-ring-color': theme.primary + '40' } as React.CSSProperties}
                         />
                     </div>
-                    <div className="flex rounded-lg border border-gray-200 overflow-hidden shrink-0">
-                        <button
-                            onClick={() => setViewMode('grid')}
-                            className={`p-2.5 transition ${viewMode === 'grid' ? 'text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
-                            style={viewMode === 'grid' ? { backgroundColor: theme.primary } : undefined}
-                            title="Grid view"
-                        >
-                            <FaGrip className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className={`p-2.5 transition ${viewMode === 'list' ? 'text-white' : 'text-gray-500 bg-white hover:bg-gray-50'}`}
-                            style={viewMode === 'list' ? { backgroundColor: theme.primary } : undefined}
-                            title="List view"
-                        >
-                            <FaList className="w-4 h-4" />
-                        </button>
+                    <div className="flex rounded-xl border border-gray-200 overflow-hidden shrink-0">
+                        {(['grid', 'list'] as ViewMode[]).map(mode => (
+                            <button key={mode} onClick={() => setViewMode(mode)}
+                                className="p-2.5 transition-colors"
+                                style={viewMode === mode ? { backgroundColor: theme.primary, color: '#fff' } : { backgroundColor: '#fff', color: '#6B7280' }}
+                                title={`${mode} view`}
+                            >
+                                {mode === 'grid' ? <FaGrip className="w-4 h-4" /> : <FaList className="w-4 h-4" />}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Provider selector (visual carousel cards) */}
+                {/* Provider carousel — only shown when multiple providers */}
                 {providers.length > 1 && (
                     <div className="-mx-4 px-4">
-                        <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-3 snap-x snap-mandatory">
-                            {/* All providers card */}
+                        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 snap-x">
+                            {/* All */}
                             <button
                                 onClick={() => setSelectedProvider('all')}
-                                className={`shrink-0 w-36 sm:w-44 flex-none p-3 rounded-2xl border transition transform-gpu ${selectedProvider === 'all' ? 'scale-105 shadow-lg' : 'bg-white hover:shadow-sm'}`}
-                                style={selectedProvider === 'all' ? { borderColor: theme.primary } : undefined}
+                                className="shrink-0 snap-start flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border-2 transition-all"
+                                style={selectedProvider === 'all'
+                                    ? { borderColor: theme.primary, backgroundColor: theme.primary, color: '#fff' }
+                                    : { borderColor: '#E5E7EB', backgroundColor: '#fff', color: '#374151' }}
                             >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gray-100 text-sm font-bold text-gray-700">All</div>
-                                    <div className="text-left">
-                                        <div className="text-sm font-semibold text-gray-900">All Providers</div>
-                                        <div className="text-xs text-gray-500">{storeData?.bundles?.length ?? 0} bundles</div>
-                                    </div>
-                                </div>
+                                All · {storeData?.bundles.length ?? 0}
                             </button>
-
-                            {providers.map((prov) => {
+                            {providers.map(prov => {
                                 const pc = getProviderColors(prov.code);
                                 const isActive = selectedProvider === prov.code;
-                                const provMap = groupedBundles.get(prov.code);
-                                const count = provMap ? Array.from(provMap.values()).reduce((s, arr) => s + arr.length, 0) : 0;
-
+                                const count = groupedBundles.get(prov.code)
+                                    ? Array.from(groupedBundles.get(prov.code)!.values()).reduce((s, a) => s + a.length, 0) : 0;
                                 return (
                                     <button
                                         key={prov.code}
                                         onClick={() => setSelectedProvider(prov.code)}
-                                        className={`shrink-0 w-36 sm:w-44 flex-none p-3 rounded-2xl transition transform-gpu text-left ${isActive ? 'scale-105 shadow-lg' : 'bg-white hover:shadow-sm'}`}
-                                        style={isActive ? { border: `1px solid ${pc.primary}`, backgroundColor: pc.primary + '08' } : undefined}
+                                        className="shrink-0 snap-start flex items-center gap-2 px-3 py-2 rounded-full text-sm font-semibold border-2 transition-all"
+                                        style={isActive
+                                            ? { borderColor: pc.primary, backgroundColor: pc.primary, color: '#fff' }
+                                            : { borderColor: '#E5E7EB', backgroundColor: '#fff', color: '#374151' }}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center font-bold text-white" style={{ backgroundColor: pc.primary }}>
-                                                {getLogoUrl(prov.logo) ? (
-                                                    <img src={getLogoUrl(prov.logo)} alt={prov.logo && typeof prov.logo === 'object' ? prov.logo.alt || prov.name : prov.name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <span className="text-sm">{prov.name.charAt(0)}</span>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <div className="text-sm font-semibold text-gray-900">{prov.name}</div>
-                                                <div className="text-xs text-gray-500">{count} bundles</div>
-                                            </div>
-                                        </div>
+                                        {getLogoUrl(prov.logo) ? (
+                                            <img src={getLogoUrl(prov.logo)} alt={prov.name} className="w-4 h-4 rounded-full object-cover" />
+                                        ) : (
+                                            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                                                style={{ backgroundColor: pc.primary }}>
+                                                {prov.name.charAt(0)}
+                                            </span>
+                                        )}
+                                        {prov.name} · {count}
                                     </button>
                                 );
                             })}
@@ -680,262 +968,70 @@ const PublicStore: React.FC = () => {
     );
 
     // ==========================================================================
-    // Render: Bundle Card (Grid View)
-    // ==========================================================================
-
-    const renderBundleCard = (bundle: PublicBundle) => {
-        const pc = getProviderColors(bundle.provider);
-        const isAfa = bundle.provider?.toUpperCase() === 'AFA';
-        const inCart = cart.some(i => i.bundle._id === bundle._id);
-        const hasData = bundle.dataVolume != null && bundle.dataVolume > 0;
-
-        return (
-            <Card key={bundle._id} variant="elevated" className="group hover:shadow-lg transition-all duration-200 overflow-hidden">
-                {/* Top accent */}
-                <div className="h-1" style={{ backgroundColor: pc.primary }} />
-                <CardBody className="p-4">
-                    <div className="flex flex-col h-full">
-                        {/* Highlight: data volume + title */}
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="flex items-start gap-3">
-                                <div className="flex flex-col items-start">
-                                    {hasData ? (
-                                        <div className="text-2xl font-extrabold" style={{ color: pc.primary }}>{bundle.dataVolume}{bundle.dataUnit}</div>
-                                    ) : null}
-                                    <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 mt-1">{bundle.name}</h3>
-                                    {bundle.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{bundle.description}</p>}
-                                </div>
-                            </div>
-
-                            {inCart && <Badge colorScheme="success" size="xs" variant="solid">In Cart</Badge>}
-                        </div>
-
-                        {/* Data / validity badges (compact) */}
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                            {hasData && (
-                                <Badge colorScheme="info" size="xs">
-                                    {bundle.dataVolume} {bundle.dataUnit}
-                                </Badge>
-                            )}
-                            <Badge colorScheme="gray" size="xs">
-                                {formatValidity(bundle.validity, bundle.validityUnit)}
-                            </Badge>
-                            {isAfa && bundle.requiresGhanaCard && (
-                                <Badge colorScheme="warning" size="xs" variant="outline">
-                                    <FaIdCard className="inline w-3 h-3 mr-1" />Ghana Card
-                                </Badge>
-                            )}
-                        </div>
-
-                        {/* Description */}
-                        {bundle.description && (
-                            <p className="text-xs text-gray-500 mb-3 line-clamp-2">{bundle.description}</p>
-                        )}
-
-                        {/* Price + Add button */}
-                        <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
-                            <span className="text-lg font-bold" style={{ color: pc.primary }}>
-                                {formatPrice(bundle.price)}
-                            </span>
-                            <Button
-                                size="sm"
-                                className="font-medium"
-                                style={{ backgroundColor: pc.primary, color: pc.text }}
-                                onClick={() => openAddDialog(bundle)}
-                            >
-                                <FaPlus className="w-3 h-3 mr-1" /> Add
-                            </Button>
-                        </div>
-                    </div>
-                </CardBody>
-            </Card>
-        );
-    };
-
-    // ==========================================================================
-    // Render: Bundle Row (List View)
-    // ==========================================================================
-
-    const renderBundleRow = (bundle: PublicBundle) => {
-        const pc = getProviderColors(bundle.provider);
-        const isAfa = bundle.provider?.toUpperCase() === 'AFA';
-        const inCart = cart.some(i => i.bundle._id === bundle._id);
-        const hasData = bundle.dataVolume != null && bundle.dataVolume > 0;
-
-        return (
-            <div
-                key={bundle._id}
-                className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-xl border border-gray-100 hover:shadow-md transition-all"
-            >
-                {/* Accent bar */}
-                <div className="shrink-0 w-1.5 h-12 rounded-full" style={{ backgroundColor: pc.primary }} />
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900 text-sm truncate">{bundle.name}</span>
-                        {inCart && <Badge colorScheme="success" size="xs" variant="solid">In Cart</Badge>}
-                        {isAfa && bundle.requiresGhanaCard && (
-                            <Badge colorScheme="warning" size="xs" variant="outline">
-                                <FaIdCard className="inline w-3 h-3 mr-0.5" />GH Card
-                            </Badge>
-                        )}
-                    </div>
-                    <div className="flex gap-2 mt-1">
-                        {hasData && (
-                            <span className="text-xs text-gray-500">{bundle.dataVolume} {bundle.dataUnit}</span>
-                        )}
-                        {hasData && <span className="text-xs text-gray-400">•</span>}
-                        <span className="text-xs text-gray-500">{formatValidity(bundle.validity, bundle.validityUnit)}</span>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3 mt-3">
-                    <div className="flex-1">
-                        <div className="text-lg font-extrabold" style={{ color: pc.primary }}>{formatPrice(bundle.price)}</div>
-                        <div className="text-xs text-gray-400">{bundle.packageName || bundle.category || 'General'}</div>
-                    </div>
-
-                    <div className="flex gap-2 items-center">
-                        <Button size="md" style={{ backgroundColor: pc.primary, color: pc.text }} onClick={() => openAddDialog(bundle)}>
-                            Buy
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => openAddDialog(bundle)} aria-label="Add to cart">
-                            <FaPlus className="w-3 h-3" />
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    // ==========================================================================
-    // Render: Bundle Sections (Provider → Package → Bundles)
+    // Bundle Sections
     // ==========================================================================
 
     const renderBundleSections = () => {
         if (groupedBundles.size === 0) {
-            // If there was a search query, show a helpful empty-search UI
-            if (searchTerm.trim()) {
-                return (
-                    <div className="max-w-5xl mx-auto px-4 py-16 text-center">
-                        <FaMagnifyingGlass className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                        <h3 className="text-lg font-semibold text-gray-900">No results for “{searchTerm}”</h3>
-                        <p className="text-sm text-gray-500 mt-2">Try different keywords or clear the search to see all bundles.</p>
-                        <div className="mt-4 flex items-center justify-center gap-3">
-                            <Button onClick={() => setSearchTerm('')}>Clear search</Button>
-                            <Button variant="outline" onClick={() => setSelectedProvider('all')}>Show all providers</Button>
-                        </div>
-                        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {/* Suggestions: show top bundles or provider cards */}
-                            {providers.slice(0, 3).map(p => (
-                                <Card key={p.code} className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: getProviderColors(p.code).primary }}>
-                                            {getLogoUrl(p.logo) ? <img src={getLogoUrl(p.logo)} alt={p.logo && typeof p.logo === 'object' ? p.logo.alt || p.name : p.name} className="w-full h-full object-cover rounded-lg" /> : p.name.charAt(0)}
-                                        </div>
-                                        <div className="text-left">
-                                            <div className="text-sm font-semibold">{p.name}</div>
-                                            <div className="text-xs text-gray-400">View packages</div>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="max-w-5xl mx-auto px-4 py-16 text-center">
-                    <FaWifi className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                    <p className="text-gray-500 font-medium">No bundles found</p>
-                    {searchTerm && <p className="text-sm text-gray-400 mt-1">Try a different search term</p>}
-                </div>
-            );
+            return <EmptyBundles searchTerm={searchTerm} onClear={() => { setSearchTerm(''); setSelectedProvider('all'); }} />;
         }
 
-        // Prefer backend-provided providers/packages structure when available
+        const renderPackageBundles = (bundles: PublicBundle[]) =>
+            viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {bundles.map(b => (
+                        <BundleCard key={b._id} bundle={b} inCart={cartSet.has(b._id)} onAdd={openAddDialog} />
+                    ))}
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    {bundles.map(b => (
+                        <BundleRow key={b._id} bundle={b} inCart={cartSet.has(b._id)} onAdd={openAddDialog} />
+                    ))}
+                </div>
+            );
+
+        // Prefer structured providers data from backend
         if (Array.isArray(storeData.providers) && storeData.providers.length > 0) {
             return (
-                <div className="max-w-5xl mx-auto px-4 py-6 space-y-8">
+                <div className="max-w-5xl mx-auto px-4 py-5 space-y-8">
                     {storeData.providers
-                        .filter(p => selectedProvider === 'all' ? true : p.code === selectedProvider)
-                        .map((prov) => {
+                        .filter(p => selectedProvider === 'all' || p.code === selectedProvider)
+                        .map(prov => {
                             const pc = getProviderColors(prov.code);
-
-                            // filter packages/bundles by search term
-                            const filteredPackages = (prov.packages || []).map(pkg => ({
+                            const filteredPkgs = (prov.packages || []).map(pkg => ({
                                 ...pkg,
                                 bundles: (pkg.bundles || []).filter(b => {
                                     if (!searchTerm.trim()) return true;
-                                    const term = searchTerm.toLowerCase();
-                                    return (
-                                        b.name.toLowerCase().includes(term) ||
-                                        (b.description?.toLowerCase() || '').includes(term) ||
-                                        (b.providerName?.toLowerCase() || '').includes(term) ||
-                                        (b.packageName?.toLowerCase() || '').includes(term)
-                                    );
-                                })
-                            })).filter(p => (p.bundles || []).length > 0);
-
-                            const totalBundles = filteredPackages.reduce((s, pkg) => s + (pkg.bundles?.length || 0), 0);
-                            if (totalBundles === 0) return null;
-
+                                    const t = searchTerm.toLowerCase();
+                                    return b.name.toLowerCase().includes(t) || (b.description?.toLowerCase() || '').includes(t);
+                                }),
+                            })).filter(p => p.bundles.length > 0);
+                            if (!filteredPkgs.length) return null;
+                            const total = filteredPkgs.reduce((s, p) => s + p.bundles.length, 0);
                             return (
                                 <section key={prov.code}>
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm" style={{ backgroundColor: pc.primary, color: pc.text }}>
-                                            {getLogoUrl(prov.logo) ? (
-                                                <img src={getLogoUrl(prov.logo)} alt={prov.logo && typeof prov.logo === 'object' ? prov.logo.alt || prov.name : prov.name} className="w-full h-full object-cover rounded-xl" />
-                                            ) : (
-                                                prov.name.charAt(0)
-                                            )}
+                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow overflow-hidden"
+                                            style={{ backgroundColor: pc.primary, color: pc.text }}>
+                                            {getLogoUrl(prov.logo)
+                                                ? <img src={getLogoUrl(prov.logo)} alt={prov.name} className="w-full h-full object-cover" />
+                                                : prov.name.charAt(0)}
                                         </div>
                                         <div>
-                                            <h2 className="text-lg font-bold text-gray-900">{prov.name}</h2>
-                                            <p className="text-xs text-gray-500">{totalBundles} bundle{totalBundles !== 1 ? 's' : ''} available</p>
+                                            <h2 className="text-base font-black text-gray-900">{prov.name}</h2>
+                                            <p className="text-xs text-gray-400">{total} bundle{total !== 1 ? 's' : ''}</p>
                                         </div>
                                     </div>
-
-                                    <div className="space-y-5 ml-2 border-l-2 pl-4" style={{ borderColor: pc.primary + '30' }}>
-                                        {filteredPackages.map((pkg) => {
-                                            const pkgKey = `${prov.code}-${pkg.name}`;
-                                            const isCollapsed = collapsedPackages.has(pkgKey);
-
+                                    <div className="space-y-4 border-l-2 pl-4 ml-1" style={{ borderColor: pc.primary + '25' }}>
+                                        {filteredPkgs.map(pkg => {
+                                            const key = `${prov.code}-${pkg.name}`;
+                                            const collapsed = collapsedPackages.has(key);
                                             return (
-                                                <div key={pkgKey}>
-                                                    <div className="mb-3">
-                                                        <div
-                                                            onClick={() => togglePackage(pkgKey)}
-                                                            className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition"
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: pc.primary }}>
-                                                                    <FaStore className="w-4 h-4" />
-                                                                </div>
-                                                                <div>
-                                                                    <div className="text-sm font-semibold text-gray-900">{pkg.name}</div>
-                                                                    <div className="text-xs text-gray-500">{pkg.bundles.length} bundle{pkg.bundles.length !== 1 ? 's' : ''}</div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-gray-400">
-                                                                {isCollapsed ? <FaChevronDown className="w-4 h-4" /> : <FaChevronUp className="w-4 h-4" />}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {!isCollapsed && (
-                                                        viewMode === 'grid' ? (
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                                {pkg.bundles.map(renderBundleCard)}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="space-y-2">
-                                                                {pkg.bundles.map(renderBundleRow)}
-                                                            </div>
-                                                        )
-                                                    )}
+                                                <div key={key} className="space-y-3">
+                                                    <PackageHeader pkgName={pkg.name} count={pkg.bundles.length}
+                                                        collapsed={collapsed} onToggle={() => togglePackage(key)} color={pc.primary} />
+                                                    {!collapsed && renderPackageBundles(pkg.bundles)}
                                                 </div>
                                             );
                                         })}
@@ -947,71 +1043,34 @@ const PublicStore: React.FC = () => {
             );
         }
 
-        // fallback to groupedBundles (derived from flat bundles)
+        // Fallback: flat groupedBundles
         return (
-            <div className="max-w-5xl mx-auto px-4 py-6 space-y-8">
+            <div className="max-w-5xl mx-auto px-4 py-5 space-y-8">
                 {Array.from(groupedBundles.entries()).map(([provCode, pkgMap]) => {
                     const pc = getProviderColors(provCode);
                     const provName = providers.find(p => p.code === provCode)?.name || provCode;
-                    const totalBundles = Array.from(pkgMap.values()).reduce((sum, arr) => sum + arr.length, 0);
-
+                    const total = Array.from(pkgMap.values()).reduce((s, a) => s + a.length, 0);
                     return (
                         <section key={provCode}>
-                            {/* Provider header */}
                             <div className="flex items-center gap-3 mb-4">
-                                <div
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm"
-                                    style={{ backgroundColor: pc.primary, color: pc.text }}
-                                >
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow"
+                                    style={{ backgroundColor: pc.primary, color: pc.text }}>
                                     {provName.charAt(0)}
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-gray-900">{provName}</h2>
-                                    <p className="text-xs text-gray-500">{totalBundles} bundle{totalBundles !== 1 ? 's' : ''} available</p>
+                                    <h2 className="text-base font-black text-gray-900">{provName}</h2>
+                                    <p className="text-xs text-gray-400">{total} bundle{total !== 1 ? 's' : ''}</p>
                                 </div>
                             </div>
-
-                            {/* Package groups */}
-                            <div className="space-y-5 ml-2 border-l-2 pl-4" style={{ borderColor: pc.primary + '30' }}>
-                                {Array.from(pkgMap.entries()).map(([pkgName, pkgBundles]) => {
-                                    const pkgKey = `${provCode}-${pkgName}`;
-                                    const isCollapsed = collapsedPackages.has(pkgKey);
-
+                            <div className="space-y-4 border-l-2 pl-4 ml-1" style={{ borderColor: pc.primary + '25' }}>
+                                {Array.from(pkgMap.entries()).map(([pkgName, bundles]) => {
+                                    const key = `${provCode}-${pkgName}`;
+                                    const collapsed = collapsedPackages.has(key);
                                     return (
-                                        <div key={pkgKey}>
-                                            {/* Package sub-header */}
-                                            <div className="mb-3">
-                                                <div
-                                                    onClick={() => togglePackage(pkgKey)}
-                                                    className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: pc.primary }}>
-                                                            <FaStore className="w-4 h-4" />
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-sm font-semibold text-gray-900">{pkgName}</div>
-                                                            <div className="text-xs text-gray-500">{pkgBundles.length} bundle{pkgBundles.length !== 1 ? 's' : ''}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-gray-400">
-                                                        {isCollapsed ? <FaChevronDown className="w-4 h-4" /> : <FaChevronUp className="w-4 h-4" />}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Bundle grid or list */}
-                                            {!isCollapsed && (
-                                                viewMode === 'grid' ? (
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                        {pkgBundles.map(renderBundleCard)}
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-2">
-                                                        {pkgBundles.map(renderBundleRow)}
-                                                    </div>
-                                                )
-                                            )}
+                                        <div key={key} className="space-y-3">
+                                            <PackageHeader pkgName={pkgName} count={bundles.length}
+                                                collapsed={collapsed} onToggle={() => togglePackage(key)} color={pc.primary} />
+                                            {!collapsed && renderPackageBundles(bundles)}
                                         </div>
                                     );
                                 })}
@@ -1024,159 +1083,115 @@ const PublicStore: React.FC = () => {
     };
 
     // ==========================================================================
-    // Render: Cart Floating Bar
+    // Cart Bar (sticky bottom)
     // ==========================================================================
 
     const renderCartBar = () => {
-        if (cart.length === 0 || showCheckout) return null;
-
+        if (!cartCount || showCheckout) return null;
         return (
-            <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-                <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="relative">
-                            <FaCartShopping className="w-6 h-6" style={{ color: theme.primary }} />
-                            <span
-                                className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-xs font-bold text-white flex items-center justify-center"
-                                style={{ backgroundColor: theme.secondary }}
-                            >
-                                {cartCount}
-                            </span>
+            <div className="fixed bottom-0 left-0 right-0 z-30 px-4 pb-4 pointer-events-none">
+                <div className="max-w-5xl mx-auto pointer-events-auto">
+                    <div className="bg-gray-900 rounded-2xl px-4 py-3 flex items-center justify-between gap-4 shadow-2xl border border-white/10">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: theme.primary }}>
+                                    <FaCartShopping className="w-4 h-4 text-white" />
+                                </div>
+                                <CartCountBadge count={cartCount} />
+                            </div>
+                            <div>
+                                <p className="text-white font-bold text-sm">{fmt(cartTotal)}</p>
+                                <p className="text-white/50 text-xs">{cartCount} item{cartCount !== 1 ? 's' : ''}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="font-bold text-gray-900">{formatPrice(cartTotal)}</p>
-                            <p className="text-xs text-gray-500">{cartCount} item{cartCount !== 1 ? 's' : ''}</p>
-                        </div>
+                        <button
+                            onClick={openCheckout}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 shadow-lg"
+                            style={{ backgroundColor: theme.primary }}
+                        >
+                            Checkout <FaArrowRight className="w-3.5 h-3.5" />
+                        </button>
                     </div>
-                    <Button
-                        size="md"
-                        className="font-semibold px-6"
-                        style={{ backgroundColor: theme.primary, color: '#FFFFFF' }}
-                        onClick={openCheckout}
-                        rightIcon={<FaArrowRight className="w-4 h-4" />}
-                    >
-                        Checkout
-                    </Button>
                 </div>
             </div>
         );
     };
 
     // ==========================================================================
-    // Render: Add-to-Cart Dialog
+    // Add-to-Cart Dialog
     // ==========================================================================
 
     const renderAddDialog = () => {
         if (!addBundle) return null;
         const pc = getProviderColors(addBundle.provider);
         const isAfa = addBundle.provider?.toUpperCase() === 'AFA';
-        const phoneValid = isValidPhone(addPhone);
-        const afaValid = !isAfa || (
+        const phoneOk = isValidPhone(addPhone);
+        const afaOk = !isAfa || (
             addCustomerName.trim() &&
-            (!addBundle.requiresGhanaCard || (
-                addGhanaCardNumber.trim() &&
-                /^[A-Z]{3}-?\d{9}-?\d$/i.test(addGhanaCardNumber)
-            ))
+            (!addBundle.requiresGhanaCard || (addGhanaCardNumber.trim() && /^[A-Z]{3}-?\d{9}-?\d$/i.test(addGhanaCardNumber)))
         );
-        const canAddToCart = phoneValid && afaValid;
+        const canAdd = phoneOk && afaOk;
         const hasData = addBundle.dataVolume != null && addBundle.dataVolume > 0;
 
         return (
-            <Dialog isOpen={showAddDialog} onClose={() => setShowAddDialog(false)} size="sm">
+            <Dialog isOpen={!!addBundle} onClose={closeAddDialog} size="sm">
                 <DialogHeader>
-                    <h3 className="text-lg font-bold text-gray-900">Add to Cart</h3>
+                    {/* Bundle preview card inside dialog */}
+                    <div className="rounded-2xl p-4 -mx-1" style={{ background: `linear-gradient(135deg, ${pc.primary}22, ${pc.primary}10)` }}>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                {hasData && (
+                                    <div className="text-3xl font-black leading-none" style={{ color: pc.primary }}>
+                                        {addBundle.dataVolume}<span className="text-xl">{addBundle.dataUnit}</span>
+                                    </div>
+                                )}
+                                <h3 className="font-bold text-gray-900 mt-1 text-sm">{addBundle.name}</h3>
+                                <div className="flex gap-2 mt-2 flex-wrap">
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-white text-gray-600 border font-medium">
+                                        {fmtValidity(addBundle.validity, addBundle.validityUnit)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="text-2xl font-extrabold" style={{ color: pc.primary }}>{fmt(addBundle.price)}</div>
+                        </div>
+                    </div>
                 </DialogHeader>
                 <DialogBody>
-                    <div className="space-y-4">
-                        {/* Bundle info card */}
-                        <div className="p-4 rounded-xl" style={{ backgroundColor: pc.background }}>
-                            <h4 className="font-semibold text-gray-900">{addBundle.name}</h4>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {hasData && (
-                                    <Badge colorScheme="info" size="xs">{addBundle.dataVolume} {addBundle.dataUnit}</Badge>
-                                )}
-                                <Badge colorScheme="gray" size="xs">
-                                    {formatValidity(addBundle.validity, addBundle.validityUnit)}
-                                </Badge>
-                            </div>
-                            {addBundle.description && (
-                                <p className="text-sm text-gray-600 mt-2">{addBundle.description}</p>
-                            )}
-                            <p className="mt-3 text-lg font-bold" style={{ color: pc.primary }}>
-                                {formatPrice(addBundle.price)}
-                            </p>
-                        </div>
-
-                        {/* AFA notice */}
+                    <div className="space-y-4 pt-1">
                         {isAfa && addBundle.requiresGhanaCard && (
-                            <Alert status="warning" title="Ghana Card Required">
-                                <p className="text-sm">This bundle requires a Ghana Card registered number.</p>
-                                {addBundle.afaRequirements && addBundle.afaRequirements.length > 0 && (
-                                    <ul className="text-sm mt-1 list-disc list-inside">
-                                        {addBundle.afaRequirements.map((req, i) => <li key={i}>{req}</li>)}
-                                    </ul>
-                                )}
+                            <Alert status="warning">
+                                <p className="text-sm font-medium">Ghana Card required for this bundle.</p>
                             </Alert>
                         )}
-
-                        {/* Phone number */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                <FaPhone className="inline w-3 h-3 mr-1.5 text-gray-400" />
-                                Receiving Phone Number
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                                <FaPhone className="inline w-3 h-3 mr-1.5 opacity-60" />Receiving Phone Number *
                             </label>
-                            <Input
-                                type="tel"
-                                placeholder="0XX XXX XXXX"
-                                value={addPhone}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddPhone(e.target.value)}
-                            />
-                            {addPhone && !phoneValid && (
-                                <p className="text-xs text-red-500 mt-1">Enter a valid 10-digit Ghana phone number</p>
+                            <Input type="tel" placeholder="0XX XXX XXXX" value={addPhone}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddPhone(e.target.value)} />
+                            {addPhone && !phoneOk && (
+                                <p className="text-xs text-red-500 mt-1">Enter a valid 10-digit Ghana phone number (e.g. 0244123456)</p>
                             )}
-                            <p className="text-xs text-gray-400 mt-1">The number that will receive this data bundle</p>
                         </div>
-
-                        {/* AFA Customer Information */}
                         {isAfa && (
                             <>
-                                {/* Customer Name */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        <FaIdCard className="inline w-3 h-3 mr-1.5 text-gray-400" />
-                                        Full Name *
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                                        <FaIdCard className="inline w-3 h-3 mr-1.5 opacity-60" />Full Name *
                                     </label>
-                                    <Input
-                                        type="text"
-                                        placeholder="Enter recipient's full name"
-                                        value={addCustomerName}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCustomerName(e.target.value)}
-                                    />
-                                    {addBundle.requiresGhanaCard && !addCustomerName.trim() && (
-                                        <p className="text-xs text-red-500 mt-1">Full name is required for AFA registration</p>
-                                    )}
+                                    <Input placeholder="Recipient's full name" value={addCustomerName}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCustomerName(e.target.value)} />
                                 </div>
-
-                                {/* Ghana Card Number */}
                                 {addBundle.requiresGhanaCard && (
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                            <FaIdCard className="inline w-3 h-3 mr-1.5 text-gray-400" />
-                                            Ghana Card Number *
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                                            <FaIdCard className="inline w-3 h-3 mr-1.5 opacity-60" />Ghana Card Number *
                                         </label>
-                                        <Input
-                                            type="text"
-                                            placeholder="GHA-XXXXXXXXX-X"
-                                            value={addGhanaCardNumber}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddGhanaCardNumber(e.target.value)}
-                                        />
-                                        {!addGhanaCardNumber.trim() && (
-                                            <p className="text-xs text-red-500 mt-1">Ghana Card number is required</p>
-                                        )}
+                                        <Input placeholder="GHA-XXXXXXXXX-X" value={addGhanaCardNumber}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddGhanaCardNumber(e.target.value)} />
                                         {addGhanaCardNumber && !/^[A-Z]{3}-?\d{9}-?\d$/i.test(addGhanaCardNumber) && (
-                                            <p className="text-xs text-red-500 mt-1">Format: GHA-XXXXXXXXX-X (9 digits in middle, 1 at end)</p>
+                                            <p className="text-xs text-red-500 mt-1">Format: GHA-000000000-0</p>
                                         )}
-                                        <p className="text-xs text-gray-400 mt-1">Must be registered with NIA for AFA services</p>
                                     </div>
                                 )}
                             </>
@@ -1185,17 +1200,15 @@ const PublicStore: React.FC = () => {
                 </DialogBody>
                 <DialogFooter>
                     <div className="flex gap-2 w-full">
-                        <Button variant="secondary" onClick={() => setShowAddDialog(false)} className="flex-1">
-                            Cancel
-                        </Button>
-                        <Button
-                            className="flex-1 font-semibold"
-                            disabled={!canAddToCart}
-                            style={{ backgroundColor: canAddToCart ? pc.primary : '#9CA3AF', color: '#FFFFFF' }}
+                        <Button variant="secondary" onClick={closeAddDialog} className="flex-1">Cancel</Button>
+                        <button
+                            disabled={!canAdd}
                             onClick={confirmAddToCart}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ backgroundColor: pc.primary }}
                         >
-                            <FaCartShopping className="w-4 h-4 mr-1.5" /> Add to Cart
-                        </Button>
+                            <FaCartShopping className="w-3.5 h-3.5" /> Add to Cart
+                        </button>
                     </div>
                 </DialogFooter>
             </Dialog>
@@ -1203,409 +1216,303 @@ const PublicStore: React.FC = () => {
     };
 
     // ==========================================================================
-    // Render: Checkout Dialog
+    // Checkout Dialog
     // ==========================================================================
 
     const renderCheckoutDialog = () => {
-        // Always surface a Paystack option for public checkout (platform routing)
-        const rawPaymentMethods = storefront.paymentMethods || [];
-        const paymentMethods = (() => {
-            const copy = [...rawPaymentMethods];
-            if (!copy.some(pm => pm.type === 'paystack')) {
-                // synthetic Paystack option (no merchant config required for platform routing)
-                copy.unshift({ type: 'paystack', details: {}, isActive: true } as { type: 'paystack'; details: Record<string, unknown>; isActive: boolean });
-            }
-            return copy;
-        })();
-
-        const selectedPayment = paymentMethods.find(pm => pm.type === paymentType) || paymentMethods[0];
+        const rawMethods = storefront.paymentMethods || [];
+        const paymentMethods = rawMethods.some(m => m.type === 'paystack')
+            ? rawMethods
+            : [{ type: 'paystack' as const, details: {}, isActive: true }, ...rawMethods];
+        const selectedPayment = paymentMethods.find(m => m.type === paymentType) || paymentMethods[0];
 
         return (
-            <Dialog
-                isOpen={showCheckout}
-                onClose={checkoutStep === 'confirmation' ? resetCheckout : () => setShowCheckout(false)}
-                size="lg"
-            >
-                {/* ---- Step: Cart Review ---- */}
+            <Dialog isOpen={showCheckout} onClose={checkoutStep === 'confirmation' ? resetCheckout : () => setShowCheckout(false)} size="lg">
+
+                {/* ── Review ── */}
                 {checkoutStep === 'review' && (
                     <>
                         <DialogHeader>
                             <div className="flex items-center gap-2">
-                                <FaCartShopping className="w-5 h-5" style={{ color: theme.primary }} />
-                                <h3 className="text-lg font-bold text-gray-900">Your Cart</h3>
-                                <Badge colorScheme="gray" size="sm">{cartCount} item{cartCount !== 1 ? 's' : ''}</Badge>
+                                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold"
+                                    style={{ backgroundColor: theme.primary }}>
+                                    <FaCartShopping className="w-3.5 h-3.5" />
+                                </div>
+                                <h3 className="font-black text-gray-900">Cart Review</h3>
+                                <span className="ml-auto text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-semibold">
+                                    {cartCount} item{cartCount !== 1 ? 's' : ''}
+                                </span>
                             </div>
                         </DialogHeader>
                         <DialogBody>
-                            {cart.length === 0 ? (
-                                <p className="text-center text-gray-500 py-8">Your cart is empty</p>
-                            ) : (
-                                <div className="space-y-3">
-                                    {cart.map((item, idx) => {
-                                        const pc = getProviderColors(item.bundle.provider);
-                                        return (
-                                            <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/50">
-                                                <div className="w-1.5 h-12 rounded-full shrink-0" style={{ backgroundColor: pc.primary }} />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-medium text-sm text-gray-900 truncate">{item.bundle.name}</p>
-                                                    <p className="text-xs text-gray-500">
-                                                        {item.bundle.providerName} &bull; {item.customerPhone}
-                                                    </p>
-                                                </div>
-                                                <span className="shrink-0 font-bold text-sm min-w-[70px] text-right" style={{ color: pc.primary }}>
-                                                    {formatPrice(item.bundle.price)}
-                                                </span>
-                                                <button
-                                                    onClick={() => removeFromCart(idx)}
-                                                    className="shrink-0 p-1.5 text-red-400 hover:text-red-600 transition rounded-lg hover:bg-red-50"
-                                                >
-                                                    <FaTrashCan className="w-3.5 h-3.5" />
-                                                </button>
+                            <div className="space-y-2">
+                                {cart.map((item, idx) => {
+                                    const pc = getProviderColors(item.bundle.provider);
+                                    return (
+                                        <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                                            <div className="w-1 h-10 rounded-full shrink-0" style={{ backgroundColor: pc.primary }} />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-semibold text-sm text-gray-900 truncate">{item.bundle.name}</p>
+                                                <p className="text-xs text-gray-400">{item.bundle.providerName} · {item.customerPhone}</p>
                                             </div>
-                                        );
-                                    })}
-
-                                    {/* Total */}
-                                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                                        <span className="font-semibold text-gray-900">Total</span>
-                                        <span className="text-xl font-bold" style={{ color: theme.primary }}>
-                                            {formatPrice(cartTotal)}
-                                        </span>
-                                    </div>
+                                            <span className="font-bold text-sm shrink-0" style={{ color: pc.primary }}>{fmt(item.bundle.price)}</span>
+                                            <button onClick={() => removeFromCart(idx)}
+                                                className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 transition">
+                                                <FaTrashCan className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                                <div className="flex justify-between items-center pt-3 mt-1 border-t border-gray-100">
+                                    <span className="font-semibold text-gray-700">Total</span>
+                                    <span className="text-2xl font-black" style={{ color: theme.primary }}>{fmt(cartTotal)}</span>
                                 </div>
-                            )}
+                            </div>
                         </DialogBody>
                         <DialogFooter>
                             <div className="flex gap-2 w-full">
-                                <Button variant="secondary" onClick={() => setShowCheckout(false)} className="flex-1">
-                                    Continue Shopping
-                                </Button>
-                                <Button
-                                    className="flex-1 font-semibold"
-                                    disabled={cart.length === 0}
-                                    style={{ backgroundColor: cart.length > 0 ? theme.primary : '#9CA3AF', color: '#FFFFFF' }}
+                                <Button variant="secondary" onClick={() => setShowCheckout(false)} className="flex-1">Keep Shopping</Button>
+                                <button
+                                    disabled={!cart.length}
                                     onClick={() => setCheckoutStep('payment')}
-                                    rightIcon={<FaArrowRight className="w-4 h-4" />}
+                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
+                                    style={{ backgroundColor: theme.primary }}
                                 >
-                                    Proceed to Payment
-                                </Button>
+                                    Proceed <FaArrowRight className="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         </DialogFooter>
                     </>
                 )}
 
-                {/* ---- Step: Details & Payment ---- */}
+                {/* ── Payment ── */}
                 {checkoutStep === 'payment' && (
                     <>
                         <DialogHeader>
                             <div className="flex items-center gap-2">
-                                <span
-                                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                                    style={{ backgroundColor: theme.primary }}
-                                >
-                                    2
-                                </span>
-                                <h3 className="text-lg font-bold text-gray-900">Details &amp; Payment</h3>
+                                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold"
+                                    style={{ backgroundColor: theme.primary }}>2</div>
+                                <h3 className="font-black text-gray-900">Your Details</h3>
                             </div>
                         </DialogHeader>
                         <DialogBody>
                             <div className="space-y-5">
                                 {/* Customer info */}
                                 <div className="space-y-3">
-                                    <h4 className="font-semibold text-gray-800 text-sm">Your Information</h4>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
-                                        <Input
-                                            placeholder="Enter your full name"
-                                            value={customerName}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value)}
-                                        />
+                                        <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Full Name *</label>
+                                        <Input placeholder="Your full name" value={customerName}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value)} />
                                     </div>
-
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                                            Email {paymentType === 'paystack' ? <span className="">*</span> : <span className="text-xs text-gray-400 font-normal ml-1">(optional)</span>}
+                                        <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                                            Email {requiresEmail ? '*' : <span className="normal-case font-normal text-gray-400">(optional)</span>}
                                         </label>
-                                        <Input
-                                            placeholder="you@example.com"
-                                            value={customerEmail}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerEmail(e.target.value)}
-                                            type="email"
-                                        />
-
-                                        {/* Show required hint when Paystack is selected, otherwise validate only when non-empty */}
-                                        {paymentType === 'paystack' && customerEmail.trim() === '' && (
-                                            <p className="text-xs text-rose-600 mt-1">Email is required for Paystack payments</p>
+                                        <Input placeholder="you@example.com" type="email" value={customerEmail}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerEmail(e.target.value)} />
+                                        {requiresEmail && !customerEmail && (
+                                            <p className="text-xs text-rose-500 mt-1">Email required for Paystack payment</p>
                                         )}
-                                        {!isValidEmail(customerEmail) && customerEmail.trim() !== '' && (
-                                            <p className="text-xs text-rose-600 mt-1">Please enter a valid email address</p>
+                                        {customerEmail && !isValidEmail(customerEmail) && (
+                                            <p className="text-xs text-rose-500 mt-1">Invalid email address</p>
                                         )}
-                                    </div>
-
-                                    <div>
-                                        <p className="text-xs text-gray-400 mt-0.5">We only collect your name and email here; email is required only for Paystack checkout. Recipient phone numbers are provided per item for delivery.</p>
                                     </div>
                                 </div>
 
-                                {/* Payment method */}
-                                {paymentMethods.length > 0 && (
-                                    <div className="space-y-3">
-                                        <h4 className="font-semibold text-gray-800 text-sm">Payment Method</h4>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {paymentMethods.map(pm => (
-                                                <button
-                                                    key={pm.type}
-                                                    onClick={() => setPaymentType(pm.type)}
-                                                    className={`p-3 rounded-xl border-2 text-left transition ${paymentType === pm.type ? 'shadow-sm' : 'border-gray-200 hover:border-gray-300'
-                                                        }`}
-                                                    style={paymentType === pm.type ? { borderColor: theme.primary, backgroundColor: theme.bg } : undefined}
-                                                >
-                                                    <p className="font-medium text-sm text-gray-900">
-                                                        {pm.type === 'paystack' ? '⚡ Pay with Paystack' : pm.type === 'mobile_money' ? '📱 Mobile Money' : '🏦 Bank Transfer'}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 mt-0.5">
-                                                        {pm.type === 'paystack' ? 'Online checkout via Paystack (recommended)' : pm.type === 'mobile_money' ? 'Pay via MoMo or mobile wallet' : 'Pay via bank transfer'}
-                                                    </p>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Payment details */}
-                                {selectedPayment && (
-                                    <div
-                                        className="p-4 rounded-xl border-2 border-dashed"
-                                        style={{ borderColor: theme.primary + '40', backgroundColor: theme.bg }}
-                                    >
-                                        <h4 className="font-semibold text-sm mb-2" style={{ color: theme.secondary }}>
-                                            📋 Payment Instructions
-                                        </h4>
-                                        <div className="space-y-1.5 text-sm">
-                                            {/* Mobile Money: details.accounts is an array of {provider, number, accountName} */}
-                                            {selectedPayment.type === 'paystack' ? (
-                                                <div className="text-sm text-gray-700">You will be redirected to Paystack to complete payment. Payment confirmation is automatic.</div>
-                                            ) : Array.isArray(selectedPayment.details?.accounts)
-                                                ? selectedPayment.details.accounts.map((acc: { provider?: string; number?: string; accountName?: string }, i: number) => (
-                                                    <div key={i} className={`${i > 0 ? 'pt-2 mt-2 border-t border-gray-200' : ''}`}>
-                                                        {acc.provider && (
-                                                            <div className="flex justify-between gap-2">
-                                                                <span className="text-gray-500">Provider</span>
-                                                                <span className="font-medium text-gray-900">{acc.provider}</span>
-                                                            </div>
-                                                        )}
-                                                        {acc.number && (
-                                                            <div className="flex justify-between gap-2">
-                                                                <span className="text-gray-500">Number</span>
-                                                                <span className="font-medium text-gray-900">{acc.number}</span>
-                                                            </div>
-                                                        )}
-                                                        {acc.accountName && (
-                                                            <div className="flex justify-between gap-2">
-                                                                <span className="text-gray-500">Account Name</span>
-                                                                <span className="font-medium text-gray-900">{acc.accountName}</span>
-                                                            </div>
-                                                        )}
+                                {/* Payment method selector */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Payment Method</label>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {paymentMethods.map(pm => {
+                                            const icons: Record<string, string> = { paystack: '⚡', mobile_money: '📱', bank_transfer: '🏦' };
+                                            const labels: Record<string, string> = {
+                                                paystack: 'Pay with Paystack',
+                                                mobile_money: 'Mobile Money',
+                                                bank_transfer: 'Bank Transfer',
+                                            };
+                                            const descs: Record<string, string> = {
+                                                paystack: 'Instant online checkout — card, MoMo & more',
+                                                mobile_money: 'Send via MoMo, then enter reference below',
+                                                bank_transfer: 'Transfer to our bank account',
+                                            };
+                                            const active = paymentType === pm.type;
+                                            return (
+                                                <button key={pm.type} onClick={() => setPaymentType(pm.type)}
+                                                    className="flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all"
+                                                    style={active ? { borderColor: theme.primary, backgroundColor: theme.bg } : { borderColor: '#E5E7EB' }}>
+                                                    <span className="text-xl">{icons[pm.type] || '💳'}</span>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-bold text-gray-900">{labels[pm.type] || pm.type}</p>
+                                                        <p className="text-xs text-gray-400">{descs[pm.type] || ''}</p>
                                                     </div>
-                                                ))
-                                                : /* Bank Transfer or flat details: render key/value pairs */
-                                                Object.entries(selectedPayment.details).map(([key, val]) => {
-                                                    if (val == null || typeof val === 'object') return null;
-                                                    return (
-                                                        <div key={key} className="flex justify-between gap-2">
-                                                            <span className="text-gray-500 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                                            <span className="font-medium text-gray-900 text-right">{String(val)}</span>
-                                                        </div>
-                                                    );
-                                                })
-                                            }
-                                        </div>
-                                        <div className="mt-3 p-2.5 bg-white rounded-lg">
-                                            <p className="text-sm font-bold text-gray-900">Amount to send: {formatPrice(cartTotal)}</p>
+                                                    <div className={`w-4 h-4 rounded-full border-2 transition-all ${active ? 'border-current bg-current' : 'border-gray-300'}`}
+                                                        style={active ? { borderColor: theme.primary, backgroundColor: theme.primary } : {}} />
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Payment instructions */}
+                                {selectedPayment && selectedPayment.type !== 'paystack' && (
+                                    <div className="p-4 rounded-xl border-2 border-dashed space-y-2"
+                                        style={{ borderColor: theme.primary + '40', backgroundColor: theme.bg }}>
+                                        <h4 className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.secondary }}>
+                                            Payment Instructions
+                                        </h4>
+                                        {Array.isArray(selectedPayment.details?.accounts)
+                                            ? selectedPayment.details.accounts.map((acc: PaymentAccount, i: number) => (
+                                                <div key={i} className="text-sm space-y-0.5">
+                                                    {acc.provider && <div className="flex justify-between"><span className="text-gray-500">Provider</span><span className="font-semibold">{acc.provider}</span></div>}
+                                                    {acc.number && <div className="flex justify-between"><span className="text-gray-500">Number</span><span className="font-bold text-lg tracking-wider">{acc.number}</span></div>}
+                                                    {acc.accountName && <div className="flex justify-between"><span className="text-gray-500">Name</span><span className="font-semibold">{acc.accountName}</span></div>}
+                                                </div>
+                                            ))
+                                            : Object.entries(selectedPayment.details || {}).map(([k, v]) => {
+                                                if (v == null || typeof v === 'object') return null;
+                                                return (
+                                                    <div key={k} className="flex justify-between text-sm">
+                                                        <span className="text-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                                        <span className="font-semibold">{String(v)}</span>
+                                                    </div>
+                                                );
+                                            })
+                                        }
+                                        <div className="pt-2 border-t border-dashed" style={{ borderColor: theme.primary + '30' }}>
+                                            <p className="font-black text-base" style={{ color: theme.secondary }}>Send exactly: {fmt(cartTotal)}</p>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Transaction reference — REQUIRED for manual Mobile Money only */}
+                                {/* MoMo reference input */}
                                 {paymentType === 'mobile_money' && (
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-800 mb-1.5">
-                                            <FaTriangleExclamation className="inline w-3.5 h-3.5 mr-1 text-amber-500" />
-                                            Transaction Reference / ID *
+                                        <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                                            Transaction Reference *
                                         </label>
-                                        <Input
-                                            placeholder="Enter your payment reference or transaction ID"
+                                        <Input placeholder="Enter your MoMo transaction ID"
                                             value={transactionRef}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTransactionRef(e.target.value)}
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Send payment first, then enter the reference here. This is required to place your order.
-                                        </p>
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTransactionRef(e.target.value)} />
+                                        <p className="text-xs text-gray-400 mt-1">Send payment first, then paste the reference here</p>
                                     </div>
                                 )}
 
-                                {/* Order summary line */}
-                                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                                {/* Order total */}
+                                <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                                     <span className="text-sm text-gray-500">{cartCount} item{cartCount !== 1 ? 's' : ''}</span>
-                                    <span className="text-xl font-bold" style={{ color: theme.primary }}>
-                                        {formatPrice(cartTotal)}
-                                    </span>
+                                    <span className="text-xl font-black" style={{ color: theme.primary }}>{fmt(cartTotal)}</span>
                                 </div>
 
-                                {/* Error */}
-                                {orderError && (
-                                    <Alert status="error" title="Order Failed">
-                                        {orderError}
-                                    </Alert>
-                                )}
+                                {orderError && <Alert status="error">{orderError}</Alert>}
                             </div>
                         </DialogBody>
                         <DialogFooter>
                             <div className="flex gap-2 w-full">
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => setCheckoutStep('review')}
-                                    leftIcon={<FaArrowLeft className="w-4 h-4" />}
-                                >
-                                    Back
+                                <Button variant="secondary" onClick={() => setCheckoutStep('review')}>
+                                    <FaArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
                                 </Button>
-                                <Button
-                                    className="flex-1 font-semibold"
+                                <button
                                     disabled={!canSubmitOrder || submitting}
-                                    isLoading={submitting}
-                                    loadingText="Placing Order..."
-                                    style={{
-                                        backgroundColor: canSubmitOrder && !submitting ? theme.primary : '#9CA3AF',
-                                        color: '#FFFFFF',
-                                    }}
                                     onClick={submitOrder}
+                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50"
+                                    style={{ backgroundColor: theme.primary }}
                                 >
-                                    Place Order — {formatPrice(cartTotal)}
-                                </Button>
+                                    {submitting ? (
+                                        <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Placing Order…</>
+                                    ) : (
+                                        <>Place Order · {fmt(cartTotal)}</>
+                                    )}
+                                </button>
                             </div>
                         </DialogFooter>
                     </>
                 )}
 
-                {/* ---- Step: Confirmation ---- */}
+                {/* ── Confirmation ── */}
                 {checkoutStep === 'confirmation' && orderResult && (
                     <>
                         <DialogHeader>
                             <div className="flex items-center gap-2">
-                                <FaCircleCheck className="w-5 h-5 text-green-500" />
-                                <h3 className="text-lg font-bold text-gray-900">Order Placed!</h3>
+                                <FaCircleCheck className="w-5 h-5 text-emerald-500" />
+                                <h3 className="font-black text-gray-900">Order Placed!</h3>
                             </div>
                         </DialogHeader>
                         <DialogBody>
-                            <div className="text-center py-4 space-y-5">
-                                <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center bg-green-100">
-                                    <FaCircleCheck className="w-8 h-8 text-green-600" />
+                            <div className="text-center space-y-5 py-2">
+                                <div className="w-20 h-20 rounded-2xl mx-auto flex items-center justify-center bg-emerald-50">
+                                    <FaCircleCheck className="w-10 h-10 text-emerald-500" />
                                 </div>
-
                                 <div>
-                                    <p className="text-lg font-bold text-gray-900">Thank you for your order!</p>
+                                    <p className="text-xl font-black text-gray-900">Thank you!</p>
                                     <p className="text-sm text-gray-500 mt-1">Order #{orderResult.orderNumber}</p>
                                 </div>
-
-                                <Card variant="flat" className="text-left">
-                                    <CardBody>
-                                        <div className="space-y-2 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-500">Total</span>
-                                                <span className="font-bold">{formatPrice(orderResult.total)}</span>
+                                <div className="bg-gray-50 rounded-2xl p-4 text-left space-y-3">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500">Total Paid</span>
+                                        <span className="font-black text-lg">{fmt(orderResult.total)}</span>
+                                    </div>
+                                    {orderResult.paystack?.authorizationUrl ? (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-start">
+                                                <span className="text-sm text-gray-500">Payment</span>
+                                                {paystackStatus === 'success' ? (
+                                                    <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">✓ Confirmed</span>
+                                                ) : paystackStatus === 'failed' ? (
+                                                    <span className="text-xs bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full font-semibold">Failed</span>
+                                                ) : (
+                                                    <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">Awaiting…</span>
+                                                )}
                                             </div>
-
-                                            {orderResult.paystack?.authorizationUrl ? (
-                                                <div className="flex justify-between items-center gap-3">
-                                                    <div>
-                                                        <span className="text-gray-500">Status</span>
-                                                        <div className="mt-1">
-                                                            {paystackCallbackStatus === 'success' ? (
-                                                                <Badge colorScheme="success" size="xs">Payment received</Badge>
-                                                            ) : paystackCallbackStatus === 'failed' ? (
-                                                                <Badge colorScheme="error" size="xs">Payment failed</Badge>
-                                                            ) : (
-                                                                <Badge colorScheme="info" size="xs">Awaiting Payment</Badge>
-                                                            )}
-                                                            <div className="text-xs text-gray-500 mt-1">
-                                                                {paystackCallbackStatus === 'success'
-                                                                    ? 'Payment confirmed — your order will be processed.'
-                                                                    : paystackCallbackStatus === 'failed'
-                                                                        ? 'Payment failed or verification pending.'
-                                                                        : 'Complete payment in the Paystack checkout that opened.'}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="text-right">
-                                                        {paystackCallbackStatus === 'success' ? (
-                                                            <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
-                                                                Refresh
-                                                            </Button>
-                                                        ) : (
-                                                            <a
-                                                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm"
-                                                                href={orderResult.paystack.authorizationUrl}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                            >
-                                                                Continue to Paystack
-                                                            </a>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-500">Status</span>
-                                                    <Badge colorScheme="warning" size="xs">Pending Verification</Badge>
-                                                </div>
+                                            {paystackStatus !== 'success' && (
+                                                <a href={orderResult.paystack.authorizationUrl} target="_blank" rel="noopener noreferrer"
+                                                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold text-white"
+                                                    style={{ backgroundColor: theme.primary }}>
+                                                    <FaBolt className="w-3.5 h-3.5" /> Continue to Paystack
+                                                </a>
                                             )}
                                         </div>
-                                    </CardBody>
-                                </Card>
+                                    ) : (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-500">Status</span>
+                                            <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">Pending Verification</span>
+                                        </div>
+                                    )}
+                                </div>
 
-                                {/* What happens next */}
-                                <div className="text-left p-4 bg-blue-50 rounded-xl">
-                                    <h4 className="font-semibold text-blue-900 text-sm mb-2">What happens next?</h4>
+                                <div className="text-left bg-blue-50 rounded-2xl p-4">
+                                    <h4 className="text-xs font-black text-blue-900 uppercase tracking-wide mb-2">What's next?</h4>
                                     <ol className="text-xs text-blue-800 space-y-1.5 list-decimal list-inside">
                                         {orderResult.paystack?.authorizationUrl ? (
                                             <>
-                                                <li>You will complete payment on Paystack.</li>
-                                                <li>Payment confirmation is automatic — your order will be processed as soon as we receive confirmation.</li>
-                                                <li>You&apos;ll receive the bundles on the phone numbers provided.</li>
+                                                <li>Complete payment in the Paystack window.</li>
+                                                <li>Your order is auto-processed on confirmation.</li>
+                                                <li>Bundles are sent to the numbers you provided.</li>
                                             </>
                                         ) : (
                                             <>
-                                                <li>The store owner will verify your payment.</li>
-                                                <li>Your data bundles will be processed automatically after verification.</li>
-                                                <li>You&apos;ll receive the bundles on the phone numbers provided.</li>
+                                                <li>Store owner verifies your payment.</li>
+                                                <li>Bundles are processed after verification.</li>
+                                                <li>Delivered to the phone numbers you provided.</li>
                                             </>
                                         )}
                                     </ol>
                                 </div>
 
-                                {/* WhatsApp contact */}
                                 {storefront.contactInfo?.whatsapp && (
-                                    <a
-                                        href={`https://wa.me/${storefront.contactInfo.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I just placed order #${orderResult.orderNumber}`)}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-500 text-white rounded-xl font-medium text-sm hover:bg-green-600 transition shadow-sm"
-                                    >
-                                        <FaWhatsapp className="w-5 h-5" /> Contact on WhatsApp
+                                    <a href={`https://wa.me/${storefront.contactInfo.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I just placed order #${orderResult.orderNumber}`)}`}
+                                        target="_blank" rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#25D366] text-white rounded-xl font-bold text-sm hover:bg-[#20BD5C] transition active:scale-95">
+                                        <FaWhatsapp className="w-4 h-4" /> Contact on WhatsApp
                                     </a>
                                 )}
                             </div>
                         </DialogBody>
                         <DialogFooter>
-                            <Button
-                                variant="primary"
-                                fullWidth
-                                style={{ backgroundColor: theme.primary, color: '#FFFFFF' }}
-                                onClick={resetCheckout}
-                            >
-                                Done
-                            </Button>
+                            <button onClick={resetCheckout}
+                                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
+                                style={{ backgroundColor: theme.primary }}>
+                                Done · Shop More
+                            </button>
                         </DialogFooter>
                     </>
                 )}
@@ -1614,80 +1521,48 @@ const PublicStore: React.FC = () => {
     };
 
     // ==========================================================================
-    // Render: Footer
+    // Footer
     // ==========================================================================
 
     const renderFooter = () => {
         const social = branding.socialLinks;
-        const hasSocial = social && Object.values(social).some(v => v);
+        const hasSocial = social && Object.values(social).some(Boolean);
         const hasContact = storefront.contactInfo &&
             (storefront.contactInfo.phone || storefront.contactInfo.email || storefront.contactInfo.whatsapp);
-
         if (!hasSocial && !hasContact && !branding.footerText) return null;
 
         return (
-            <footer
-                className="border-t border-gray-100 bg-gray-50 px-4 py-8"
-                style={{ marginBottom: cart.length > 0 && !showCheckout ? '72px' : 0 }}
-            >
+            <footer className="border-t border-gray-100 bg-gray-50 px-4 py-8"
+                style={{ marginBottom: cartCount > 0 && !showCheckout ? '80px' : 0 }}>
                 <div className="max-w-5xl mx-auto space-y-4 text-center">
-                    {/* Social links */}
                     {hasSocial && (
-                        <div className="flex items-center justify-center gap-4">
-                            {social?.facebook && (
-                                <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition">
-                                    <FaFacebook className="w-5 h-5" />
-                                </a>
-                            )}
-                            {social?.twitter && (
-                                <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-500 transition">
-                                    <FaTwitter className="w-5 h-5" />
-                                </a>
-                            )}
-                            {social?.instagram && (
-                                <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-600 transition">
-                                    <FaInstagram className="w-5 h-5" />
-                                </a>
-                            )}
-                            {social?.tiktok && (
-                                <a href={social.tiktok} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-900 transition text-sm font-bold">
-                                    TikTok
-                                </a>
-                            )}
+                        <div className="flex items-center justify-center gap-5">
+                            {social?.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition"><FaFacebook className="w-5 h-5" /></a>}
+                            {social?.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-500 transition"><FaTwitter className="w-5 h-5" /></a>}
+                            {social?.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-600 transition"><FaInstagram className="w-5 h-5" /></a>}
                         </div>
                     )}
-
-                    {/* Contact info */}
                     {hasContact && (
-                        <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-500">
+                        <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
                             {storefront.contactInfo?.phone && (
-                                <a href={`tel:${storefront.contactInfo.phone}`} className="flex items-center gap-1.5 hover:text-gray-700 transition">
-                                    <FaPhone className="w-3 h-3" /> {storefront.contactInfo.phone}
+                                <a href={`tel:${storefront.contactInfo.phone}`} className="flex items-center gap-1.5 hover:text-gray-800 transition">
+                                    <FaPhone className="w-3 h-3" />{storefront.contactInfo.phone}
                                 </a>
                             )}
                             {storefront.contactInfo?.whatsapp && (
-                                <a
-                                    href={`https://wa.me/${storefront.contactInfo.whatsapp.replace(/\D/g, '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1.5 text-green-600 hover:text-green-700 transition"
-                                >
-                                    <FaWhatsapp className="w-3.5 h-3.5" /> WhatsApp
+                                <a href={`https://wa.me/${storefront.contactInfo.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-1.5 text-[#25D366] hover:text-[#20BD5C] transition font-semibold">
+                                    <FaWhatsapp className="w-4 h-4" />WhatsApp
                                 </a>
                             )}
                             {storefront.contactInfo?.email && (
-                                <a href={`mailto:${storefront.contactInfo.email}`} className="flex items-center gap-1.5 hover:text-gray-700 transition">
-                                    <FaEnvelope className="w-3 h-3" /> {storefront.contactInfo.email}
+                                <a href={`mailto:${storefront.contactInfo.email}`} className="flex items-center gap-1.5 hover:text-gray-800 transition">
+                                    <FaEnvelope className="w-3 h-3" />{storefront.contactInfo.email}
                                 </a>
                             )}
                         </div>
                     )}
-
-                    {/* Footer text */}
-                    {branding.footerText && (
-                        <p className="text-xs text-gray-400">{branding.footerText}</p>
-                    )}
-
+                    {branding.footerText && <p className="text-xs text-gray-400">{branding.footerText}</p>}
                     <p className="text-xs text-gray-300">Powered by DNAStudios</p>
                 </div>
             </footer>
@@ -1695,17 +1570,32 @@ const PublicStore: React.FC = () => {
     };
 
     // ==========================================================================
-    // Main Render
+    // Root render
     // ==========================================================================
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-safe">
+        <div className="min-h-screen bg-gray-50">
+            <style>{`
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes cartBounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        .cart-bounce { animation: cartBounce 0.3s ease; }
+      `}</style>
+
             {renderHeader()}
             {renderToolbar()}
-            {renderBundleSections()}
 
-            {/* Spacer for cart bar */}
-            {cart.length > 0 && !showCheckout && <div className="h-20" />}
+            <main>
+                {/* Popular bundles carousel — shown above bundle grid */}
+                <div className="max-w-5xl mx-auto">
+                    <PopularCarousel theme={theme} bundles={popularBundles} onSelect={openAddDialog} />
+                </div>
+
+                {renderBundleSections()}
+
+                {/* Spacer for floating cart bar */}
+                {cartCount > 0 && !showCheckout && <div className="h-24" />}
+            </main>
 
             {renderFooter()}
             {renderCartBar()}

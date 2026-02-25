@@ -1,19 +1,25 @@
-import React, { useState, useEffect, useContext } from "react";
+// src/components/wallet/TopUpRequestModal.tsx
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
+import { FaMoneyBillWave, FaWhatsapp, FaCheck, FaArrowLeft, FaArrowRight, FaBolt } from 'react-icons/fa';
 import {
-  FaMoneyBillWave,
-  FaWhatsapp,
-  FaCheck,
-  FaArrowLeft,
-  FaArrowRight,
-} from "react-icons/fa";
-import { Button, Input, Textarea, Alert, Tabs, TabsList, TabsTrigger, Dialog, DialogHeader, DialogBody, DialogFooter, Spinner } from "../../design-system";
-import { useToast } from "../../design-system/components/toast";
-import { settingsService } from "../../services/settings.service";
-import { walletService } from "../../services/wallet-service";
-import { AuthContext } from "../../contexts/AuthContext";
-import { canHaveWallet } from "../../utils/userTypeHelpers";
+  Button, Input, Textarea, Alert, Dialog, DialogHeader, DialogBody, DialogFooter, Spinner, Tabs, TabsList, TabsTrigger,
+} from '../../design-system';
+import { useToast } from '../../design-system/components/toast';
+import { settingsService } from '../../services/settings.service';
+import { walletService } from '../../services/wallet-service';
+import { AuthContext } from '../../contexts/AuthContext';
+import { canHaveWallet } from '../../utils/userTypeHelpers';
 
-interface TopUpRequestModalProps {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type TopUpMode = 'request' | 'instant';
+
+interface FormState {
+  amount: string;
+  description: string;
+}
+
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (amount: number, description: string) => Promise<void>;
@@ -21,318 +27,276 @@ interface TopUpRequestModalProps {
   error?: string | null;
 }
 
-type ContactMethod = "whatsapp" | null;
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-interface StepData {
-  amount: string;
-  description: string;
-  contactMethod: ContactMethod;
+const InfoBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Alert status="info">
+    <div className="ml-3 text-sm">{children}</div>
+  </Alert>
+);
+
+const SummaryRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div className="flex justify-between text-sm">
+    <span className="text-gray-500">{label}</span>
+    <span className="font-medium text-gray-900">{value}</span>
+  </div>
+);
+
+const StepIndicator: React.FC<{ current: number; total: number }> = ({ current, total }) => (
+  <div className="flex flex-col gap-2">
+    <div className="flex items-center justify-between">
+      {Array.from({ length: total }).map((_, i) => (
+        <React.Fragment key={i}>
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+              i + 1 <= current ? 'bg-white' : 'bg-white/20 text-white'
+            }`}
+            style={i + 1 <= current ? { color: 'var(--color-primary-500)' } : {}}
+          >
+            {i + 1 < current ? <FaCheck className="w-3.5 h-3.5" /> : i + 1}
+          </div>
+          {i < total - 1 && (
+            <div className={`flex-1 h-1 mx-2 transition-colors ${i + 1 < current ? 'bg-white' : 'bg-white/20'}`} />
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+    <p className="text-center text-xs text-white/80">Step {current} of {total}</p>
+  </div>
+);
+
+// ─── Paystack Inline Helper ───────────────────────────────────────────────────
+
+async function loadPaystackScript(): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((window as any).PaystackPop) return;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://js.paystack.co/v1/inline.js';
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load Paystack script'));
+    document.head.appendChild(s);
+  });
 }
 
-export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  isSubmitting,
-  error,
-}) => {
-  const [currentStep, setCurrentStep] = useState(1);
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, isSubmitting, error }) => {
   const { addToast } = useToast();
   const { authState } = useContext(AuthContext)!;
   const user = authState?.user;
-  const [stepData, setStepData] = useState<StepData>({
-    amount: "",
-    description: "",
-    contactMethod: "whatsapp",
-  });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [minimumAmount, setMinimumAmount] = useState<number>(10); // Default fallback
-  const [hasPendingRequest, setHasPendingRequest] = useState(false);
-  const [checkingPending, setCheckingPending] = useState(false);
-  // Mode: 'request' -> send admin request | 'instant' -> Paystack checkout
-  const [topUpMode, setTopUpMode] = useState<'request' | 'instant'>('request');
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [step, setStep] = useState(1);
+  const [mode, setMode] = useState<TopUpMode>('request');
+  const [form, setForm] = useState<FormState>({ amount: '', description: '' });
+  const [fieldErrors, setFieldErrors] = useState<Partial<FormState>>({});
+
+  const [minimumAmount, setMinimumAmount] = useState(10);
   const [paystackEnabled, setPaystackEnabled] = useState(false);
-  const [isInitiatingPaystack, setIsInitiatingPaystack] = useState(false); // used to disable Paystack button & show spinner
+  const [paystackPublicKey, setPaystackPublicKey] = useState<string | null>(null);
 
-  const totalSteps = 3;
+  const [checkingPending, setCheckingPending] = useState(false);
+  const [hasPendingRequest, setHasPendingRequest] = useState(false);
+  const [isPaystackLoading, setIsPaystackLoading] = useState(false);
 
-  // Small reusable pieces to keep the component DRY
-  const InfoBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <Alert status="info">
-      <div className="flex items-start">
-        <div className="ml-3">{children}</div>
-      </div>
-    </Alert>
-  );
+  const TOTAL_STEPS = 2;
 
-  const SummaryRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
-    <div className="flex justify-between">
-      <span className="text-gray-600">{label}</span>
-      <span className="font-medium">{value}</span>
-    </div>
-  );
+  // ── Effects ────────────────────────────────────────────────────────────────
 
-  // Check for pending top-up request and fetch minimum amount on modal open
   useEffect(() => {
-    const checkPendingAndFetchSettings = async () => {
-      if (!isOpen) return;
+    if (!isOpen) return;
 
-      // Check for pending request
+    const init = async () => {
       setCheckingPending(true);
       try {
         const hasPending = await walletService.checkPendingTopUpRequest();
         setHasPendingRequest(hasPending);
-      } catch (error) {
-        console.error("Failed to check pending top-up request:", error);
+      } catch {
+        // Non-critical — just don't block the user
       } finally {
         setCheckingPending(false);
       }
 
-      // Fetch minimum amount based on user type
       try {
         const walletSettings = await settingsService.getWalletSettings();
-        const userType = user?.userType || "agent";
-
-        // Get minimum for user's type, fallback to default
         const minimums = walletSettings.minimumTopUpAmounts;
-        let userMinimum = minimums.default;
+        const userType = user?.userType ?? 'agent';
+        setMinimumAmount(minimums[userType] ?? minimums.default ?? 10);
+      } catch {
+        // Use default minimum
+      }
 
-        if (userType === "agent" && minimums.agent) {
-          userMinimum = minimums.agent;
-        } else if (userType === "super_agent" && minimums.super_agent) {
-          userMinimum = minimums.super_agent;
-        } else if (userType === "dealer" && minimums.dealer) {
-          userMinimum = minimums.dealer;
-        } else if (userType === "super_dealer" && minimums.super_dealer) {
-          userMinimum = minimums.super_dealer;
-        }
-
-        setMinimumAmount(userMinimum);
-
-        // Prefer wallet-level public key endpoint (works for agents). Fallback to admin API settings only if needed.
-        try {
-          const { publicKey, configured } = await walletService.getPaystackPublicKey();
-          // Only enable instant top-up when both publicKey and server-side configuration (secret) exist
-          setPaystackEnabled(Boolean(publicKey && configured));
-        } catch (err) {
-          console.error('Failed to fetch Paystack public key from wallet endpoint:', err);
-          // Fallback: super-admin-only API settings (may fail for non-admins)
-          try {
-            const apiSettings = await settingsService.getApiSettings();
-            setPaystackEnabled(Boolean(apiSettings?.paystackEnabled));
-          } catch (err2) {
-            console.error('Fallback: failed to fetch API settings (paystack flag):', err2);
-            setPaystackEnabled(false);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch minimum top-up amount:", error);
+      try {
+        const { publicKey, configured } = await walletService.getPaystackPublicKey();
+        setPaystackPublicKey(publicKey || null);
+        setPaystackEnabled(Boolean(publicKey && configured));
+      } catch {
+        setPaystackEnabled(false);
       }
     };
 
-    checkPendingAndFetchSettings();
+    init();
   }, [isOpen, user]);
 
-  const validateStep = (step: number): boolean => {
-    const newErrors: { [key: string]: string } = {};
+  // ── Derived state ─────────────────────────────────────────────────────────
 
-    if (step === 1) {
-      const raw = stepData.amount?.toString().trim() ?? "";
-      const amt = Number(raw);
+  const parsedAmount = useMemo(() => parseFloat(form.amount || ''), [form.amount]);
+  const isAmountValid = useMemo(
+    () => !Number.isNaN(parsedAmount) && parsedAmount >= minimumAmount && parsedAmount <= 10_000,
+    [parsedAmount, minimumAmount]
+  );
 
-      if (!raw) {
-        newErrors.amount = "Amount is required";
-      } else if (Number.isNaN(amt)) {
-        newErrors.amount = "Enter a valid numeric amount";
-      } else if (amt < minimumAmount) {
-        newErrors.amount = `Amount must be at least GH₵${minimumAmount}`;
-      } else if (amt > 10000) {
-        newErrors.amount = "Amount cannot exceed GH₵10,000";
-      }
-    }
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const updateField = (field: keyof FormState, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  const isStep1Valid = React.useMemo(() => {
-    const raw = stepData.amount?.toString().trim() ?? "";
-    const amt = Number(raw);
-    return raw !== "" && !Number.isNaN(amt) && amt >= minimumAmount && amt <= 10000;
-  }, [stepData.amount, minimumAmount]);
-
-  const handleNext = () => {
-    if (!validateStep(currentStep)) return;
-
-    // For instant mode we go to a Paystack-specific step (step 2)
-    if (currentStep === 1 && topUpMode === "instant") {
-      setCurrentStep(2);
-      return;
-    }
-
-    setCurrentStep((s) => Math.min(totalSteps, s + 1));
+  const validateAmount = (): boolean => {
+    const raw = form.amount.trim();
+    if (!raw) return setError('amount', 'Amount is required'), false;
+    if (Number.isNaN(parsedAmount)) return setError('amount', 'Enter a valid number'), false;
+    if (parsedAmount < minimumAmount) return setError('amount', `Minimum amount is GH₵${minimumAmount}`), false;
+    if (parsedAmount > 10_000) return setError('amount', 'Maximum amount is GH₵10,000'), false;
+    return true;
   };
 
-  const handleBack = () => {
-    setErrors({});
-    setCurrentStep((s) => Math.max(1, s - 1));
+  const setError = (field: keyof FormState, message: string) => {
+    setFieldErrors((prev) => ({ ...prev, [field]: message }));
   };
 
-  const handleInstantTopUp = async () => {
-    // Start Paystack checkout for instant top-up
-    if (!paystackEnabled) {
-      addToast("Paystack is not enabled for this platform.", "error");
-      return;
-    }
-
-    // Open a blank popup synchronously to avoid browser popup blockers
-    const popup = window.open("", "_blank");
-    if (!popup) {
-      addToast(
-        "Popup blocked by browser. Please allow popups for this site or try again.",
-        "error"
-      );
-      return;
-    }
-
-    try {
-      setIsInitiatingPaystack(true);
-      const amount = parseFloat(stepData.amount);
-      const init = await walletService.initiatePaystackTopUp(amount);
-      // normalize response shape from walletService
-      type InitResp = { authorizationUrl?: string; authorization_url?: string };
-      const resp = init as InitResp;
-      const authorizationUrl = resp.authorizationUrl ?? resp.authorization_url;
-
-      if (authorizationUrl) {
-        try {
-          // Navigate the already-open popup to the checkout URL (preserves user gesture)
-          popup.location.href = authorizationUrl;
-        } catch (navErr) {
-          // Some browsers disallow setting location on cross-origin blank popups; fallback to replace
-          // log the navigation error (helpful in diagnostics)
-          console.debug('Paystack popup navigation failed, falling back to window.open', navErr);
-          popup.close();
-          window.open(authorizationUrl, "_blank");
-        }
-
-        addToast(
-          "Paystack checkout opened — complete payment to auto-credit your wallet.",
-          "success",
-          6000
-        );
-        handleClose();
-      } else {
-        popup.close();
-        throw new Error("Paystack initialization did not return an authorization URL");
-      }
-    } catch (err: unknown) {
-      // Normalize error message
-      const serverMsg =
-        err instanceof Error
-          ? err.message
-          : typeof err === 'object' && err !== null && 'toString' in err
-            ? String(err)
-            : 'Failed to start Paystack checkout';
-
-      // Friendly messages for common Paystack misconfiguration
-      if (/Paystack authentication failed|secret key is not configured|invalid/i.test(serverMsg)) {
-        addToast(
-          'Paystack is not correctly configured on the server. Contact your administrator to set Paystack keys.',
-          'error',
-          8000
-        );
-      } else {
-        addToast(serverMsg, 'error');
-      }
-
-      try {
-        if (popup && !popup.closed) popup.close();
-      } catch (closeErr) {
-        console.debug('Failed to close popup after Paystack error', closeErr);
-      }
-    } finally {
-      setIsInitiatingPaystack(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!validateStep(currentStep)) return;
-
-    // Instant (Paystack) flow
-    if (topUpMode === "instant") {
-      await handleInstantTopUp();
-      return;
-    }
-
-    // Default: request -> submit admin request
-    const description =
-      stepData.description || `Top-up request via ${stepData.contactMethod}`;
-
-    // Close the modal first
-    handleClose();
-
-    // Submit the request
-    await onSubmit(parseFloat(stepData.amount), description);
-
-    // Show success toast notification
-    addToast(
-      `Your wallet top-up request of GH₵${stepData.amount} has been submitted successfully. You will be notified when it's processed.`,
-      "success",
-      5000
-    );
-
-    // Handle routing after successful submission
-    if (stepData.contactMethod === "whatsapp") {
-      handleWhatsAppContact();
-    }
+  const resetModal = () => {
+    setStep(1);
+    setMode('request');
+    setForm({ amount: '', description: '' });
+    setFieldErrors({});
+    setHasPendingRequest(false);
+    setIsPaystackLoading(false);
   };
 
   const handleClose = () => {
-    setCurrentStep(1);
-    setStepData({
-      amount: "",
-      description: "",
-      contactMethod: "whatsapp",
-    });
-    setErrors({});
-    setHasPendingRequest(false);
+    resetModal();
     onClose();
   };
 
-  const updateStepData = (
-    field: keyof StepData,
-    value: string | ContactMethod
-  ) => {
-    setStepData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
+  // ── Navigation ─────────────────────────────────────────────────────────────
+
+  const handleNext = () => {
+    if (!validateAmount()) return;
+    setStep(2);
+  };
+
+  const handleBack = () => {
+    setFieldErrors({});
+    setStep(1);
+  };
+
+  // ── Paystack Inline Checkout ───────────────────────────────────────────────
+
+  const handlePaystackCheckout = async () => {
+    if (!paystackEnabled) {
+      addToast('Paystack is not enabled for this platform.', 'error');
+      return;
+    }
+
+    setIsPaystackLoading(true);
+    try {
+      // Get checkout config from server — no DB record created yet
+      const init = await walletService.initiatePaystackTopUp(parsedAmount);
+      const { reference } = init;
+      const publicKey = init.publicKey || paystackPublicKey;
+
+      if (!reference) throw new Error('Missing transaction reference from server');
+      if (!publicKey) throw new Error('Paystack public key unavailable');
+
+      await loadPaystackScript();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const PaystackPop = (window as any).PaystackPop;
+      if (!PaystackPop) throw new Error('Paystack inline script failed to load');
+
+      const handler = PaystackPop.setup({
+        key: publicKey,
+        email: user?.email,
+        amount: Math.round(parsedAmount * 100), // pesewas
+        currency: 'GHS',
+        ref: reference,
+        onClose: () => {
+          // Nothing to clean up in DB — the transaction only exists after payment
+          addToast('Payment window closed. No charge was made.', 'info', 4000);
+          setIsPaystackLoading(false);
+        },
+        callback: (response: { reference: string }) => {
+          // Immediately verify on the server so the wallet is credited
+          walletService
+            .verifyPaystackReference(response.reference)
+            .then(() => {
+              addToast('Payment successful! Your wallet has been credited.', 'success', 5000);
+              handleClose();
+            })
+            .catch((verifyErr) => {
+              console.error('[TopUpModal] Verification failed:', verifyErr);
+              addToast(
+                'Payment received but verification is pending. Your wallet will be updated shortly.',
+                'warning',
+                8000
+              );
+              handleClose();
+            });
+        },
+      });
+
+      handler.openIframe();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to start Paystack checkout';
+
+      if (/authentication failed|secret key/i.test(message)) {
+        addToast('Paystack is not correctly configured. Contact your administrator.', 'error', 8000);
+      } else if (/currency not supported/i.test(message)) {
+        addToast('Paystack does not support GHS on this account. Contact your administrator.', 'error', 10000);
+      } else {
+        addToast(message, 'error');
+      }
+
+      setIsPaystackLoading(false);
     }
   };
 
-  const handleWhatsAppContact = () => {
-    const message = `Hi, I need a wallet top-up of GH₵${stepData.amount}. Please process my request.`;
-    const whatsappUrl = `https://wa.me/+233548983019?text=${encodeURIComponent(
-      message
-    )}`;
-    window.open(whatsappUrl, "_blank");
+  // ── Manual Request Submission ──────────────────────────────────────────────
+
+  const handleManualSubmit = async () => {
+    const description = form.description.trim() || 'Wallet top-up request via WhatsApp';
+    handleClose();
+    await onSubmit(parsedAmount, description);
+    addToast(`Top-up request of GH₵${parsedAmount} submitted. You'll be notified when it's processed.`, 'success', 5000);
+    openWhatsApp();
   };
+
+  const openWhatsApp = () => {
+    const msg = `Hi, I need a wallet top-up of GH₵${parsedAmount}. Please process my request.`;
+    window.open(`https://wa.me/+233548983019?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   if (!isOpen) return null;
 
+  const isBlocked = checkingPending || hasPendingRequest;
+
   return (
     <Dialog isOpen={isOpen} onClose={handleClose} size="md">
+      {/* ── Header ── */}
       <DialogHeader
         className="text-white"
-        style={{
-          background: "linear-gradient(to right, var(--color-primary-500), var(--color-primary-700))",
-        }}
+        style={{ background: 'linear-gradient(to right, var(--color-primary-500), var(--color-primary-700))' }}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <FaMoneyBillWave className="h-6 w-6 text-white" />
-            <h3 className="text-lg font-semibold text-white">Request Wallet Top-Up</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <FaMoneyBillWave className="h-5 w-5 text-white" />
+            <h3 className="text-lg font-semibold text-white">Wallet Top-Up</h3>
           </div>
           <Button variant="ghost" iconOnly aria-label="Close" onClick={handleClose} className="text-white">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,235 +304,161 @@ export const TopUpRequestModal: React.FC<TopUpRequestModalProps> = ({
             </svg>
           </Button>
         </div>
-
-        {/* Progress */}
-        <div>
-          <div className="flex items-center justify-between">
-            {Array.from({ length: totalSteps }).map((_, index) => (
-              <div key={index} className="flex items-center flex-1">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${index + 1 <= currentStep ? "bg-white" : "bg-white/20 text-white"
-                    }`}
-                  style={index + 1 <= currentStep ? { color: "var(--color-primary-500)" } : {}}
-                >
-                  {index + 1 < currentStep ? <FaCheck className="w-4 h-4" /> : index + 1}
-                </div>
-                {index < totalSteps - 1 && (
-                  <div className={`flex-1 h-1 mx-2 ${index + 1 < currentStep ? "bg-white" : "bg-white/20"}`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="text-xs text-white text-center">Step {currentStep} of {totalSteps}</div>
-        </div>
+        {!isBlocked && <StepIndicator current={step} total={TOTAL_STEPS} />}
       </DialogHeader>
 
-      <DialogBody>
+      {/* ── Body ── */}
+      <DialogBody className="space-y-4">
+        {/* Loading state */}
         {checkingPending && (
-          <div className="flex items-center justify-center py-4">
+          <div className="flex items-center justify-center py-8 gap-3 text-gray-500">
             <Spinner size="lg" color="primary" />
-            <span className="ml-3 text-gray-600">Checking status...</span>
+            <span>Checking your account…</span>
           </div>
         )}
 
+        {/* Blocked: pending request exists */}
         {!checkingPending && hasPendingRequest && (
-          <Alert variant="solid" status="error" className="mb-4">You already have a pending top-up request. Please wait for it to be processed before making a new request.</Alert>
+          <Alert status="warning" variant="solid">
+            You already have a pending top-up request. Please wait for it to be processed before making a new request.
+          </Alert>
         )}
 
+        {/* External error passed from parent */}
         {!checkingPending && !hasPendingRequest && error && (
-          <Alert variant="solid" status="error" className="mb-4">{error}</Alert>
+          <Alert status="error" variant="solid">{error}</Alert>
         )}
 
-        {!checkingPending && !hasPendingRequest && (
-          <>
-            {currentStep === 1 && (
-              <div className="space-y-4">
-                <Tabs value={topUpMode} onValueChange={(v: string) => setTopUpMode(v as 'request' | 'instant')}>
-                  <TabsList className="w-full justify-center">
-                    <TabsTrigger value="request">Request (Admin)</TabsTrigger>
-                    {paystackEnabled && canHaveWallet(user?.userType || '') ? (
-                      <TabsTrigger value="instant">Instant (Paystack)</TabsTrigger>
-                    ) : (
-                      <div className="inline-flex items-center rounded-md px-3 py-1.5 text-sm text-gray-400" aria-hidden>
-                        Instant (Paystack)
-                      </div>
-                    )}
-                  </TabsList>
-                </Tabs>
-
-                {!paystackEnabled && <div className="text-xs text-gray-400">Paystack not enabled or server keys missing</div>}
-
-                <div>
-                  <Input
-                    id="amount"
-                    label={`Top-Up Amount (GH₵)`}
-                    type="number"
-                    min={minimumAmount}
-                    step="0.01"
-                    placeholder={`Minimum GH₵${minimumAmount}`}
-                    value={stepData.amount}
-                    onChange={(e) => updateStepData("amount", e.target.value)}
-                    isInvalid={Boolean(errors.amount)}
-                  />
-                </div>
-
-                <div>
-                  <Textarea
-                    id="description"
-                    label="Description (Optional)"
-                    rows={3}
-                    placeholder="Reason for top-up request..."
-                    value={stepData.description}
-                    onChange={(e) => updateStepData("description", e.target.value)}
-                    error={errors.description}
-                  />
-                </div>
-
-                <InfoBox>
-                  <p className="text-sm">Minimum top-up amount is GH₵{minimumAmount}. Your top-up request will be reviewed by an administrator. You'll be notified once it's processed.</p>
-                </InfoBox>
-              </div>
-            )}
-
-            {currentStep === 2 && topUpMode === "request" && (
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-lg font-medium text-gray-900">Choose Contact Method</h4>
-                  <p className="text-sm text-gray-600">Select how you'd like to inform the admin about your top-up request.</p>
-                </div>
-
-                <div>
-                  <Button
-                    variant="outline"
-                    size="md"
-                    onClick={() => updateStepData('contactMethod', 'whatsapp')}
-                    leftIcon={
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center ${stepData.contactMethod === 'whatsapp' ? 'bg-emerald-500' : 'bg-emerald-50'}`}>
-                        <FaWhatsapp className={`${stepData.contactMethod === 'whatsapp' ? 'text-white' : 'text-emerald-600'} w-5 h-5`} />
-                      </div>
-                    }
-                    rightIcon={
-                      stepData.contactMethod === 'whatsapp' ? (
-                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
-                          <FaCheck className="w-3.5 h-3.5 text-white flex items-end" />
-                        </div>
-                      ) : undefined
-                    }
-                    className={`w-full justify-start rounded-md p-4 ${stepData.contactMethod === 'whatsapp' ? 'bg-emerald-50 border border-emerald-100' : 'bg-white border border-gray-200'}`}
-                  >
-                    <div className="text-left">
-                      <div className="font-medium text-gray-900">WhatsApp Message</div>
-                      <div className="text-sm text-gray-500">Send a pre-filled message to admin</div>
-                    </div>
-                  </Button>
-                </div>
-
-                {errors.contactMethod && <p className="text-sm text-red-600">{errors.contactMethod}</p>}
-              </div>
-            )}
-
-            {currentStep === 2 && topUpMode === "instant" && (
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-lg font-medium text-gray-900">Pay with Paystack</h4>
-                  <p className="text-sm text-gray-600">You will be redirected to Paystack to complete payment. Once the payment is successful your wallet will be automatically credited.</p>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                  <SummaryRow label="Amount" value={<span>GH₵{stepData.amount || '—'}</span>} />
-                  <SummaryRow label="Payment provider" value={<span>Paystack</span>} />
-                </div>
-
-                {!paystackEnabled && (
-                  <Alert status="error">Paystack is not configured for this platform. Contact your administrator.</Alert>
+        {/* ── Step 1: Amount + Mode ── */}
+        {!isBlocked && step === 1 && (
+          <div className="space-y-4">
+            {/* Mode selector */}
+            <Tabs value={mode} onValueChange={(v: string) => setMode(v as TopUpMode)}>
+              <TabsList className="w-full">
+                <TabsTrigger value="request" className="flex-1">
+                  Request (Admin)
+                </TabsTrigger>
+                {paystackEnabled && canHaveWallet(user?.userType ?? '') ? (
+                  <TabsTrigger value="instant" className="flex-1 flex items-center gap-1.5">
+                    <FaBolt className="w-3 h-3" /> Instant (Paystack)
+                  </TabsTrigger>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 cursor-not-allowed" title="Paystack not configured">
+                    <FaBolt className="w-3 h-3" /> Instant (Paystack)
+                  </div>
                 )}
+              </TabsList>
+            </Tabs>
 
-                <p className="text-sm text-gray-500">Use the <strong>Next</strong> button below to proceed to Paystack and complete the payment.</p>
-              </div>
+            {/* Amount input */}
+            <Input
+              id="amount"
+              label={`Amount (GH₵)`}
+              type="number"
+              min={minimumAmount}
+              step="0.01"
+              placeholder={`Minimum GH₵${minimumAmount}`}
+              value={form.amount}
+              onChange={(e) => updateField('amount', e.target.value)}
+              isInvalid={Boolean(fieldErrors.amount)}
+              errorText={fieldErrors.amount}
+            />
+
+            {/* Optional description */}
+            <Textarea
+              id="description"
+              label="Description (optional)"
+              rows={2}
+              placeholder="Reason for top-up…"
+              value={form.description}
+              onChange={(e) => updateField('description', e.target.value)}
+            />
+
+            {/* Mode-specific info */}
+            {mode === 'request' ? (
+              <InfoBox>
+                Your request will be reviewed by an administrator. You'll be notified and can follow up via WhatsApp once submitted.
+              </InfoBox>
+            ) : (
+              <InfoBox>
+                Pay instantly via Paystack. Your wallet is credited automatically on payment confirmation — no admin approval needed.
+              </InfoBox>
             )}
+          </div>
+        )}
 
-            {currentStep === 3 && (
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Confirm Your Request</h4>
-                </div>
+        {/* ── Step 2: Confirm ── */}
+        {!isBlocked && step === 2 && (
+          <div className="space-y-4">
+            <h4 className="font-semibold text-gray-900">Confirm Your {mode === 'instant' ? 'Payment' : 'Request'}</h4>
 
-                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                  <SummaryRow label="Amount" value={<span>GH₵{stepData.amount}</span>} />
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-100">
+              <SummaryRow label="Amount" value={`GH₵${parsedAmount.toFixed(2)}`} />
+              {form.description && <SummaryRow label="Description" value={form.description} />}
+              {mode === 'request' ? (
+                <>
+                  <SummaryRow label="Method" value="Admin approval" />
+                  <SummaryRow label="Follow-up" value={<span className="flex items-center gap-1"><FaWhatsapp className="text-green-500" /> WhatsApp</span>} />
+                </>
+              ) : (
+                <SummaryRow label="Payment gateway" value="Paystack (instant)" />
+              )}
+            </div>
 
-                  {stepData.description && (
-                    <SummaryRow label="Description" value={<span className="font-medium text-sm">{stepData.description}</span>} />
-                  )}
-
-                  {topUpMode === 'request' ? (
-                    <SummaryRow label="Contact Method" value={<span className="font-medium capitalize">{stepData.contactMethod}</span>} />
-                  ) : (
-                    <SummaryRow label="Payment Method" value={<span className="font-medium">Paystack (instant)</span>} />
-                  )}
-                </div>
-
-                <InfoBox>
-                  <p className="text-sm">
-                    {topUpMode === 'request'
-                      ? 'Your request will be submitted and you can contact the admin using your selected method.'
-                      : 'You will be redirected to Paystack to complete the payment. On success your wallet will be auto-credited.'}
-                  </p>
-                </InfoBox>
-              </div>
+            {mode === 'instant' ? (
+              <InfoBox>
+                Clicking <strong>Pay Now</strong> will open the Paystack payment window. Your wallet is credited immediately after a successful payment.
+              </InfoBox>
+            ) : (
+              <InfoBox>
+                After submitting, a WhatsApp message will open so you can notify the admin directly.
+              </InfoBox>
             )}
-          </>
+          </div>
         )}
       </DialogBody>
 
+      {/* ── Footer ── */}
       <DialogFooter justify="end">
-        {!checkingPending && !hasPendingRequest && currentStep > 1 && (
-          <Button variant="secondary" onClick={handleBack} disabled={isSubmitting}>
-            <FaArrowLeft className="w-4 h-4 mr-2" />
-            <span>Back</span>
-          </Button>
-        )}
-
-        {!checkingPending && !hasPendingRequest && currentStep < totalSteps && (
-          <Button
-            onClick={() => {
-              if (currentStep === 2 && topUpMode === 'instant') {
-                void handleInstantTopUp();
-              } else {
-                handleNext();
-              }
-            }}
-            disabled={
-              isSubmitting ||
-              (currentStep === 1 && !isStep1Valid) ||
-              (currentStep === 2 && topUpMode === 'instant' && (!paystackEnabled || isInitiatingPaystack))
-            }
-          >
-            <span>{currentStep === 2 && topUpMode === 'instant' ? 'Proceed to Paystack' : 'Next'}</span>
-            <FaArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        )}
-
-        {!checkingPending && !hasPendingRequest && currentStep === totalSteps && (
-          <div className="flex space-x-3">
-            <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="flex items-center space-x-2">
-              {isSubmitting ? (
-                <>
-                  <Spinner size="sm" color="primary" />
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                <>
-                  <FaCheck className="w-4 h-4 mr-2" />
-                  <span>{topUpMode === 'instant' ? 'Pay with Paystack' : 'Submit Request'}</span>
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-
-        {(checkingPending || hasPendingRequest) && (
+        {isBlocked && (
           <Button variant="secondary" onClick={handleClose}>Close</Button>
+        )}
+
+        {!isBlocked && step === 1 && (
+          <Button onClick={handleNext} disabled={!isAmountValid}>
+            <span>Next</span>
+            <FaArrowRight className="w-3.5 h-3.5 ml-2" />
+          </Button>
+        )}
+
+        {!isBlocked && step === 2 && (
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={handleBack} disabled={isSubmitting || isPaystackLoading}>
+              <FaArrowLeft className="w-3.5 h-3.5 mr-2" />
+              <span>Back</span>
+            </Button>
+
+            {mode === 'request' ? (
+              <Button onClick={handleManualSubmit} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <><Spinner size="sm" color="primary" /><span className="ml-2">Submitting…</span></>
+                ) : (
+                  <><FaCheck className="w-3.5 h-3.5 mr-2" /><span>Submit Request</span></>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={handlePaystackCheckout}
+                disabled={!paystackEnabled || isPaystackLoading}
+              >
+                {isPaystackLoading ? (
+                  <><Spinner size="sm" color="primary" /><span className="ml-2">Opening Paystack…</span></>
+                ) : (
+                  <><FaBolt className="w-3.5 h-3.5 mr-2" /><span>Pay Now</span></>
+                )}
+              </Button>
+            )}
+          </div>
         )}
       </DialogFooter>
     </Dialog>
