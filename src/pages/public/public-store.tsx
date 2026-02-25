@@ -766,7 +766,7 @@ const PublicStore: React.FC = () => {
                             addToast('Payment window closed. No charge was made.', 'info', 4000);
                         },
                         callback: (response: { reference: string }) => {
-                            walletService
+                            storefrontService
                                 .verifyPaystackReference(response.reference)
                                 .then(() => {
                                     setPaystackStatus('success');

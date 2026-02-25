@@ -1,5 +1,4 @@
 // src/services/websocket.service.ts
-import { apiClient } from "../utils/api-client";
 
 class WebSocketService {
   private ws: WebSocket | null = null;
@@ -9,11 +8,7 @@ class WebSocketService {
   private readonly listeners: Map<string, ((data: unknown) => void)[]> =
     new Map();
   private currentUserId: string | null = null;
-  private _isPolling = false;
-  private pollingInterval: NodeJS.Timeout | null = null;
-  private readonly pollingDelay = 5000; // 5 seconds
-  private lastWalletUpdate = 0;
-
+  // (polling support removed)
   connect(userId: string) {
     if (this.ws?.readyState === WebSocket.OPEN) {
       return; // Already connected
@@ -26,9 +21,10 @@ class WebSocketService {
       import.meta.env.PROD || window.location.hostname !== "localhost";
     const wsUrl = import.meta.env.VITE_API_URL;
 
-    // If we're in production and no WebSocket URL is configured, skip WebSocket and use polling only
+    // If we're in production and no WebSocket URL is configured, we used to fall back to polling.
+    // Polling has been removed and real-time updates now require a working WebSocket connection.
     if (isProduction && !wsUrl) {
-      this.startPolling(userId);
+      console.warn("WebSocket not configured; real-time updates unavailable.");
       return;
     }
 
@@ -40,8 +36,6 @@ class WebSocketService {
 
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
-        // Stop polling if WebSocket is working
-        this.stopPolling();
       };
 
       this.ws.onmessage = (event) => {
@@ -55,87 +49,19 @@ class WebSocketService {
 
       this.ws.onclose = () => {
         this.handleReconnect(userId);
-        // Start polling when WebSocket fails
-        this.startPolling(userId);
+        // no polling fallback
       };
 
       this.ws.onerror = () => {
-        // Start polling when WebSocket fails
-        this.startPolling(userId);
+        // no polling fallback
       };
     } catch {
-      // Start polling when WebSocket fails
-      this.startPolling(userId);
+      // polling has been removed; nothing to do
+      // this.startPolling(userId);
     }
   }
 
-  private startPolling(userId: string) {
-    if (this._isPolling) return;
 
-    this._isPolling = true;
-
-    this.pollingInterval = setInterval(async () => {
-      try {
-        // Poll for wallet updates
-        const response = await apiClient.get("/api/wallet/info");
-
-        if (response.status >= 200 && response.status < 300) {
-          const data = response.data;
-          if (data.success && data.wallet) {
-            // Check if we have a new update (simple timestamp check)
-            const currentTime = Date.now();
-            if (currentTime - this.lastWalletUpdate > 1000) {
-              // At least 1 second difference
-              this.lastWalletUpdate = currentTime;
-
-              // Emit wallet update event
-              this.emit("wallet_update", {
-                type: "wallet_update",
-                userId: userId,
-                balance: data.wallet.balance,
-                recentTransactions: data.wallet.recentTransactions,
-              });
-            }
-          }
-        }
-
-        // Poll for commission updates
-        try {
-          const commissionResponse = await apiClient.get(
-            "/api/commissions/agent?status=pending"
-          );
-
-          if (
-            commissionResponse.status >= 200 &&
-            commissionResponse.status < 300
-          ) {
-            const commissionData = commissionResponse.data;
-            if (commissionData.success && commissionData.data) {
-              // Emit commission updates for any new or updated commissions
-              commissionData.data.forEach((commission: unknown) => {
-                this.emit("commission", {
-                  type: "commission_update",
-                  commission: commission,
-                });
-              });
-            }
-          }
-        } catch {
-          // Commission polling error - continue with other polling
-        }
-      } catch {
-        // Polling error
-      }
-    }, this.pollingDelay);
-  }
-
-  private stopPolling() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
-    }
-    this._isPolling = false;
-  }
 
   private handleReconnect(userId: string) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -145,8 +71,8 @@ class WebSocketService {
         this.connect(userId);
       }, this.reconnectDelay * this.reconnectAttempts);
     } else {
-      // Ensure polling is started when WebSocket fails completely
-      this.startPolling(userId);
+      // polling has been removed; nothing to do
+      // this.startPolling(userId);
     }
   }
 
@@ -163,7 +89,6 @@ class WebSocketService {
         this.emit("notification", data.data);
         break;
       case "wallet_update":
-        this.lastWalletUpdate = Date.now();
         this.emit("wallet_update", {
           type: "wallet_update",
           userId: data.userId,
@@ -224,7 +149,6 @@ class WebSocketService {
       this.ws.close();
       this.ws = null;
     }
-    this.stopPolling();
     this.currentUserId = null;
   }
 
@@ -263,9 +187,6 @@ class WebSocketService {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 
-  isPolling(): boolean {
-    return this._isPolling;
-  }
 
   getCurrentUserId(): string | null {
     return this.currentUserId;
