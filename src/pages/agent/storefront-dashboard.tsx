@@ -13,6 +13,7 @@ import {
   TabsTrigger,
   TabsContent,
   StatsGrid,
+  StatCard,
 } from "../../design-system";
 import { useToast } from "../../design-system";
 import {
@@ -73,6 +74,8 @@ export const StorefrontDashboardPage: React.FC = () => {
   const [analytics, setAnalytics] = useState<StorefrontAnalytics | null>(null);
   const [recentOrders, setRecentOrders] = useState<StorefrontOrder[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  // bundles that the agent has enabled/disabled (used for checklist logic)
+  const [availableBundles, setAvailableBundles] = useState<AgentBundle[]>([]);
 
   // Checklist visibility — auto-hide when all done, or manually hidden
   const [checklistManuallyHidden, setChecklistManuallyHidden] = useState(() =>
@@ -106,17 +109,19 @@ export const StorefrontDashboardPage: React.FC = () => {
     loadStorefront();
   }, [loadStorefront]);
 
-  // Load analytics & recent orders when storefront is available
+  // Load analytics, orders and bundle availability when storefront is available
   const loadAnalyticsAndOrders = useCallback(async () => {
     if (!storefront) return;
     setAnalyticsLoading(true);
     try {
-      const [analyticsData, ordersData] = await Promise.all([
+      const [analyticsData, ordersData, bundlesData] = await Promise.all([
         storefrontService.getAnalytics(),
         storefrontService.getMyOrders({ limit: 5, offset: 0 }),
+        storefrontService.getAvailableBundles(),
       ]);
       setAnalytics(analyticsData);
       setRecentOrders(ordersData.orders || []);
+      setAvailableBundles(bundlesData);
     } catch (error) {
       console.error("Failed to load analytics:", error);
     } finally {
@@ -202,7 +207,8 @@ export const StorefrontDashboardPage: React.FC = () => {
     },
     {
       label: "Configure bundle pricing",
-      done: !!storefront.isApproved,
+      // consider pricing configured only if the store has at least one enabled bundle
+      done: availableBundles.some(b => b.isEnabled),
       action: () => setActiveTab("pricing"),
     },
     {
@@ -224,6 +230,45 @@ export const StorefrontDashboardPage: React.FC = () => {
   // Format helpers
   const formatCurrency = (amount: number) =>
     `GH₵ ${amount.toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // Carousel for profit metrics
+  const ProfitCarousel: React.FC<{
+    completed: number;
+    pending: number;
+    loading: boolean;
+  }> = ({ completed, pending, loading }) => {
+    const [index, setIndex] = useState(0);
+    useEffect(() => {
+      const iv = setInterval(() => setIndex((i) => (i + 1) % 2), 5000);
+      return () => clearInterval(iv);
+    }, []);
+
+    const cards = [
+      {
+        title: "Profit",
+        value: loading ? "—" : formatCurrency(completed),
+        subtitle: "From completed orders",
+        icon: <TrendingUp className="w-4 h-4" />,
+      },
+      {
+        title: "Pending Profit",
+        value: loading ? "—" : formatCurrency(pending),
+        subtitle: "Markup on pending orders",
+        icon: <Clock className="w-4 h-4" />,
+      },
+    ];
+
+    const card = cards[index];
+    return (
+      <StatCard
+        title={card.title}
+        value={card.value}
+        subtitle={card.subtitle}
+        icon={card.icon}
+        size="md"
+      />
+    );
+  };
 
   const formatRelativeTime = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -363,40 +408,37 @@ export const StorefrontDashboardPage: React.FC = () => {
         <TabsContent value="overview">
           <div className="space-y-4 sm:space-y-6">
             {/* Analytics Stats Row */}
-            <StatsGrid
-              stats={[
-                {
-                  title: "Total Orders",
-                  value: analyticsLoading ? "—" : (analytics?.totalOrders ?? 0),
-                  subtitle: `${analytics?.completedOrders ?? 0} completed`,
-                  icon: <ShoppingCart className="w-4 h-4" />,
-                  size: "md",
-                },
-                {
-                  title: "Revenue",
-                  value: analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0),
-                  subtitle: "Lifetime earnings",
-                  icon: <DollarSign className="w-4 h-4" />,
-                  size: "md",
-                },
-                {
-                  title: "Profit",
-                  value: analyticsLoading ? "—" : formatCurrency(analytics?.totalProfit ?? 0),
-                  subtitle: "From markups",
-                  icon: <TrendingUp className="w-4 h-4" />,
-                  size: "md",
-                },
-                {
-                  title: "Pending",
-                  value: analyticsLoading ? "—" : (analytics?.pendingOrders ?? 0),
-                  subtitle: "Awaiting action",
-                  icon: <Clock className="w-4 h-4" />,
-                  size: "md",
-                },
-              ]}
-              columns={4}
-              gap="md"
-            />
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="Total Orders"
+                value={analyticsLoading ? "—" : analytics?.totalOrders ?? 0}
+                subtitle={`${analytics?.completedOrders ?? 0} completed`}
+                icon={<ShoppingCart className="w-4 h-4" />}
+                size="md"
+              />
+
+              <StatCard
+                title="Revenue"
+                value={analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0)}
+                subtitle="Lifetime earnings"
+                icon={<DollarSign className="w-4 h-4" />}
+                size="md"
+              />
+
+              <ProfitCarousel
+                completed={analytics?.totalProfit ?? 0}
+                pending={analytics?.pendingProfit ?? 0}
+                loading={analyticsLoading}
+              />
+
+              <StatCard
+                title="Pending"
+                value={analyticsLoading ? "—" : analytics?.pendingOrders ?? 0}
+                subtitle="Awaiting action"
+                icon={<Clock className="w-4 h-4" />}
+                size="md"
+              />
+            </div>
 
             {/* Additional analytics row */}
             {analytics && !analyticsLoading && (

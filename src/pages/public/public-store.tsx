@@ -4,7 +4,7 @@
 // Mobile-first, theme-aware, performance-optimised
 // =============================================================================
 
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     Button, Alert, Skeleton,
@@ -129,14 +129,7 @@ const THEMES: Record<string, ThemeConfig> = {
 
 const DEFAULT_THEME = THEMES.blue;
 
-// Placeholder popular bundles (replace with API data when available)
-const POPULAR_BUNDLE_PLACEHOLDERS = [
-    { label: '1GB', sub: 'Daily · 24hrs', badge: '🔥 Top Pick' },
-    { label: '5GB', sub: 'Weekly · 7 days', badge: '⚡ Fast Seller' },
-    { label: '10GB', sub: 'Monthly · 30 days', badge: '💎 Best Value' },
-    { label: '2GB', sub: 'Night · 12hrs', badge: '🌙 Night Owl' },
-    { label: '20GB', sub: 'Monthly · 30 days', badge: '🚀 Power User' },
-];
+// placeholders removed – popularity driven exclusively by backend now.
 
 // =============================================================================
 // Pure Helpers (no hooks — safe to call anywhere)
@@ -208,8 +201,29 @@ const PopularCarousel = memo(({
     bundles,
     onSelect,
 }: { theme: ThemeConfig; bundles: PublicBundle[]; onSelect?: (b: PublicBundle) => void }) => {
-    // Use real bundles if available, otherwise placeholders
-    const items = bundles.length > 0 ? bundles.slice(0, 8) : null;
+    // hooks must run unconditionally at top
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // cap at eight
+    const items = bundles && bundles.length ? bundles.slice(0, 8) : [];
+
+    // autoplay by scrolling to the next card every 3s
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el || items.length <= 1) return;
+        let idx = 0;
+        const timer = setInterval(() => {
+            idx = (idx + 1) % items.length;
+            const child = el.children[idx] as HTMLElement;
+            if (child) {
+                el.scrollTo({ left: child.offsetLeft, behavior: 'smooth' });
+            }
+        }, 3000);
+        return () => clearInterval(timer);
+    }, [items]);
+
+    // if no bundles were passed, render nothing at all
+    if (!bundles || bundles.length === 0) return null;
 
     return (
         <div className="py-4">
@@ -217,60 +231,39 @@ const PopularCarousel = memo(({
                 <FaFire className="w-4 h-4" style={{ color: theme.primary }} />
                 <h2 className="text-sm font-bold text-gray-800 tracking-wide uppercase">Popular Right Now</h2>
             </div>
-            <div className="flex gap-3 overflow-x-auto px-4 pb-3 hide-scrollbar snap-x snap-mandatory">
-                {items
-                    ? items.map((b) => {
-                        const pc = getProviderColors(b.provider);
-                        return (
-                            <div
-                                key={b._id}
-                                onClick={() => onSelect?.(b)}
-                                className="shrink-0 snap-start w-36 rounded-2xl overflow-hidden shadow-md cursor-pointer active:scale-95 transition-transform duration-150"
-                                style={{ background: `linear-gradient(145deg, ${pc.primary}ee, ${pc.primary}99)` }}
-                            >
-                                <div className="p-3 text-white">
-                                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-70">{b.providerName}</div>
-                                    <div className="text-2xl font-black mt-1 leading-none">
-                                        {b.dataVolume}{b.dataUnit}
-                                    </div>
-                                    <div className="text-[10px] opacity-80 mt-1">{fmtValidity(b.validity, b.validityUnit)}</div>
-                                    <div className="mt-3 flex items-end justify-between">
-                                        <span className="text-sm font-extrabold">{fmt(b.price)}</span>
-                                    </div>
-                                    <div className="mt-2 text-[9px] bg-white/20 rounded-full px-2 py-0.5 inline-block">
-                                        🔥 Popular
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })
-                    : POPULAR_BUNDLE_PLACEHOLDERS.map((p, i) => (
+            <div
+                ref={containerRef}
+                className="flex gap-3 overflow-x-auto px-4 pb-3 hide-scrollbar snap-x snap-mandatory"
+            >
+                {items.map((b) => {
+                    const pc = getProviderColors(b.provider);
+                    return (
                         <div
-                            key={i}
-                            className="shrink-0 snap-start w-36 rounded-2xl overflow-hidden shadow-md"
-                            style={{
-                                background: `linear-gradient(145deg, ${theme.primary}dd, ${theme.secondary}cc)`,
-                                opacity: 0.85,
-                            }}
+                            key={b._id}
+                            onClick={() => onSelect?.(b)}
+                            className="shrink-0 snap-start w-[85%] sm:w-1/3 rounded-2xl overflow-hidden shadow-md cursor-pointer active:scale-95 transition-transform duration-150"
+                            style={{ background: `linear-gradient(145deg, ${pc.primary}ee, ${pc.primary}99)` }}
                         >
                             <div className="p-3 text-white">
-                                <div className="text-[10px] font-bold uppercase tracking-widest opacity-60">Data Bundle</div>
-                                <div className="text-2xl font-black mt-1 leading-none">{p.label}</div>
-                                <div className="text-[10px] opacity-80 mt-1">{p.sub}</div>
-                                <div className="mt-3">
-                                    <div className="h-4 bg-white/20 rounded w-16 animate-pulse" />
+                                <div className="text-[10px] font-bold uppercase tracking-widest opacity-70">{b.providerName}</div>
+                                <div className="text-2xl font-black mt-1 leading-none">
+                                    {b.dataVolume}{b.dataUnit}
+                                </div>
+                                <div className="text-[10px] opacity-80 mt-1">{fmtValidity(b.validity, b.validityUnit)}</div>
+                                <div className="mt-3 flex items-end justify-between">
+                                    <span className="text-sm font-extrabold">{fmt(b.price)}</span>
                                 </div>
                                 <div className="mt-2 text-[9px] bg-white/20 rounded-full px-2 py-0.5 inline-block">
-                                    {p.badge}
+                                    🔥 Popular
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    );
+                })}
             </div>
         </div>
     );
 });
-
 // =============================================================================
 // Bundle Card — Grid View
 // =============================================================================
@@ -480,7 +473,12 @@ const EmptyBundles = memo(({ searchTerm, onClear }: { searchTerm: string; onClea
                 </button>
             </>
         ) : (
-            <p className="text-gray-400 font-medium">No bundles available right now</p>
+            <>
+                <p className="text-gray-400 font-medium">No bundles available right now</p>
+                <p className="text-sm text-gray-500 mt-2">
+                    The store owner may not have activated any bundles yet. Check back later or contact them for assistance.
+                </p>
+            </>
         )}
     </div>
 ));
@@ -629,8 +627,12 @@ const PublicStore: React.FC = () => {
         return result;
     }, [storeData, searchTerm, selectedProvider]);
 
-    // Top 8 bundles sorted by some heuristic (price asc for now; swap for purchase_count when API provides it)
+    // Top bundles: if the backend returned a list (most-sold by store), use it;
+    // otherwise fallback to the cheapest items heuristic.
     const popularBundles = useMemo(() => {
+        if (storeData?.popularBundles && storeData.popularBundles.length) {
+            return storeData.popularBundles.slice(0, 8);
+        }
         if (!storeData?.bundles.length) return [];
         return [...storeData.bundles].sort((a, b) => a.price - b.price).slice(0, 8);
     }, [storeData]);
@@ -1587,9 +1589,11 @@ const PublicStore: React.FC = () => {
 
             <main>
                 {/* Popular bundles carousel — shown above bundle grid */}
-                <div className="max-w-5xl mx-auto">
-                    <PopularCarousel theme={theme} bundles={popularBundles} onSelect={openAddDialog} />
-                </div>
+                {popularBundles.length > 0 && (
+                    <div className="max-w-5xl mx-auto">
+                        <PopularCarousel theme={theme} bundles={popularBundles} onSelect={openAddDialog} />
+                    </div>
+                )}
 
                 {renderBundleSections()}
 

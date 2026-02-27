@@ -171,7 +171,12 @@ export interface StorefrontOrder {
 export interface StorefrontAnalytics {
   totalOrders: number;
   totalRevenue: number;
+  /** profit from orders that have reached completed status */
   totalProfit: number;
+  /** markup sitting on pending orders */
+  pendingProfit?: number;
+  /** markup on orders that have been confirmed but not yet completed */
+  confirmedProfit?: number;
   averageOrderValue: number;
   completedOrders: number;
   confirmedOrders: number;
@@ -222,6 +227,8 @@ export interface PublicStorefront {
   };
   // backward-compatible flat list
   bundles: PublicBundle[];
+  // optional list of popular bundles (store-scoped)
+  popularBundles?: PublicBundle[];
   // grouped providers -> packages -> bundles (optional; added for provider-first UI)
   providers?: Array<{
     code: string;

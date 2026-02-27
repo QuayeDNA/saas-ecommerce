@@ -898,11 +898,6 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         {/* ===== Branding & Customization ===== */}
         <TabsContent value="branding" className="space-y-6" data-tour="storefront-branding">
           {/* Appearance & Theme */}
-
-          {/* ===== Earnings / Payouts ===== */}
-          <TabsContent value="earnings" className="space-y-6">
-            <EarningsManager />
-          </TabsContent>
           <section className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
               <Palette className="w-4 h-4 text-gray-500" />
@@ -1114,6 +1109,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               Save Branding Settings
             </Button>
           </div>
+        </TabsContent>
+
+        {/* ===== Earnings / Payouts ===== */}
+        <TabsContent value="earnings" className="space-y-6">
+          <EarningsManager />
         </TabsContent>
 
         {/* ===== Payment Methods ===== */}
