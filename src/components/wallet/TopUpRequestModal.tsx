@@ -1,11 +1,11 @@
 // src/components/wallet/TopUpRequestModal.tsx
-import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { FaMoneyBillWave, FaWhatsapp, FaCheck, FaArrowLeft, FaArrowRight, FaBolt } from 'react-icons/fa';
 import {
   Button, Input, Textarea, Alert, Dialog, DialogHeader, DialogBody, DialogFooter, Spinner, Tabs, TabsList, TabsTrigger,
 } from '../../design-system';
 import { useToast } from '../../design-system/components/toast';
-import { settingsService } from '../../services/settings.service';
+import { settingsService, type FeeSettings } from '../../services/settings.service';
 import { walletService } from '../../services/wallet-service';
 import { AuthContext } from '../../contexts/AuthContext';
 import { canHaveWallet } from '../../utils/userTypeHelpers';
@@ -100,6 +100,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   const [checkingPending, setCheckingPending] = useState(false);
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
   const [isPaystackLoading, setIsPaystackLoading] = useState(false);
+  const [feeSettings, setFeeSettings] = useState<FeeSettings | null>(null);
 
   const TOTAL_STEPS = 2;
 
@@ -135,6 +136,13 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
       } catch {
         setPaystackEnabled(false);
       }
+
+      try {
+        const fees = await settingsService.getFeeSettings();
+        setFeeSettings(fees);
+      } catch {
+        // Non-critical — fee preview just won't show
+      }
     };
 
     init();
@@ -147,6 +155,39 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
     () => !Number.isNaN(parsedAmount) && parsedAmount >= minimumAmount && parsedAmount <= 10_000,
     [parsedAmount, minimumAmount]
   );
+
+  // ── Fee preview ───────────────────────────────────────────────────────────
+
+  const collectionFeePreview = useMemo(() => {
+    if (!feeSettings || !isAmountValid || Number.isNaN(parsedAmount)) return null;
+    const totalFeePercent =
+      (feeSettings.paystackCollectionFeePercent ?? 0) + (feeSettings.platformFeePercent ?? 0);
+    if (totalFeePercent <= 0) return null;
+
+    if (feeSettings.delegateFeesToCustomer) {
+      // delegateFeesToCustomer=true → agent PAYS the fee (gross-up)
+      // Goal: wallet credited parsedAmount; agent charged parsedAmount + fee
+      const agentPays = Math.round((parsedAmount / (1 - totalFeePercent / 100)) * 100) / 100;
+      const feeAmount = Math.round((agentPays - parsedAmount) * 100) / 100;
+      return {
+        feePercent: totalFeePercent,
+        feeAmount,
+        netCredit: parsedAmount,   // wallet always gets what they entered
+        agentPays,                 // this is what Paystack charges them
+        agentBearsFee: true,
+      };
+    } else {
+      // delegateFeesToCustomer=false → platform absorbs fee
+      // Agent pays parsedAmount, wallet credited parsedAmount, platform pays the fee
+      return {
+        feePercent: totalFeePercent,
+        feeAmount: Math.round(parsedAmount * (totalFeePercent / 100) * 100) / 100,
+        netCredit: parsedAmount,
+        agentPays: parsedAmount,
+        agentBearsFee: false,
+      };
+    }
+  }, [feeSettings, parsedAmount, isAmountValid]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -221,9 +262,20 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
       const handler = PaystackPop.setup({
         key: publicKey,
         email: user?.email,
-        amount: Math.round(parsedAmount * 100), // pesewas
+        amount: init.amountPesewas,   // gross charge in pesewas (includes fee if delegated)
         currency: 'GHS',
         ref: reference,
+        metadata: {
+          type: 'wallet_topup',
+          userId: user?.id ?? user?._id,
+          userName: user?.fullName,
+          targetCreditAmount: init.targetCreditAmount, // wallet credit amount (pre-fee)
+          chargeAmount: init.chargeAmount,
+          paystackFee: init.paystackFee,
+          platformFee: init.platformFee,
+          totalFee: init.totalFee,
+          feesDelegate: init.feesDelegate,
+        },
         onClose: () => {
           // Nothing to clean up in DB — the transaction only exists after payment
           addToast('Payment window closed. No charge was made.', 'info', 4000);
@@ -374,6 +426,31 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
               onChange={(e) => updateField('description', e.target.value)}
             />
 
+            {/* Fee preview (instant mode only) */}
+            {mode === 'instant' && collectionFeePreview && (
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm space-y-1.5">
+                <p className="font-medium text-blue-800 text-xs uppercase tracking-wide">Fee breakdown</p>
+                <div className="flex justify-between text-gray-600">
+                  <span>Wallet credited</span>
+                  <span className="font-medium text-green-700">GH₵{collectionFeePreview.netCredit.toFixed(2)}</span>
+                </div>
+                {collectionFeePreview.agentBearsFee ? (
+                  <>
+                    <div className="flex justify-between text-orange-600">
+                      <span>Processing fee ({collectionFeePreview.feePercent.toFixed(2)}%)</span>
+                      <span>+ GH₵{collectionFeePreview.feeAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold border-t border-blue-200 pt-1.5">
+                      <span className="text-gray-800">You will be charged</span>
+                      <span className="text-gray-900">GH₵{collectionFeePreview.agentPays.toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-gray-400 border-t border-blue-200 pt-1.5">Processing fee is covered by the platform — you are charged exactly GH₵{parsedAmount.toFixed(2)}.</p>
+                )}
+              </div>
+            )}
+
             {/* Mode-specific info */}
             {mode === 'request' ? (
               <InfoBox>
@@ -401,7 +478,29 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                   <SummaryRow label="Follow-up" value={<span className="flex items-center gap-1"><FaWhatsapp className="text-green-500" /> WhatsApp</span>} />
                 </>
               ) : (
-                <SummaryRow label="Payment gateway" value="Paystack (instant)" />
+                <>
+                  <SummaryRow label="Payment gateway" value="Paystack (instant)" />
+                  <SummaryRow
+                    label="Wallet credited"
+                    value={<span className="text-green-600 font-semibold">GH₵{parsedAmount.toFixed(2)}</span>}
+                  />
+                  {collectionFeePreview?.agentBearsFee ? (
+                    <>
+                      <SummaryRow
+                        label={`Processing fee (${collectionFeePreview.feePercent.toFixed(2)}%)`}
+                        value={<span className="text-orange-600">+ GH₵{collectionFeePreview.feeAmount.toFixed(2)}</span>}
+                      />
+                      <div className="border-t border-gray-200 pt-2">
+                        <SummaryRow
+                          label="Total charged by Paystack"
+                          value={<span className="font-bold text-gray-900">GH₵{collectionFeePreview.agentPays.toFixed(2)}</span>}
+                        />
+                      </div>
+                    </>
+                  ) : collectionFeePreview ? (
+                    <SummaryRow label="Processing fee" value={<span className="text-gray-400 text-xs">Covered by platform</span>} />
+                  ) : null}
+                </>
               )}
             </div>
 

@@ -108,7 +108,20 @@ export const walletService = {
    */
   initiatePaystackTopUp: async (
     amount: number
-  ): Promise<{ authorizationUrl: string; reference: string; access_code?: string; amount?: number }> => {
+  ): Promise<{
+    reference: string;
+    publicKey: string;
+    /** Gross amount Paystack charges the agent (may include fee if delegated) */
+    chargeAmount: number;
+    /** Amount in pesewas to pass to PaystackPop.setup */
+    amountPesewas: number;
+    /** Original requested wallet credit amount */
+    targetCreditAmount: number;
+    paystackFee: number;
+    platformFee: number;
+    totalFee: number;
+    feesDelegate: boolean;
+  }> => {
     const response = await apiClient.post<{ success: boolean; data: any }>("/api/wallet/paystack/initiate", { amount });
     return response.data.data;
   },
@@ -272,9 +285,9 @@ export const walletService = {
     return response.data.data;
   },
 
-  requestPayout: async (amount: number, destination: PayoutDestination): Promise<PayoutRequestItem> => {
-    const response = await apiClient.post<{ success: boolean; data: PayoutRequestItem }>("/api/wallet/payouts/request", { amount, destination });
-    return response.data.data;
+  requestPayout: async (amount: number, destination: PayoutDestination): Promise<{ data: PayoutRequestItem; autoPayoutEnabled: boolean }> => {
+    const response = await apiClient.post<{ success: boolean; data: PayoutRequestItem; autoPayoutEnabled: boolean }>("/api/wallet/payouts/request", { amount, destination });
+    return { data: response.data.data, autoPayoutEnabled: response.data.autoPayoutEnabled ?? false };
   },
 
   /* Admin: payout queue & actions */

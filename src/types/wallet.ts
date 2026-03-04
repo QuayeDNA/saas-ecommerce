@@ -116,6 +116,8 @@ export interface EarningsDashboard {
     bank_account: number;
   };
   payoutFeeBearer?: 'platform' | 'agent';
+  platformPayoutFeePercent?: number;
+  autoPayoutEnabled?: boolean;
   minimumPayoutAmounts?: {
     mobile_money: number;
     bank_account: number;

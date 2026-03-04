@@ -87,14 +87,17 @@ export const EarningsManager: React.FC = () => {
   const feeEstimate = useMemo(() => {
     if (!dashboard?.transferFees || !amount || Number(amount) <= 0) return null;
 
-    const fee = destType === 'bank_account'
+    const paystackFlatFee = destType === 'bank_account'
       ? dashboard.transferFees.bank_account
       : dashboard.transferFees.mobile_money;
-    const feeBearer = dashboard.payoutFeeBearer || 'agent';
+    const platformFeePercent = dashboard.platformPayoutFeePercent || 0;
     const numAmt = Number(amount);
-    const netAmount = feeBearer === 'agent' ? Math.max(0, numAmt - fee) : numAmt;
+    const platformFee = Math.round(numAmt * platformFeePercent) / 100;
+    const totalFee = Math.round((paystackFlatFee + platformFee) * 100) / 100;
+    const feeBearer = dashboard.payoutFeeBearer || 'agent';
+    const netAmount = feeBearer === 'agent' ? Math.max(0, Math.round((numAmt - totalFee) * 100) / 100) : numAmt;
 
-    return { fee, netAmount, feeBearer };
+    return { paystackFlatFee, platformFee, totalFee, netAmount, feeBearer, platformFeePercent };
   }, [amount, destType, dashboard]);
 
   const minimumPayout = useMemo(() => {
@@ -147,8 +150,12 @@ export const EarningsManager: React.FC = () => {
 
     try {
       setSubmitting(true);
-      await walletService.requestPayout(numericAmount, dest);
-      addToast('Payout requested — awaiting admin review', 'success');
+      const { autoPayoutEnabled } = await walletService.requestPayout(numericAmount, dest);
+      if (autoPayoutEnabled) {
+        addToast('Transfer initiated — you will be notified when it completes', 'success');
+      } else {
+        addToast('Payout requested — awaiting admin review', 'success');
+      }
       setShowRequestDialog(false);
       void load();
     } catch (err: unknown) {
@@ -227,11 +234,16 @@ export const EarningsManager: React.FC = () => {
               disabled={!dashboard?.canRequestPayout}
               leftIcon={<ArrowDownToLine className="w-4 h-4" />}
             >
-              Request Payout
+              {dashboard?.autoPayoutEnabled ? 'Withdraw via Paystack' : 'Request Payout'}
             </Button>
             {!dashboard?.canRequestPayout && (
               <p className="text-xs text-center text-gray-400 mt-2">
                 Payouts are currently unavailable
+              </p>
+            )}
+            {dashboard?.autoPayoutEnabled && dashboard?.canRequestPayout && (
+              <p className="text-xs text-center text-green-600 mt-2 flex items-center justify-center gap-1">
+                <span>⚡</span> Instant transfer — no admin approval needed
               </p>
             )}
           </div>
@@ -243,10 +255,11 @@ export const EarningsManager: React.FC = () => {
         <div className="flex items-start gap-3 p-3.5 bg-blue-50 border border-blue-100 rounded-xl text-sm">
           <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
           <div className="text-gray-600">
-            <span className="font-semibold text-gray-800">Transfer fees:</span>{' '}
-            Mobile Money — GH₵ {dashboard.transferFees.mobile_money.toFixed(2)},&nbsp;
-            Bank Account — GH₵ {dashboard.transferFees.bank_account.toFixed(2)} per transfer.
-            Fees are deducted from your payout amount.
+            <span className="font-semibold text-gray-800">Transfer fees (deducted from payout):</span>{' '}
+            Mobile Money — GH₵ {dashboard.transferFees.mobile_money.toFixed(2)} Paystack
+            {(dashboard.platformPayoutFeePercent ?? 0) > 0 && ` + ${dashboard.platformPayoutFeePercent}% platform`},&nbsp;
+            Bank Account — GH₵ {dashboard.transferFees.bank_account.toFixed(2)} Paystack
+            {(dashboard.platformPayoutFeePercent ?? 0) > 0 && ` + ${dashboard.platformPayoutFeePercent}% platform`}.
           </div>
         </div>
       )}
@@ -483,10 +496,18 @@ export const EarningsManager: React.FC = () => {
                   <span className="font-medium">GH₵ {Number(amount).toFixed(2)}</span>
                 </div>
                 {feeEstimate.feeBearer === 'agent' && (
-                  <div className="flex justify-between text-orange-600">
-                    <span>Transfer fee ({destType === 'bank_account' ? 'bank' : 'MoMo'})</span>
-                    <span>− GH₵ {feeEstimate.fee.toFixed(2)}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between text-orange-600">
+                      <span>Paystack flat fee ({destType === 'bank_account' ? 'bank' : 'MoMo'})</span>
+                      <span>− GH₵ {feeEstimate.paystackFlatFee.toFixed(2)}</span>
+                    </div>
+                    {feeEstimate.platformFeePercent > 0 && (
+                      <div className="flex justify-between text-orange-600">
+                        <span>Platform fee ({feeEstimate.platformFeePercent}%)</span>
+                        <span>− GH₵ {feeEstimate.platformFee.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div className="flex justify-between border-t border-indigo-200 pt-2 font-semibold">
                   <span className="text-gray-700">You receive</span>
@@ -495,8 +516,11 @@ export const EarningsManager: React.FC = () => {
               </div>
             )}
 
+            {/* Manual/auto notice */}
             <p className="text-xs text-gray-400">
-              Payout requests are reviewed by admin. Processing takes 5–30 minutes after approval.
+              {dashboard?.autoPayoutEnabled
+                ? '⚡ Auto-payout is enabled. Your transfer will be sent via Paystack immediately after submission.'
+                : 'Payout requests are reviewed by admin. Processing takes 5–30 minutes after approval.'}
             </p>
           </div>
         </DialogBody>
@@ -513,7 +537,7 @@ export const EarningsManager: React.FC = () => {
               disabled={submitting || !amount || Number(amount) < minimumPayout}
               leftIcon={<ArrowDownToLine className="w-4 h-4" />}
             >
-              Request Payout
+              {dashboard?.autoPayoutEnabled ? 'Withdraw Now' : 'Request Payout'}
             </Button>
           </div>
         </DialogFooter>

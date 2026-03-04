@@ -500,14 +500,19 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
             </span>
           </div>
 
-          {/* Total */}
+          {/* Total — for storefront orders show the tier cost (agent's cost to fulfil),
+               not the customer-facing charge amount stored in order.total */}
           <div className="flex items-center gap-2 text-sm">
             <FaMoneyBillWave className="text-gray-400 w-4 h-4 flex-shrink-0" />
             <span className="text-gray-700 font-medium min-w-0 w-16">
               Total:
             </span>
             <span className="text-gray-900 font-semibold">
-              {formatCurrency(order.total)}
+              {formatCurrency(
+                order.orderType === 'storefront' && order.storefrontData?.totalTierCost != null
+                  ? order.storefrontData.totalTierCost
+                  : order.total
+              )}
             </span>
           </div>
 

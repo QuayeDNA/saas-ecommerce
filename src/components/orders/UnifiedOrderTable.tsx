@@ -431,7 +431,11 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      {formatCurrency(order.total)}
+                      {formatCurrency(
+                        order.orderType === 'storefront' && order.storefrontData?.totalTierCost != null
+                          ? order.storefrontData.totalTierCost
+                          : order.total
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="relative">

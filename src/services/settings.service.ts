@@ -63,6 +63,10 @@ export interface FeeSettings {
     bank_account: number;
   };
   payoutFeeBearer: 'platform' | 'agent';
+  /** Platform's own percentage cut deducted from each payout amount */
+  platformPayoutFeePercent: number;
+  /** Whether agents can withdraw directly via Paystack without admin approval */
+  autoPayoutEnabled: boolean;
 }
 
 export interface PasswordResetRequest {
@@ -220,13 +224,13 @@ class SettingsService {
   // Fee Settings (Paystack collection fees, platform fees, payout fees)
   async getFeeSettings(): Promise<FeeSettings> {
     const response = await apiClient.get("/api/settings/fees");
-    return response.data;
+    return response.data.data ?? response.data;
   }
 
   async updateFeeSettings(settings: Partial<FeeSettings>): Promise<FeeSettings> {
     const response = await apiClient.put("/api/settings/fees", settings);
     this._allSettingsCache = null;
-    return response.data;
+    return response.data.data ?? response.data;
   }
 
   /**
@@ -237,6 +241,7 @@ class SettingsService {
     siteSettings: SiteSettings;
     apiSettings: ApiSettings;
     walletSettings: WalletSettings;
+    feeSettings: FeeSettings;
     signupApproval: { requireApprovalForSignup: boolean };
     autoApproveStorefronts: { autoApproveStorefronts: boolean };
     systemInfo: SystemInfo;
@@ -246,16 +251,17 @@ class SettingsService {
       return this._allSettingsCache.data;
     }
 
-    const [siteSettings, apiSettings, walletSettings, signupApproval, autoApproveStorefronts, systemInfo] = await Promise.all([
+    const [siteSettings, apiSettings, walletSettings, feeSettings, signupApproval, autoApproveStorefronts, systemInfo] = await Promise.all([
       this.getSiteSettings(),
       this.getApiSettings(),
       this.getWalletSettings(),
+      this.getFeeSettings(),
       this.getSignupApprovalSetting(),
       this.getAutoApproveStorefronts(),
       this.getSystemInfo(),
     ]);
 
-    const combined = { siteSettings, apiSettings, walletSettings, signupApproval, autoApproveStorefronts, systemInfo };
+    const combined = { siteSettings, apiSettings, walletSettings, feeSettings, signupApproval, autoApproveStorefronts, systemInfo };
     this._allSettingsCache = { ts: Date.now(), data: combined };
     return combined;
   }

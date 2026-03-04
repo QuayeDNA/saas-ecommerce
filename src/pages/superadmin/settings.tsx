@@ -43,6 +43,7 @@ export default function SuperAdminSettingsPage() {
         const all = await settingsService.getAllSettings();
         if (!mounted) return;
         setData(all);
+        if (all.feeSettings) setFeeSettings(all.feeSettings);
       } catch (err) {
         console.error("Failed to load settings:", err);
         if (mounted) setMessage({ type: "error", text: "Failed to load settings" });
@@ -120,6 +121,7 @@ export default function SuperAdminSettingsPage() {
 
   const handleFeeSettingsSuccess = useCallback((settings: FeeSettings) => {
     setFeeSettings(settings);
+    setData(d => d ? { ...d, feeSettings: settings } : d);
     setMessage({ type: 'success', text: 'Fee settings updated' });
   }, []);
 
