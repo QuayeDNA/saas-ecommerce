@@ -22,11 +22,13 @@ import {
   FaChevronDown,
   FaChevronUp,
   FaCheckCircle,
+  FaMoneyBillAlt,
 } from "react-icons/fa";
 import { Alert, Button, Tabs, TabsList, TabsTrigger, Spinner, Pagination, StatsGrid, Card, CardHeader, CardBody } from "../design-system";
 import { useToast } from "../design-system/components/toast";
 import { TopUpRequestModal } from "../components/wallet/TopUpRequestModal";
 import { SearchAndFilter } from "../components/common/SearchAndFilter";
+import { EarningsManager } from "../components/storefront/earnings-manager";
 
 export const WalletPage = () => {
   const {
@@ -61,7 +63,7 @@ export const WalletPage = () => {
     CommissionMonthlySummary[]
   >([]);
   const [isLoadingCommissions, setIsLoadingCommissions] = useState(false);
-  const [activeTab, setActiveTab] = useState<"wallet" | "commissions">(
+  const [activeTab, setActiveTab] = useState<"wallet" | "commissions" | "earnings">(
     "wallet"
   );
 
@@ -305,7 +307,7 @@ export const WalletPage = () => {
 
       {/* Tab Navigation */}
       <div className="mt-6 border-b border-gray-200">
-        <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as 'wallet' | 'commissions')}>
+        <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as 'wallet' | 'commissions' | 'earnings')}>
           <TabsList className="w-full justify-center space-x-8">
             <TabsTrigger value="wallet">
               <FaWallet className="inline mr-2" />
@@ -314,6 +316,10 @@ export const WalletPage = () => {
             <TabsTrigger value="commissions">
               <FaCoins className="inline mr-2" />
               Commissions
+            </TabsTrigger>
+            <TabsTrigger value="earnings">
+              <FaMoneyBillAlt className="inline mr-2" />
+              Earnings
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -446,7 +452,7 @@ export const WalletPage = () => {
           </CardBody>
         </Card>
       </>
-    ) : (
+    ) : activeTab === "commissions" ? (
       /* Commissions Tab Content */
       <>
         {/* Current Month Daily Accumulation */}
@@ -940,6 +946,14 @@ export const WalletPage = () => {
             )}
           </Card>
         )}
+      </>
+    ) : (
+      /* Earnings & Payouts Tab Content */
+      <>
+        <div className="mb-4 p-4 rounded-lg bg-blue-50 border border-blue-100 text-sm text-blue-800">
+          <strong>Your storefront earnings</strong> are stored securely in your account. You can request a payout at any time — even if your storefront is inactive or closed.
+        </div>
+        <EarningsManager />
       </>
     )}
 

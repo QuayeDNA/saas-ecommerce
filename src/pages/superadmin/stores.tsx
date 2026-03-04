@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/superadmin/stores.tsx
 import { useEffect, useState, useCallback } from "react";
 import {
@@ -13,6 +14,7 @@ import {
   DialogHeader,
   DialogBody,
   DialogFooter,
+  FormField,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -51,6 +53,8 @@ import {
   Calendar,
   User,
   Mail,
+  X,
+  DollarSign,
 } from "lucide-react";
 
 // =========================================================================
@@ -280,6 +284,66 @@ function StoreDetailDialog({
 }
 
 // =========================================================================
+// Confirm/Input Dialog
+// =========================================================================
+
+interface ConfirmOpts {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  variant: 'danger' | 'success' | 'primary';
+  hasInput: boolean;
+  inputLabel: string;
+  inputPlaceholder: string;
+  onConfirm: (inputValue?: string) => void;
+}
+
+const CONFIRM_CLOSED: ConfirmOpts = {
+  isOpen: false, title: '', message: '', confirmLabel: 'Confirm',
+  variant: 'primary', hasInput: false, inputLabel: '', inputPlaceholder: '',
+  onConfirm: () => {},
+};
+
+function ConfirmDialog({
+  opts, input, onInputChange, loading, onClose, onConfirm,
+}: {
+  opts: ConfirmOpts;
+  input: string;
+  onInputChange: (v: string) => void;
+  loading: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <Dialog isOpen={opts.isOpen} onClose={onClose} size="sm">
+      <DialogHeader>{opts.title}</DialogHeader>
+      <DialogBody>
+        <p className="text-sm text-gray-700">{opts.message}</p>
+        {opts.hasInput && (
+          <FormField label={opts.inputLabel} className="mt-4">
+            <Input
+              value={input}
+              onChange={e => onInputChange(e.target.value)}
+              placeholder={opts.inputPlaceholder}
+              autoFocus
+            />
+          </FormField>
+        )}
+      </DialogBody>
+      <DialogFooter>
+        <div className="flex gap-2 justify-end w-full">
+          <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
+          <Button variant={opts.variant} onClick={onConfirm} isLoading={loading}>
+            {opts.confirmLabel}
+          </Button>
+        </div>
+      </DialogFooter>
+    </Dialog>
+  );
+}
+
+// =========================================================================
 // Main Page
 // =========================================================================
 
@@ -296,25 +360,67 @@ export default function StoresPage() {
   const [autoApprove, setAutoApprove] = useState(false);
   const [autoApproveLoading, setAutoApproveLoading] = useState(false);
 
-  // Payouts modal (admin)
-  const [payoutsModalOpen, setPayoutsModalOpen] = useState(false);
+  // Payouts drawer (admin)
+  const [payoutsDrawerOpen, setPayoutsDrawerOpen] = useState(false);
   const [payoutsLoading, setPayoutsLoading] = useState(false);
   const [agentPayouts, setAgentPayouts] = useState<any[]>([]);
   const [payoutActionLoading, setPayoutActionLoading] = useState<string | null>(null);
+  const [pendingPayoutsMap, setPendingPayoutsMap] = useState<Record<string, number>>({});
+  const [selectedPayoutsStore, setSelectedPayoutsStore] = useState<AdminStorefrontData | null>(null);
+  const [bulkApproveLoading, setBulkApproveLoading] = useState(false);
+
+  // Confirm dialog
+  const [confirmOpts, setConfirmOpts] = useState<ConfirmOpts>(CONFIRM_CLOSED);
+  const [confirmInput, setConfirmInput] = useState('');
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const openConfirm = (opts: Omit<ConfirmOpts, 'isOpen'>) => {
+    setConfirmInput('');
+    setConfirmOpts({ ...opts, isOpen: true });
+  };
+  const closeConfirm = () => setConfirmOpts(CONFIRM_CLOSED);
+  const doConfirm = async () => {
+    setConfirmLoading(true);
+    try {
+      await Promise.resolve(confirmOpts.onConfirm(confirmOpts.hasInput ? confirmInput : undefined));
+      closeConfirm();
+    } catch {
+      // error already handled inside handler
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
+  // Reactive helper — get current agent ID from selected payouts store
+  const getPayoutsAgentId = () => {
+    const store = selectedPayoutsStore || selectedStore;
+    if (!store) return null;
+    return typeof store.agentId === 'object' ? (store.agentId as any)._id as string : store.agentId as string;
+  };
 
   // Fetch data
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [storesRes, statsRes, autoApproveRes] = await Promise.all([
+      const [storesRes, statsRes, autoApproveRes, allPayoutsRes] = await Promise.all([
         storefrontService.getAdminStorefronts(),
         storefrontService.getAdminStats(),
         settingsService.getAutoApproveStorefronts(),
+        walletService.getPendingPayouts().catch(() => [] as any[]),
       ]);
       setStores(storesRes.storefronts);
       setStats(statsRes);
       setAutoApprove(autoApproveRes.autoApproveStorefronts);
+      // Build pending payout count map per agent
+      const map: Record<string, number> = {};
+      (allPayoutsRes as any[]).forEach((p: any) => {
+        if (p.status === 'pending') {
+          const uid = typeof p.user === 'object' ? (p.user as any)?._id : p.user;
+          if (uid) map[uid as string] = (map[uid as string] || 0) + 1;
+        }
+      });
+      setPendingPayoutsMap(map);
     } catch (err) {
       console.error("Failed to fetch stores:", err);
       setError("Failed to load stores data.");
@@ -333,7 +439,10 @@ export default function StoresPage() {
       setActionLoading(storefrontId);
       await storefrontService.approveStorefront(storefrontId);
       addToast("Store approved successfully", "success");
-      await fetchData();
+      setStores(prev => prev.map(s => s._id === storefrontId
+        ? { ...s, isApproved: true, approvedAt: new Date() as unknown as string }
+        : s
+      ));
       setSelectedStore(null);
     } catch {
       addToast("Failed to approve store", "error");
@@ -342,30 +451,47 @@ export default function StoresPage() {
     }
   };
 
-  const handleSuspend = async (storefrontId: string) => {
-    const reason = prompt("Reason for suspension (optional):");
-    try {
-      setActionLoading(storefrontId);
-      await storefrontService.suspendStorefront(storefrontId, reason || undefined);
-      addToast("Store suspended", "success");
-      await fetchData();
-      setSelectedStore(null);
-    } catch {
-      addToast("Failed to suspend store", "error");
-    } finally {
-      setActionLoading(null);
-    }
+  const handleSuspend = (storefrontId: string) => {
+    openConfirm({
+      title: 'Suspend Store',
+      message: 'Suspending this store will make it inaccessible to customers.',
+      confirmLabel: 'Suspend',
+      variant: 'danger',
+      hasInput: true,
+      inputLabel: 'Reason (optional)',
+      inputPlaceholder: 'Enter reason for suspension…',
+      onConfirm: async (reason) => {
+        setActionLoading(storefrontId);
+        try {
+          await storefrontService.suspendStorefront(storefrontId, reason || undefined);
+          addToast('Store suspended', 'success');
+          setStores(prev => prev.map(s => s._id === storefrontId
+            ? { ...s, suspendedByAdmin: true, suspensionReason: reason || '', suspendedAt: new Date() as unknown as string }
+            : s
+          ));
+          setSelectedStore(null);
+        } catch {
+          addToast('Failed to suspend store', 'error');
+          throw new Error('failed');
+        } finally {
+          setActionLoading(null);
+        }
+      },
+    });
   };
 
   const handleUnsuspend = async (storefrontId: string) => {
     try {
       setActionLoading(storefrontId);
       await storefrontService.unsuspendStorefront(storefrontId);
-      addToast("Store unsuspended", "success");
-      await fetchData();
+      addToast('Store unsuspended', 'success');
+      setStores(prev => prev.map(s => s._id === storefrontId
+        ? { ...s, suspendedByAdmin: false, suspensionReason: undefined as unknown as string }
+        : s
+      ));
       setSelectedStore(null);
     } catch {
-      addToast("Failed to unsuspend store", "error");
+      addToast('Failed to unsuspend store', 'error');
     } finally {
       setActionLoading(null);
     }
@@ -379,26 +505,37 @@ export default function StoresPage() {
     }
   };
 
-  const handleDelete = async (store: AdminStorefrontData) => {
-    const reason = prompt(`Delete "${store.businessName}"? Enter reason (optional):`);
-    if (reason === null) return; // cancelled
-    try {
-      setActionLoading(store._id!);
-      await storefrontService.adminDeleteStorefront(store._id!, reason || undefined);
-      addToast("Store deleted", "success");
-      await fetchData();
-      setSelectedStore(null);
-    } catch {
-      addToast("Failed to delete store", "error");
-    } finally {
-      setActionLoading(null);
-    }
+  const handleDelete = (store: AdminStorefrontData) => {
+    openConfirm({
+      title: `Delete "${store.businessName}"`,
+      message: 'This action is permanent and cannot be undone. The agent will lose access to their storefront.',
+      confirmLabel: 'Delete Permanently',
+      variant: 'danger',
+      hasInput: true,
+      inputLabel: 'Reason (optional)',
+      inputPlaceholder: 'Enter reason for deletion…',
+      onConfirm: async (reason) => {
+        setActionLoading(store._id!);
+        try {
+          await storefrontService.adminDeleteStorefront(store._id!, reason || undefined);
+          addToast('Store deleted', 'success');
+          setStores(prev => prev.filter(s => s._id !== store._id));
+          setSelectedStore(null);
+        } catch {
+          addToast('Failed to delete store', 'error');
+          throw new Error('failed');
+        } finally {
+          setActionLoading(null);
+        }
+      },
+    });
   };
 
   // --- Admin: fetch payouts for the selected agent ---
-  const openPayoutsForAgent = async (agentId: string) => {
+  const openPayoutsForAgent = async (agentId: string, store?: AdminStorefrontData) => {
     try {
-      setPayoutsModalOpen(true);
+      setPayoutsDrawerOpen(true);
+      setSelectedPayoutsStore(store ?? selectedStore ?? null);
       setPayoutsLoading(true);
       // getPendingPayouts now returns pending + approved + processing
       const allPayouts = await walletService.getPendingPayouts();
@@ -415,55 +552,139 @@ export default function StoresPage() {
   };
 
   const refreshPayouts = async () => {
-    if (!selectedStore) return;
-    const agentId = typeof selectedStore.agentId === 'object' ? (selectedStore.agentId as any)._id : selectedStore.agentId;
+    const store = selectedPayoutsStore || selectedStore;
+    if (!store) return;
+    const agentId = typeof store.agentId === 'object' ? (store.agentId as any)._id : store.agentId;
     if (agentId) await openPayoutsForAgent(agentId as string);
   };
 
-  const handleApprovePayout = async (payoutId: string) => {
-    if (!confirm('Approve this payout? Earnings will be deducted from the agent\'s balance.')) return;
-    try {
-      setPayoutActionLoading(payoutId);
-      await walletService.approvePayout(payoutId);
-      addToast('Payout approved — ready for transfer', 'success');
-      await refreshPayouts();
-      await fetchData();
-    } catch {
-      addToast('Failed to approve payout', 'error');
-    } finally {
-      setPayoutActionLoading(null);
-    }
+  const handleApprovePayout = (payoutId: string) => {
+    openConfirm({
+      title: 'Approve Payout',
+      message: "The agent's earnings will be deducted and the payout will be marked ready for transfer.",
+      confirmLabel: 'Approve',
+      variant: 'success',
+      hasInput: false,
+      inputLabel: '',
+      inputPlaceholder: '',
+      onConfirm: async () => {
+        setPayoutActionLoading(payoutId);
+        try {
+          await walletService.approvePayout(payoutId);
+          addToast('Payout approved — ready for Paystack transfer', 'success');
+          // Reactive update — no full reload needed
+          setAgentPayouts(prev => prev.map(p => p._id === payoutId ? { ...p, status: 'approved' } : p));
+          const agentId = getPayoutsAgentId();
+          if (agentId) setPendingPayoutsMap(prev => ({
+            ...prev,
+            [agentId]: Math.max(0, (prev[agentId] || 0) - 1),
+          }));
+          fetchData().catch(() => {});
+        } catch (err: unknown) {
+          addToast((err instanceof Error ? err.message : null) || 'Failed to approve payout', 'error');
+          throw err;
+        } finally {
+          setPayoutActionLoading(null);
+        }
+      },
+    });
   };
 
-  const handleRejectPayout = async (payoutId: string) => {
-    const reason = prompt('Rejection reason (optional):');
-    if (reason === null) return; // cancelled
-    try {
-      setPayoutActionLoading(payoutId);
-      await walletService.rejectPayout(payoutId, reason || undefined);
-      addToast('Payout rejected', 'success');
-      await refreshPayouts();
-      await fetchData();
-    } catch {
-      addToast('Failed to reject payout', 'error');
-    } finally {
-      setPayoutActionLoading(null);
-    }
+  const handleRejectPayout = (payoutId: string) => {
+    openConfirm({
+      title: 'Reject Payout',
+      message: 'The agent will be notified and can submit a new request.',
+      confirmLabel: 'Reject',
+      variant: 'danger',
+      hasInput: true,
+      inputLabel: 'Rejection reason (optional)',
+      inputPlaceholder: 'e.g. Invalid account details, insufficient verification…',
+      onConfirm: async (reason) => {
+        setPayoutActionLoading(payoutId);
+        try {
+          await walletService.rejectPayout(payoutId, reason || undefined);
+          addToast('Payout rejected', 'success');
+          // Reactive update
+          setAgentPayouts(prev => prev.map(p => p._id === payoutId
+            ? { ...p, status: 'rejected', rejectionReason: reason || 'Rejected by administrator' }
+            : p
+          ));
+          const agentId = getPayoutsAgentId();
+          if (agentId) setPendingPayoutsMap(prev => ({
+            ...prev,
+            [agentId]: Math.max(0, (prev[agentId] || 0) - 1),
+          }));
+          fetchData().catch(() => {});
+        } catch (err: unknown) {
+          addToast((err instanceof Error ? err.message : null) || 'Failed to reject payout', 'error');
+          throw err;
+        } finally {
+          setPayoutActionLoading(null);
+        }
+      },
+    });
   };
 
-  const handleProcessPayout = async (payoutId: string) => {
-    if (!confirm('Initiate Paystack transfer for this payout? This will send money to the agent.')) return;
-    try {
-      setPayoutActionLoading(payoutId);
-      await walletService.processPayout(payoutId);
-      addToast('Paystack transfer initiated — awaiting confirmation', 'success');
-      await refreshPayouts();
-      await fetchData();
-    } catch {
-      addToast('Failed to process payout transfer', 'error');
-    } finally {
-      setPayoutActionLoading(null);
-    }
+  const handleProcessPayout = (payoutId: string) => {
+    openConfirm({
+      title: 'Send via Paystack Transfer',
+      message: 'This will initiate a live Paystack transfer to the agent. The money will leave the platform balance immediately.',
+      confirmLabel: 'Send Transfer',
+      variant: 'primary',
+      hasInput: false,
+      inputLabel: '',
+      inputPlaceholder: '',
+      onConfirm: async () => {
+        setPayoutActionLoading(payoutId);
+        try {
+          const updated = await walletService.processPayout(payoutId);
+          addToast('Paystack transfer initiated — awaiting webhook confirmation', 'success');
+          // Reactive update — use server response which includes recalculated fees
+          setAgentPayouts(prev => prev.map(p => p._id === payoutId ? { ...p, ...updated, status: 'processing' } : p));
+          fetchData().catch(() => {});
+        } catch (err: unknown) {
+          addToast((err instanceof Error ? err.message : null) || 'Failed to process payout transfer', 'error');
+          throw err;
+        } finally {
+          setPayoutActionLoading(null);
+        }
+      },
+    });
+  };
+
+  const handleBulkApprove = () => {
+    const pending = agentPayouts.filter(p => p.status === 'pending');
+    if (pending.length === 0) return;
+    openConfirm({
+      title: `Approve All ${pending.length} Payout${pending.length > 1 ? 's' : ''}`,
+      message: `Each agent's earnings will be deducted for all ${pending.length} pending payout request${pending.length > 1 ? 's' : ''}.`,
+      confirmLabel: `Approve All`,
+      variant: 'success',
+      hasInput: false,
+      inputLabel: '',
+      inputPlaceholder: '',
+      onConfirm: async () => {
+        setBulkApproveLoading(true);
+        let approved = 0;
+        for (const p of pending) {
+          try {
+            await walletService.approvePayout(p._id);
+            approved++;
+          } catch {
+            // continue with remaining
+          }
+        }
+        setBulkApproveLoading(false);
+        if (approved > 0) {
+          addToast(`${approved} payout${approved > 1 ? 's' : ''} approved`, 'success');
+          // Reactive update
+          setAgentPayouts(prev => prev.map(p => p.status === 'pending' ? { ...p, status: 'approved' } : p));
+          const agentId = getPayoutsAgentId();
+          if (agentId) setPendingPayoutsMap(prev => ({ ...prev, [agentId]: 0 }));
+          fetchData().catch(() => {});
+        }
+      },
+    });
   };
 
   // Filtering
@@ -681,7 +902,18 @@ export default function StoresPage() {
                                     )}
                                   </TableCell>
                                   <TableCell>
-                                    <StatusBadge store={store} />
+                                    <div className="flex flex-col gap-1.5 items-start">
+                                      <StatusBadge store={store} />
+                                      {(() => {
+                                        const agentId = typeof store.agentId === 'object' ? (store.agentId as any)._id : store.agentId;
+                                        const count = agentId ? (pendingPayoutsMap[agentId as string] || 0) : 0;
+                                        return count > 0 ? (
+                                          <Badge colorScheme="warning" variant="solid" size="xs" rounded>
+                                            {count} pending payout{count > 1 ? 's' : ''}
+                                          </Badge>
+                                        ) : null;
+                                      })()}
+                                    </div>
                                   </TableCell>
                                   <TableCell>
                                     <span className="text-sm text-gray-500">
@@ -690,6 +922,19 @@ export default function StoresPage() {
                                   </TableCell>
                                   <TableCell>
                                     <div className="flex items-center gap-1.5">
+                                      {(() => {
+                                        const agentId = typeof store.agentId === 'object' ? (store.agentId as any)._id : store.agentId;
+                                        return agentId ? (
+                                          <Button
+                                            iconOnly
+                                            variant="ghost"
+                                            size="sm"
+                                            leftIcon={<DollarSign className={`w-4 h-4 ${pendingPayoutsMap[agentId as string] ? 'text-amber-500' : 'text-gray-400'}`} />}
+                                            onClick={() => { setSelectedPayoutsStore(store); openPayoutsForAgent(agentId as string); }}
+                                            aria-label="View payouts"
+                                          />
+                                        ) : null;
+                                      })()}
                                       <Button
                                         iconOnly
                                         variant="ghost"
@@ -765,7 +1010,18 @@ export default function StoresPage() {
                                     )}
                                   </div>
                                 </div>
-                                <StatusBadge store={store} />
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                  <StatusBadge store={store} />
+                                  {(() => {
+                                    const agentId = typeof store.agentId === 'object' ? (store.agentId as any)._id : store.agentId;
+                                    const count = agentId ? (pendingPayoutsMap[agentId as string] || 0) : 0;
+                                    return count > 0 ? (
+                                      <Badge colorScheme="warning" variant="solid" size="xs" rounded>
+                                        {count} payout{count > 1 ? 's' : ''}
+                                      </Badge>
+                                    ) : null;
+                                  })()}
+                                </div>
                               </button>
 
                               {/* Bottom: Agent email + Actions */}
@@ -774,6 +1030,19 @@ export default function StoresPage() {
                                   {agent?.email || ""}
                                 </span>
                                 <div className="flex items-center gap-1.5 flex-shrink-0">
+                                  {(() => {
+                                    const agentId = typeof store.agentId === 'object' ? (store.agentId as any)._id : store.agentId;
+                                    return agentId ? (
+                                      <Button
+                                        iconOnly
+                                        variant="ghost"
+                                        size="xs"
+                                        leftIcon={<DollarSign className={`w-3.5 h-3.5 ${pendingPayoutsMap[agentId as string] ? 'text-amber-500' : 'text-gray-400'}`} />}
+                                        onClick={() => { setSelectedPayoutsStore(store); openPayoutsForAgent(agentId as string); }}
+                                        aria-label="View payouts"
+                                      />
+                                    ) : null;
+                                  })()}
                                   <Button
                                     iconOnly
                                     variant="ghost"
@@ -832,143 +1101,200 @@ export default function StoresPage() {
         </CardBody>
       </Card>
 
-      {/* Payouts modal (admin) */}
-      <Dialog isOpen={payoutsModalOpen} onClose={() => setPayoutsModalOpen(false)} size="lg">
-        <DialogHeader>
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <h3 className="text-lg font-semibold">Agent Payouts</h3>
-              <span className="text-sm text-gray-500">{selectedStore ? `${selectedStore.displayName || selectedStore.businessName}` : ''}</span>
+      {/* Payout Side Drawer */}
+      {payoutsDrawerOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() => setPayoutsDrawerOpen(false)}
+          />
+
+          {/* Slide-in panel */}
+          <div className="fixed right-0 top-0 h-full w-full sm:w-[520px] z-50 bg-white shadow-2xl flex flex-col">
+
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b bg-white shrink-0">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-blue-600 shrink-0" />
+                  <h3 className="font-semibold text-gray-900">Payout Requests</h3>
+                </div>
+                {selectedPayoutsStore && (
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    {selectedPayoutsStore.displayName || selectedPayoutsStore.businessName}
+                    {(() => {
+                      const agent = typeof selectedPayoutsStore.agentId === 'object' ? selectedPayoutsStore.agentId : null;
+                      return agent ? ` · ${agent.fullName}` : '';
+                    })()}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {agentPayouts.filter(p => p.status === 'pending').length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="success"
+                    onClick={handleBulkApprove}
+                    isLoading={bulkApproveLoading}
+                    disabled={!!payoutActionLoading || bulkApproveLoading}
+                  >
+                    Approve All ({agentPayouts.filter(p => p.status === 'pending').length})
+                  </Button>
+                )}
+                <Button
+                  iconOnly
+                  size="sm"
+                  variant="ghost"
+                  leftIcon={<RefreshCw className={`w-4 h-4 ${payoutsLoading ? 'animate-spin' : ''}`} />}
+                  onClick={refreshPayouts}
+                  disabled={payoutsLoading}
+                  aria-label="Refresh"
+                />
+                <button
+                  onClick={() => setPayoutsDrawerOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
             </div>
-            <Button size="sm" variant="outline" onClick={refreshPayouts} isLoading={payoutsLoading} disabled={payoutsLoading}>
-              Refresh
-            </Button>
-          </div>
-        </DialogHeader>
-        <DialogBody>
-          {payoutsLoading ? (
-            <div className="py-8 text-center text-gray-500">Loading payouts…</div>
-          ) : agentPayouts.length === 0 ? (
-            <div className="py-8 text-center text-sm text-gray-500">No actionable payouts for this agent.</div>
-          ) : (
-            <div className="space-y-3">
-              {agentPayouts.map(p => {
-                const isPending = p.status === 'pending';
-                const isApproved = p.status === 'approved';
-                const isProcessing = p.status === 'processing';
-                const isActionable = isPending || isApproved;
-                const statusColor = isPending ? 'warning' : isApproved ? 'info' : isProcessing ? 'info' : p.status === 'completed' ? 'success' : 'error';
-                const statusLabel = isPending ? 'Pending Review' : isApproved ? 'Approved' : isProcessing ? 'Processing' : p.status === 'completed' ? 'Completed' : p.status === 'failed' ? 'Failed' : p.status;
 
-                return (
-                  <div key={p._id} className={`border rounded-lg p-4 ${isActionable ? 'border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-900/10' : 'border-gray-200 dark:border-gray-700'}`}>
-                    {/* Header row */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-3">
-                        <Badge colorScheme={statusColor as 'warning' | 'info' | 'success' | 'error'}>{statusLabel}</Badge>
-                        <span className="text-xs text-gray-500">
-                          {new Date(p.requestedAt || p.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold">GH₵ {p.amount.toFixed(2)}</div>
-                      </div>
-                    </div>
+            {/* Scrollable payout list */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {payoutsLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Spinner size="lg" />
+                </div>
+              ) : agentPayouts.length === 0 ? (
+                <div className="py-16 text-center">
+                  <DollarSign className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-gray-500">No payout requests</p>
+                  <p className="text-xs text-gray-400 mt-1">This agent has no pending, approved, or processing payouts.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {agentPayouts.map(p => {
+                    const isPending = p.status === 'pending';
+                    const isApproved = p.status === 'approved';
+                    const isProcessing = p.status === 'processing';
+                    const isActionable = isPending || isApproved;
+                    const statusColor = isPending ? 'warning' : isApproved ? 'info' : isProcessing ? 'info' : p.status === 'completed' ? 'success' : 'error';
+                    const statusLabel = isPending ? 'Pending Review' : isApproved ? 'Approved' : isProcessing ? 'Processing' : p.status === 'completed' ? 'Completed' : p.status === 'rejected' ? 'Rejected' : p.status === 'failed' ? 'Failed' : p.status;
 
-                    {/* Details grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-3">
-                      <div>
-                        <div className="text-xs text-gray-500">Destination</div>
-                        <div className="font-medium">
-                          {p.destination.type === 'mobile_money'
-                            ? `${p.destination.mobileProvider} — ${p.destination.phoneNumber}`
-                            : `Bank — ${p.destination.accountNumber || ''}`}
+                    return (
+                      <div key={p._id} className={`border rounded-xl p-4 ${isActionable ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 bg-white'}`}>
+                        {/* Header row */}
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge colorScheme={statusColor as 'warning' | 'info' | 'success' | 'error'}>{statusLabel}</Badge>
+                            <span className="text-xs text-gray-500">
+                              {new Date(p.requestedAt || p.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-lg font-bold">GH₵ {p.amount.toFixed(2)}</div>
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Transfer Fee</div>
-                        <div className="font-medium text-orange-600">
-                          {p.transferFee != null ? `GH₵ ${p.transferFee.toFixed(2)}` : '—'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Agent Receives</div>
-                        <div className="font-medium text-green-600">
-                          {p.netAmount != null ? `GH₵ ${p.netAmount.toFixed(2)}` : `GH₵ ${p.amount.toFixed(2)}`}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Fee Bearer</div>
-                        <div className="font-medium capitalize">
-                          {p.metadata?.feeBearer || 'agent'}
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Paystack transfer details (if processing/completed/failed) */}
-                    {p.paystackTransfer?.transferReference && (
-                      <div className="bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs text-gray-600 dark:text-gray-400 mb-3">
-                        <span className="font-medium">Transfer ref:</span> {p.paystackTransfer.transferReference}
-                        {p.paystackTransfer.transferCode && <> &bull; <span className="font-medium">Code:</span> {p.paystackTransfer.transferCode}</>}
-                        {p.paystackTransfer.failureReason && (
-                          <div className="text-red-500 mt-1">
-                            <span className="font-medium">Failure:</span> {p.paystackTransfer.failureReason}
+                        {/* Details grid */}
+                        <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                          <div>
+                            <div className="text-xs text-gray-500">Destination</div>
+                            <div className="font-medium text-sm">
+                              {p.destination.type === 'mobile_money'
+                                ? `${p.destination.mobileProvider} — ${p.destination.phoneNumber}`
+                                : `Bank — ${p.destination.accountNumber || ''}`}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">Fee Bearer</div>
+                            <div className="font-medium capitalize text-sm">{p.metadata?.feeBearer || 'agent'}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">Transfer Fee</div>
+                            <div className="font-medium text-orange-600 text-sm">
+                              {p.transferFee != null ? `GH₵ ${p.transferFee.toFixed(2)}` : '—'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">Agent Receives</div>
+                            <div className="font-medium text-green-600 text-sm">
+                              {p.netAmount != null ? `GH₵ ${p.netAmount.toFixed(2)}` : `GH₵ ${p.amount.toFixed(2)}`}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Paystack transfer ref */}
+                        {p.paystackTransfer?.transferReference && (
+                          <div className="bg-gray-50 rounded-lg p-2 text-xs text-gray-600 mb-3">
+                            <span className="font-medium">Transfer ref:</span> {p.paystackTransfer.transferReference}
+                            {p.paystackTransfer.transferCode && <> &bull; <span className="font-medium">Code:</span> {p.paystackTransfer.transferCode}</>}
+                            {p.paystackTransfer.failureReason && (
+                              <div className="text-red-500 mt-1">
+                                <span className="font-medium">Failure:</span> {p.paystackTransfer.failureReason}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Action buttons */}
+                        {isActionable && (
+                          <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                            {isPending && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="success"
+                                  onClick={() => handleApprovePayout(p._id)}
+                                  isLoading={payoutActionLoading === p._id}
+                                  disabled={!!payoutActionLoading || bulkApproveLoading}
+                                >
+                                  Approve & Deduct
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  onClick={() => handleRejectPayout(p._id)}
+                                  isLoading={payoutActionLoading === p._id}
+                                  disabled={!!payoutActionLoading || bulkApproveLoading}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            {isApproved && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleProcessPayout(p._id)}
+                                isLoading={payoutActionLoading === p._id}
+                                disabled={!!payoutActionLoading || bulkApproveLoading}
+                              >
+                                Send via Paystack Transfer
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        {isProcessing && (
+                          <div className="text-xs text-blue-600 pt-2 border-t border-gray-200">
+                            Transfer in progress — awaiting Paystack webhook confirmation…
                           </div>
                         )}
                       </div>
-                    )}
-
-                    {/* Action buttons */}
-                    {isActionable && (
-                      <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                        {isPending && (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => handleApprovePayout(p._id)}
-                              isLoading={payoutActionLoading === p._id}
-                              disabled={!!payoutActionLoading}
-                            >
-                              Approve & Deduct Balance
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              onClick={() => handleRejectPayout(p._id)}
-                              isLoading={payoutActionLoading === p._id}
-                              disabled={!!payoutActionLoading}
-                            >
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {isApproved && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleProcessPayout(p._id)}
-                            isLoading={payoutActionLoading === p._id}
-                            disabled={!!payoutActionLoading}
-                          >
-                            Send via Paystack Transfer
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                    {isProcessing && (
-                      <div className="text-xs text-blue-600 dark:text-blue-400 pt-2 border-t border-gray-200 dark:border-gray-700">
-                        Transfer in progress — awaiting Paystack webhook confirmation…
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="secondary" onClick={() => setPayoutsModalOpen(false)}>Close</Button>
-        </DialogFooter>
-      </Dialog>
+
+            {/* Drawer footer */}
+            <div className="px-5 py-3 border-t bg-gray-50 shrink-0 text-xs text-gray-500 text-center">
+              {agentPayouts.length > 0 && `${agentPayouts.length} payout request${agentPayouts.length > 1 ? 's' : ''} total`}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Store Detail Dialog */}
       <StoreDetailDialog
@@ -980,6 +1306,16 @@ export default function StoresPage() {
         onDelete={handleDelete}
         isProcessing={!!actionLoading}
         onViewPayouts={openPayoutsForAgent}
+      />
+
+      {/* Confirm / Input Dialog */}
+      <ConfirmDialog
+        opts={confirmOpts}
+        input={confirmInput}
+        onInputChange={setConfirmInput}
+        loading={confirmLoading}
+        onClose={closeConfirm}
+        onConfirm={doConfirm}
       />
     </div>
   );

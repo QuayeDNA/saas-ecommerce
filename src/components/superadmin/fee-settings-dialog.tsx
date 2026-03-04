@@ -33,6 +33,15 @@ const DEFAULT_FEE_SETTINGS: FeeSettings = {
   payoutFeeBearer: "agent",
 };
 
+const mergeWithDefaults = (data: Partial<FeeSettings>): FeeSettings => ({
+  ...DEFAULT_FEE_SETTINGS,
+  ...data,
+  paystackTransferFees: {
+    ...DEFAULT_FEE_SETTINGS.paystackTransferFees,
+    ...(data.paystackTransferFees ?? {}),
+  },
+});
+
 export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
   isOpen,
   onClose,
@@ -48,13 +57,13 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (currentSettings) {
-        setFormData(currentSettings);
+        setFormData(mergeWithDefaults(currentSettings));
       } else {
         // Load from server
         setLoadingSettings(true);
         settingsService
           .getFeeSettings()
-          .then((data) => setFormData(data))
+          .then((data) => setFormData(mergeWithDefaults(data)))
           .catch(() => setFormData(DEFAULT_FEE_SETTINGS))
           .finally(() => setLoadingSettings(false));
       }
@@ -77,7 +86,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
   };
 
   const handleClose = () => {
-    setFormData(currentSettings || DEFAULT_FEE_SETTINGS);
+    setFormData(currentSettings ? mergeWithDefaults(currentSettings) : DEFAULT_FEE_SETTINGS);
     onClose();
   };
 
@@ -118,15 +127,13 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                 </h3>
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                      label="Paystack fee (%)"
-                      helperText="Paystack's collection fee — currently 1.95% in Ghana"
-                    >
+                    <FormField label="Paystack fee (%)">
                       <Input
                         type="number"
                         step="0.01"
                         min="0"
                         max="10"
+                        helperText="Paystack's collection fee — currently 1.95% in Ghana"
                         value={String(formData.paystackCollectionFeePercent)}
                         onChange={(e) =>
                           setFormData((prev) => ({
@@ -138,15 +145,13 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       />
                     </FormField>
 
-                    <FormField
-                      label="Platform fee (%)"
-                      helperText="Your additional platform fee on top of Paystack"
-                    >
+                    <FormField label="Platform fee (%)">
                       <Input
                         type="number"
                         step="0.01"
                         min="0"
                         max="20"
+                        helperText="Your additional platform fee on top of Paystack"
                         value={String(formData.platformFeePercent)}
                         onChange={(e) =>
                           setFormData((prev) => ({
@@ -225,16 +230,14 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                 </h3>
                 <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                      label="Mobile Money transfer fee (GH₵)"
-                      helperText="Paystack charges GH₵ 1.00 per MoMo transfer"
-                    >
+                    <FormField label="Mobile Money transfer fee (GH₵)">
                       <Input
                         type="number"
                         step="0.01"
                         min="0"
+                        helperText="Paystack charges GH₵ 1.00 per MoMo transfer"
                         value={String(
-                          formData.paystackTransferFees.mobile_money
+                          formData.paystackTransferFees?.mobile_money ?? 1.0
                         )}
                         onChange={(e) =>
                           setFormData((prev) => ({
@@ -248,16 +251,14 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       />
                     </FormField>
 
-                    <FormField
-                      label="Bank transfer fee (GH₵)"
-                      helperText="Paystack charges GH₵ 8.00 per bank transfer"
-                    >
+                    <FormField label="Bank transfer fee (GH₵)">
                       <Input
                         type="number"
                         step="0.01"
                         min="0"
+                        helperText="Paystack charges GH₵ 8.00 per bank transfer"
                         value={String(
-                          formData.paystackTransferFees.bank_account
+                          formData.paystackTransferFees?.bank_account ?? 8.0
                         )}
                         onChange={(e) =>
                           setFormData((prev) => ({
