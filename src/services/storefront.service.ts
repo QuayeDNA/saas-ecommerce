@@ -275,6 +275,40 @@ export interface PublicOrderResult {
   };
 }
 
+// ─── Order Tracking Types ─────────────────────────────────────────────────────
+
+export interface TrackedOrderItem {
+  bundleName: string;
+  provider: string;
+  dataVolume: number;
+  dataUnit: string;
+  validity: number | string;
+  validityUnit: string;
+  quantity: number;
+  customerPhone: string;
+  processingStatus: string;
+}
+
+export interface TrackOrderTimeline {
+  event: string;
+  at: string | null;
+  done: boolean;
+  failed?: boolean;
+  pending?: boolean;
+}
+
+export interface TrackedOrder {
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  paymentType: string;
+  paymentVerified: boolean;
+  items: TrackedOrderItem[];
+  timeline: TrackOrderTimeline[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Admin types
 export interface AdminStorefrontData extends StorefrontData {
   agentId: {
@@ -492,6 +526,18 @@ class StorefrontService {
   async verifyPaystackReference(reference: string): Promise<{ success: boolean; message?: string }> {
     const response = await apiClient.get(`${this.basePath}/paystack/verify?reference=${encodeURIComponent(reference)}`);
     return response.data;
+  }
+
+  /**
+   * Track a public storefront order by orderId or storefront_<orderId> reference.
+   * No authentication required — returns sanitised status only.
+   */
+  async trackOrder(businessName: string, ref: string): Promise<TrackedOrder> {
+    const response = await apiClient.get(
+      `${this.basePath}/${encodeURIComponent(businessName)}/orders/track`,
+      { params: { ref } }
+    );
+    return response.data.data;
   }
 
   // =========================================================================

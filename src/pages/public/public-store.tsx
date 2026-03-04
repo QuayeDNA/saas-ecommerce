@@ -17,14 +17,14 @@ import { walletService } from '../../services/wallet-service';
 import { useToast } from '../../design-system/components/toast';
 import type {
     PublicBundle, PublicStorefront, PublicOrderData,
-    PublicOrderResult, StorefrontBranding,
+    PublicOrderResult, StorefrontBranding, TrackedOrder,
 } from '../../services/storefront.service';
 import {
     FaCircleCheck, FaTriangleExclamation, FaIdCard,
     FaArrowRight, FaArrowLeft, FaPhone, FaEnvelope,
     FaStore, FaChevronDown, FaWifi,
     FaMagnifyingGlass, FaFire, FaBolt, FaTag,
-    FaChevronLeft, FaChevronRight, FaBagShopping,
+    FaChevronLeft, FaChevronRight, FaBagShopping, FaBoxOpen, FaXmark,
 } from 'react-icons/fa6';
 import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 
@@ -612,6 +612,305 @@ const EmptyBundles = memo(({ searchTerm, onClear }: { searchTerm: string; onClea
 ));
 
 // =============================================================================
+// Track Order — LocalStorage utilities (24 h TTL, device-scoped per store)
+// =============================================================================
+
+const TRACK_TTL = 24 * 60 * 60 * 1000;
+
+interface SavedOrderEntry {
+    orderId: string;
+    orderNumber: string;
+    reference: string;
+    bundleName: string;
+    provider: string;
+    total: number;
+    paymentType: string;
+    savedAt: number;
+    lastStatus: string;
+}
+
+function trackStorageKey(biz: string) { return `storefront_orders_${biz}`; }
+
+function loadSavedOrders(biz: string): SavedOrderEntry[] {
+    try {
+        const raw = localStorage.getItem(trackStorageKey(biz));
+        if (!raw) return [];
+        const all: SavedOrderEntry[] = JSON.parse(raw);
+        const cutoff = Date.now() - TRACK_TTL;
+        return all.filter(e => {
+            if (e.savedAt < cutoff) return false;
+            if (e.lastStatus === 'completed' || e.lastStatus === 'failed') {
+                return e.savedAt > Date.now() - 60 * 60 * 1000; // keep 1 h after final state
+            }
+            return true;
+        });
+    } catch { return []; }
+}
+
+function saveOrderEntry(biz: string, entry: SavedOrderEntry) {
+    const existing = loadSavedOrders(biz).filter(e => e.orderId !== entry.orderId);
+    try { localStorage.setItem(trackStorageKey(biz), JSON.stringify([entry, ...existing])); } catch { /* quota */ }
+}
+
+function updateSavedStatus(biz: string, orderId: string, status: string) {
+    const updated = loadSavedOrders(biz).map(e => e.orderId === orderId ? { ...e, lastStatus: status } : e);
+    try { localStorage.setItem(trackStorageKey(biz), JSON.stringify(updated)); } catch { /* */ }
+}
+
+// =============================================================================
+// Status config
+// =============================================================================
+
+const ORDER_STATUS_CFG: Record<string, { label: string; bg: string; color: string }> = {
+    pending_payment:     { label: 'Awaiting Payment', bg: '#FEF3C7', color: '#92400E' },
+    pending:             { label: 'Pending',           bg: '#FEF3C7', color: '#92400E' },
+    confirmed:           { label: 'Confirmed',         bg: '#CCFBF1', color: '#134E4A' },
+    processing:          { label: 'Processing',        bg: '#DBEAFE', color: '#1E3A8A' },
+    completed:           { label: 'Delivered ✓',       bg: '#DCFCE7', color: '#14532D' },
+    partially_completed: { label: 'Partial',           bg: '#FEF9C3', color: '#713F12' },
+    failed:              { label: 'Failed',            bg: '#FEE2E2', color: '#7F1D1D' },
+    cancelled:           { label: 'Cancelled',         bg: '#F3F4F6', color: '#374151' },
+};
+
+// =============================================================================
+// TrackOrderDrawer — slide-in from right, shows saved orders + manual lookup
+// =============================================================================
+
+interface TrackOrderDrawerProps { businessName: string; theme: ThemeConfig; isOpen: boolean; onClose: () => void; }
+
+const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOrderDrawerProps) => {
+    const [savedOrders, setSavedOrders] = useState<SavedOrderEntry[]>([]);
+    const [expandedId, setExpandedId]   = useState<string | null>(null);
+    const [liveData, setLiveData]       = useState<Record<string, TrackedOrder>>({});
+    const [manualRef, setManualRef]     = useState('');
+    const [showManual, setShowManual]   = useState(false);
+    const [trackResult, setTrackResult] = useState<TrackedOrder | null>(null);
+    const [trackError, setTrackError]   = useState<string | null>(null);
+    const [trackLoading, setTrackLoading] = useState(false);
+
+    useEffect(() => { if (isOpen) setSavedOrders(loadSavedOrders(businessName)); }, [isOpen, businessName]);
+
+    const fetchLiveStatus = useCallback(async (entry: SavedOrderEntry) => {
+        try {
+            const data = await storefrontService.trackOrder(businessName, entry.reference);
+            setLiveData(prev => ({ ...prev, [entry.orderId]: data }));
+            if (data.status !== entry.lastStatus) {
+                updateSavedStatus(businessName, entry.orderId, data.status);
+                setSavedOrders(loadSavedOrders(businessName));
+            }
+        } catch { /* silent */ }
+    }, [businessName]);
+
+    const handleExpand = useCallback((entry: SavedOrderEntry) => {
+        const next = expandedId === entry.orderId ? null : entry.orderId;
+        setExpandedId(next);
+        if (next && !liveData[entry.orderId]) fetchLiveStatus(entry);
+    }, [expandedId, liveData, fetchLiveStatus]);
+
+    const handleManualTrack = useCallback(async () => {
+        if (!manualRef.trim()) return;
+        setTrackLoading(true); setTrackError(null); setTrackResult(null);
+        try {
+            const data = await storefrontService.trackOrder(businessName, manualRef.trim());
+            setTrackResult(data);
+        } catch (err) {
+            setTrackError(err instanceof Error ? err.message : 'Order not found');
+        } finally { setTrackLoading(false); }
+    }, [businessName, manualRef]);
+
+    const fmtDate = (iso: string | null) =>
+        !iso ? '—' : new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+    const renderTimeline = (order: TrackedOrder) => (
+        <div className="pt-3">
+            {order.timeline.map((step, idx) => {
+                const isLast   = idx === order.timeline.length - 1;
+                const dotColor = step.failed ? '#EF4444' : step.done ? '#22C55E' : '#D1D5DB';
+                return (
+                    <div key={idx} className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                            <div className="w-3 h-3 rounded-full border-2 mt-1 shrink-0"
+                                style={{ borderColor: dotColor, backgroundColor: (step.done || step.failed) ? dotColor : 'white' }} />
+                            {!isLast && (
+                                <div className="w-0.5 flex-1 min-h-[22px] mt-0.5"
+                                    style={{ backgroundColor: step.done ? '#22C55E' : '#E5E7EB' }} />
+                            )}
+                        </div>
+                        <div className={`${isLast ? 'pb-1' : 'pb-3'}`}>
+                            <p className={`text-sm font-semibold leading-tight ${
+                                step.failed ? 'text-red-600' : step.done ? 'text-gray-900' : 'text-gray-400'
+                            }`}>{step.event}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                                {step.at ? fmtDate(step.at) : (step.done ? '' : 'Pending…')}
+                            </p>
+                        </div>
+                    </div>
+                );
+            })}
+            {order.items.length > 0 && (
+                <div className="mt-2 pt-3 border-t border-gray-100 space-y-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Bundle Details</p>
+                    {order.items.map((item, i) => (
+                        <div key={i} className="flex items-start justify-between text-xs gap-2">
+                            <div className="min-w-0">
+                                <span className="font-semibold text-gray-800">{item.bundleName}</span>
+                                {item.dataVolume > 0 && <span className="text-gray-400 ml-1">· {item.dataVolume}{item.dataUnit}</span>}
+                            </div>
+                            <div className="text-right shrink-0">
+                                <p className="font-mono text-gray-600">{item.customerPhone}</p>
+                                <span className={`text-[10px] font-bold ${
+                                    item.processingStatus === 'completed' ? 'text-green-600' :
+                                    item.processingStatus === 'failed'    ? 'text-red-500'   :
+                                    item.processingStatus === 'processing'? 'text-blue-500'  : 'text-amber-500'
+                                }`}>{item.processingStatus}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
+    const renderOrderCard = (entry: SavedOrderEntry) => {
+        const cfg        = ORDER_STATUS_CFG[entry.lastStatus] ?? ORDER_STATUS_CFG.pending;
+        const live       = liveData[entry.orderId];
+        const isExpanded = expandedId === entry.orderId;
+        return (
+            <div key={entry.orderId} className="rounded-2xl border border-gray-100 overflow-hidden bg-white shadow-sm">
+                <button onClick={() => handleExpand(entry)}
+                    className="w-full p-4 flex items-start justify-between gap-3 text-left hover:bg-gray-50/50 transition">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-mono font-bold text-gray-600 shrink-0">{entry.orderNumber}</span>
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                                style={{ backgroundColor: cfg.bg, color: cfg.color }}>{cfg.label}</span>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-800 mt-1 truncate">{entry.bundleName}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                            GH₵{entry.total.toFixed(2)} · {
+                                entry.paymentType === 'paystack'      ? '⚡ Paystack' :
+                                entry.paymentType === 'mobile_money'  ? '📱 MoMo' : '🏦 Bank'
+                            } · {new Date(entry.savedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                    </div>
+                    <FaChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 shrink-0 mt-1 ${isExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                {isExpanded && (
+                    <div className="px-4 pb-4 border-t border-gray-100 bg-gray-50/50">
+                        {live
+                            ? renderTimeline(live)
+                            : <div className="py-5 flex items-center justify-center gap-2 text-sm text-gray-400">
+                                <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                                Loading status…
+                            </div>
+                        }
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const renderTrackResult = (order: TrackedOrder) => {
+        const cfg = ORDER_STATUS_CFG[order.status] ?? ORDER_STATUS_CFG.pending;
+        return (
+            <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-mono font-bold text-gray-600">{order.orderNumber}</span>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: cfg.bg, color: cfg.color }}>{cfg.label}</span>
+                </div>
+                {renderTimeline(order)}
+            </div>
+        );
+    };
+
+    // Always render drawer so we can animate open/close smoothly. visibility
+// controlled via CSS transitions on opacity and transform.
+    return (
+        <div className={`fixed inset-0 z-50 flex justify-end ${isOpen ? '' : 'pointer-events-none'}`} onClick={onClose}>
+            <div className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${
+                isOpen ? 'opacity-100' : 'opacity-0'
+            }`} />
+            <div className={`relative w-full max-w-md h-full flex flex-col bg-white shadow-2xl transform transition-transform duration-300 ${
+                isOpen ? 'translate-x-0' : 'translate-x-full'
+            }`} onClick={e => e.stopPropagation()}>
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                            style={{ backgroundColor: theme.primary + '18' }}>
+                            <FaBoxOpen className="w-4 h-4" style={{ color: theme.primary }} />
+                        </div>
+                        <div>
+                            <h2 className="font-black text-gray-900 text-base leading-tight">My Orders</h2>
+                            <p className="text-[11px] text-gray-400 leading-tight">Track your purchases on this device</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose}
+                        className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition">
+                        <FaXmark className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+
+                {/* Order list */}
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                    {savedOrders.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+                                <FaBoxOpen className="w-8 h-8 text-gray-300" />
+                            </div>
+                            <p className="font-bold text-gray-700">No recent orders</p>
+                            <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                                Orders placed on this device appear here for 24 hours.
+                            </p>
+                            <p className="text-xs text-gray-300 mt-3">Have a reference? Use the lookup below.</p>
+                        </div>
+                    ) : (
+                        savedOrders.map(entry => renderOrderCard(entry))
+                    )}
+                </div>
+
+                {/* Manual lookup */}
+                <div className="border-t border-gray-100 bg-gray-50/60 px-4 py-4 shrink-0 space-y-3">
+                    <button
+                        onClick={() => { setShowManual(m => !m); setTrackResult(null); setTrackError(null); }}
+                        className="flex items-center justify-between w-full text-sm font-bold text-gray-600 hover:text-gray-900 transition">
+                        <span>Track by order reference</span>
+                        <FaChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showManual ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showManual && (
+                        <div className="space-y-2">
+                            <input
+                                type="text"
+                                placeholder="Paste order ID or reference…"
+                                value={manualRef}
+                                onChange={e => setManualRef(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleManualTrack()}
+                                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white placeholder:text-gray-300 focus:outline-none focus:ring-2"
+                                style={{ '--tw-ring-color': theme.primary + '50' } as React.CSSProperties}
+                            />
+                            <button
+                                onClick={handleManualTrack}
+                                disabled={!manualRef.trim() || trackLoading}
+                                className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition active:scale-95 disabled:opacity-40"
+                                style={{ backgroundColor: theme.primary }}>
+                                {trackLoading ? 'Looking up…' : 'Track Order'}
+                            </button>
+                            {trackError  && <p className="text-xs text-red-500 text-center">{trackError}</p>}
+                            {trackResult && renderTrackResult(trackResult)}
+                        </div>
+                    )}
+                    <p className="text-[10px] text-gray-300 text-center">
+                        Data stored locally on this device · Clears after 24 hours
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+});
+
+// =============================================================================
 // Main Component
 // =============================================================================
 
@@ -651,6 +950,9 @@ const PublicStore: React.FC = () => {
     const [orderError, setOrderError] = useState<string | null>(null);
     const [orderResult, setOrderResult] = useState<PublicOrderResult | null>(null);
     const [paystackStatus, setPaystackStatus] = useState<'idle' | 'success' | 'failed'>('idle');
+
+    // ── Track order drawer ────────────────────────────────────────────────────
+    const [showTrackDrawer, setShowTrackDrawer] = useState(false);
 
     // ==========================================================================
     // Data fetching
@@ -861,6 +1163,20 @@ const PublicStore: React.FC = () => {
             const reference = paystackData?.reference;
 
             setOrderResult(result);
+            // Save to device localStorage for order tracking (24 h TTL)
+            if (businessName) {
+                saveOrderEntry(businessName, {
+                    orderId:     result.orderId,
+                    orderNumber: result.orderNumber,
+                    reference:   reference || result.orderId,
+                    bundleName:  activeOrder.bundle.name,
+                    provider:    activeOrder.bundle.provider || '',
+                    total:       result.total,
+                    paymentType,
+                    savedAt:     Date.now(),
+                    lastStatus:  result.status,
+                });
+            }
             setOrderStep('confirmation');
 
             if (paystackUrl && reference) {
@@ -1018,7 +1334,14 @@ const PublicStore: React.FC = () => {
                             style={{ '--tw-ring-color': theme.primary + '40' } as React.CSSProperties}
                         />
                     </div>
-
+                    <button
+                        onClick={() => setShowTrackDrawer(true)}
+                        title="Track my orders"
+                        className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition whitespace-nowrap"
+                    >
+                        <FaBoxOpen className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">My Orders</span>
+                    </button>
                 </div>
 
                 {/* Provider carousel — only shown when multiple providers */}
@@ -1570,6 +1893,13 @@ const PublicStore: React.FC = () => {
                                     </div>
                                     <p className="text-xl font-black text-gray-900">Thank you!</p>
                                     <p className="text-sm text-gray-500 mt-0.5">Order #{orderResult.orderNumber}</p>
+                                    <button
+                                        onClick={() => { closeOrderDialog(); setShowTrackDrawer(true); }}
+                                        className="text-xs font-bold mt-1.5 underline underline-offset-2"
+                                        style={{ color: theme.primary }}
+                                    >
+                                        Track this order →
+                                    </button>
                                 </div>
 
                                 {/* Order breakdown */}
@@ -1787,6 +2117,16 @@ const PublicStore: React.FC = () => {
 
             {/* Single-item order dialog */}
             {renderOrderDialog()}
+
+            {/* Track Order Drawer */}
+            {businessName && (
+                <TrackOrderDrawer
+                    businessName={businessName}
+                    theme={theme}
+                    isOpen={showTrackDrawer}
+                    onClose={() => setShowTrackDrawer(false)}
+                />
+            )}
         </div>
     );
 };
