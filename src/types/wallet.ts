@@ -85,7 +85,7 @@ export type PayoutStatus = 'pending' | 'approved' | 'processing' | 'completed' |
 
 export interface PayoutRequestItem {
   _id: string;
-  user: string | { _id: string; fullName?: string; email?: string; phone?: string; earningsBalance?: number };
+  user: string | { _id: string; fullName?: string; email?: string; phone?: string; earningsBalance?: number; userType?: string };
   amount: number;
   currency: string;
   status: PayoutStatus;
@@ -93,8 +93,15 @@ export interface PayoutRequestItem {
   transferFee?: number;
   netAmount?: number;
   paystackTransfer?: Record<string, any> | null;
+  reviewedBy?: string;
+  reviewedAt?: string | Date;
+  rejectionReason?: string;
+  metadata?: Record<string, any>;
   createdAt: string | Date;
   updatedAt?: string | Date;
+  requestedAt?: string | Date;
+  processedAt?: string | Date;
+  completedAt?: string | Date;
 }
 
 export interface EarningsDashboard {
@@ -104,5 +111,14 @@ export interface EarningsDashboard {
   totalWithdrawn: number;
   recentPayouts: PayoutRequestItem[];
   canRequestPayout: boolean;
+  transferFees?: {
+    mobile_money: number;
+    bank_account: number;
+  };
+  payoutFeeBearer?: 'platform' | 'agent';
+  minimumPayoutAmounts?: {
+    mobile_money: number;
+    bank_account: number;
+  };
 }
 

@@ -6,8 +6,9 @@ import { Badge } from "../../design-system/components/badge";
 import { Alert } from "../../design-system/components/alert";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "../../design-system";
 import { ColorSchemeSelector } from "../../components/common/color-scheme-selector";
-import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type SystemInfo } from "../../services/settings.service";
+import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type SystemInfo } from "../../services/settings.service";
 import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog } from "../../components/superadmin";
+import { FeeSettingsDialog } from "../../components/superadmin/fee-settings-dialog";
 
 export default function SuperAdminSettingsPage() {
 
@@ -30,6 +31,8 @@ export default function SuperAdminSettingsPage() {
   const [apiDialogOpen, setApiDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [feeDialogOpen, setFeeDialogOpen] = useState(false);
+  const [feeSettings, setFeeSettings] = useState<FeeSettings | null>(null);
 
   // single load + client cache via settingsService.getAllSettings()
   useEffect(() => {
@@ -113,6 +116,11 @@ export default function SuperAdminSettingsPage() {
   const handleApiSettingsSuccess = useCallback((settings: ApiSettings) => {
     setData(d => d ? { ...d, apiSettings: settings } : d);
     setMessage({ type: "success", text: "API settings updated" });
+  }, []);
+
+  const handleFeeSettingsSuccess = useCallback((settings: FeeSettings) => {
+    setFeeSettings(settings);
+    setMessage({ type: 'success', text: 'Fee settings updated' });
   }, []);
 
   const handleWalletSettingsSuccess = useCallback((settings: WalletSettings) => {
@@ -413,6 +421,36 @@ export default function SuperAdminSettingsPage() {
                   </div>
                 </div>
               </Card>
+
+              <Card>
+                <SectionHeader title="Fee & Payout Settings" subtitle="Paystack fees, platform fees & payout configuration" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 bg-blue-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Paystack Collection Fee</div>
+                    <div className="font-medium">{feeSettings?.paystackCollectionFeePercent ?? 1.95}%</div>
+                  </div>
+                  <div className="p-3 bg-blue-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Platform Fee</div>
+                    <div className="font-medium">{feeSettings?.platformFeePercent ?? 0}%</div>
+                  </div>
+                  <div className="p-3 bg-blue-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Fee Delegation</div>
+                    <div className="font-medium">{(feeSettings?.delegateFeesToCustomer ?? true) ? 'Customer pays' : 'Platform absorbs'}</div>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">MoMo Transfer Fee</div>
+                    <div className="font-medium">GH₵{(feeSettings?.paystackTransferFees?.mobile_money ?? 1.0).toFixed(2)}</div>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Bank Transfer Fee</div>
+                    <div className="font-medium">GH₵{(feeSettings?.paystackTransferFees?.bank_account ?? 8.0).toFixed(2)}</div>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Payout Fee Bearer</div>
+                    <div className="font-medium capitalize">{feeSettings?.payoutFeeBearer ?? 'agent'}</div>
+                  </div>
+                </div>
+              </Card>
             </div>
           )}
 
@@ -464,6 +502,8 @@ export default function SuperAdminSettingsPage() {
         <ApiSettingsDialog isOpen={apiDialogOpen} onClose={() => setApiDialogOpen(false)} currentSettings={data.apiSettings} onSuccess={handleApiSettingsSuccess} />
 
         <WalletSettingsDialog isOpen={walletDialogOpen} onClose={() => setWalletDialogOpen(false)} currentSettings={data.walletSettings} onSuccess={handleWalletSettingsSuccess} />
+
+        <FeeSettingsDialog isOpen={feeDialogOpen} onClose={() => setFeeDialogOpen(false)} currentSettings={feeSettings} onSuccess={handleFeeSettingsSuccess} />
 
         <AdminPasswordDialog isOpen={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)} onSuccess={handlePasswordChangeSuccess} />
       </div>

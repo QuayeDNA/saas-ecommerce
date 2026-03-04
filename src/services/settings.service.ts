@@ -54,6 +54,17 @@ export interface WalletSettings {
   };
 }
 
+export interface FeeSettings {
+  paystackCollectionFeePercent: number;
+  platformFeePercent: number;
+  delegateFeesToCustomer: boolean;
+  paystackTransferFees: {
+    mobile_money: number;
+    bank_account: number;
+  };
+  payoutFeeBearer: 'platform' | 'agent';
+}
+
 export interface PasswordResetRequest {
   userId: string;
   newPassword: string;
@@ -202,6 +213,18 @@ class SettingsService {
     settings: WalletSettings
   ): Promise<WalletSettings> {
     const response = await apiClient.put("/api/settings/wallet", settings);
+    this._allSettingsCache = null;
+    return response.data;
+  }
+
+  // Fee Settings (Paystack collection fees, platform fees, payout fees)
+  async getFeeSettings(): Promise<FeeSettings> {
+    const response = await apiClient.get("/api/settings/fees");
+    return response.data;
+  }
+
+  async updateFeeSettings(settings: Partial<FeeSettings>): Promise<FeeSettings> {
+    const response = await apiClient.put("/api/settings/fees", settings);
     this._allSettingsCache = null;
     return response.data;
   }

@@ -142,6 +142,8 @@ export default function SuperAdminPayoutsPage() {
                     <TableHeaderCell>Requested</TableHeaderCell>
                     <TableHeaderCell>Agent</TableHeaderCell>
                     <TableHeaderCell>Amount</TableHeaderCell>
+                    <TableHeaderCell>Fee</TableHeaderCell>
+                    <TableHeaderCell>Net</TableHeaderCell>
                     <TableHeaderCell>Destination</TableHeaderCell>
                     <TableHeaderCell>Status</TableHeaderCell>
                     <TableHeaderCell>Actions</TableHeaderCell>
@@ -150,32 +152,53 @@ export default function SuperAdminPayoutsPage() {
                 <TableBody>
                   {payouts.map(p => (
                     <TableRow key={p._id}>
-                      <TableCell>{new Date(p.createdAt).toLocaleString()}</TableCell>
-                      <TableCell className="min-w-[220px]">
-                        {typeof p.user === 'object' ? `${(p.user as { fullName?: string; email?: string }).fullName} • ${(p.user as { fullName?: string; email?: string }).email}` : String(p.user)}
+                      <TableCell className="whitespace-nowrap text-xs">
+                        {new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        <div className="text-gray-400">{new Date(p.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
                       </TableCell>
-                      <TableCell>GH₵ {p.amount.toFixed(2)}</TableCell>
-                      <TableCell className="text-xs truncate max-w-[240px]">
-                        {p.destination.type === 'mobile_money' ? `${p.destination.mobileProvider} • ${p.destination.phoneNumber}` : `${p.destination.bankCode || ''} • ${p.destination.accountNumber || ''}`}
+                      <TableCell className="min-w-[200px]">
+                        {typeof p.user === 'object' ? (
+                          <div>
+                            <div className="font-medium">{(p.user as { fullName?: string }).fullName}</div>
+                            <div className="text-xs text-gray-500">{(p.user as { email?: string }).email}</div>
+                          </div>
+                        ) : String(p.user)}
+                      </TableCell>
+                      <TableCell className="font-medium">GH₵ {p.amount.toFixed(2)}</TableCell>
+                      <TableCell className="text-xs text-orange-600">
+                        {p.transferFee != null ? `GH₵ ${p.transferFee.toFixed(2)}` : '—'}
+                      </TableCell>
+                      <TableCell className="font-medium text-green-600">
+                        {p.netAmount != null ? `GH₵ ${p.netAmount.toFixed(2)}` : '—'}
+                      </TableCell>
+                      <TableCell className="text-xs truncate max-w-[200px]">
+                        {p.destination.type === 'mobile_money' ? `${p.destination.mobileProvider} • ${p.destination.phoneNumber}` : `Bank • ${p.destination.accountNumber || ''}`}
                       </TableCell>
                       <TableCell><Badge colorScheme={badgeColor(p.status)}>{p.status}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           {p.status === 'pending' && (
                             <>
-                              <Button size="xs" onClick={() => handleApprove(p._id)} isLoading={actionLoading === p._id}>Approve</Button>
-                              <Button size="xs" variant="danger" onClick={() => handleReject(p._id)} isLoading={actionLoading === p._id}>Reject</Button>
-                              <Button size="xs" variant="outline" onClick={() => handleProcess(p._id)} isLoading={actionLoading === p._id}>Process</Button>
+                              <Button size="xs" onClick={() => handleApprove(p._id)} isLoading={actionLoading === p._id} disabled={!!actionLoading}>Approve</Button>
+                              <Button size="xs" variant="danger" onClick={() => handleReject(p._id)} isLoading={actionLoading === p._id} disabled={!!actionLoading}>Reject</Button>
                             </>
                           )}
-                          {p.status !== 'pending' && <span className="text-xs text-gray-500">No actions</span>}
+                          {p.status === 'approved' && (
+                            <Button size="xs" onClick={() => handleProcess(p._id)} isLoading={actionLoading === p._id} disabled={!!actionLoading}>Send Transfer</Button>
+                          )}
+                          {p.status === 'processing' && (
+                            <span className="text-xs text-blue-500">Awaiting…</span>
+                          )}
+                          {!['pending', 'approved', 'processing'].includes(p.status) && (
+                            <span className="text-xs text-gray-500">{p.paystackTransfer?.transferReference || '—'}</span>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
                   {payouts.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-sm text-gray-500 py-8">No payouts found</TableCell>
+                      <TableCell colSpan={8} className="text-center text-sm text-gray-500 py-8">No payouts found</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
