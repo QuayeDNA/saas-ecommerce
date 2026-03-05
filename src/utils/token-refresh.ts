@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { refreshClient } from './api-client';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';

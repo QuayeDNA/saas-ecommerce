@@ -20,6 +20,7 @@ import {
   type StorefrontData,
   type StorefrontAnalytics,
   type StorefrontOrder,
+  type AgentBundle,
 } from "../../services/storefront.service";
 import { walletService } from "../../services/wallet-service";
 import type { EarningsDashboard } from "../../types/wallet";

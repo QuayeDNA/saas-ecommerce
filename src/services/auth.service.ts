@@ -4,9 +4,6 @@ import Cookies from "js-cookie";
 import type { User } from "../types";
 import { apiClient } from "../utils/api-client";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "https://localhost:5050";
-
 // Cookie configuration
 const COOKIE_OPTIONS = {
   secure: import.meta.env.PROD, // Only secure in production

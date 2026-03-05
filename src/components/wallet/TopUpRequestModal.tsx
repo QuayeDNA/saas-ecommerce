@@ -124,7 +124,8 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
         const walletSettings = await settingsService.getWalletSettings();
         const minimums = walletSettings.minimumTopUpAmounts;
         const userType = user?.userType ?? 'agent';
-        setMinimumAmount(minimums[userType] ?? minimums.default ?? 10);
+        const key = userType as keyof typeof minimums;
+        setMinimumAmount(minimums[key] ?? minimums.default ?? 10);
       } catch {
         // Use default minimum
       }
