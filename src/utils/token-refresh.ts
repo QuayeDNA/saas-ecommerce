@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { refreshClient } from './api-client';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 
@@ -76,11 +76,7 @@ class TokenRefreshService {
 
       console.log('🔄 Proactively refreshing token...');
 
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL ?? 'http://localhost:5050'}/api/auth/refresh`,
-        { refreshToken },
-        { withCredentials: true }
-      );
+      const response = await refreshClient.post(`/api/auth/refresh`, { refreshToken });
 
       const { accessToken, refreshToken: newRefreshToken } = response.data;
       const rememberMe = !!Cookies.get('rememberMe');

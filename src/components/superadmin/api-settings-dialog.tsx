@@ -8,7 +8,9 @@ import {
   Input,
   Button,
   FormField,
+  Switch,
 } from "../../design-system";
+import { Key, Smartphone, CreditCard, Eye, EyeOff } from "lucide-react";
 import {
   settingsService,
   type ApiSettings,
@@ -33,11 +35,20 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     mtn: false,
     telecel: false,
     airtelTigo: false,
+    paystackTestSecret: false,
+    paystackLiveSecret: false,
   });
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(currentSettings);
+      // In production we DO NOT receive secret values from the backend — clear inputs so
+      // the dialog only sends secret fields when admin provides a new value.
+      const clearedSecrets = { ...currentSettings } as ApiSettings;
+      if (!import.meta.env.DEV) {
+        clearedSecrets.paystackTestSecretKey = "";
+        clearedSecrets.paystackLiveSecretKey = "";
+      }
+      setFormData(clearedSecrets);
     }
   }, [isOpen, currentSettings]);
 
@@ -46,7 +57,14 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     setIsLoading(true);
 
     try {
-      const result = await settingsService.updateApiSettings(formData);
+      // Do not send secret fields back to the server in production when left blank.
+      const payload: Partial<ApiSettings> = { ...formData };
+      if (!import.meta.env.DEV) {
+        if (!payload.paystackTestSecretKey) delete payload.paystackTestSecretKey;
+        if (!payload.paystackLiveSecretKey) delete payload.paystackLiveSecretKey;
+      }
+
+      const result = await settingsService.updateApiSettings(payload as ApiSettings);
       onSuccess(result);
       onClose();
     } catch (error) {
@@ -58,7 +76,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
 
   const handleClose = () => {
     setFormData(currentSettings);
-    setShowKeys({ mtn: false, telecel: false, airtelTigo: false });
+    setShowKeys({ mtn: false, telecel: false, airtelTigo: false, paystackTestSecret: false, paystackLiveSecret: false });
     onClose();
   };
 
@@ -71,7 +89,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
       <DialogHeader>
         <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
           <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-            🔑
+            <Key className="w-4 h-4 text-orange-600" />
           </span>
           API Configuration
         </h2>
@@ -103,7 +121,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                 <div className="p-4 border border-gray-200 rounded-lg">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                      📱
+                      <Smartphone className="w-4 h-4 text-yellow-600" />
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">MTN API Key</h4>
@@ -125,13 +143,16 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       placeholder="Enter MTN API key"
                       className="font-mono"
                       rightIcon={
-                        <button
+                        <Button
                           type="button"
-                          onClick={() => toggleKeyVisibility("mtn")}
-                          className="text-gray-400 hover:text-gray-600"
+                          variant="ghost"
+                          size="xs"
+                          iconOnly
+                          aria-label={showKeys.mtn ? 'Hide MTN key' : 'Reveal MTN key'}
+                          onClick={() => toggleKeyVisibility('mtn')}
                         >
-                          {showKeys.mtn ? "🙈" : "👁️"}
-                        </button>
+                          {showKeys.mtn ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
                       }
                     />
                   </FormField>
@@ -141,7 +162,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                 <div className="p-4 border border-gray-200 rounded-lg">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      📱
+                      <Smartphone className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">
@@ -165,13 +186,16 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       placeholder="Enter Telecel API key"
                       className="font-mono"
                       rightIcon={
-                        <button
+                        <Button
                           type="button"
-                          onClick={() => toggleKeyVisibility("telecel")}
-                          className="text-gray-400 hover:text-gray-600"
+                          variant="ghost"
+                          size="xs"
+                          iconOnly
+                          aria-label={showKeys.telecel ? 'Hide Telecel key' : 'Reveal Telecel key'}
+                          onClick={() => toggleKeyVisibility('telecel')}
                         >
-                          {showKeys.telecel ? "🙈" : "👁️"}
-                        </button>
+                          {showKeys.telecel ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
                       }
                     />
                   </FormField>
@@ -181,7 +205,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                 <div className="p-4 border border-gray-200 rounded-lg">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                      📱
+                      <Smartphone className="w-4 h-4 text-red-600" />
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">
@@ -205,15 +229,100 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       placeholder="Enter AirtelTigo API key"
                       className="font-mono"
                       rightIcon={
-                        <button
+                        <Button
                           type="button"
-                          onClick={() => toggleKeyVisibility("airtelTigo")}
-                          className="text-gray-400 hover:text-gray-600"
+                          variant="ghost"
+                          size="xs"
+                          iconOnly
+                          aria-label={showKeys.airtelTigo ? 'Hide AirtelTigo key' : 'Reveal AirtelTigo key'}
+                          onClick={() => toggleKeyVisibility('airtelTigo')}
                         >
-                          {showKeys.airtelTigo ? "🙈" : "👁️"}
-                        </button>
+                          {showKeys.airtelTigo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
                       }
                     />
+                  </FormField>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-900">Paystack (Payment Gateway)</h3>
+
+              <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><CreditCard className="w-4 h-4 text-green-600" /></div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Paystack</h4>
+                    <p className="text-sm text-gray-600">Enable Paystack and configure test/live keys</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={formData.paystackEnabled || false}
+                      onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackEnabled: checked }))}
+                    />
+                    <span className="text-sm text-gray-700">Enable Paystack</span>
+                  </div>
+
+                  <FormField label="Test Secret Key">
+                    <Input
+                      type={showKeys.paystackTestSecret ? 'text' : 'password'}
+                      value={formData.paystackTestSecretKey || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paystackTestSecretKey: e.target.value }))}
+                      placeholder={import.meta.env.DEV ? "sk_test_..." : (currentSettings.paystackTestSecretExists ? "(stored on server)" : "sk_test_...")}
+                      className="font-mono"
+                      rightIcon={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          iconOnly
+                          aria-label={showKeys.paystackTestSecret ? 'Hide test secret' : 'Reveal test secret'}
+                          onClick={() => setShowKeys(prev => ({ ...prev, paystackTestSecret: !prev.paystackTestSecret }))}
+                        >
+                          {showKeys.paystackTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      }
+                    />
+                    {!import.meta.env.DEV && currentSettings.paystackTestSecretExists && (
+                      <div className="text-xs text-gray-500 mt-2">Secret stored on server — leave blank to keep existing value or enter a new key to replace.</div>
+                    )}
+                  </FormField>
+
+                  <FormField label="Live Public Key (optional)">
+                    <Input
+                      value={formData.paystackLivePublicKey || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paystackLivePublicKey: e.target.value }))}
+                      placeholder="pk_live_..."
+                      className="font-mono"
+                    />
+                  </FormField>
+
+                  <FormField label="Live Secret Key (optional)">
+                    <Input
+                      type={showKeys.paystackLiveSecret ? 'text' : 'password'}
+                      value={formData.paystackLiveSecretKey || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paystackLiveSecretKey: e.target.value }))}
+                      placeholder={import.meta.env.DEV ? "sk_live_..." : (currentSettings.paystackLiveSecretExists ? "(stored on server)" : "sk_live_...")}
+                      className="font-mono"
+                      rightIcon={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          iconOnly
+                          aria-label={showKeys.paystackLiveSecret ? 'Hide live secret' : 'Reveal live secret'}
+                          onClick={() => setShowKeys(prev => ({ ...prev, paystackLiveSecret: !prev.paystackLiveSecret }))}
+                        >
+                          {showKeys.paystackLiveSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      }
+                    />
+                    {!import.meta.env.DEV && currentSettings.paystackLiveSecretExists && (
+                      <div className="text-xs text-gray-500 mt-2">Secret stored on server — leave blank to keep existing value or enter a new key to replace.</div>
+                    )}
                   </FormField>
                 </div>
               </div>

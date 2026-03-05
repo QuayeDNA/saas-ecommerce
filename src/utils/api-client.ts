@@ -3,8 +3,11 @@ import Cookies from "js-cookie";
 import { getToken, removeToken } from "./auth-storage";
 
 // Create a public axios instance for unauthenticated requests
+const DEFAULT_API = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "" : "https://localhost:5050");
+
 export const publicApiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:5050",
+  // In dev prefer a relative URL so Vite's dev server proxy handles /api requests.
+  baseURL: DEFAULT_API,
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,11 +15,18 @@ export const publicApiClient = axios.create({
 
 // Create a custom axios instance
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:5050",
+  baseURL: DEFAULT_API,
   headers: {
     "Content-Type": "application/json",
   },
   withCredentials: true, // Important for cookies
+});
+
+// Lightweight client for refresh calls (no interceptors)
+export const refreshClient = axios.create({
+  baseURL: DEFAULT_API,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
 });
 
 // Add a request interceptor to inject the auth token
@@ -63,13 +73,7 @@ apiClient.interceptors.response.use(
         // Attempt token refresh
         const refreshToken = Cookies.get("refreshToken");
         if (refreshToken) {
-          const refreshResponse = await axios.post(
-            `${
-              import.meta.env.VITE_API_URL || "http://localhost:5050"
-            }/api/auth/refresh`,
-            { refreshToken },
-            { withCredentials: true }
-          );
+          const refreshResponse = await refreshClient.post(`/api/auth/refresh`, { refreshToken });
 
           const { accessToken } = refreshResponse.data;
 

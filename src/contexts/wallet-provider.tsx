@@ -24,7 +24,7 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<
-    "websocket" | "polling" | "disconnected"
+    "websocket" | "disconnected"
   >("disconnected");
 
   // Helper function to get user ID (handles both 'id' and '_id' properties)
@@ -93,15 +93,15 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
           setWalletInfo((prev) => {
             const updatedWallet = prev
               ? {
-                  ...prev,
-                  balance: walletUpdate.balance,
-                  recentTransactions:
-                    walletUpdate.recentTransactions || prev.recentTransactions,
-                }
+                ...prev,
+                balance: walletUpdate.balance,
+                recentTransactions:
+                  walletUpdate.recentTransactions || prev.recentTransactions,
+              }
               : {
-                  balance: walletUpdate.balance,
-                  recentTransactions: walletUpdate.recentTransactions || [],
-                };
+                balance: walletUpdate.balance,
+                recentTransactions: walletUpdate.recentTransactions || [],
+              };
 
             return updatedWallet;
           });
@@ -116,8 +116,6 @@ export function WalletProvider({ children }: Readonly<WalletProviderProps>) {
     const checkConnectionStatus = () => {
       if (websocketService.isConnected()) {
         setConnectionStatus("websocket");
-      } else if (websocketService.isPolling()) {
-        setConnectionStatus("polling");
       } else {
         setConnectionStatus("disconnected");
       }

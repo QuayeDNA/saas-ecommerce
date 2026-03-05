@@ -21,6 +21,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from "../../design-system";
+import { EarningsManager } from './earnings-manager';
 import { useToast } from "../../design-system";
 import {
   storefrontService,
@@ -66,7 +67,7 @@ interface StorefrontSettingsProps {
 }
 
 interface PaymentMethodForm {
-  type: "mobile_money" | "bank_transfer";
+  type: "mobile_money" | "bank_transfer" | "paystack";
   details: {
     accounts?: Array<{
       provider: string;
@@ -76,6 +77,7 @@ interface PaymentMethodForm {
     bank?: string;
     account?: string;
     name?: string;
+    subaccountId?: string;
   };
   isActive: boolean;
 }
@@ -90,6 +92,7 @@ interface FormErrors {
 // --- Constants ---
 
 const PAYMENT_TYPE_OPTIONS = [
+  { value: "paystack", label: "Paystack (online)" },
   { value: "mobile_money", label: "Mobile Money" },
   { value: "bank_transfer", label: "Bank Transfer" },
 ];
@@ -144,7 +147,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   });
 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodForm[]>(
-    storefront.paymentMethods || [],
+    storefront.paymentMethods && storefront.paymentMethods.length > 0
+      ? (storefront.paymentMethods as PaymentMethodForm[])
+      : [{ type: 'paystack', details: {}, isActive: false }],
   );
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -218,6 +223,13 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
           }
         }
       }
+
+      // Paystack (platform checkout) requires no storefront-level credentials by default
+      if (payment.type === 'paystack') {
+        // Accept as valid — optional storefront `paystackSubaccountId` may be present but not required
+        continue;
+      }
+
       if (
         payment.type === "bank_transfer" &&
         (!payment.details.account || !payment.details.bank)
@@ -289,13 +301,15 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     [errors.paymentMethods],
   );
 
-  const addPaymentMethod = (type: "mobile_money" | "bank_transfer") => {
+  const addPaymentMethod = (type: "mobile_money" | "bank_transfer" | "paystack") => {
     const newMethod: PaymentMethodForm = {
       type,
       details:
         type === "mobile_money"
           ? { accounts: [{ provider: "", number: "", accountName: "" }] }
-          : { account: "", bank: "", name: "" },
+          : type === 'bank_transfer'
+            ? { account: "", bank: "", name: "" }
+            : {},
       isActive: false,
     };
     setPaymentMethods((prev) => [...prev, newMethod]);
@@ -524,6 +538,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               {method.type === "bank_transfer" && (
                 <Banknote className="w-3 h-3 mr-1" />
               )}
+              {method.type === "paystack" && (
+                <CreditCard className="w-3 h-3 mr-1" />
+              )}
               {
                 PAYMENT_TYPE_OPTIONS.find((opt) => opt.value === method.type)
                   ?.label
@@ -680,6 +697,22 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               </FormField>
             </div>
           )}
+
+          {method.type === 'paystack' && (
+            <div className="space-y-3 text-sm">
+              <FormField label="Paystack Subaccount (optional)">
+                <Input
+                  value={method.details?.subaccountId || storefront.paystackSubaccountId || ''}
+                  onChange={(e) => handlePaymentMethodChange(index, 'subaccountId', e.target.value)}
+                  placeholder="e.g., SB123_xxx (optional)"
+                  size="sm"
+                />
+              </FormField>
+              <p className="text-xs text-gray-500">
+                When enabled, public customers will pay via Paystack (platform checkout). You may optionally provide a Paystack subaccount id for direct payouts; otherwise funds flow to the platform.
+              </p>
+            </div>
+          )}
         </CardBody>
       )}
     </Card>
@@ -708,6 +741,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="payment">Payment</TabsTrigger>
+            <TabsTrigger value="earnings">Earnings</TabsTrigger>
             <TabsTrigger value="sharing">Share</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
@@ -974,50 +1008,97 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               </h3>
             </div>
 
-            <FormField label="Logo URL">
-              <Input
-                value={brandingData.logoUrl}
-                onChange={(e) => handleBrandingChange("logoUrl", e.target.value)}
-                placeholder="https://example.com/logo.png"
-                leftIcon={<Image className="w-4 h-4" />}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Paste a URL to your logo image (recommended: square, 200x200px)
-              </p>
-              {brandingData.logoUrl && (
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
+            {/* Logo */}
+            <div className="space-y-2">
+              <FormField label="Store Logo URL">
+                <Input
+                  value={brandingData.logoUrl}
+                  onChange={(e) => handleBrandingChange("logoUrl", e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  leftIcon={<Image className="w-4 h-4" />}
+                  helperText="Square image recommended (200×200 px). Paste a public image URL or leave blank to use the initials fallback."
+                />
+              </FormField>
+              {/* Logo preview — always visible */}
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                {brandingData.logoUrl ? (
                   <img
                     src={brandingData.logoUrl}
-                    alt="Logo preview"
-                    className="w-12 h-12 rounded-lg object-cover border"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    alt="Store logo"
+                    className="w-14 h-14 rounded-xl object-cover border border-gray-200 shadow-sm"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const fallback = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
                   />
-                  <span className="text-sm text-gray-600">Logo preview</span>
+                ) : null}
+                {/* Fallback: initials avatar */}
+                <div
+                  className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black text-white shadow-sm shrink-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                    display: brandingData.logoUrl ? 'none' : 'flex',
+                  }}
+                >
+                  {formData.businessName?.charAt(0)?.toUpperCase() || 'S'}
                 </div>
-              )}
-            </FormField>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    {brandingData.logoUrl ? 'Logo preview' : 'Initials fallback (no logo set)'}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {brandingData.logoUrl
+                      ? 'This is how your logo appears on your storefront.'
+                      : 'Your store initial is shown automatically when no logo is uploaded.'}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-            <FormField label="Banner Image URL">
-              <Input
-                value={brandingData.bannerUrl}
-                onChange={(e) => handleBrandingChange("bannerUrl", e.target.value)}
-                placeholder="https://example.com/banner.jpg"
-                leftIcon={<Image className="w-4 h-4" />}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                A wide banner for your store header (recommended: 1200x300px)
-              </p>
-              {brandingData.bannerUrl && (
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+            {/* Banner */}
+            <div className="space-y-2">
+              <FormField label="Store Banner URL">
+                <Input
+                  value={brandingData.bannerUrl}
+                  onChange={(e) => handleBrandingChange("bannerUrl", e.target.value)}
+                  placeholder="https://example.com/banner.jpg"
+                  leftIcon={<Image className="w-4 h-4" />}
+                  helperText="Wide image recommended (1200×300 px). Leave blank to use the auto-generated gradient banner."
+                />
+              </FormField>
+              {/* Banner preview — always visible */}
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-2">
+                <p className="text-xs font-medium text-gray-500">Banner preview</p>
+                {brandingData.bannerUrl ? (
                   <img
                     src={brandingData.bannerUrl}
-                    alt="Banner preview"
-                    className="w-full h-24 rounded-lg object-cover border"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    alt="Store banner"
+                    className="w-full h-24 rounded-lg object-cover border border-gray-200"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                    }}
                   />
+                ) : null}
+                {/* Fallback gradient banner */}
+                <div
+                  className="w-full h-24 rounded-lg flex items-center justify-center text-white font-bold text-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%)',
+                    display: brandingData.bannerUrl ? 'none' : 'flex',
+                  }}
+                >
+                  {formData.businessName || 'Your Store'}
                 </div>
-              )}
-            </FormField>
+                <p className="text-xs text-gray-400">
+                  {brandingData.bannerUrl
+                    ? 'Your custom banner image will be shown on the storefront.'
+                    : 'A gradient banner is generated from the theme color when no image is set.'}
+                </p>
+              </div>
+            </div>
           </section>
 
           {/* Social Links */}
@@ -1077,6 +1158,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
           </div>
         </TabsContent>
 
+        {/* ===== Earnings / Payouts ===== */}
+        <TabsContent value="earnings" className="space-y-6">
+          <EarningsManager />
+        </TabsContent>
+
         {/* ===== Payment Methods ===== */}
         <TabsContent value="payment" className="space-y-6">
           <section className="space-y-4">
@@ -1091,6 +1177,8 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 Configure how customers can pay
               </p>
             </div>
+
+
 
             {errors.paymentMethods && (
               <Alert status="error" variant="left-accent">
@@ -1123,7 +1211,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                     leftIcon={<Plus className="w-4 h-4" />}
                     onClick={() =>
                       addPaymentMethod(
-                        option.value as "mobile_money" | "bank_transfer",
+                        option.value as "mobile_money" | "bank_transfer" | "paystack",
                       )
                     }
                   >

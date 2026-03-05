@@ -182,6 +182,11 @@ const getSuperAdminNavItems = (): NavItem[] => [
     icon: <FaStore />,
   },
   {
+    label: "Payouts",
+    path: "/superadmin/payouts",
+    icon: <FaMoneyBillWave />,
+  },
+  {
     label: "Wallet",
     path: "/superadmin/wallet",
     icon: <FaWallet />,
@@ -305,11 +310,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <>
             <button
               onClick={() => toggleExpanded(item.path)}
-              className={`w-full flex items-center justify-between px-3 py-3 rounded-md text-sm transition-all duration-200 ${
-                hasActiveChildItem
+              className={`w-full flex items-center justify-between px-3 py-3 rounded-md text-sm transition-all duration-200 ${hasActiveChildItem
                   ? "text-white shadow-md"
                   : "text-gray-300 hover:text-white"
-              } ${level > 0 ? "ml-4" : ""}`}
+                } ${level > 0 ? "ml-4" : ""}`}
               style={{
                 backgroundColor: hasActiveChildItem
                   ? "var(--color-secondary-500)"
@@ -329,18 +333,16 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             >
               <div className="flex items-center">
                 <span
-                  className={`mr-3 ${
-                    hasActiveChildItem ? "text-white" : "text-gray-400"
-                  }`}
+                  className={`mr-3 ${hasActiveChildItem ? "text-white" : "text-gray-400"
+                    }`}
                 >
                   {item.icon}
                 </span>
                 <span className="font-medium">{item.label}</span>
               </div>
               <span
-                className={`transition-transform duration-200 ${
-                  isExpanded ? "rotate-90" : ""
-                }`}
+                className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
+                  }`}
               >
                 <ChevronRight size={12} />
               </span>
@@ -355,11 +357,10 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         ) : (
           <Link
             to={item.path}
-            className={`flex items-center px-3 py-3 rounded-md text-sm transition-all duration-200 ${
-              isActive
+            className={`flex items-center px-3 py-3 rounded-md text-sm transition-all duration-200 ${isActive
                 ? "text-white shadow-md"
                 : "text-gray-300 hover:text-white"
-            } ${level > 0 ? "ml-6" : ""}`}
+              } ${level > 0 ? "ml-6" : ""}`}
             style={
               {
                 backgroundColor: isActive
@@ -380,9 +381,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             onClick={() => onClose()}
           >
             <span
-              className={`mr-3 ${isActive ? "text-white" : "text-gray-400"} ${
-                level > 0 ? "text-xs" : ""
-              }`}
+              className={`mr-3 ${isActive ? "text-white" : "text-gray-400"} ${level > 0 ? "text-xs" : ""
+                }`}
             >
               {item.icon}
             </span>
@@ -406,9 +406,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     <>
       {/* Sidebar - slide in on mobile, fixed on desktop */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 text-white transform transition-all duration-300 ease-in-out flex flex-col ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}
+        className={`fixed inset-y-0 left-0 z-30 w-64 text-white transform transition-all duration-300 ease-in-out flex flex-col ${isOpen ? "translate-x-0" : "-translate-x-full"
+          } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}
         style={{ backgroundColor: "var(--color-primary-500)" }}
       >
         {/* Logo and close button */}
@@ -487,9 +486,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 </div>
                 <div className="flex items-center">
                   <span
-                    className={`w-2 h-2 ${
-                      authState.isAuthenticated ? "bg-green-500" : "bg-gray-400"
-                    } rounded-full mr-1 flex-shrink-0`}
+                    className={`w-2 h-2 ${authState.isAuthenticated ? "bg-green-500" : "bg-gray-400"
+                      } rounded-full mr-1 flex-shrink-0`}
                   ></span>
                   <p className="text-xs text-gray-300 truncate capitalize">
                     {authState.user?.userType ?? "User"}

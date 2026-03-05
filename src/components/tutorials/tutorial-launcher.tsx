@@ -15,6 +15,7 @@ import {
     Clock,
     BookOpen,
     ChevronRight,
+    EyeOff,
 } from "lucide-react";
 import { Badge } from "../../design-system";
 import { useTutorial } from "../../hooks/use-tutorial";
@@ -48,8 +49,20 @@ export const TutorialLauncher: React.FC = () => {
         resetAllTutorials,
     } = useTutorial();
 
-    // Don't show the FAB while a tutorial is playing
-    if (activeTutorial) return null;
+    // Persistent hide via localStorage
+    const HIDE_KEY = 'tutorials-widget-hidden';
+    const [isHidden, setIsHidden] = React.useState(() => {
+        try { return localStorage.getItem(HIDE_KEY) === 'true'; } catch { return false; }
+    });
+
+    const hideWidget = () => {
+        try { localStorage.setItem(HIDE_KEY, 'true'); } catch { /* ignore */ }
+        setIsHidden(true);
+        setLauncherOpen(false);
+    };
+
+    // Don't show the FAB while a tutorial is playing or widget is hidden
+    if (activeTutorial || isHidden) return null;
 
     return (
         <>
@@ -200,9 +213,19 @@ export const TutorialLauncher: React.FC = () => {
 
                         {/* Footer */}
                         <div className="px-4 py-3 border-t border-gray-100 shrink-0">
-                            <p className="text-xs text-gray-400 text-center">
-                                Press <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] font-mono">?</kbd> anytime to open tutorials
-                            </p>
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-gray-400">
+                                    Press <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] font-mono">?</kbd> anytime to open tutorials
+                                </p>
+                                <button
+                                    onClick={hideWidget}
+                                    className="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1"
+                                    title="Permanently hide this widget"
+                                >
+                                    <EyeOff className="w-3.5 h-3.5" />
+                                    Hide
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </>

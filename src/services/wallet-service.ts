@@ -4,6 +4,9 @@ import type {
   TransactionHistoryResponse,
   WalletTransaction,
   WalletAnalytics,
+  EarningsDashboard,
+  PayoutRequestItem,
+  PayoutDestination,
 } from "../types/wallet";
 import { canHaveWallet } from "../utils/userTypeHelpers";
 
@@ -97,6 +100,65 @@ export const walletService = {
     }>("/api/wallet/request-top-up", { amount, description });
 
     return response.data.transaction;
+  },
+
+  /**
+   * Initiate Paystack checkout for instant wallet top-up (agent-facing)
+   * Calls backend POST /api/wallet/paystack/initiate and returns Paystack init data
+   */
+  initiatePaystackTopUp: async (
+    amount: number
+  ): Promise<{
+    reference: string;
+    publicKey: string;
+    /** Gross amount Paystack charges the agent (may include fee if delegated) */
+    chargeAmount: number;
+    /** Amount in pesewas to pass to PaystackPop.setup */
+    amountPesewas: number;
+    /** Original requested wallet credit amount */
+    targetCreditAmount: number;
+    paystackFee: number;
+    platformFee: number;
+    totalFee: number;
+    feesDelegate: boolean;
+  }> => {
+    const response = await apiClient.post<{ success: boolean; data: any }>("/api/wallet/paystack/initiate", { amount });
+    return response.data.data;
+  },
+
+  /**
+   * Verify a paystack transaction by reference (used by frontend callback)
+   */
+  verifyPaystackReference: async (reference: string) => {
+    const response = await apiClient.get<{ success: boolean; message?: string }>(`/api/wallet/paystack/verify?reference=${encodeURIComponent(reference)}`);
+    return response.data;
+  },
+
+  /**
+   * Get Paystack public key + server-side configured status
+   * Calls GET /api/wallet/paystack/public-key and returns { publicKey, configured }
+   */
+  getPaystackPublicKey: async (): Promise<{ publicKey: string; configured: boolean }> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      publicKey?: string;
+      configured?: boolean;
+    }>("/api/wallet/paystack/public-key");
+
+    return {
+      publicKey: response.data?.publicKey || "",
+      configured: Boolean(response.data?.configured),
+    };
+  },
+
+  /**
+   * Cancel a pending Paystack top-up request by reference (cleanup on failure)
+   */
+  cancelPaystackTopUp: async (reference: string) => {
+    const response = await apiClient.delete<{ success: boolean; message?: string }>(
+      `/api/wallet/paystack/cancel?reference=${encodeURIComponent(reference)}`
+    );
+    return response.data;
   },
 
   /**
@@ -208,6 +270,45 @@ export const walletService = {
     }>(`/api/wallet/analytics?${params.toString()}`);
 
     return response.data.analytics;
+  },
+
+  /* Earnings & Payouts (agent-facing) */
+  getEarningsDashboard: async (): Promise<EarningsDashboard> => {
+    const response = await apiClient.get<{ success: boolean; data: EarningsDashboard }>("/api/wallet/earnings/dashboard");
+    return response.data.data;
+  },
+
+  getPayouts: async (status?: string): Promise<PayoutRequestItem[]> => {
+    const params = new URLSearchParams();
+    if (status) params.append("status", status);
+    const response = await apiClient.get<{ success: boolean; data: PayoutRequestItem[] }>(`/api/wallet/payouts?${params.toString()}`);
+    return response.data.data;
+  },
+
+  requestPayout: async (amount: number, destination: PayoutDestination): Promise<{ data: PayoutRequestItem; autoPayoutEnabled: boolean }> => {
+    const response = await apiClient.post<{ success: boolean; data: PayoutRequestItem; autoPayoutEnabled: boolean }>("/api/wallet/payouts/request", { amount, destination });
+    return { data: response.data.data, autoPayoutEnabled: response.data.autoPayoutEnabled ?? false };
+  },
+
+  /* Admin: payout queue & actions */
+  getPendingPayouts: async (): Promise<PayoutRequestItem[]> => {
+    const response = await apiClient.get<{ success: boolean; data: PayoutRequestItem[] }>("/api/wallet/admin/payouts");
+    return response.data.data;
+  },
+
+  approvePayout: async (payoutId: string, transferReference?: string) => {
+    const response = await apiClient.put<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/approve`, { transferReference });
+    return response.data.data;
+  },
+
+  rejectPayout: async (payoutId: string, reason?: string) => {
+    const response = await apiClient.put<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/reject`, { reason });
+    return response.data.data;
+  },
+
+  processPayout: async (payoutId: string) => {
+    const response = await apiClient.post<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/process`);
+    return response.data.data;
   },
 
   /**

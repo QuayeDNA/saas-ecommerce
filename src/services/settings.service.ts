@@ -23,6 +23,16 @@ export interface ApiSettings {
   telecelApiKey: string;
   airtelTigoApiKey: string;
   apiEndpoint: string;
+  // Paystack
+  paystackEnabled?: boolean;
+  paystackTestPublicKey?: string;
+  paystackTestSecretKey?: string; // returned only in non-production builds
+  paystackLivePublicKey?: string;
+  paystackLiveSecretKey?: string; // returned only in non-production builds
+
+  // Flags indicating whether a secret exists on the server (safe to expose)
+  paystackTestSecretExists?: boolean;
+  paystackLiveSecretExists?: boolean;
 }
 
 export interface SystemInfo {
@@ -42,6 +52,21 @@ export interface WalletSettings {
     super_dealer: number;
     default: number;
   };
+}
+
+export interface FeeSettings {
+  paystackCollectionFeePercent: number;
+  platformFeePercent: number;
+  delegateFeesToCustomer: boolean;
+  paystackTransferFees: {
+    mobile_money: number;
+    bank_account: number;
+  };
+  payoutFeeBearer: 'platform' | 'agent';
+  /** Platform's own percentage cut deducted from each payout amount */
+  platformPayoutFeePercent: number;
+  /** Whether agents can withdraw directly via Paystack without admin approval */
+  autoPayoutEnabled: boolean;
 }
 
 export interface PasswordResetRequest {
@@ -65,6 +90,9 @@ export interface RoleChangeRequest {
 // =============================================================================
 
 class SettingsService {
+  // short-lived in-memory cache for combined settings to avoid repeated requests
+  private _allSettingsCache: { ts: number; data: any } | null = null;
+
   // Site Management
   async getSiteSettings(): Promise<SiteSettings> {
     const response = await apiClient.get("/api/settings/site");
@@ -73,11 +101,14 @@ class SettingsService {
 
   async updateSiteSettings(settings: SiteSettings): Promise<SiteSettings> {
     const response = await apiClient.put("/api/settings/site", settings);
+    // invalidate cache so subsequent `getAllSettings` returns fresh data
+    this._allSettingsCache = null;
     return response.data;
   }
 
   async toggleSiteStatus(): Promise<{ isSiteOpen: boolean }> {
     const response = await apiClient.post("/api/settings/site/toggle");
+    this._allSettingsCache = null;
     return response.data;
   }
 
@@ -88,6 +119,7 @@ class SettingsService {
 
   async updateSignupApprovalSetting(requireApproval: boolean): Promise<{ requireApprovalForSignup: boolean }> {
     const response = await apiClient.put("/api/settings/signup-approval", { requireApprovalForSignup: requireApproval });
+    this._allSettingsCache = null;
     return response.data;
   }
 
@@ -98,6 +130,7 @@ class SettingsService {
 
   async updateAutoApproveStorefronts(autoApprove: boolean): Promise<{ autoApproveStorefronts: boolean }> {
     const response = await apiClient.put("/api/settings/storefront-auto-approve", { autoApproveStorefronts: autoApprove });
+    this._allSettingsCache = null;
     return response.data;
   }
 
@@ -131,6 +164,7 @@ class SettingsService {
 
   async updateApiSettings(settings: ApiSettings): Promise<ApiSettings> {
     const response = await apiClient.put("/api/settings/api", settings);
+    this._allSettingsCache = null;
     return response.data;
   }
 
@@ -183,7 +217,53 @@ class SettingsService {
     settings: WalletSettings
   ): Promise<WalletSettings> {
     const response = await apiClient.put("/api/settings/wallet", settings);
+    this._allSettingsCache = null;
     return response.data;
+  }
+
+  // Fee Settings (Paystack collection fees, platform fees, payout fees)
+  async getFeeSettings(): Promise<FeeSettings> {
+    const response = await apiClient.get("/api/settings/fees");
+    return response.data.data ?? response.data;
+  }
+
+  async updateFeeSettings(settings: Partial<FeeSettings>): Promise<FeeSettings> {
+    const response = await apiClient.put("/api/settings/fees", settings);
+    this._allSettingsCache = null;
+    return response.data.data ?? response.data;
+  }
+
+  /**
+   * Combined fetch used by the Settings page — cached client‑side for a short TTL
+   * reduces duplicate network calls when the page remounts or dialogs re-open.
+   */
+  async getAllSettings(force = false): Promise<{
+    siteSettings: SiteSettings;
+    apiSettings: ApiSettings;
+    walletSettings: WalletSettings;
+    feeSettings: FeeSettings;
+    signupApproval: { requireApprovalForSignup: boolean };
+    autoApproveStorefronts: { autoApproveStorefronts: boolean };
+    systemInfo: SystemInfo;
+  }> {
+    const TTL = 30_000; // 30s
+    if (!force && this._allSettingsCache && (Date.now() - this._allSettingsCache.ts) < TTL) {
+      return this._allSettingsCache.data;
+    }
+
+    const [siteSettings, apiSettings, walletSettings, feeSettings, signupApproval, autoApproveStorefronts, systemInfo] = await Promise.all([
+      this.getSiteSettings(),
+      this.getApiSettings(),
+      this.getWalletSettings(),
+      this.getFeeSettings(),
+      this.getSignupApprovalSetting(),
+      this.getAutoApproveStorefronts(),
+      this.getSystemInfo(),
+    ]);
+
+    const combined = { siteSettings, apiSettings, walletSettings, feeSettings, signupApproval, autoApproveStorefronts, systemInfo };
+    this._allSettingsCache = { ts: Date.now(), data: combined };
+    return combined;
   }
 }
 

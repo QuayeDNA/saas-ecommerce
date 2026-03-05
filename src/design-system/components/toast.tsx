@@ -188,7 +188,7 @@ const ToastContainer = () => {
 
   // Create a portal for the toast container
   return createPortal(
-    <div className="fixed top-4 right-2 sm:right-4 z-50 flex flex-col items-end space-y-2 px-2 w-full max-w-full pointer-events-none">
+    <div className="fixed top-4 right-2 sm:right-4 z-1000 flex flex-col items-end space-y-2 px-2 w-full max-w-full pointer-events-none">
       {toasts.map((toast) => (
         <ToastItem
           key={toast.id}

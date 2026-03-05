@@ -12,7 +12,7 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-  StatsGrid,
+  StatCard,
 } from "../../design-system";
 import { useToast } from "../../design-system";
 import {
@@ -20,7 +20,10 @@ import {
   type StorefrontData,
   type StorefrontAnalytics,
   type StorefrontOrder,
+  type AgentBundle,
 } from "../../services/storefront.service";
+import { walletService } from "../../services/wallet-service";
+import type { EarningsDashboard } from "../../types/wallet";
 import {
   Store,
   DollarSign,
@@ -41,6 +44,8 @@ import {
   ChevronRight,
   RefreshCw,
   Zap,
+  Wallet,
+  ChevronLeft,
 } from "lucide-react";
 import { getApiErrorMessage } from "../../utils/error-helpers";
 
@@ -71,8 +76,11 @@ export const StorefrontDashboardPage: React.FC = () => {
 
   // Analytics & orders state
   const [analytics, setAnalytics] = useState<StorefrontAnalytics | null>(null);
+  const [earnings, setEarnings] = useState<EarningsDashboard | null>(null);
   const [recentOrders, setRecentOrders] = useState<StorefrontOrder[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  // bundles that the agent has enabled/disabled (used for checklist logic)
+  const [availableBundles, setAvailableBundles] = useState<AgentBundle[]>([]);
 
   // Checklist visibility — auto-hide when all done, or manually hidden
   const [checklistManuallyHidden, setChecklistManuallyHidden] = useState(() =>
@@ -106,17 +114,21 @@ export const StorefrontDashboardPage: React.FC = () => {
     loadStorefront();
   }, [loadStorefront]);
 
-  // Load analytics & recent orders when storefront is available
+  // Load analytics, orders and bundle availability when storefront is available
   const loadAnalyticsAndOrders = useCallback(async () => {
     if (!storefront) return;
     setAnalyticsLoading(true);
     try {
-      const [analyticsData, ordersData] = await Promise.all([
+      const [analyticsData, ordersData, bundlesData, earningsData] = await Promise.all([
         storefrontService.getAnalytics(),
         storefrontService.getMyOrders({ limit: 5, offset: 0 }),
+        storefrontService.getAvailableBundles(),
+        walletService.getEarningsDashboard().catch(() => null),
       ]);
       setAnalytics(analyticsData);
       setRecentOrders(ordersData.orders || []);
+      setAvailableBundles(bundlesData);
+      if (earningsData) setEarnings(earningsData);
     } catch (error) {
       console.error("Failed to load analytics:", error);
     } finally {
@@ -202,7 +214,8 @@ export const StorefrontDashboardPage: React.FC = () => {
     },
     {
       label: "Configure bundle pricing",
-      done: !!storefront.isApproved,
+      // consider pricing configured only if the store has at least one enabled bundle
+      done: availableBundles.some(b => b.isEnabled),
       action: () => setActiveTab("pricing"),
     },
     {
@@ -224,6 +237,92 @@ export const StorefrontDashboardPage: React.FC = () => {
   // Format helpers
   const formatCurrency = (amount: number) =>
     `GH₵ ${amount.toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // Carousel for profit / earnings metrics — 3 slides
+  const ProfitCarousel: React.FC<{
+    completed: number;
+    pending: number;
+    confirmed: number;
+    available: number | null;
+    loading: boolean;
+  }> = ({ completed, pending, confirmed, available, loading }) => {
+    const [index, setIndex] = useState(0);
+    const val = loading ? "—" : null;
+
+    const cards = [
+      {
+        title: "Storefront Profit",
+        value: val ?? formatCurrency(completed),
+        subtitle: "Markup from completed orders",
+        icon: <TrendingUp className="w-4 h-4" />,
+        color: "text-green-600",
+      },
+      {
+        title: "Pending Profit",
+        value: val ?? formatCurrency(pending + confirmed),
+        subtitle: (pending > 0 || confirmed > 0) ? `${pending > 0 ? `${formatCurrency(pending)} pending` : ""}${pending > 0 && confirmed > 0 ? " · " : ""}${confirmed > 0 ? `${formatCurrency(confirmed)} confirmed` : ""}` : "No pending markup",
+        icon: <Clock className="w-4 h-4" />,
+        color: "text-amber-600",
+      },
+      {
+        title: "Available Earnings",
+        value: val ?? (available !== null ? formatCurrency(available) : "—"),
+        subtitle: "Ready to withdraw",
+        icon: <Wallet className="w-4 h-4" />,
+        color: "text-blue-600",
+      },
+    ];
+
+    const total = cards.length;
+    const prev = () => setIndex((i) => (i - 1 + total) % total);
+    const next = () => setIndex((i) => (i + 1) % total);
+
+    // Auto-advance
+    useEffect(() => {
+      const iv = setInterval(next, 5000);
+      return () => clearInterval(iv);
+    }, []);
+
+    const card = cards[index];
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 relative min-h-[100px]">
+        {/* Nav arrows */}
+        <button
+          onClick={prev}
+          className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 text-gray-400 transition"
+          aria-label="Previous"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={next}
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 text-gray-400 transition"
+          aria-label="Next"
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="px-5">
+          <p className="text-xs text-gray-500 font-medium truncate">{card.title}</p>
+          <p className={`text-xl font-bold mt-0.5 ${card.color}`}>{card.value}</p>
+          <p className="text-xs text-gray-400 mt-0.5 truncate">{card.subtitle}</p>
+        </div>
+
+        {/* Dots */}
+        <div className="flex justify-center gap-1 mt-auto">
+          {cards.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${
+                i === index ? "bg-blue-500 w-3" : "bg-gray-200"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const formatRelativeTime = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -362,62 +461,62 @@ export const StorefrontDashboardPage: React.FC = () => {
         {/* Overview Tab */}
         <TabsContent value="overview">
           <div className="space-y-4 sm:space-y-6">
-            {/* Analytics Stats Row */}
-            <StatsGrid
-              stats={[
-                {
-                  title: "Total Orders",
-                  value: analyticsLoading ? "—" : (analytics?.totalOrders ?? 0),
-                  subtitle: `${analytics?.completedOrders ?? 0} completed`,
-                  icon: <ShoppingCart className="w-4 h-4" />,
-                  size: "md",
-                },
-                {
-                  title: "Revenue",
-                  value: analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0),
-                  subtitle: "Lifetime earnings",
-                  icon: <DollarSign className="w-4 h-4" />,
-                  size: "md",
-                },
-                {
-                  title: "Profit",
-                  value: analyticsLoading ? "—" : formatCurrency(analytics?.totalProfit ?? 0),
-                  subtitle: "From markups",
-                  icon: <TrendingUp className="w-4 h-4" />,
-                  size: "md",
-                },
-                {
-                  title: "Pending",
-                  value: analyticsLoading ? "—" : (analytics?.pendingOrders ?? 0),
-                  subtitle: "Awaiting action",
-                  icon: <Clock className="w-4 h-4" />,
-                  size: "md",
-                },
-              ]}
-              columns={4}
-              gap="md"
-            />
+            {/* ── Analytics Stats ───────────────────────────────────────────── */}
+            {/* Row 1: primary KPIs — 2 cols on mobile, 4 on lg */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <StatCard
+                title="Total Orders"
+                value={analyticsLoading ? "—" : analytics?.totalOrders ?? 0}
+                subtitle={`${analytics?.completedOrders ?? 0} completed`}
+                icon={<ShoppingCart className="w-4 h-4" />}
+                size="md"
+              />
 
-            {/* Additional analytics row */}
+              <StatCard
+                title="Store Revenue"
+                value={analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0)}
+                subtitle="Total charged to customers"
+                icon={<DollarSign className="w-4 h-4" />}
+                size="md"
+              />
+
+              <ProfitCarousel
+                completed={analytics?.totalProfit ?? 0}
+                pending={analytics?.pendingProfit ?? 0}
+                confirmed={analytics?.confirmedProfit ?? 0}
+                available={earnings?.availableBalance ?? null}
+                loading={analyticsLoading}
+              />
+
+              <StatCard
+                title="Pending Orders"
+                value={analyticsLoading ? "—" : analytics?.pendingOrders ?? 0}
+                subtitle="Awaiting action"
+                icon={<Clock className="w-4 h-4" />}
+                size="md"
+              />
+            </div>
+
+            {/* Row 2: secondary breakdown — 4 cols always, smaller */}
             {analytics && !analyticsLoading && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-500 mb-0.5">Avg Order Value</p>
-                  <p className="text-sm font-bold text-gray-900">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">Avg Order Value</p>
+                  <p className="text-sm font-bold text-gray-900 mt-0.5">
                     {formatCurrency(analytics.averageOrderValue)}
                   </p>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-500 mb-0.5">Confirmed</p>
-                  <p className="text-sm font-bold text-blue-600">{analytics.confirmedOrders}</p>
+                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">Confirmed</p>
+                  <p className="text-sm font-bold text-blue-600 mt-0.5">{analytics.confirmedOrders}</p>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-500 mb-0.5">Completed</p>
-                  <p className="text-sm font-bold text-green-600">{analytics.completedOrders}</p>
+                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">Completed</p>
+                  <p className="text-sm font-bold text-green-600 mt-0.5">{analytics.completedOrders}</p>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-500 mb-0.5">Cancelled</p>
-                  <p className="text-sm font-bold text-red-600">{analytics.cancelledOrders}</p>
+                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">Cancelled</p>
+                  <p className="text-sm font-bold text-red-500 mt-0.5">{analytics.cancelledOrders}</p>
                 </div>
               </div>
             )}
@@ -626,9 +725,12 @@ export const StorefrontDashboardPage: React.FC = () => {
                             </div>
                             <div className="text-right shrink-0">
                               <p className="text-sm font-bold text-gray-900">
-                                {formatCurrency(order.total)}
+                                {formatCurrency(order.storefrontData?.totalTierCost ?? order.total)}
                               </p>
                               <p className="text-xs text-gray-400">
+                                {order.total !== (order.storefrontData?.totalTierCost ?? order.total) && (
+                                  <span className="text-gray-300 line-through mr-1">{formatCurrency(order.total)}</span>
+                                )}
                                 {formatRelativeTime(order.createdAt)}
                               </p>
                             </div>

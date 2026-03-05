@@ -19,7 +19,7 @@ export interface StorefrontData {
   suspendedAt?: string;
   suspendedBy?: string;
   paymentMethods: Array<{
-    type: 'mobile_money' | 'bank_transfer';
+    type: 'mobile_money' | 'bank_transfer' | 'paystack';
     details: Record<string, unknown>;
     isActive: boolean;
   }>;
@@ -34,6 +34,8 @@ export interface StorefrontData {
     showContact?: boolean;
   };
   branding?: StorefrontBranding;
+  // Optional Paystack subaccount code for direct payouts to the agent via Paystack
+  paystackSubaccountId?: string;
   approvedAt?: string;
   approvedBy?: string;
   createdAt?: string;
@@ -169,7 +171,12 @@ export interface StorefrontOrder {
 export interface StorefrontAnalytics {
   totalOrders: number;
   totalRevenue: number;
+  /** profit from orders that have reached completed status */
   totalProfit: number;
+  /** markup sitting on pending orders */
+  pendingProfit?: number;
+  /** markup on orders that have been confirmed but not yet completed */
+  confirmedProfit?: number;
   averageOrderValue: number;
   completedOrders: number;
   confirmedOrders: number;
@@ -213,13 +220,15 @@ export interface PublicStorefront {
     };
     branding?: StorefrontBranding;
     paymentMethods: Array<{
-      type: 'mobile_money' | 'bank_transfer';
+      type: 'mobile_money' | 'bank_transfer' | 'paystack';
       details: Record<string, unknown>;
       isActive: boolean;
     }>;
   };
   // backward-compatible flat list
   bundles: PublicBundle[];
+  // optional list of popular bundles (store-scoped)
+  popularBundles?: PublicBundle[];
   // grouped providers -> packages -> bundles (optional; added for provider-first UI)
   providers?: Array<{
     code: string;
@@ -247,7 +256,7 @@ export interface PublicOrderData {
     ghanaCardNumber?: string; // AFA-specific
   };
   paymentMethod: {
-    type: 'mobile_money' | 'bank_transfer';
+    type: 'mobile_money' | 'bank_transfer' | 'paystack';
     reference?: string;
     paymentProofUrl?: string;
   };
@@ -258,6 +267,46 @@ export interface PublicOrderResult {
   orderNumber: string;
   total: number;
   status: string;
+  // When paymentMethod.type === 'paystack' the server may return Paystack init data
+  paystack?: {
+    authorizationUrl?: string;
+    reference?: string;
+    accessCode?: string;
+  };
+}
+
+// ─── Order Tracking Types ─────────────────────────────────────────────────────
+
+export interface TrackedOrderItem {
+  bundleName: string;
+  provider: string;
+  dataVolume: number;
+  dataUnit: string;
+  validity: number | string;
+  validityUnit: string;
+  quantity: number;
+  customerPhone: string;
+  processingStatus: string;
+}
+
+export interface TrackOrderTimeline {
+  event: string;
+  at: string | null;
+  done: boolean;
+  failed?: boolean;
+  pending?: boolean;
+}
+
+export interface TrackedOrder {
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  paymentType: string;
+  paymentVerified: boolean;
+  items: TrackedOrderItem[];
+  timeline: TrackOrderTimeline[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Admin types
@@ -269,6 +318,7 @@ export interface AdminStorefrontData extends StorefrontData {
     phone: string;
     userType: string;
     walletBalance: number;
+    earningsBalance?: number;
   };
 }
 
@@ -352,6 +402,16 @@ class StorefrontService {
   async deleteStorefront(): Promise<{ message: string }> {
     const response = await apiClient.delete(`${this.basePath}/agent/storefront`);
     return { message: response.data.message };
+  }
+
+  /**
+   * Create Paystack subaccount for the authenticated agent's storefront.
+   * Returns the updated storefront object and the Paystack subaccount payload.
+   * Backend validation: agent must have an active bank_transfer payment method with account details.
+   */
+  async createPaystackSubaccount(): Promise<{ storefront: StorefrontData; subaccount: Record<string, unknown> }> {
+    const response = await apiClient.post(`${this.basePath}/agent/storefront/paystack/subaccount`);
+    return response.data.data;
   }
 
   // =========================================================================
@@ -457,6 +517,26 @@ class StorefrontService {
 
   async createPublicOrder(businessName: string, orderData: PublicOrderData): Promise<PublicOrderResult> {
     const response = await apiClient.post(`${this.basePath}/${businessName}/order`, orderData);
+    return response.data.data;
+  }
+
+  /**
+   * Verify a Paystack transaction reference for a storefront order (used by frontend callback)
+   */
+  async verifyPaystackReference(reference: string): Promise<{ success: boolean; message?: string }> {
+    const response = await apiClient.get(`${this.basePath}/paystack/verify?reference=${encodeURIComponent(reference)}`);
+    return response.data;
+  }
+
+  /**
+   * Track a public storefront order by orderId or storefront_<orderId> reference.
+   * No authentication required — returns sanitised status only.
+   */
+  async trackOrder(businessName: string, ref: string): Promise<TrackedOrder> {
+    const response = await apiClient.get(
+      `${this.basePath}/${encodeURIComponent(businessName)}/orders/track`,
+      { params: { ref } }
+    );
     return response.data.data;
   }
 

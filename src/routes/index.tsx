@@ -103,6 +103,11 @@ const WalletPage = lazy(() =>
     default: module.WalletPage,
   })),
 );
+
+const WalletTopupCallbackPage = lazy(() =>
+  import("../pages/wallet-topup-callback").then((module) => ({ default: module.WalletTopupCallbackPage }))
+);
+const StorefrontCallbackPage = lazy(() => import("../pages/storefront-callback").then((m) => ({ default: m.StorefrontCallbackPage })));
 const StorefrontDashboardPage = lazy(() =>
   import("../pages/agent/storefront-dashboard").then((module) => ({
     default: module.StorefrontDashboardPage,
@@ -144,6 +149,22 @@ const publicRoutes: RouteObject[] = [
     element: (
       <Suspense fallback={<PageLoader />}>
         <LoginPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/wallet/topup/callback",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <WalletTopupCallbackPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/storefront/:storefrontId/callback",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <StorefrontCallbackPage />
       </Suspense>
     ),
   },
@@ -332,6 +353,7 @@ const agentRoutes: RouteObject[] = [
               </Suspense>
             ),
           },
+
           {
             path: "storefront",
             element: (
