@@ -23,6 +23,8 @@ import {
   FaIdCard,
 } from "react-icons/fa";
 import { orderService } from "../../services/order.service";
+import { authService } from "../../services/auth.service";
+import { PageLoader } from "../../components/page-loader";
 import { Input } from "../../design-system/components/input";
 import type { Order } from "../../types/order";
 import { Modal } from "../../design-system/components/modal";
@@ -240,7 +242,6 @@ export default function SuperAdminUserDetailsPage() {
     setImpersonateLoading(true);
     try {
       // Get current admin data from auth service
-      const authService = (await import("../../services/auth.service")).authService;
       const adminToken = authService.getToken();
       const adminUser = authService.getCurrentUser();
 
@@ -367,16 +368,7 @@ export default function SuperAdminUserDetailsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-sm sm:text-base text-gray-600">
-            Loading user details...
-          </p>
-        </div>
-      </div>
-    );
+    return <PageLoader text="Loading user details..." />;
   }
 
   if (error || !user) {

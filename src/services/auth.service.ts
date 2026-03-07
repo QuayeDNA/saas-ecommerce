@@ -2,7 +2,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 import type { User } from "../types";
-import { apiClient } from "../utils/api-client";
+import { apiClient, refreshClient } from "../utils/api-client";
 
 // Cookie configuration
 const COOKIE_OPTIONS = {
@@ -219,7 +219,6 @@ class AuthService {
       }
 
       // Use refreshClient to avoid interceptor recursion and centralize baseURL
-      const { refreshClient } = await import("../utils/api-client");
       const response = await refreshClient.post(`/api/auth/refresh`, { refreshToken });
 
       const {

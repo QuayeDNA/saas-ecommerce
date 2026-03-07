@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { FaMoneyBillWave, FaWhatsapp, FaCheck, FaArrowLeft, FaArrowRight, FaBolt } from 'react-icons/fa';
 import {
-  Button, Input, Textarea, Alert, Dialog, DialogHeader, DialogBody, DialogFooter, Spinner, Tabs, TabsList, TabsTrigger,
+  Button, Input, Textarea, Alert, Dialog, DialogHeader, DialogBody, DialogFooter, Spinner,
 } from '../../design-system';
 import { useToast } from '../../design-system/components/toast';
 import { settingsService, type FeeSettings } from '../../services/settings.service';
@@ -48,9 +48,8 @@ const StepIndicator: React.FC<{ current: number; total: number }> = ({ current, 
       {Array.from({ length: total }).map((_, i) => (
         <React.Fragment key={i}>
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-              i + 1 <= current ? 'bg-white' : 'bg-white/20 text-white'
-            }`}
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${i + 1 <= current ? 'bg-white' : 'bg-white/20 text-white'
+              }`}
             style={i + 1 <= current ? { color: 'var(--color-primary-500)' } : {}}
           >
             {i + 1 < current ? <FaCheck className="w-3.5 h-3.5" /> : i + 1}
@@ -385,23 +384,62 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
         {/* ── Step 1: Amount + Mode ── */}
         {!isBlocked && step === 1 && (
           <div className="space-y-4">
-            {/* Mode selector */}
-            <Tabs value={mode} onValueChange={(v: string) => setMode(v as TopUpMode)}>
-              <TabsList className="w-full">
-                <TabsTrigger value="request" className="flex-1">
-                  Request (Admin)
-                </TabsTrigger>
-                {paystackEnabled && canHaveWallet(user?.userType ?? '') ? (
-                  <TabsTrigger value="instant" className="flex-1 flex items-center gap-1.5">
-                    <FaBolt className="w-3 h-3" /> Instant (Paystack)
-                  </TabsTrigger>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 cursor-not-allowed" title="Paystack not configured">
-                    <FaBolt className="w-3 h-3" /> Instant (Paystack)
-                  </div>
+            {/* Mode selector — visual selection cards */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Admin request card */}
+              <button
+                type="button"
+                onClick={() => setMode('request')}
+                className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 ${mode === 'request'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                    : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
+                  }`}
+              >
+                {mode === 'request' && (
+                  <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-white">
+                    <FaCheck className="h-2 w-2" />
+                  </span>
                 )}
-              </TabsList>
-            </Tabs>
+                <div className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${mode === 'request' ? 'bg-blue-100' : 'bg-gray-200'
+                  }`}>
+                  <FaWhatsapp className={`h-4 w-4 ${mode === 'request' ? 'text-blue-600' : 'text-gray-500'}`} />
+                </div>
+                <div className="text-center leading-tight">
+                  <p className="font-semibold">Admin Request</p>
+                  <p className={`mt-0.5 text-xs ${mode === 'request' ? 'text-blue-500' : 'text-gray-400'}`}>Via WhatsApp</p>
+                </div>
+              </button>
+
+              {/* Paystack instant card */}
+              <button
+                type="button"
+                onClick={paystackEnabled && canHaveWallet(user?.userType ?? '') ? () => setMode('instant') : undefined}
+                disabled={!paystackEnabled || !canHaveWallet(user?.userType ?? '')}
+                title={!paystackEnabled ? 'Paystack not configured' : undefined}
+                className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${!paystackEnabled || !canHaveWallet(user?.userType ?? '')
+                    ? 'border-gray-200 bg-gray-50 text-gray-400'
+                    : mode === 'instant'
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                      : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
+                  }`}
+              >
+                {mode === 'instant' && (
+                  <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <FaCheck className="h-2 w-2" />
+                  </span>
+                )}
+                <div className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${mode === 'instant' && paystackEnabled ? 'bg-emerald-100' : 'bg-gray-200'
+                  }`}>
+                  <FaBolt className={`h-4 w-4 ${mode === 'instant' && paystackEnabled ? 'text-emerald-600' : 'text-gray-500'}`} />
+                </div>
+                <div className="text-center leading-tight">
+                  <p className="font-semibold">Instant Pay</p>
+                  <p className={`mt-0.5 text-xs ${mode === 'instant' && paystackEnabled ? 'text-emerald-500' : 'text-gray-400'}`}>
+                    {paystackEnabled ? 'Via Paystack' : 'Not available'}
+                  </p>
+                </div>
+              </button>
+            </div>
 
             {/* Amount input */}
             <Input

@@ -41,8 +41,8 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      // In production we DO NOT receive secret values from the backend — clear inputs so
-      // the dialog only sends secret fields when admin provides a new value.
+      // In production the test key field is hidden; clear it so it is never sent.
+      // For the live secret, clear it so the field only submits when the admin enters a new value.
       const clearedSecrets = { ...currentSettings } as ApiSettings;
       if (!import.meta.env.DEV) {
         clearedSecrets.paystackTestSecretKey = "";
@@ -57,10 +57,10 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     setIsLoading(true);
 
     try {
-      // Do not send secret fields back to the server in production when left blank.
+      // In production: test key is never shown/submitted; omit blank live secret to preserve existing.
       const payload: Partial<ApiSettings> = { ...formData };
       if (!import.meta.env.DEV) {
-        if (!payload.paystackTestSecretKey) delete payload.paystackTestSecretKey;
+        delete payload.paystackTestSecretKey;
         if (!payload.paystackLiveSecretKey) delete payload.paystackLiveSecretKey;
       }
 
@@ -266,32 +266,31 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                     <span className="text-sm text-gray-700">Enable Paystack</span>
                   </div>
 
-                  <FormField label="Test Secret Key">
-                    <Input
-                      type={showKeys.paystackTestSecret ? 'text' : 'password'}
-                      value={formData.paystackTestSecretKey || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, paystackTestSecretKey: e.target.value }))}
-                      placeholder={import.meta.env.DEV ? "sk_test_..." : (currentSettings.paystackTestSecretExists ? "(stored on server)" : "sk_test_...")}
-                      className="font-mono"
-                      rightIcon={
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="xs"
-                          iconOnly
-                          aria-label={showKeys.paystackTestSecret ? 'Hide test secret' : 'Reveal test secret'}
-                          onClick={() => setShowKeys(prev => ({ ...prev, paystackTestSecret: !prev.paystackTestSecret }))}
-                        >
-                          {showKeys.paystackTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
-                      }
-                    />
-                    {!import.meta.env.DEV && currentSettings.paystackTestSecretExists && (
-                      <div className="text-xs text-gray-500 mt-2">Secret stored on server — leave blank to keep existing value or enter a new key to replace.</div>
-                    )}
-                  </FormField>
+                  {import.meta.env.DEV && (
+                    <FormField label="Test Secret Key">
+                      <Input
+                        type={showKeys.paystackTestSecret ? 'text' : 'password'}
+                        value={formData.paystackTestSecretKey || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, paystackTestSecretKey: e.target.value }))}
+                        placeholder="sk_test_..."
+                        className="font-mono"
+                        rightIcon={
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="xs"
+                            iconOnly
+                            aria-label={showKeys.paystackTestSecret ? 'Hide test secret' : 'Reveal test secret'}
+                            onClick={() => setShowKeys(prev => ({ ...prev, paystackTestSecret: !prev.paystackTestSecret }))}
+                          >
+                            {showKeys.paystackTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                        }
+                      />
+                    </FormField>
+                  )}
 
-                  <FormField label="Live Public Key (optional)">
+                  <FormField label={import.meta.env.DEV ? "Live Public Key (optional)" : "Live Public Key"}>
                     <Input
                       value={formData.paystackLivePublicKey || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, paystackLivePublicKey: e.target.value }))}

@@ -73,7 +73,7 @@ const quickLinks = [
     icon: <FaClipboardList className="text-yellow-600 text-xl sm:text-2xl" />,
   },
   {
-    to: "/superadmin/wallet",
+    to: "/superadmin/wallet/top-ups",
     label: "Wallet & Transactions",
     icon: <FaWallet className="text-purple-600 text-xl sm:text-2xl" />,
   },

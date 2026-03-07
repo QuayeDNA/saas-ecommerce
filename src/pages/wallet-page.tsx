@@ -308,17 +308,18 @@ export const WalletPage = () => {
       {/* Tab Navigation */}
       <div className="mt-6 border-b border-gray-200">
         <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as 'wallet' | 'commissions' | 'earnings')}>
-          <TabsList className="w-full justify-center space-x-8">
-            <TabsTrigger value="wallet">
-              <FaWallet className="inline mr-2" />
+          <TabsList className="w-full">
+            <TabsTrigger value="wallet" className="flex-1 min-w-0">
+              <FaWallet className="inline shrink-0 mr-1.5" />
               Wallet
             </TabsTrigger>
-            <TabsTrigger value="commissions">
-              <FaCoins className="inline mr-2" />
-              Commissions
+            <TabsTrigger value="commissions" className="flex-1 min-w-0">
+              <FaCoins className="inline shrink-0 mr-1.5" />
+              <span className="sm:hidden">Comms</span>
+              <span className="hidden sm:inline">Commissions</span>
             </TabsTrigger>
-            <TabsTrigger value="earnings">
-              <FaMoneyBillAlt className="inline mr-2" />
+            <TabsTrigger value="earnings" className="flex-1 min-w-0">
+              <FaMoneyBillAlt className="inline shrink-0 mr-1.5" />
               Earnings
             </TabsTrigger>
           </TabsList>

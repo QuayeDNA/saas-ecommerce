@@ -2,6 +2,7 @@
 
 import Cookies from "js-cookie";
 import type { User } from "../types/auth";
+import { authService } from "../services/auth.service";
 
 export interface ImpersonationData {
   adminToken: string;
@@ -115,7 +116,7 @@ export class ImpersonationService {
         if (adminRefreshToken) {
           console.log("🔄 Attempting to refresh admin token using stored refresh token...");
           try {
-            const authService = (await import("../services/auth.service")).authService;
+            // authService is statically imported at the top of this file
 
             // Temporarily set the refresh token cookie so refreshAccessToken() can use it
             Cookies.set("refreshToken", adminRefreshToken, {
