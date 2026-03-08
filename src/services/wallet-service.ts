@@ -311,6 +311,11 @@ export const walletService = {
     return response.data.data;
   },
 
+  markPayoutComplete: async (payoutId: string, transferReference?: string) => {
+    const response = await apiClient.put<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/complete`, { transferReference });
+    return response.data.data;
+  },
+
   /**
    * Admin: Get all wallet transactions performed by admin
    * @param page Page number

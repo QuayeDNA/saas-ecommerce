@@ -51,7 +51,6 @@ import {
   AlertTriangle,
   Trash2,
   Eye,
-  Calendar,
   User,
   Mail,
   X,
@@ -791,11 +790,36 @@ export default function StoresPage() {
         try {
           const updated = await walletService.processPayout(payoutId);
           addToast('Paystack transfer initiated — awaiting webhook confirmation', 'success');
-          // Reactive update — use server response which includes recalculated fees
           setAgentPayouts(prev => prev.map(p => p._id === payoutId ? { ...p, ...updated, status: 'processing' } : p));
           fetchData().catch(() => { });
         } catch (err: unknown) {
           addToast((err instanceof Error ? err.message : null) || 'Failed to process payout transfer', 'error');
+          throw err;
+        } finally {
+          setPayoutActionLoading(null);
+        }
+      },
+    });
+  };
+
+  const handleMarkPayoutPaid = (payoutId: string) => {
+    openConfirm({
+      title: 'Mark Payout as Manually Paid',
+      message: 'Confirm that you have personally sent the funds to the agent (MoMo, bank transfer, etc.).',
+      confirmLabel: 'Mark as Paid',
+      variant: 'success',
+      hasInput: true,
+      inputLabel: 'Transfer Reference (optional)',
+      inputPlaceholder: 'e.g. MoMo transaction ID or bank ref',
+      onConfirm: async (ref?: string) => {
+        setPayoutActionLoading(payoutId);
+        try {
+          const updated = await walletService.markPayoutComplete(payoutId, ref || undefined);
+          addToast('Payout marked as completed', 'success');
+          setAgentPayouts(prev => prev.map(p => p._id === payoutId ? { ...p, ...updated, status: 'completed' } : p));
+          fetchData().catch(() => { });
+        } catch (err: unknown) {
+          addToast((err instanceof Error ? err.message : null) || 'Failed to mark payout complete', 'error');
           throw err;
         } finally {
           setPayoutActionLoading(null);
@@ -1437,14 +1461,27 @@ export default function StoresPage() {
                               </>
                             )}
                             {isApproved && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleProcessPayout(p._id)}
-                                isLoading={payoutActionLoading === p._id}
-                                disabled={!!payoutActionLoading || bulkApproveLoading}
-                              >
-                                Send via Paystack Transfer
-                              </Button>
+                              <div className="flex gap-2 flex-wrap">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleProcessPayout(p._id)}
+                                  isLoading={payoutActionLoading === p._id}
+                                  disabled={!!payoutActionLoading || bulkApproveLoading}
+                                  title="Send money via Paystack Transfers API"
+                                >
+                                  Send via Paystack
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="success"
+                                  onClick={() => handleMarkPayoutPaid(p._id)}
+                                  isLoading={payoutActionLoading === p._id}
+                                  disabled={!!payoutActionLoading || bulkApproveLoading}
+                                  title="You sent money manually — mark this payout as complete"
+                                >
+                                  Mark as Paid
+                                </Button>
+                              </div>
                             )}
                           </div>
                         )}

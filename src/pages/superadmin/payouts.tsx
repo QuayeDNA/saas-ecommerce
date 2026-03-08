@@ -101,8 +101,22 @@ export default function SuperAdminPayoutsPage() {
       setActionLoading(id);
       await walletService.processPayout(id);
       await refreshAndNotify('Payout processing started', 'success');
-    } catch {
-      refreshAndNotify('Failed to process payout', 'error');
+    } catch (err: unknown) {
+      refreshAndNotify((err instanceof Error ? err.message : null) || 'Failed to process payout', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleMarkPaid = async (id: string) => {
+    const ref = prompt('Enter the transfer reference (MoMo ID, bank ref, etc.) — leave blank to auto-generate:');
+    if (ref === null) return; // user cancelled
+    try {
+      setActionLoading(id);
+      await walletService.markPayoutComplete(id, ref || undefined);
+      await refreshAndNotify('Payout marked as completed', 'success');
+    } catch (err: unknown) {
+      refreshAndNotify((err instanceof Error ? err.message : null) || 'Failed to mark payout complete', 'error');
     } finally {
       setActionLoading(null);
     }
@@ -184,7 +198,10 @@ export default function SuperAdminPayoutsPage() {
                             </>
                           )}
                           {p.status === 'approved' && (
-                            <Button size="xs" onClick={() => handleProcess(p._id)} isLoading={actionLoading === p._id} disabled={!!actionLoading}>Send Transfer</Button>
+                            <div className="flex gap-1 flex-wrap">
+                              <Button size="xs" onClick={() => handleProcess(p._id)} isLoading={actionLoading === p._id} disabled={!!actionLoading} title="Send via Paystack Transfers API">Paystack</Button>
+                              <Button size="xs" variant="success" onClick={() => handleMarkPaid(p._id)} isLoading={actionLoading === p._id} disabled={!!actionLoading} title="Admin sent money manually (MoMo/bank)">Mark as Paid</Button>
+                            </div>
                           )}
                           {p.status === 'processing' && (
                             <span className="text-xs text-blue-500">Awaiting…</span>
