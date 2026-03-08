@@ -78,11 +78,6 @@ const quickLinks = [
     icon: <FaWallet className="text-purple-600 text-xl sm:text-2xl" />,
   },
   {
-    to: "/superadmin/payouts",
-    label: "Payouts",
-    icon: <FaMoneyBillWave className="text-green-600 text-xl sm:text-2xl" />,
-  },
-  {
     to: "/superadmin/settings",
     label: "Settings",
     icon: <FaCog className="text-gray-600 text-xl sm:text-2xl" />,

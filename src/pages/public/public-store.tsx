@@ -381,38 +381,56 @@ const FeaturedSection = memo((
                     <>
                         <button
                             onClick={() => goTo(activeIdx - 1)}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/85 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all active:scale-95"
+                            className="absolute left-0 bottom-0 z-10 w-10 h-10 rounded-tr-2xl bg-black/20 backdrop-blur-sm flex items-center justify-center hover:bg-black/35 transition-all active:scale-95"
                             aria-label="Previous bundle"
                         >
-                            <FaChevronLeft className="w-3.5 h-3.5 text-gray-700" />
+                            <FaChevronLeft className="w-3.5 h-3.5 text-white drop-shadow" />
                         </button>
                         <button
                             onClick={() => goTo(activeIdx + 1)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/85 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all active:scale-95"
+                            className="absolute right-0 bottom-0 z-10 w-10 h-10 rounded-tl-2xl bg-black/20 backdrop-blur-sm flex items-center justify-center hover:bg-black/35 transition-all active:scale-95"
                             aria-label="Next bundle"
                         >
-                            <FaChevronRight className="w-3.5 h-3.5 text-gray-700" />
+                            <FaChevronRight className="w-3.5 h-3.5 text-white drop-shadow" />
                         </button>
                     </>
                 )}
             </div>
 
-            {/* Dot indicators */}
+            {/* Dot indicators + nav row */}
             {count > 1 && (
-                <div className="flex items-center justify-center gap-1.5 mt-4">
-                    {items.map((_, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => goTo(idx)}
-                            className="rounded-full transition-all duration-300"
-                            style={{
-                                width: idx === activeIdx ? '24px' : '7px',
-                                height: '7px',
-                                backgroundColor: idx === activeIdx ? (activePc?.primary || theme.primary) : '#D1D5DB',
-                            }}
-                            aria-label={`Go to slide ${idx + 1}`}
-                        />
-                    ))}
+                <div className="flex items-center justify-center gap-3 mt-4">
+                    <button
+                        onClick={() => goTo(activeIdx - 1)}
+                        className="w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all hover:scale-110 active:scale-95"
+                        style={{ borderColor: activePc?.primary || theme.primary, color: activePc?.primary || theme.primary }}
+                        aria-label="Previous bundle"
+                    >
+                        <FaChevronLeft className="w-2.5 h-2.5" />
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                        {items.map((_, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => goTo(idx)}
+                                className="rounded-full transition-all duration-300"
+                                style={{
+                                    width: idx === activeIdx ? '24px' : '7px',
+                                    height: '7px',
+                                    backgroundColor: idx === activeIdx ? (activePc?.primary || theme.primary) : '#D1D5DB',
+                                }}
+                                aria-label={`Go to slide ${idx + 1}`}
+                            />
+                        ))}
+                    </div>
+                    <button
+                        onClick={() => goTo(activeIdx + 1)}
+                        className="w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all hover:scale-110 active:scale-95"
+                        style={{ borderColor: activePc?.primary || theme.primary, color: activePc?.primary || theme.primary }}
+                        aria-label="Next bundle"
+                    >
+                        <FaChevronRight className="w-2.5 h-2.5" />
+                    </button>
                 </div>
             )}
         </div>
@@ -1134,10 +1152,15 @@ const PublicStore: React.FC = () => {
         let popup: Window | null = null;
         try {
             const phone = normalizePhone(orderPhone);
+            const isAfa = activeOrder.bundle.provider?.toUpperCase() === 'AFA';
             const orderData: PublicOrderData = {
                 items: [{ bundleId: activeOrder.bundle._id, quantity: 1, customerPhone: phone }],
                 customerInfo: {
-                    name: customerName.trim(),
+                    // For AFA orders use the recipient's full name entered in step 1.
+                    // For all other orders use the buyer's name from the checkout step.
+                    name: (isAfa && activeOrder.customerName)
+                        ? activeOrder.customerName.trim()
+                        : customerName.trim(),
                     phone,
                     email: storeData?.storefront.contactInfo?.email || undefined,
                     ...(activeOrder.ghanaCardNumber && { ghanaCardNumber: activeOrder.ghanaCardNumber }),
@@ -1236,17 +1259,54 @@ const PublicStore: React.FC = () => {
     // ==========================================================================
 
     const renderHeader = () => {
+        // System-generated tagline when store has none
+        const displayTagline = branding.tagline || (() => {
+            const name = storefront.businessName || '';
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+            const taglines = [
+                "Fast data, great prices — always.",
+                "Your trusted data partner in Ghana.",
+                "Affordable bundles, delivered instantly.",
+                "Stay connected without breaking the bank.",
+                "Top-up in seconds. Browse all day.",
+                "Ghana's most reliable data deals.",
+                "Smart data for smart people.",
+                "Always online, always affordable.",
+                "Power up your connection today.",
+                "Bundle up and save more.",
+                "Reliable data at unbeatable prices.",
+                "Your go-to stop for data bundles.",
+                "Connecting Ghana, one bundle at a time.",
+                "Fastest top-ups, happiest customers.",
+                "Data deals that make sense.",
+                "Browse more, pay less.",
+                "Your network. Your savings. Our service.",
+                "Quality bundles from a trusted source.",
+                "Instant top-up, zero hassle.",
+                "Because staying connected matters.",
+            ];
+            return taglines[hash % taglines.length];
+        })();
+
+        // System-generated logo (SVG data-URI) when none is set
+        const getSystemLogo = () => {
+            const letter = (storefront.displayName || storefront.businessName || 'S').charAt(0).toUpperCase();
+            const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:${theme.primary}'/><stop offset='100%' style='stop-color:${theme.secondary}'/></linearGradient></defs><rect width='200' height='200' rx='40' fill='url(#g)'/><text x='100' y='130' font-family='Arial Black,Arial,sans-serif' font-size='110' font-weight='900' fill='white' text-anchor='middle'>${letter}</text></svg>`;
+            return `data:image/svg+xml;base64,${btoa(svg)}`;
+        };
+        const logoSrc = branding.logoUrl || getSystemLogo();
+        const displayDescription = storefront.description
+            || `Welcome to ${storefront.displayName}! We offer fast, affordable data bundles from all major networks in Ghana.`;
         if (storeLayout === 'minimal') {
             return (
                 <header className="pt-10 pb-6 px-4 text-center" style={{ backgroundColor: theme.heroBg }}>
-                    {branding.logoUrl && (
-                        <img src={branding.logoUrl} alt={storefront.displayName}
-                            className="h-14 w-14 rounded-2xl mx-auto mb-4 object-cover shadow"
-                            style={{ border: `2px solid ${theme.primary}40` }}
-                        />
-                    )}
+                    <img src={logoSrc} alt={storefront.displayName}
+                        className="h-14 w-14 rounded-2xl mx-auto mb-4 object-cover shadow"
+                        style={{ border: `2px solid ${theme.primary}40` }}
+                    />
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">{storefront.displayName}</h1>
-                    {branding.tagline && <p className="text-sm text-gray-500 mt-1">{branding.tagline}</p>}
+                    <p className="text-sm text-gray-500 mt-1">{displayTagline}</p>
                 </header>
             );
         }
@@ -1261,15 +1321,13 @@ const PublicStore: React.FC = () => {
                     )}
                     <div className="px-4 py-5 border-b-4" style={{ backgroundColor: theme.bg, borderColor: theme.primary }}>
                         <div className="max-w-5xl mx-auto flex items-center gap-4">
-                            {branding.logoUrl && (
-                                <img src={branding.logoUrl} alt={storefront.displayName}
-                                    className="h-14 w-14 rounded-xl object-cover border-2 shadow-md"
-                                    style={{ borderColor: theme.primary }}
-                                />
-                            )}
+                            <img src={logoSrc} alt={storefront.displayName}
+                                className="h-14 w-14 rounded-xl object-cover border-2 shadow-md shrink-0"
+                                style={{ borderColor: theme.primary }}
+                            />
                             <div>
                                 <h1 className="text-2xl font-black" style={{ color: theme.secondary }}>{storefront.displayName}</h1>
-                                {branding.tagline && <p className="text-sm" style={{ color: theme.secondary + 'aa' }}>{branding.tagline}</p>}
+                                <p className="text-sm" style={{ color: theme.secondary + 'aa' }}>{displayTagline}</p>
                             </div>
                         </div>
                     </div>
@@ -1288,20 +1346,14 @@ const PublicStore: React.FC = () => {
                 <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5" />
 
                 <div className="relative px-4 pt-10 pb-12 sm:pt-16 sm:pb-20 text-center">
-                    {branding.logoUrl && (
-                        <img src={branding.logoUrl} alt={storefront.displayName}
-                            className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl mx-auto mb-4 object-cover border-2 border-white/30 shadow-xl"
-                        />
-                    )}
+                    <img src={logoSrc} alt={storefront.displayName}
+                        className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl mx-auto mb-4 object-cover border-2 border-white/30 shadow-xl"
+                    />
                     <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-none">
                         {storefront.displayName}
                     </h1>
-                    {branding.tagline && (
-                        <p className="mt-3 text-white/70 text-sm sm:text-base max-w-xs mx-auto">{branding.tagline}</p>
-                    )}
-                    {storefront.description && (
-                        <p className="mt-1 text-white/50 text-xs max-w-sm mx-auto">{storefront.description}</p>
-                    )}
+                    <p className="mt-3 text-white/70 text-sm sm:text-base max-w-xs mx-auto">{displayTagline}</p>
+                    <p className="mt-1 text-white/50 text-xs max-w-sm mx-auto">{displayDescription}</p>
                 </div>
             </header>
         );
@@ -1590,7 +1642,7 @@ const PublicStore: React.FC = () => {
                                 <div>
                                     <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
                                         <FaPhone className="w-3 h-3 opacity-60" />
-                                        Which number should receive this bundle? *
+                                        Recipient Number *
                                     </label>
                                     <Input
                                         type="tel"

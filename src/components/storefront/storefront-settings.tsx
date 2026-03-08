@@ -92,6 +92,62 @@ interface FormErrors {
 
 // --- Constants ---
 
+/** 20 system-generated taglines — shown on the public store when the agent hasn't set one */
+const SYSTEM_TAGLINES = [
+  "Fast data, great prices — always.",
+  "Your trusted data partner in Ghana.",
+  "Affordable bundles, delivered instantly.",
+  "Stay connected without breaking the bank.",
+  "Top-up in seconds. Browse all day.",
+  "Ghana's most reliable data deals.",
+  "Smart data for smart people.",
+  "Always online, always affordable.",
+  "Power up your connection today.",
+  "Bundle up and save more.",
+  "Reliable data at unbeatable prices.",
+  "Your go-to stop for data bundles.",
+  "Connecting Ghana, one bundle at a time.",
+  "Fastest top-ups, happiest customers.",
+  "Data deals that make sense.",
+  "Browse more, pay less.",
+  "Your network. Your savings. Our service.",
+  "Quality bundles from a trusted source.",
+  "Instant top-up, zero hassle.",
+  "Because staying connected matters.",
+];
+
+/** Pick a deterministic tagline based on the storefront businessName so it's stable per store */
+function getSystemTagline(businessName: string): string {
+  let hash = 0;
+  for (let i = 0; i < businessName.length; i++) {
+    hash = (hash * 31 + businessName.charCodeAt(i)) >>> 0;
+  }
+  return SYSTEM_TAGLINES[hash % SYSTEM_TAGLINES.length];
+}
+
+/** Deterministic placeholder description for stores without one */
+function getSystemDescription(displayName: string): string {
+  return `Welcome to ${displayName}! We offer fast, affordable data bundles from all major networks in Ghana. Order in seconds and stay connected all day.`;
+}
+
+/** SVG data-URI used as the store logo when none is set */
+function getSystemLogoDataUrl(initials: string, theme: string = 'blue'): string {
+  const themeColors: Record<string, [string, string]> = {
+    blue:   ['#2563EB', '#1E40AF'],
+    green:  ['#16A34A', '#15803D'],
+    purple: ['#7C3AED', '#6D28D9'],
+    orange: ['#EA580C', '#C2410C'],
+    red:    ['#DC2626', '#B91C1C'],
+    teal:   ['#0D9488', '#0F766E'],
+    indigo: ['#4F46E5', '#4338CA'],
+    pink:   ['#DB2777', '#BE185D'],
+  };
+  const [from, to] = themeColors[theme] || themeColors.blue;
+  const letter = (initials || 'S').charAt(0).toUpperCase();
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:${from}'/><stop offset='100%' style='stop-color:${to}'/></linearGradient></defs><rect width='200' height='200' rx='40' fill='url(#g)'/><text x='100' y='130' font-family='Arial Black,Arial,sans-serif' font-size='110' font-weight='900' fill='white' text-anchor='middle'>${letter}</text></svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
 const PAYMENT_TYPE_OPTIONS = [
   { value: "paystack", label: "Paystack (online)" },
   { value: "bank_transfer", label: "Bank Transfer" },
@@ -421,11 +477,24 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   const saveBrandingSettings = async () => {
     try {
       setIsLoading(true);
+      // Inject system-generated placeholders when the agent leaves fields blank.
+      // These are stored in the DB so the public store always has something to show.
+      const resolvedTagline = brandingData.tagline.trim()
+        || getSystemTagline(formData.businessName || storefront.businessName);
+      const resolvedDescription = formData.description.trim()
+        || getSystemDescription(storefront.displayName || formData.businessName || storefront.businessName);
+      const resolvedLogoUrl = brandingData.logoUrl.trim()
+        || getSystemLogoDataUrl(
+            (storefront.displayName || formData.businessName || storefront.businessName).charAt(0),
+            brandingData.theme,
+          );
+
       const updateData = {
+        description: resolvedDescription,
         branding: {
-          logoUrl: brandingData.logoUrl.trim() || undefined,
+          logoUrl: resolvedLogoUrl,
           bannerUrl: brandingData.bannerUrl.trim() || undefined,
-          tagline: brandingData.tagline.trim() || undefined,
+          tagline: resolvedTagline,
           customColors: {
             primary: brandingData.primaryColor.trim() || undefined,
             secondary: brandingData.secondaryColor.trim() || undefined,
@@ -962,12 +1031,14 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               <Input
                 value={brandingData.tagline}
                 onChange={(e) => handleBrandingChange("tagline", e.target.value)}
-                placeholder="e.g. Best data deals in town!"
+                placeholder={getSystemTagline(formData.businessName || storefront.businessName)}
                 leftIcon={<Type className="w-4 h-4" />}
                 maxLength={120}
               />
-              <p className="text-xs text-gray-400 mt-1 text-right">
-                {brandingData.tagline.length}/120
+              <p className="text-xs text-gray-400 mt-1">
+                {brandingData.tagline.trim()
+                  ? `${brandingData.tagline.length}/120`
+                  : `Auto-generated when left blank: "${getSystemTagline(formData.businessName || storefront.businessName)}"`}
               </p>
             </FormField>
 
@@ -1048,24 +1119,24 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                     }}
                   />
                 ) : null}
-                {/* Fallback: initials avatar */}
-                <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black text-white shadow-sm shrink-0"
-                  style={{
-                    background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-                    display: brandingData.logoUrl ? 'none' : 'flex',
-                  }}
-                >
-                  {formData.businessName?.charAt(0)?.toUpperCase() || 'S'}
-                </div>
+                {/* Auto-generated logo — shown when no URL is set */}
+                <img
+                  src={getSystemLogoDataUrl(
+                    (formData.businessName || storefront.businessName || 'S').charAt(0),
+                    brandingData.theme,
+                  )}
+                  alt="Auto logo"
+                  className="w-14 h-14 rounded-xl object-cover border border-gray-200 shadow-sm shrink-0"
+                  style={{ display: brandingData.logoUrl ? 'none' : 'block' }}
+                />
                 <div>
                   <p className="text-sm font-medium text-gray-700">
-                    {brandingData.logoUrl ? 'Logo preview' : 'Initials fallback (no logo set)'}
+                    {brandingData.logoUrl ? 'Logo preview' : 'Auto-generated logo (no URL set)'}
                   </p>
                   <p className="text-xs text-gray-400">
                     {brandingData.logoUrl
                       ? 'This is how your logo appears on your storefront.'
-                      : 'Your store initial is shown automatically when no logo is uploaded.'}
+                      : 'An initial-letter logo matching your theme is shown automatically when no logo URL is uploaded.'}
                   </p>
                 </div>
               </div>
