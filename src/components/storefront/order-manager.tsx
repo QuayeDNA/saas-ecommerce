@@ -475,9 +475,11 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                           {formatStatus(order.status)}
                         </Badge>
                       </div>
-                      <p className="font-bold text-gray-900">
-                        GHS {(order.total || 0).toFixed(2)}
-                      </p>
+                      <div className="text-right">
+                        <p className="font-bold text-gray-900">
+                          GHS {(order.total || 0).toFixed(2)}
+                        </p>
+                      </div>
                     </div>
 
                     {/* Customer */}
@@ -490,21 +492,30 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                     {/* Items - fully visible */}
                     {(order.storefrontData?.items || []).length > 0 && (
                       <div className="mb-3 space-y-1.5">
-                        {order.storefrontData!.items.map((item, idx) => (
-                          <div key={idx} className="text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-700">
-                                {item.bundleName} x{item.quantity}
-                              </span>
-                              <span className="text-gray-500">
-                                GHS {(item.totalPrice || 0).toFixed(2)}
-                              </span>
+                        {order.storefrontData!.items.map((item, idx) => {
+                          const itemMarkup = ((item.unitPrice || 0) - (item.tierPrice || 0)) * (item.quantity || 1);
+                          return (
+                            <div key={idx} className="text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-700">
+                                  {item.bundleName}
+                                </span>
+                                {itemMarkup > 0 ? (
+                                  <span className="text-emerald-600 font-medium">
+                                    +GHS {itemMarkup.toFixed(2)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-500">
+                                    GHS {(item.totalPrice || 0).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                              {item.customerPhone && (
+                                <p className="text-xs text-gray-400">→ {item.customerPhone}</p>
+                              )}
                             </div>
-                            {item.customerPhone && (
-                              <p className="text-xs text-gray-400">→ {item.customerPhone}</p>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 

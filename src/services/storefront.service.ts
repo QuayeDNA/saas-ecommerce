@@ -170,18 +170,47 @@ export interface StorefrontOrder {
 
 export interface StorefrontAnalytics {
   totalOrders: number;
+  /** Gross revenue — sum of customer-paid totals for paid orders */
   totalRevenue: number;
-  /** profit from orders that have reached completed status */
+  /** Total tier cost for completed orders (what left the wallet) */
+  totalCost: number;
+  /** Net profit (markup) — only from completed orders */
   totalProfit: number;
-  /** markup sitting on pending orders */
-  pendingProfit?: number;
-  /** markup on orders that have been confirmed but not yet completed */
-  confirmedProfit?: number;
+  /** Markup locked in pending-payment orders */
+  pendingProfit: number;
+  /** Markup locked in confirmed orders */
+  confirmedProfit: number;
+  /** Markup locked in processing orders */
+  processingProfit: number;
   averageOrderValue: number;
   completedOrders: number;
   confirmedOrders: number;
   pendingOrders: number;
+  processingOrders: number;
   cancelledOrders: number;
+  failedOrders: number;
+}
+
+export interface EarningsTransactionRecord {
+  _id: string;
+  type: 'credit' | 'debit' | 'payout';
+  amount: number;
+  balanceAfter: number;
+  description: string;
+  reference: string;
+  relatedOrder?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface StorefrontEarnings {
+  /** Current spendable earnings balance */
+  availableBalance: number;
+  /** Cumulative earnings credited (all time) */
+  totalEarned: number;
+  /** Cumulative amount sent out via payouts (all time) */
+  totalWithdrawn: number;
+  recentTransactions: EarningsTransactionRecord[];
 }
 
 // Public storefront types (customer-facing)
@@ -331,6 +360,44 @@ export interface AdminStorefrontStats {
   totalRevenue: number;
   totalProfit: number;
   autoApproveStorefronts: boolean;
+}
+
+export interface AdminStorefrontOrderSummary {
+  _id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  total: number;
+  createdAt: string;
+  storefrontData?: {
+    customerInfo?: { name?: string; phone?: string };
+    totalMarkup?: number;
+    totalTierCost?: number;
+    items?: unknown[];
+  };
+}
+
+export interface AdminStorefrontOrderStats {
+  totalOrders: number;
+  completedOrders: number;
+  totalRevenue: number;
+  totalProfit: number;
+}
+
+/** Full detail shape returned by GET /admin/storefronts/:id */
+export interface AdminStorefrontDetail extends StorefrontData {
+  agentId: {
+    _id: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    userType: string;
+    walletBalance: number;
+    earningsBalance: number;
+    createdAt: string;
+  };
+  recentOrders: AdminStorefrontOrderSummary[];
+  orderStats: AdminStorefrontOrderStats;
 }
 
 /** Bundle toggle request item */
@@ -506,6 +573,12 @@ class StorefrontService {
     return response.data.data;
   }
 
+  /** Authoritative earnings ledger for the agent — sourced from EarningsTransaction records */
+  async getEarnings(): Promise<StorefrontEarnings> {
+    const response = await apiClient.get(`${this.basePath}/agent/storefront/earnings`);
+    return response.data.data;
+  }
+
   // =========================================================================
   // Public Storefront (Customer-facing)
   // =========================================================================
@@ -568,6 +641,12 @@ class StorefrontService {
 
   async getAdminStats(): Promise<AdminStorefrontStats> {
     const response = await apiClient.get(`${this.basePath}/admin/stats`);
+    return response.data.data;
+  }
+
+  /** Full store detail including recent orders and order stats — fetched on demand */
+  async getAdminStorefrontById(storefrontId: string): Promise<AdminStorefrontDetail> {
+    const response = await apiClient.get(`${this.basePath}/admin/storefronts/${storefrontId}`);
     return response.data.data;
   }
 

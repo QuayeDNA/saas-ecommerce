@@ -32,6 +32,7 @@ import {
   storefrontService,
   type AdminStorefrontData,
   type AdminStorefrontStats,
+  type AdminStorefrontDetail,
 } from "../../services/storefront.service";
 import { settingsService } from "../../services/settings.service";
 import {
@@ -96,6 +97,8 @@ function StatusBadge({ store }: { store: AdminStorefrontData }) {
 
 function StoreDetailDialog({
   store,
+  detail,
+  detailLoading,
   isOpen,
   onClose,
   onApprove,
@@ -105,16 +108,36 @@ function StoreDetailDialog({
   onViewPayouts,
 }: {
   store: AdminStorefrontData | null;
+  detail: AdminStorefrontDetail | null;
+  detailLoading: boolean;
   isOpen: boolean;
   onClose: () => void;
   onApprove: (id: string) => void;
   onToggleStatus: (store: AdminStorefrontData) => void;
   onDelete: (store: AdminStorefrontData) => void;
   isProcessing: boolean;
-  onViewPayouts?: (agentId: string) => void;
+  onViewPayouts?: (agentId: string, store?: AdminStorefrontData) => void;
 }) {
   if (!store) return null;
-  const agent = typeof store.agentId === "object" ? store.agentId : null;
+
+  // Use the rich detail when available, fall back to list-level data
+  const d = detail ?? store;
+  const agent = detail?.agentId ?? (typeof store.agentId === "object" ? store.agentId : null);
+  const orderStats = detail?.orderStats;
+  const recentOrders = detail?.recentOrders ?? [];
+
+  const fmtCurrency = (v: number) =>
+    `GH₵ ${v.toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const orderStatusColor: Record<string, string> = {
+    completed: "text-green-700 bg-green-50",
+    confirmed: "text-blue-700 bg-blue-50",
+    processing: "text-indigo-700 bg-indigo-50",
+    pending: "text-amber-700 bg-amber-50",
+    pending_payment: "text-amber-700 bg-amber-50",
+    failed: "text-red-700 bg-red-50",
+    cancelled: "text-gray-600 bg-gray-100",
+  };
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="lg">
@@ -125,113 +148,206 @@ function StoreDetailDialog({
           </div>
           <div className="min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 truncate">
-              {store.displayName || store.businessName}
+              {d.displayName || d.businessName}
             </h3>
-            <p className="text-sm text-gray-500">/{store.businessName}</p>
+            <p className="text-sm text-gray-500">/{d.businessName}</p>
+          </div>
+          <div className="ml-auto shrink-0">
+            <StatusBadge store={store} />
           </div>
         </div>
       </DialogHeader>
 
-      <DialogBody>
-        <div className="space-y-5">
-          {/* Status */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">Status:</span>
-            <StatusBadge store={store} />
+      <DialogBody className="space-y-5">
+        {/* Loading overlay */}
+        {detailLoading && (
+          <div className="flex items-center justify-center py-6">
+            <Spinner size="sm" />
+            <span className="ml-2 text-sm text-gray-400">Loading full details…</span>
           </div>
+        )}
 
-          {/* Suspension info */}
-          {store.suspendedByAdmin && (
-            <Alert status="error" variant="left-accent">
-              <div>
-                <p className="font-medium">This store is suspended</p>
-                {store.suspensionReason && (
-                  <p className="text-sm mt-1">Reason: {store.suspensionReason}</p>
-                )}
-                {store.suspendedAt && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Since {new Date(store.suspendedAt).toLocaleDateString()}
-                  </p>
-                )}
+        {/* Suspension alert */}
+        {store.suspendedByAdmin && (
+          <Alert status="error" variant="left-accent">
+            <div>
+              <p className="font-medium">This store is suspended</p>
+              {store.suspensionReason && <p className="text-sm mt-1">Reason: {store.suspensionReason}</p>}
+              {store.suspendedAt && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Since {new Date(store.suspendedAt).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          </Alert>
+        )}
+
+        {/* ── Order Stats ─────────────────────────────────────────────────── */}
+        {orderStats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="bg-gray-50 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500">Total Orders</p>
+              <p className="text-lg font-bold text-gray-900">{orderStats.totalOrders}</p>
+            </div>
+            <div className="bg-green-50 rounded-lg p-3 text-center">
+              <p className="text-xs text-green-600">Completed</p>
+              <p className="text-lg font-bold text-green-800">{orderStats.completedOrders}</p>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3 text-center">
+              <p className="text-xs text-blue-600">Revenue</p>
+              <p className="text-sm font-bold text-blue-800">{fmtCurrency(orderStats.totalRevenue)}</p>
+            </div>
+            <div className="bg-emerald-50 rounded-lg p-3 text-center">
+              <p className="text-xs text-emerald-600">Profit</p>
+              <p className="text-sm font-bold text-emerald-800">{fmtCurrency(orderStats.totalProfit)}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Agent + Earnings ────────────────────────────────────────────── */}
+        {agent && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Agent</p>
+              <div className="flex items-center gap-1.5 text-sm">
+                <User className="w-3.5 h-3.5 text-gray-400" />
+                <span className="font-medium text-gray-900">{agent.fullName}</span>
+                <Badge colorScheme="info" variant="subtle" size="xs">
+                  {agent.userType.replace(/_/g, " ")}
+                </Badge>
               </div>
-            </Alert>
-          )}
+              <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                <Mail className="w-3.5 h-3.5 text-gray-400" />
+                <span className="truncate">{agent.email}</span>
+              </div>
+              {agent.phone && (
+                <div className="text-xs text-gray-500">📞 {agent.phone}</div>
+              )}
+              {(agent as any).createdAt && (
+                <div className="text-xs text-gray-400">
+                  Agent since {new Date((agent as any).createdAt).toLocaleDateString()}
+                </div>
+              )}
+            </div>
 
-          {/* Agent Info */}
-          {agent && (
-            <>
-              <Card variant="flat" className="bg-gray-50">
-                <CardBody>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Agent Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="font-medium text-gray-900">{agent.fullName}</span>
-                      <Badge colorScheme="info" variant="subtle" size="xs">
-                        {agent.userType.replace("_", " ")}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{agent.email}</span>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-
-              {/* Earnings summary (admin) */}
-              <Card variant="flat" className="bg-white border border-gray-100">
-                <CardBody>
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="text-xs text-gray-500">Agent earnings</div>
-                      <div className="text-lg font-bold">GH₵ {typeof agent.earningsBalance === 'number' ? Number(agent.earningsBalance).toFixed(2) : '—'}</div>
-                      <div className="text-xs text-gray-400 mt-1">Balance available for payout</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => onViewPayouts?.((agent as any)._id)} disabled={!agent?._id}>View Payouts</Button>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            </>
-          )}
-
-          {/* Store Details */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-gray-500 mb-1">Created</p>
-              <div className="flex items-center gap-1.5 text-gray-900">
-                <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                {store.createdAt ? new Date(store.createdAt).toLocaleDateString() : "—"}
+            <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-1.5">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Balances</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">Wallet</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {typeof agent.walletBalance === 'number' ? fmtCurrency(agent.walletBalance) : '—'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">Earnings</span>
+                <span className="text-sm font-semibold text-green-700">
+                  {typeof agent.earningsBalance === 'number' ? fmtCurrency(agent.earningsBalance) : '—'}
+                </span>
+              </div>
+              <div className="pt-1.5">
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="w-full"
+                  leftIcon={<DollarSign className="w-3 h-3" />}
+                  onClick={() => onViewPayouts?.((agent as any)._id, store)}
+                  disabled={!(agent as any)._id}
+                >
+                  View Payouts
+                </Button>
               </div>
             </div>
-            <div>
-              <p className="text-gray-500 mb-1">Approved</p>
-              <div className="flex items-center gap-1.5 text-gray-900">
-                {store.isApproved ? (
-                  <>
-                    <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                    {store.approvedAt ? new Date(store.approvedAt).toLocaleDateString() : "Yes"}
-                  </>
-                ) : (
-                  <>
-                    <Clock className="w-3.5 h-3.5 text-yellow-500" />
-                    Not yet
-                  </>
-                )}
-              </div>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-1">Contact</p>
-              <p className="text-gray-900">{store.contactInfo?.phone || "—"}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-1">Payment Methods</p>
-              <p className="text-gray-900">{store.paymentMethods?.filter(pm => pm.isActive).length || 0} active</p>
-            </div>
+          </div>
+        )}
+
+        {/* ── Store Details ───────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Created</p>
+            <p className="text-gray-900 font-medium">
+              {d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "—"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Approved</p>
+            <p className="text-gray-900 font-medium">
+              {d.isApproved
+                ? (d.approvedAt ? new Date(d.approvedAt).toLocaleDateString() : "Yes")
+                : "Pending"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Contact</p>
+            <p className="text-gray-900 font-medium">{d.contactInfo?.phone || "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Email</p>
+            <p className="text-gray-900 font-medium truncate">{d.contactInfo?.email || "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Payment Methods</p>
+            <p className="text-gray-900 font-medium">
+              {d.paymentMethods?.filter(pm => pm.isActive).length || 0} active
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Subaccount</p>
+            <p className="text-gray-900 font-medium text-xs truncate">
+              {d.paystackSubaccountId || "—"}
+            </p>
           </div>
         </div>
+
+        {/* ── Recent Orders ───────────────────────────────────────────────── */}
+        {!detailLoading && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Recent Orders {recentOrders.length > 0 && `(last ${recentOrders.length})`}
+            </p>
+            {recentOrders.length === 0 ? (
+              <p className="text-sm text-gray-400 py-2">No orders yet</p>
+            ) : (
+              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                {recentOrders.map(order => (
+                  <div
+                    key={order._id}
+                    className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50 transition"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-mono font-semibold text-gray-700">
+                          #{order.orderNumber}
+                        </span>
+                        <span
+                          className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${orderStatusColor[order.status] ?? "text-gray-600 bg-gray-100"
+                            }`}
+                        >
+                          {order.status.replace(/_/g, " ")}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                        {order.storefrontData?.customerInfo?.name || "Customer"}
+                        {" · "}
+                        {order.storefrontData?.items?.length ?? 0} item{(order.storefrontData?.items?.length ?? 0) !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {fmtCurrency(order.storefrontData?.totalTierCost ?? order.total)}
+                      </p>
+                      {(order.storefrontData?.totalMarkup ?? 0) > 0 && (
+                        <p className="text-xs text-emerald-600">+{fmtCurrency(order.storefrontData!.totalMarkup!)}</p>
+                      )}
+                      <p className="text-xs text-gray-400">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </DialogBody>
 
       <DialogFooter justify="between">
@@ -302,7 +418,7 @@ interface ConfirmOpts {
 const CONFIRM_CLOSED: ConfirmOpts = {
   isOpen: false, title: '', message: '', confirmLabel: 'Confirm',
   variant: 'primary', hasInput: false, inputLabel: '', inputPlaceholder: '',
-  onConfirm: () => {},
+  onConfirm: () => { },
 };
 
 function ConfirmDialog({
@@ -357,6 +473,8 @@ export default function StoresPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedStore, setSelectedStore] = useState<AdminStorefrontData | null>(null);
+  const [selectedStoreDetail, setSelectedStoreDetail] = useState<AdminStorefrontDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [autoApprove, setAutoApprove] = useState(false);
   const [autoApproveLoading, setAutoApproveLoading] = useState(false);
 
@@ -373,6 +491,22 @@ export default function StoresPage() {
   const [confirmOpts, setConfirmOpts] = useState<ConfirmOpts>(CONFIRM_CLOSED);
   const [confirmInput, setConfirmInput] = useState('');
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // Open store detail: set list-level store immediately, then lazy-load full detail
+  const openStoreDetail = useCallback(async (store: AdminStorefrontData) => {
+    setSelectedStore(store);
+    setSelectedStoreDetail(null);
+    if (!store._id) return;
+    setDetailLoading(true);
+    try {
+      const detail = await storefrontService.getAdminStorefrontById(store._id);
+      setSelectedStoreDetail(detail);
+    } catch {
+      // Detail load failed — dialog still shows with list-level data
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
 
   const openConfirm = (opts: Omit<ConfirmOpts, 'isOpen'>) => {
     setConfirmInput('');
@@ -551,9 +685,27 @@ export default function StoresPage() {
     }
   };
 
+  const openAllPayouts = async () => {
+    try {
+      setPayoutsDrawerOpen(true);
+      setSelectedPayoutsStore(null);
+      setPayoutsLoading(true);
+      const allPayouts = await walletService.getPendingPayouts();
+      setAgentPayouts(allPayouts || []);
+    } catch {
+      addToast('Failed to load payouts', 'error');
+    } finally {
+      setPayoutsLoading(false);
+    }
+  };
+
   const refreshPayouts = async () => {
     const store = selectedPayoutsStore || selectedStore;
-    if (!store) return;
+    if (!store) {
+      // "All Payouts" mode — reload without agent filter
+      await openAllPayouts();
+      return;
+    }
     const agentId = typeof store.agentId === 'object' ? (store.agentId as any)._id : store.agentId;
     if (agentId) await openPayoutsForAgent(agentId as string);
   };
@@ -579,7 +731,7 @@ export default function StoresPage() {
             ...prev,
             [agentId]: Math.max(0, (prev[agentId] || 0) - 1),
           }));
-          fetchData().catch(() => {});
+          fetchData().catch(() => { });
         } catch (err: unknown) {
           addToast((err instanceof Error ? err.message : null) || 'Failed to approve payout', 'error');
           throw err;
@@ -614,7 +766,7 @@ export default function StoresPage() {
             ...prev,
             [agentId]: Math.max(0, (prev[agentId] || 0) - 1),
           }));
-          fetchData().catch(() => {});
+          fetchData().catch(() => { });
         } catch (err: unknown) {
           addToast((err instanceof Error ? err.message : null) || 'Failed to reject payout', 'error');
           throw err;
@@ -641,7 +793,7 @@ export default function StoresPage() {
           addToast('Paystack transfer initiated — awaiting webhook confirmation', 'success');
           // Reactive update — use server response which includes recalculated fees
           setAgentPayouts(prev => prev.map(p => p._id === payoutId ? { ...p, ...updated, status: 'processing' } : p));
-          fetchData().catch(() => {});
+          fetchData().catch(() => { });
         } catch (err: unknown) {
           addToast((err instanceof Error ? err.message : null) || 'Failed to process payout transfer', 'error');
           throw err;
@@ -681,7 +833,7 @@ export default function StoresPage() {
           setAgentPayouts(prev => prev.map(p => p.status === 'pending' ? { ...p, status: 'approved' } : p));
           const agentId = getPayoutsAgentId();
           if (agentId) setPendingPayoutsMap(prev => ({ ...prev, [agentId]: 0 }));
-          fetchData().catch(() => {});
+          fetchData().catch(() => { });
         }
       },
     });
@@ -727,15 +879,35 @@ export default function StoresPage() {
             Manage and monitor all agent storefronts
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          leftIcon={<RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />}
-          onClick={fetchData}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />}
+            onClick={fetchData}
+            disabled={loading}
+          >
+            Refresh
+          </Button>
+          {(() => {
+            const totalPendingPayouts = Object.values(pendingPayoutsMap).reduce((sum, n) => sum + n, 0);
+            return (
+              <Button
+                variant={totalPendingPayouts > 0 ? "primary" : "outline"}
+                size="sm"
+                leftIcon={<DollarSign className="w-4 h-4" />}
+                onClick={openAllPayouts}
+              >
+                Payouts
+                {totalPendingPayouts > 0 && (
+                  <Badge colorScheme="error" variant="solid" size="xs" rounded className="ml-1.5">
+                    {totalPendingPayouts}
+                  </Badge>
+                )}
+              </Button>
+            );
+          })()}
+        </div>
       </div>
 
       {/* Stats Grid — using design system StatsGrid */}
@@ -878,7 +1050,7 @@ export default function StoresPage() {
                                   <TableCell>
                                     <button
                                       className="flex items-center gap-3 text-left group"
-                                      onClick={() => setSelectedStore(store)}
+                                      onClick={() => openStoreDetail(store)}
                                     >
                                       <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
                                         <Store className="w-4 h-4 text-blue-600" />
@@ -940,7 +1112,7 @@ export default function StoresPage() {
                                         variant="ghost"
                                         size="sm"
                                         leftIcon={<Eye className="w-4 h-4" />}
-                                        onClick={() => setSelectedStore(store)}
+                                        onClick={() => openStoreDetail(store)}
                                         aria-label="View details"
                                       />
                                       <Button
@@ -995,7 +1167,7 @@ export default function StoresPage() {
                               {/* Top: Store name + Status */}
                               <button
                                 className="w-full flex items-start justify-between gap-3 mb-2.5 text-left"
-                                onClick={() => setSelectedStore(store)}
+                                onClick={() => openStoreDetail(store)}
                               >
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1299,8 +1471,10 @@ export default function StoresPage() {
       {/* Store Detail Dialog */}
       <StoreDetailDialog
         store={selectedStore}
+        detail={selectedStoreDetail}
+        detailLoading={detailLoading}
         isOpen={!!selectedStore}
-        onClose={() => setSelectedStore(null)}
+        onClose={() => { setSelectedStore(null); setSelectedStoreDetail(null); }}
         onApprove={handleApprove}
         onToggleStatus={handleToggleStatus}
         onDelete={handleDelete}

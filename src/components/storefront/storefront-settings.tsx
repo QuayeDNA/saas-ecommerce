@@ -57,6 +57,7 @@ import {
   Instagram,
   Twitter,
   Globe,
+  HelpCircle,
 } from "lucide-react";
 
 // --- Types ---
@@ -93,7 +94,6 @@ interface FormErrors {
 
 const PAYMENT_TYPE_OPTIONS = [
   { value: "paystack", label: "Paystack (online)" },
-  { value: "mobile_money", label: "Mobile Money" },
   { value: "bank_transfer", label: "Bank Transfer" },
 ];
 
@@ -103,6 +103,32 @@ const MOMO_PROVIDER_OPTIONS = [
   { value: "Vodafone", label: "Vodafone" },
   { value: "AirtelTigo", label: "AirtelTigo" },
 ];
+
+// Inline tooltip for the disabled subaccount field
+function SubaccountTooltip() {
+  const [visible, setVisible] = React.useState(false);
+  return (
+    <span className="relative inline-flex items-center">
+      <button
+        type="button"
+        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+        onFocus={() => setVisible(true)}
+        onBlur={() => setVisible(false)}
+        onClick={() => setVisible((v) => !v)}
+        aria-label="Subaccount info"
+      >
+        <HelpCircle className="w-3.5 h-3.5" />
+      </button>
+      {visible && (
+        <span className="absolute left-5 top-1/2 -translate-y-1/2 z-50 w-64 rounded-lg bg-gray-900 text-white text-xs px-3 py-2 shadow-lg pointer-events-none">
+          Paystack subaccount configuration is managed by the platform administrator. Contact support if you need a direct-payout subaccount linked to your store.
+        </span>
+      )}
+    </span>
+  );
+}
 
 // --- Component ---
 
@@ -300,20 +326,6 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     },
     [errors.paymentMethods],
   );
-
-  const addPaymentMethod = (type: "mobile_money" | "bank_transfer" | "paystack") => {
-    const newMethod: PaymentMethodForm = {
-      type,
-      details:
-        type === "mobile_money"
-          ? { accounts: [{ provider: "", number: "", accountName: "" }] }
-          : type === 'bank_transfer'
-            ? { account: "", bank: "", name: "" }
-            : {},
-      isActive: false,
-    };
-    setPaymentMethods((prev) => [...prev, newMethod]);
-  };
 
   const removePaymentMethod = (index: number) => {
     setPaymentMethods((prev) => prev.filter((_, i) => i !== index));
@@ -700,17 +712,20 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
           {method.type === 'paystack' && (
             <div className="space-y-3 text-sm">
-              <FormField label="Paystack Subaccount (optional)">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-medium text-gray-700">Paystack Subaccount</span>
+                  <SubaccountTooltip />
+                </div>
                 <Input
                   value={method.details?.subaccountId || storefront.paystackSubaccountId || ''}
-                  onChange={(e) => handlePaymentMethodChange(index, 'subaccountId', e.target.value)}
-                  placeholder="e.g., SB123_xxx (optional)"
+                  onChange={() => { }}
+                  placeholder="Managed by platform"
                   size="sm"
+                  disabled
+                  className="bg-gray-50 cursor-not-allowed"
                 />
-              </FormField>
-              <p className="text-xs text-gray-500">
-                When enabled, public customers will pay via Paystack (platform checkout). You may optionally provide a Paystack subaccount id for direct payouts; otherwise funds flow to the platform.
-              </p>
+              </div>
             </div>
           )}
         </CardBody>
@@ -1193,33 +1208,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               )}
             </div>
 
-            {/* Add payment method */}
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Add payment method:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {PAYMENT_TYPE_OPTIONS.filter(
-                  (option) =>
-                    !paymentMethods.some((pm) => pm.type === option.value),
-                ).map((option) => (
-                  <Button
-                    key={option.value}
-                    variant="outline"
-                    size="sm"
-                    leftIcon={<Plus className="w-4 h-4" />}
-                    onClick={() =>
-                      addPaymentMethod(
-                        option.value as "mobile_money" | "bank_transfer" | "paystack",
-                      )
-                    }
-                  >
-                    Add {option.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
+            {/* Add payment method — disabled; Paystack is the only supported method */}
           </section>
 
           {/* Save */}

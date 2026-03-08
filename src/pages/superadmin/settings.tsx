@@ -425,10 +425,10 @@ export default function SuperAdminSettingsPage() {
               </Card>
 
               <Card>
-                <SectionHeader title="Fee & Payout Settings" subtitle="Paystack fees, platform fees & payout configuration" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <SectionHeader title="Storefront Collection Fees" subtitle="Fees applied to agent storefront payments via Paystack" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3 bg-blue-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Paystack Collection Fee</div>
+                    <div className="text-sm text-gray-600">Paystack Fee</div>
                     <div className="font-medium">{feeSettings?.paystackCollectionFeePercent ?? 1.95}%</div>
                   </div>
                   <div className="p-3 bg-blue-50 rounded-lg flex justify-between">
@@ -436,9 +436,33 @@ export default function SuperAdminSettingsPage() {
                     <div className="font-medium">{feeSettings?.platformFeePercent ?? 0}%</div>
                   </div>
                   <div className="p-3 bg-blue-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Fee Delegation</div>
-                    <div className="font-medium">{(feeSettings?.delegateFeesToCustomer ?? true) ? 'Customer pays' : 'Platform absorbs'}</div>
+                    <div className="text-sm text-gray-600">Fee Bearer</div>
+                    <div className="font-medium">{(feeSettings?.delegateFeesToCustomer ?? true) ? 'Customer' : 'Platform'}</div>
                   </div>
+                </div>
+              </Card>
+
+              <Card>
+                <SectionHeader title="Wallet Top-Up Fees" subtitle="Fees applied when agents top up their wallet via Paystack" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 bg-violet-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Paystack Fee</div>
+                    <div className="font-medium">{feeSettings?.walletTopUpCollectionFeePercent ?? 1.95}%</div>
+                  </div>
+                  <div className="p-3 bg-violet-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Platform Fee</div>
+                    <div className="font-medium">{feeSettings?.walletTopUpPlatformFeePercent ?? 0}%</div>
+                  </div>
+                  <div className="p-3 bg-violet-50 rounded-lg flex justify-between">
+                    <div className="text-sm text-gray-600">Fee Bearer</div>
+                    <div className="font-medium">{(feeSettings?.walletTopUpDelegateFeesToCustomer ?? true) ? 'Agent' : 'Platform'}</div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card>
+                <SectionHeader title="Payout Transfer Fees" subtitle="Paystack transfer costs & payout configuration" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3 bg-green-50 rounded-lg flex justify-between">
                     <div className="text-sm text-gray-600">MoMo Transfer Fee</div>
                     <div className="font-medium">GH₵{(feeSettings?.paystackTransferFees?.mobile_money ?? 1.0).toFixed(2)}</div>
@@ -448,7 +472,7 @@ export default function SuperAdminSettingsPage() {
                     <div className="font-medium">GH₵{(feeSettings?.paystackTransferFees?.bank_account ?? 8.0).toFixed(2)}</div>
                   </div>
                   <div className="p-3 bg-green-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Payout Fee Bearer</div>
+                    <div className="text-sm text-gray-600">Fee Bearer</div>
                     <div className="font-medium capitalize">{feeSettings?.payoutFeeBearer ?? 'agent'}</div>
                   </div>
                 </div>

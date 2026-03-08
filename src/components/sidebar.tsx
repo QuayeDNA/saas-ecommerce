@@ -182,11 +182,6 @@ const getSuperAdminNavItems = (): NavItem[] => [
     icon: <FaStore />,
   },
   {
-    label: "Payouts",
-    path: "/superadmin/payouts",
-    icon: <FaMoneyBillWave />,
-  },
-  {
     label: "Wallet",
     path: "/superadmin/wallet",
     icon: <FaWallet />,
@@ -311,8 +306,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             <button
               onClick={() => toggleExpanded(item.path)}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-md text-sm transition-all duration-200 ${hasActiveChildItem
-                  ? "text-white shadow-md"
-                  : "text-gray-300 hover:text-white"
+                ? "text-white shadow-md"
+                : "text-gray-300 hover:text-white"
                 } ${level > 0 ? "ml-4" : ""}`}
               style={{
                 backgroundColor: hasActiveChildItem
@@ -358,8 +353,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <Link
             to={item.path}
             className={`flex items-center px-3 py-3 rounded-md text-sm transition-all duration-200 ${isActive
-                ? "text-white shadow-md"
-                : "text-gray-300 hover:text-white"
+              ? "text-white shadow-md"
+              : "text-gray-300 hover:text-white"
               } ${level > 0 ? "ml-6" : ""}`}
             style={
               {

@@ -373,9 +373,9 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
       type: "mobile_money",
       label: "Mobile Money",
       description:
-        "Accept payments via mobile money (MTN, Vodafone, AirtelTigo)",
+        "Accept payments via mobile money (Coming Soon)",
       icon: Smartphone,
-      available: true,
+      available: false,
     },
     {
       type: "cash",

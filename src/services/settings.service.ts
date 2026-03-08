@@ -55,9 +55,14 @@ export interface WalletSettings {
 }
 
 export interface FeeSettings {
+  /** Storefront payment collection fees */
   paystackCollectionFeePercent: number;
   platformFeePercent: number;
   delegateFeesToCustomer: boolean;
+  /** Wallet top-up collection fees (separate from storefront) */
+  walletTopUpCollectionFeePercent: number;
+  walletTopUpPlatformFeePercent: number;
+  walletTopUpDelegateFeesToCustomer: boolean;
   paystackTransferFees: {
     mobile_money: number;
     bank_account: number;

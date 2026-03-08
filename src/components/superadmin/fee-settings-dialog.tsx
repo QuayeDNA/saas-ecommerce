@@ -64,6 +64,9 @@ const DEFAULT_FEE_SETTINGS: FeeSettings = {
   paystackCollectionFeePercent: 1.95,
   platformFeePercent: 0,
   delegateFeesToCustomer: true,
+  walletTopUpCollectionFeePercent: 1.95,
+  walletTopUpPlatformFeePercent: 0,
+  walletTopUpDelegateFeesToCustomer: true,
   paystackTransferFees: { mobile_money: 1.0, bank_account: 8.0 },
   payoutFeeBearer: "agent",
   platformPayoutFeePercent: 0,
@@ -129,7 +132,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
     onClose();
   };
 
-  // ── Preview: collection fee on a GH₵ 100 order ──────────────────────────
+  // ── Preview: collection fee on a GH₵ 100 storefront order ─────────────
   const totalCollectionFeePercent =
     formData.paystackCollectionFeePercent + formData.platformFeePercent;
   const sampleBase = 100;
@@ -137,6 +140,15 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
     ? sampleBase / (1 - totalCollectionFeePercent / 100)
     : sampleBase;
   const sampleFee = sampleCharge - sampleBase;
+
+  // ── Preview: collection fee on a GH₵ 100 wallet top-up ──────────────────
+  const totalWalletTopUpFeePercent =
+    formData.walletTopUpCollectionFeePercent + formData.walletTopUpPlatformFeePercent;
+  const sampleWalletBase = 100;
+  const sampleWalletCharge = formData.walletTopUpDelegateFeesToCustomer
+    ? sampleWalletBase / (1 - totalWalletTopUpFeePercent / 100)
+    : sampleWalletBase;
+  const sampleWalletFee = sampleWalletCharge - sampleWalletBase;
 
   // ── Preview: payout fee on a GH₵ 50 MoMo withdrawal ────────────────────
   const samplePayout = 50;
@@ -262,6 +274,95 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                     <PreviewCell
                       label="Fee amount"
                       value={`GH₵ ${sampleFee.toFixed(2)}`}
+                      valueClass="text-orange-600"
+                    />
+                  </div>
+                </div>
+              </Section>
+
+              {/* ── Wallet Top-Up Fees ─────────────────────────────────── */}
+              <Section
+                title="Wallet Top-Up Fees"
+                icon="💰"
+                iconBg="bg-violet-100"
+                panelBg="bg-violet-50"
+                panelBorder="border-violet-200"
+              >
+                <p className="text-xs text-gray-500 -mt-1">
+                  Applied when agents top up their wallet via Paystack. Independent of storefront fees.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField label="Paystack top-up fee (%)">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="10"
+                      value={String(formData.walletTopUpCollectionFeePercent)}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          walletTopUpCollectionFeePercent: parseFloat(e.target.value) || 0,
+                        }))
+                      }
+                      helperText="Paystack's fee — currently 1.95% in Ghana"
+                      rightIcon={<span className="text-xs font-medium text-gray-500">%</span>}
+                    />
+                  </FormField>
+
+                  <FormField label="Platform surcharge (%)">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="20"
+                      value={String(formData.walletTopUpPlatformFeePercent)}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          walletTopUpPlatformFeePercent: parseFloat(e.target.value) || 0,
+                        }))
+                      }
+                      helperText="Your additional fee on top of Paystack"
+                      rightIcon={<span className="text-xs font-medium text-gray-500">%</span>}
+                    />
+                  </FormField>
+                </div>
+
+                <FormField label="Fee delegation">
+                  <Select
+                    value={formData.walletTopUpDelegateFeesToCustomer ? "true" : "false"}
+                    onChange={(v: string) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        walletTopUpDelegateFeesToCustomer: v === "true",
+                      }))
+                    }
+                    options={[
+                      { value: "true", label: "Agent pays fees (amount adjusted upward)" },
+                      { value: "false", label: "Platform absorbs fees (deducted from revenue)" },
+                    ]}
+                  />
+                </FormField>
+
+                {/* Wallet top-up fee preview */}
+                <div className="bg-white border border-violet-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-violet-900 mb-2">
+                    Preview — GH₵ {sampleWalletBase.toFixed(2)} wallet top-up
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <PreviewCell
+                      label="Total fee"
+                      value={`${totalWalletTopUpFeePercent.toFixed(2)}%`}
+                      valueClass="text-violet-700"
+                    />
+                    <PreviewCell
+                      label="Agent charged"
+                      value={`GH₵ ${sampleWalletCharge.toFixed(2)}`}
+                    />
+                    <PreviewCell
+                      label="Fee amount"
+                      value={`GH₵ ${sampleWalletFee.toFixed(2)}`}
                       valueClass="text-orange-600"
                     />
                   </div>
@@ -432,11 +533,10 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                 </FormField>
 
                 <div
-                  className={`flex items-start gap-3 rounded-lg px-3 py-2.5 border text-sm ${
-                    formData.autoPayoutEnabled
+                  className={`flex items-start gap-3 rounded-lg px-3 py-2.5 border text-sm ${formData.autoPayoutEnabled
                       ? "bg-amber-50 border-amber-200 text-amber-800"
                       : "bg-white border-gray-200 text-gray-600"
-                  }`}
+                    }`}
                 >
                   <span className="mt-0.5 flex-shrink-0">
                     {formData.autoPayoutEnabled ? "⚠️" : "ℹ️"}

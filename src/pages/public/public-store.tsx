@@ -153,7 +153,6 @@ const normalizePhone = (p: string) => {
 };
 
 const isValidPhone = (p: string) => /^0\d{9}$/.test(normalizePhone(p));
-const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 const fmtValidity = (v: number | string, u: string) =>
     v === 'unlimited' || u === 'unlimited' ? 'Unlimited' : `${v} ${u}`;
 
@@ -662,14 +661,14 @@ function updateSavedStatus(biz: string, orderId: string, status: string) {
 // =============================================================================
 
 const ORDER_STATUS_CFG: Record<string, { label: string; bg: string; color: string }> = {
-    pending_payment:     { label: 'Awaiting Payment', bg: '#FEF3C7', color: '#92400E' },
-    pending:             { label: 'Pending',           bg: '#FEF3C7', color: '#92400E' },
-    confirmed:           { label: 'Confirmed',         bg: '#CCFBF1', color: '#134E4A' },
-    processing:          { label: 'Processing',        bg: '#DBEAFE', color: '#1E3A8A' },
-    completed:           { label: 'Delivered ✓',       bg: '#DCFCE7', color: '#14532D' },
-    partially_completed: { label: 'Partial',           bg: '#FEF9C3', color: '#713F12' },
-    failed:              { label: 'Failed',            bg: '#FEE2E2', color: '#7F1D1D' },
-    cancelled:           { label: 'Cancelled',         bg: '#F3F4F6', color: '#374151' },
+    pending_payment: { label: 'Awaiting Payment', bg: '#FEF3C7', color: '#92400E' },
+    pending: { label: 'Pending', bg: '#FEF3C7', color: '#92400E' },
+    confirmed: { label: 'Confirmed', bg: '#CCFBF1', color: '#134E4A' },
+    processing: { label: 'Processing', bg: '#DBEAFE', color: '#1E3A8A' },
+    completed: { label: 'Delivered ✓', bg: '#DCFCE7', color: '#14532D' },
+    partially_completed: { label: 'Partial', bg: '#FEF9C3', color: '#713F12' },
+    failed: { label: 'Failed', bg: '#FEE2E2', color: '#7F1D1D' },
+    cancelled: { label: 'Cancelled', bg: '#F3F4F6', color: '#374151' },
 };
 
 // =============================================================================
@@ -680,12 +679,12 @@ interface TrackOrderDrawerProps { businessName: string; theme: ThemeConfig; isOp
 
 const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOrderDrawerProps) => {
     const [savedOrders, setSavedOrders] = useState<SavedOrderEntry[]>([]);
-    const [expandedId, setExpandedId]   = useState<string | null>(null);
-    const [liveData, setLiveData]       = useState<Record<string, TrackedOrder>>({});
-    const [manualRef, setManualRef]     = useState('');
-    const [showManual, setShowManual]   = useState(false);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [liveData, setLiveData] = useState<Record<string, TrackedOrder>>({});
+    const [manualRef, setManualRef] = useState('');
+    const [showManual, setShowManual] = useState(false);
     const [trackResult, setTrackResult] = useState<TrackedOrder | null>(null);
-    const [trackError, setTrackError]   = useState<string | null>(null);
+    const [trackError, setTrackError] = useState<string | null>(null);
     const [trackLoading, setTrackLoading] = useState(false);
 
     useEffect(() => { if (isOpen) setSavedOrders(loadSavedOrders(businessName)); }, [isOpen, businessName]);
@@ -724,7 +723,7 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
     const renderTimeline = (order: TrackedOrder) => (
         <div className="pt-3">
             {order.timeline.map((step, idx) => {
-                const isLast   = idx === order.timeline.length - 1;
+                const isLast = idx === order.timeline.length - 1;
                 const dotColor = step.failed ? '#EF4444' : step.done ? '#22C55E' : '#D1D5DB';
                 return (
                     <div key={idx} className="flex gap-3">
@@ -737,9 +736,8 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                             )}
                         </div>
                         <div className={`${isLast ? 'pb-1' : 'pb-3'}`}>
-                            <p className={`text-sm font-semibold leading-tight ${
-                                step.failed ? 'text-red-600' : step.done ? 'text-gray-900' : 'text-gray-400'
-                            }`}>{step.event}</p>
+                            <p className={`text-sm font-semibold leading-tight ${step.failed ? 'text-red-600' : step.done ? 'text-gray-900' : 'text-gray-400'
+                                }`}>{step.event}</p>
                             <p className="text-xs text-gray-400 mt-0.5">
                                 {step.at ? fmtDate(step.at) : (step.done ? '' : 'Pending…')}
                             </p>
@@ -758,11 +756,10 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                             </div>
                             <div className="text-right shrink-0">
                                 <p className="font-mono text-gray-600">{item.customerPhone}</p>
-                                <span className={`text-[10px] font-bold ${
-                                    item.processingStatus === 'completed' ? 'text-green-600' :
-                                    item.processingStatus === 'failed'    ? 'text-red-500'   :
-                                    item.processingStatus === 'processing'? 'text-blue-500'  : 'text-amber-500'
-                                }`}>{item.processingStatus}</span>
+                                <span className={`text-[10px] font-bold ${item.processingStatus === 'completed' ? 'text-green-600' :
+                                        item.processingStatus === 'failed' ? 'text-red-500' :
+                                            item.processingStatus === 'processing' ? 'text-blue-500' : 'text-amber-500'
+                                    }`}>{item.processingStatus}</span>
                             </div>
                         </div>
                     ))}
@@ -772,8 +769,8 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
     );
 
     const renderOrderCard = (entry: SavedOrderEntry) => {
-        const cfg        = ORDER_STATUS_CFG[entry.lastStatus] ?? ORDER_STATUS_CFG.pending;
-        const live       = liveData[entry.orderId];
+        const cfg = ORDER_STATUS_CFG[entry.lastStatus] ?? ORDER_STATUS_CFG.pending;
+        const live = liveData[entry.orderId];
         const isExpanded = expandedId === entry.orderId;
         return (
             <div key={entry.orderId} className="rounded-2xl border border-gray-100 overflow-hidden bg-white shadow-sm">
@@ -788,8 +785,8 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                         <p className="text-sm font-semibold text-gray-800 mt-1 truncate">{entry.bundleName}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
                             GH₵{entry.total.toFixed(2)} · {
-                                entry.paymentType === 'paystack'      ? '⚡ Paystack' :
-                                entry.paymentType === 'mobile_money'  ? '📱 MoMo' : '🏦 Bank'
+                                entry.paymentType === 'paystack' ? '⚡ Paystack' :
+                                    entry.paymentType === 'mobile_money' ? '📱 MoMo' : '🏦 Bank'
                             } · {new Date(entry.savedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </p>
                     </div>
@@ -825,15 +822,13 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
     };
 
     // Always render drawer so we can animate open/close smoothly. visibility
-// controlled via CSS transitions on opacity and transform.
+    // controlled via CSS transitions on opacity and transform.
     return (
         <div className={`fixed inset-0 z-50 flex justify-end ${isOpen ? '' : 'pointer-events-none'}`} onClick={onClose}>
-            <div className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${
-                isOpen ? 'opacity-100' : 'opacity-0'
-            }`} />
-            <div className={`relative w-full max-w-md h-full flex flex-col bg-white shadow-2xl transform transition-transform duration-300 ${
-                isOpen ? 'translate-x-0' : 'translate-x-full'
-            }`} onClick={e => e.stopPropagation()}>
+            <div className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'
+                }`} />
+            <div className={`relative w-full max-w-md h-full flex flex-col bg-white shadow-2xl transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                }`} onClick={e => e.stopPropagation()}>
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
@@ -897,7 +892,7 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                                 style={{ backgroundColor: theme.primary }}>
                                 {trackLoading ? 'Looking up…' : 'Track Order'}
                             </button>
-                            {trackError  && <p className="text-xs text-red-500 text-center">{trackError}</p>}
+                            {trackError && <p className="text-xs text-red-500 text-center">{trackError}</p>}
                             {trackResult && renderTrackResult(trackResult)}
                         </div>
                     )}
@@ -941,7 +936,7 @@ const PublicStore: React.FC = () => {
 
     // Step 2 — Payment info
     const [customerName, setCustomerName] = useState('');
-    const [customerEmail, setCustomerEmail] = useState('');
+    // email is sourced from the agent's store profile — not collected from customer
     const [paymentType, setPaymentType] = useState<'paystack' | 'mobile_money' | 'bank_transfer'>('paystack');
     const [transactionRef, setTransactionRef] = useState('');
 
@@ -1076,13 +1071,11 @@ const PublicStore: React.FC = () => {
 
     // Form validation
     const phoneOk = isValidPhone(orderPhone);
-    const requiresEmail = paymentType === 'paystack';
-    const isEmailOkay = requiresEmail ? isValidEmail(customerEmail) : (!customerEmail || isValidEmail(customerEmail));
     const isAfaBundle = activeOrder?.bundle.provider?.toUpperCase() === 'AFA';
     const afaOk = !isAfaBundle || (orderCustomerName.trim() &&
         (!activeOrder?.bundle.requiresGhanaCard || (orderGhanaCard.trim() && /^[A-Z]{3}-?\d{9}-?\d$/i.test(orderGhanaCard))));
     const step1Valid = phoneOk && Boolean(afaOk);
-    const canSubmitOrder = Boolean(customerName.trim() && isEmailOkay &&
+    const canSubmitOrder = Boolean(customerName.trim() &&
         (paymentType !== 'mobile_money' || transactionRef.trim()));
 
     // ==========================================================================
@@ -1095,7 +1088,6 @@ const PublicStore: React.FC = () => {
         setOrderCustomerName('');
         setOrderGhanaCard('');
         setCustomerName('');
-        setCustomerEmail('');
         setTransactionRef('');
         setOrderError(null);
         setOrderResult(null);
@@ -1147,7 +1139,7 @@ const PublicStore: React.FC = () => {
                 customerInfo: {
                     name: customerName.trim(),
                     phone,
-                    email: customerEmail.trim() || undefined,
+                    email: storeData?.storefront.contactInfo?.email || undefined,
                     ...(activeOrder.ghanaCardNumber && { ghanaCardNumber: activeOrder.ghanaCardNumber }),
                 },
                 paymentMethod: {
@@ -1166,15 +1158,15 @@ const PublicStore: React.FC = () => {
             // Save to device localStorage for order tracking (24 h TTL)
             if (businessName) {
                 saveOrderEntry(businessName, {
-                    orderId:     result.orderId,
+                    orderId: result.orderId,
                     orderNumber: result.orderNumber,
-                    reference:   reference || result.orderId,
-                    bundleName:  activeOrder.bundle.name,
-                    provider:    activeOrder.bundle.provider || '',
-                    total:       result.total,
+                    reference: reference || result.orderId,
+                    bundleName: activeOrder.bundle.name,
+                    provider: activeOrder.bundle.provider || '',
+                    total: result.total,
                     paymentType,
-                    savedAt:     Date.now(),
-                    lastStatus:  result.status,
+                    savedAt: Date.now(),
+                    lastStatus: result.status,
                 });
             }
             setOrderStep('confirmation');
@@ -1188,7 +1180,8 @@ const PublicStore: React.FC = () => {
                     if (!PaystackPop) throw new Error('Paystack script failed to load');
                     const handler = PaystackPop.setup({
                         key: publicKey,
-                        email: customerEmail || `customer-${Date.now()}@storefront.local`,
+                        email: storeData?.storefront.contactInfo?.email || `store-${businessName || 'unknown'}@brytelink.com`,
+                        // customer email not required — agent's registered email receives Paystack receipts
                         amount: Math.round((result.total ?? activeOrder.bundle.price) * 100),
                         currency: 'GHS',
                         ref: reference,
@@ -1227,7 +1220,7 @@ const PublicStore: React.FC = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [businessName, storeData, canSubmitOrder, activeOrder, orderPhone, customerName, customerEmail, paymentType, transactionRef, addToast]);
+    }, [businessName, storeData, canSubmitOrder, activeOrder, orderPhone, customerName, paymentType, transactionRef, addToast]);
 
     // ==========================================================================
     // Conditional renders
@@ -1710,23 +1703,6 @@ const PublicStore: React.FC = () => {
                                             value={customerName}
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerName(e.target.value)}
                                         />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
-                                            Email Address{requiresEmail ? ' *' : <span className="normal-case font-normal text-gray-400"> (optional)</span>}
-                                        </label>
-                                        <Input
-                                            type="email"
-                                            placeholder="you@example.com"
-                                            value={customerEmail}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomerEmail(e.target.value)}
-                                        />
-                                        {requiresEmail && !customerEmail && (
-                                            <p className="text-xs text-rose-500 mt-1">⚡ Email is required for Paystack payment — used for your receipt</p>
-                                        )}
-                                        {customerEmail && !isValidEmail(customerEmail) && (
-                                            <p className="text-xs text-rose-500 mt-1">Please enter a valid email address</p>
-                                        )}
                                     </div>
                                 </div>
 

@@ -19,11 +19,10 @@ import {
   storefrontService,
   type StorefrontData,
   type StorefrontAnalytics,
+  type StorefrontEarnings,
   type StorefrontOrder,
   type AgentBundle,
 } from "../../services/storefront.service";
-import { walletService } from "../../services/wallet-service";
-import type { EarningsDashboard } from "../../types/wallet";
 import {
   Store,
   DollarSign,
@@ -45,7 +44,11 @@ import {
   RefreshCw,
   Zap,
   Wallet,
-  ChevronLeft,
+  ArrowUpRight,
+  ArrowDownRight,
+  BarChart2,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { getApiErrorMessage } from "../../utils/error-helpers";
 
@@ -76,7 +79,7 @@ export const StorefrontDashboardPage: React.FC = () => {
 
   // Analytics & orders state
   const [analytics, setAnalytics] = useState<StorefrontAnalytics | null>(null);
-  const [earnings, setEarnings] = useState<EarningsDashboard | null>(null);
+  const [earnings, setEarnings] = useState<StorefrontEarnings | null>(null);
   const [recentOrders, setRecentOrders] = useState<StorefrontOrder[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   // bundles that the agent has enabled/disabled (used for checklist logic)
@@ -123,7 +126,7 @@ export const StorefrontDashboardPage: React.FC = () => {
         storefrontService.getAnalytics(),
         storefrontService.getMyOrders({ limit: 5, offset: 0 }),
         storefrontService.getAvailableBundles(),
-        walletService.getEarningsDashboard().catch(() => null),
+        storefrontService.getEarnings().catch(() => null),
       ]);
       setAnalytics(analyticsData);
       setRecentOrders(ordersData.orders || []);
@@ -237,92 +240,6 @@ export const StorefrontDashboardPage: React.FC = () => {
   // Format helpers
   const formatCurrency = (amount: number) =>
     `GH₵ ${amount.toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-  // Carousel for profit / earnings metrics — 3 slides
-  const ProfitCarousel: React.FC<{
-    completed: number;
-    pending: number;
-    confirmed: number;
-    available: number | null;
-    loading: boolean;
-  }> = ({ completed, pending, confirmed, available, loading }) => {
-    const [index, setIndex] = useState(0);
-    const val = loading ? "—" : null;
-
-    const cards = [
-      {
-        title: "Storefront Profit",
-        value: val ?? formatCurrency(completed),
-        subtitle: "Markup from completed orders",
-        icon: <TrendingUp className="w-4 h-4" />,
-        color: "text-green-600",
-      },
-      {
-        title: "Pending Profit",
-        value: val ?? formatCurrency(pending + confirmed),
-        subtitle: (pending > 0 || confirmed > 0) ? `${pending > 0 ? `${formatCurrency(pending)} pending` : ""}${pending > 0 && confirmed > 0 ? " · " : ""}${confirmed > 0 ? `${formatCurrency(confirmed)} confirmed` : ""}` : "No pending markup",
-        icon: <Clock className="w-4 h-4" />,
-        color: "text-amber-600",
-      },
-      {
-        title: "Available Earnings",
-        value: val ?? (available !== null ? formatCurrency(available) : "—"),
-        subtitle: "Ready to withdraw",
-        icon: <Wallet className="w-4 h-4" />,
-        color: "text-blue-600",
-      },
-    ];
-
-    const total = cards.length;
-    const prev = () => setIndex((i) => (i - 1 + total) % total);
-    const next = () => setIndex((i) => (i + 1) % total);
-
-    // Auto-advance
-    useEffect(() => {
-      const iv = setInterval(next, 5000);
-      return () => clearInterval(iv);
-    }, []);
-
-    const card = cards[index];
-    return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2 relative min-h-[100px]">
-        {/* Nav arrows */}
-        <button
-          onClick={prev}
-          className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 text-gray-400 transition"
-          aria-label="Previous"
-        >
-          <ChevronLeft className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={next}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 text-gray-400 transition"
-          aria-label="Next"
-        >
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-
-        <div className="px-5">
-          <p className="text-xs text-gray-500 font-medium truncate">{card.title}</p>
-          <p className={`text-xl font-bold mt-0.5 ${card.color}`}>{card.value}</p>
-          <p className="text-xs text-gray-400 mt-0.5 truncate">{card.subtitle}</p>
-        </div>
-
-        {/* Dots */}
-        <div className="flex justify-center gap-1 mt-auto">
-          {cards.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setIndex(i)}
-              className={`w-1.5 h-1.5 rounded-full transition-all ${
-                i === index ? "bg-blue-500 w-3" : "bg-gray-200"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   const formatRelativeTime = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -461,9 +378,30 @@ export const StorefrontDashboardPage: React.FC = () => {
         {/* Overview Tab */}
         <TabsContent value="overview">
           <div className="space-y-4 sm:space-y-6">
-            {/* ── Analytics Stats ───────────────────────────────────────────── */}
-            {/* Row 1: primary KPIs — 2 cols on mobile, 4 on lg */}
+            {/* ── Analytics Stats ─────────────────────────────────────────── */}
+            {/* Row 1: primary KPIs — 2 cols mobile / 4 cols desktop */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <StatCard
+                title="Gross Revenue"
+                value={analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0)}
+                subtitle="From paid customer orders"
+                icon={<DollarSign className="w-4 h-4" />}
+                size="md"
+              />
+              <StatCard
+                title="Net Profit"
+                value={analyticsLoading ? "—" : formatCurrency(analytics?.totalProfit ?? 0)}
+                subtitle="Secured (completed orders)"
+                icon={<TrendingUp className="w-4 h-4" />}
+                size="md"
+              />
+              <StatCard
+                title="Available Earnings"
+                value={analyticsLoading ? "—" : formatCurrency(earnings?.availableBalance ?? 0)}
+                subtitle="Ready to withdraw"
+                icon={<Wallet className="w-4 h-4" />}
+                size="md"
+              />
               <StatCard
                 title="Total Orders"
                 value={analyticsLoading ? "—" : analytics?.totalOrders ?? 0}
@@ -471,54 +409,252 @@ export const StorefrontDashboardPage: React.FC = () => {
                 icon={<ShoppingCart className="w-4 h-4" />}
                 size="md"
               />
-
-              <StatCard
-                title="Store Revenue"
-                value={analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0)}
-                subtitle="Total charged to customers"
-                icon={<DollarSign className="w-4 h-4" />}
-                size="md"
-              />
-
-              <ProfitCarousel
-                completed={analytics?.totalProfit ?? 0}
-                pending={analytics?.pendingProfit ?? 0}
-                confirmed={analytics?.confirmedProfit ?? 0}
-                available={earnings?.availableBalance ?? null}
-                loading={analyticsLoading}
-              />
-
-              <StatCard
-                title="Pending Orders"
-                value={analyticsLoading ? "—" : analytics?.pendingOrders ?? 0}
-                subtitle="Awaiting action"
-                icon={<Clock className="w-4 h-4" />}
-                size="md"
-              />
             </div>
 
-            {/* Row 2: secondary breakdown — 4 cols always, smaller */}
-            {analytics && !analyticsLoading && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                <div className="bg-white border border-gray-200 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Avg Order Value</p>
-                  <p className="text-sm font-bold text-gray-900 mt-0.5">
-                    {formatCurrency(analytics.averageOrderValue)}
-                  </p>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Confirmed</p>
-                  <p className="text-sm font-bold text-blue-600 mt-0.5">{analytics.confirmedOrders}</p>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Completed</p>
-                  <p className="text-sm font-bold text-green-600 mt-0.5">{analytics.completedOrders}</p>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Cancelled</p>
-                  <p className="text-sm font-bold text-red-500 mt-0.5">{analytics.cancelledOrders}</p>
-                </div>
-              </div>
+            {/* Row 2: Revenue breakdown + Order status */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Revenue Breakdown */}
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4 text-indigo-500" />
+                    <h3 className="text-base font-semibold">Revenue Breakdown</h3>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  {analyticsLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Spinner size="sm" />
+                    </div>
+                  ) : analytics ? (
+                    <div className="space-y-0.5">
+                      <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <ArrowUpRight className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                          <span className="text-sm text-gray-600">Gross Revenue</span>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(analytics.totalRevenue)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <ArrowDownRight className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                          <span className="text-sm text-gray-600">Fulfilment Cost</span>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900">
+                          − {formatCurrency(analytics.totalCost)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between py-2.5">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-3.5 h-3.5 text-green-600 shrink-0" />
+                          <span className="text-sm font-medium text-gray-800">Net Profit</span>
+                        </div>
+                        <span className="text-sm font-bold text-green-700">
+                          {formatCurrency(analytics.totalProfit)}
+                        </span>
+                      </div>
+
+                      {/* Pipeline markup (not yet secured) */}
+                      {(analytics.pendingProfit > 0 ||
+                        analytics.confirmedProfit > 0 ||
+                        analytics.processingProfit > 0) && (
+                          <div className="pt-2 mt-1 border-t border-dashed border-gray-200">
+                            <p className="text-xs text-gray-400 font-medium mb-2 uppercase tracking-wide">
+                              Pipeline — not yet earned
+                            </p>
+                            <div className="space-y-1.5">
+                              {analytics.pendingProfit > 0 && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-amber-600 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" /> Pending orders
+                                  </span>
+                                  <span className="text-xs font-semibold text-amber-600">
+                                    {formatCurrency(analytics.pendingProfit)}
+                                  </span>
+                                </div>
+                              )}
+                              {analytics.confirmedProfit > 0 && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" /> Confirmed orders
+                                  </span>
+                                  <span className="text-xs font-semibold text-blue-600">
+                                    {formatCurrency(analytics.confirmedProfit)}
+                                  </span>
+                                </div>
+                              )}
+                              {analytics.processingProfit > 0 && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-indigo-600 flex items-center gap-1">
+                                    <RefreshCw className="w-3 h-3" /> Processing orders
+                                  </span>
+                                  <span className="text-xs font-semibold text-indigo-600">
+                                    {formatCurrency(analytics.processingProfit)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-sm text-gray-400">No data yet</div>
+                  )}
+                </CardBody>
+              </Card>
+
+              {/* Order Status Breakdown */}
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-blue-500" />
+                    <h3 className="text-base font-semibold">Order Status</h3>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  {analyticsLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Spinner size="sm" />
+                    </div>
+                  ) : analytics ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                        <div>
+                          <p className="text-xs text-green-700">Completed</p>
+                          <p className="text-sm font-bold text-green-800">
+                            {analytics.completedOrders}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                        <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" />
+                        <div>
+                          <p className="text-xs text-blue-700">Confirmed</p>
+                          <p className="text-sm font-bold text-blue-800">
+                            {analytics.confirmedOrders}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-indigo-50 rounded-lg">
+                        <RefreshCw className="w-4 h-4 text-indigo-600 shrink-0" />
+                        <div>
+                          <p className="text-xs text-indigo-700">Processing</p>
+                          <p className="text-sm font-bold text-indigo-800">
+                            {analytics.processingOrders}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-lg">
+                        <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                        <div>
+                          <p className="text-xs text-amber-700">Pending</p>
+                          <p className="text-sm font-bold text-amber-800">
+                            {analytics.pendingOrders}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                        <XCircle className="w-4 h-4 text-gray-400 shrink-0" />
+                        <div>
+                          <p className="text-xs text-gray-500">Cancelled</p>
+                          <p className="text-sm font-bold text-gray-700">
+                            {analytics.cancelledOrders}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
+                        <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                        <div>
+                          <p className="text-xs text-red-600">Failed</p>
+                          <p className="text-sm font-bold text-red-700">
+                            {analytics.failedOrders}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-sm text-gray-400">No order data</div>
+                  )}
+                </CardBody>
+              </Card>
+            </div>
+
+            {/* Earnings History */}
+            {earnings && earnings.recentTransactions.length > 0 && (
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="w-4 h-4 text-green-600" />
+                      <h3 className="text-base font-semibold">Earnings History</h3>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-500">
+                        Balance:{" "}
+                        <span className="font-semibold text-green-700">
+                          {formatCurrency(earnings.availableBalance)}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  <div className="space-y-1">
+                    {earnings.recentTransactions.slice(0, 8).map((txn) => (
+                      <div
+                        key={txn._id}
+                        className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 transition"
+                      >
+                        <div
+                          className={`p-1.5 rounded-full shrink-0 ${txn.type === "credit"
+                              ? "bg-green-100"
+                              : "bg-red-100"
+                            }`}
+                        >
+                          {txn.type === "credit" ? (
+                            <ArrowUpRight className="w-3.5 h-3.5 text-green-600" />
+                          ) : (
+                            <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-800 truncate">{txn.description}</p>
+                          <p className="text-xs text-gray-400">
+                            {formatRelativeTime(txn.createdAt)}
+                            {txn.reference && (
+                              <span className="ml-1.5 font-mono text-gray-300">
+                                · {txn.reference}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p
+                            className={`text-sm font-semibold ${txn.type === "credit"
+                                ? "text-green-700"
+                                : "text-red-600"
+                              }`}
+                          >
+                            {txn.type === "credit" ? "+" : "−"}
+                            {formatCurrency(txn.amount)}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            bal {formatCurrency(txn.balanceAfter)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {earnings.recentTransactions.length > 8 && (
+                    <p className="text-xs text-center text-gray-400 mt-2 pt-2 border-t border-gray-100">
+                      Showing 8 of {earnings.recentTransactions.length} recent transactions
+                    </p>
+                  )}
+                </CardBody>
+              </Card>
             )}
 
             {/* Two-column: Quick Actions + (Checklist OR Recent Orders) */}

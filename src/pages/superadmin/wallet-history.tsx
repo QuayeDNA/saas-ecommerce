@@ -196,7 +196,6 @@ export default function WalletHistoryPage() {
                   <TableHeaderCell>Amount</TableHeaderCell>
                   <TableHeaderCell className="hidden lg:table-cell">Description</TableHeaderCell>
                   <TableHeaderCell className="hidden xl:table-cell">Admin</TableHeaderCell>
-                  <TableHeaderCell></TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
