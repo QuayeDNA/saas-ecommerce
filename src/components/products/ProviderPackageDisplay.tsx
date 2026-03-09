@@ -19,7 +19,7 @@ import {
   Button,
   Badge,
   Alert,
-  Spinner,
+  Skeleton,
   Container,
   Section,
 } from "../../design-system";
@@ -154,20 +154,20 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     filters: {
       ...(!category && !packageId && categories.length > 1
         ? {
-            category: {
-              label: "Category",
-              value: selectedCategory,
-              options: categories.map((cat) => ({
-                value: cat ?? "",
-                label:
-                  cat === "all"
-                    ? "All Categories"
-                    : typeof cat === "string"
+          category: {
+            label: "Category",
+            value: selectedCategory,
+            options: categories.map((cat) => ({
+              value: cat ?? "",
+              label:
+                cat === "all"
+                  ? "All Categories"
+                  : typeof cat === "string"
                     ? cat.charAt(0).toUpperCase() + cat.slice(1)
                     : "",
-              })),
-            },
-          }
+            })),
+          },
+        }
         : {}),
       status: {
         label: "Status",
@@ -194,7 +194,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
         setSelectedStatus(value);
       }
     },
-    onSearch: () => {},
+    onSearch: () => { },
     onClearFilters: () => {
       setSearchTerm("");
       setSelectedCategory(category || "all");
@@ -205,15 +205,54 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
 
   if (loading) {
     return (
-      <Container>
-        <Card>
-          <CardBody className="p-8">
-            <div className="flex items-center justify-center">
-              <Spinner size="lg" />
-              <span className="ml-3 text-gray-600">Loading packages...</span>
+      <Container padding="none">
+        <div className="space-y-6">
+          {/* Header skeleton */}
+          <div className="flex items-center gap-3">
+            <Skeleton variant="rectangular" width="3rem" height="3rem" />
+            <div className="space-y-2">
+              <Skeleton variant="text" height="1.75rem" width="220px" />
+              <Skeleton variant="text" height="0.875rem" width="160px" />
             </div>
-          </CardBody>
-        </Card>
+          </div>
+
+          {/* Search / filter bar skeleton */}
+          <div className="flex gap-3">
+            <Skeleton variant="rectangular" height="2.5rem" width="100%" />
+            <Skeleton variant="rectangular" height="2.5rem" width="120px" />
+            <Skeleton variant="rectangular" height="2.5rem" width="120px" />
+          </div>
+
+          {/* Package cards skeleton */}
+          {[...Array(2)].map((_, pi) => (
+            <Card key={pi} className="overflow-hidden">
+              <CardBody>
+                <div className="flex items-center gap-2 mb-4">
+                  <Skeleton variant="rectangular" width="2.5rem" height="2.5rem" />
+                  <Skeleton variant="text" height="1.25rem" width="150px" />
+                </div>
+                <Skeleton variant="text" height="0.875rem" width="80%" className="mb-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, bi) => (
+                    <Card key={bi}>
+                      <CardBody>
+                        <div className="space-y-3">
+                          <Skeleton variant="text" height="1.1rem" width="70%" />
+                          <div className="flex gap-2">
+                            <Skeleton variant="rectangular" height="1.25rem" width="50px" />
+                            <Skeleton variant="rectangular" height="1.25rem" width="60px" />
+                          </div>
+                          <Skeleton variant="text" height="1.5rem" width="90px" />
+                          <Skeleton variant="rectangular" height="2.25rem" />
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
       </Container>
     );
   }
@@ -344,9 +383,8 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                       .map((bundle) => (
                         <Card
                           key={bundle._id}
-                          className={`hover:shadow-md transition ${
-                            !bundle.isActive ? "opacity-75" : ""
-                          }`}
+                          className={`hover:shadow-md transition ${!bundle.isActive ? "opacity-75" : ""
+                            }`}
                         >
                           <CardBody>
                             <div className="flex flex-col gap-3">
@@ -379,7 +417,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                                   }}
                                 >
                                   {bundle.validity === "unlimited" &&
-                                  bundle.validityUnit === "unlimited"
+                                    bundle.validityUnit === "unlimited"
                                     ? "Unlimited"
                                     : `${bundle.validity} ${bundle.validityUnit}`}
                                 </Badge>
@@ -388,9 +426,9 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                                 <div className="text-lg font-bold text-gray-900">
                                   {userType
                                     ? formatCurrency(
-                                        getPriceForUserType(bundle, userType),
-                                        bundle.currency
-                                      )
+                                      getPriceForUserType(bundle, userType),
+                                      bundle.currency
+                                    )
                                     : `${bundle.price} ${bundle.currency}`}
                                 </div>
                                 {userType &&

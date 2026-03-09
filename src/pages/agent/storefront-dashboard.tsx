@@ -7,6 +7,7 @@ import {
   Badge,
   Alert,
   Spinner,
+  Skeleton,
   Input,
   Tabs,
   TabsList,
@@ -171,15 +172,81 @@ export const StorefrontDashboardPage: React.FC = () => {
     }
   };
 
-  // Loading state
+  // Loading state — skeleton matching page structure
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <Spinner size="lg" />
-          <p className="mt-3 text-sm text-gray-600">
-            Loading your storefront...
-          </p>
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header card skeleton */}
+        <Card>
+          <CardBody>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <Skeleton variant="text" height="2rem" width="220px" />
+                  <Skeleton variant="rectangular" height="1.25rem" width="60px" />
+                </div>
+                <Skeleton variant="text" height="0.875rem" width="180px" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton variant="rectangular" height="2rem" width="100px" />
+                <Skeleton variant="rectangular" height="2rem" width="90px" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Tab bar skeleton */}
+        <div className="bg-white rounded-lg border border-gray-200 px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex gap-2">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} variant="rectangular" height="2.25rem" width="100px" />
+            ))}
+          </div>
+        </div>
+
+        {/* Stat cards skeleton — 2 col mobile / 4 col desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardBody>
+                <Skeleton variant="text" height="0.75rem" width="70px" className="mb-2" />
+                <Skeleton variant="text" height="1.75rem" width="110px" className="mb-1" />
+                <Skeleton variant="text" height="0.75rem" width="90px" />
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+
+        {/* Content cards skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i} variant="outlined">
+              <CardHeader>
+                <Skeleton variant="text" height="1.25rem" width="150px" />
+              </CardHeader>
+              <CardBody className="space-y-3">
+                {[...Array(4)].map((_, j) => (
+                  <Skeleton key={j} variant="rectangular" height="2.5rem" />
+                ))}
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+
+        {/* Bottom row skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i} variant="outlined">
+              <CardHeader>
+                <Skeleton variant="text" height="1.25rem" width="140px" />
+              </CardHeader>
+              <CardBody className="space-y-3">
+                {[...Array(3)].map((_, j) => (
+                  <Skeleton key={j} variant="rectangular" height="3rem" />
+                ))}
+              </CardBody>
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -610,8 +677,8 @@ export const StorefrontDashboardPage: React.FC = () => {
                       >
                         <div
                           className={`p-1.5 rounded-full shrink-0 ${txn.type === "credit"
-                              ? "bg-green-100"
-                              : "bg-red-100"
+                            ? "bg-green-100"
+                            : "bg-red-100"
                             }`}
                         >
                           {txn.type === "credit" ? (
@@ -634,8 +701,8 @@ export const StorefrontDashboardPage: React.FC = () => {
                         <div className="text-right shrink-0">
                           <p
                             className={`text-sm font-semibold ${txn.type === "credit"
-                                ? "text-green-700"
-                                : "text-red-600"
+                              ? "text-green-700"
+                              : "text-red-600"
                               }`}
                           >
                             {txn.type === "credit" ? "+" : "−"}
