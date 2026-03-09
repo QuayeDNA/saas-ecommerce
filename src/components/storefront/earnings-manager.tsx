@@ -101,10 +101,11 @@ export const EarningsManager: React.FC = () => {
   }, [amount, destType, dashboard]);
 
   const minimumPayout = useMemo(() => {
-    if (!dashboard?.minimumPayoutAmounts) return 5;
+    const amounts = dashboard?.minimumPayoutAmounts;
+    if (!amounts) return destType === 'bank_account' ? 50 : 1;
     return destType === 'bank_account'
-      ? dashboard.minimumPayoutAmounts.bank_account
-      : dashboard.minimumPayoutAmounts.mobile_money;
+      ? (amounts.bank_account ?? 50)
+      : (amounts.mobile_money ?? 1);
   }, [destType, dashboard]);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
@@ -231,14 +232,14 @@ export const EarningsManager: React.FC = () => {
             <Button
               className="w-full"
               onClick={openRequest}
-              disabled={!dashboard?.canRequestPayout}
+              disabled={!(dashboard && dashboard.availableBalance > 0)}
               leftIcon={<ArrowDownToLine className="w-4 h-4" />}
             >
               {dashboard?.autoPayoutEnabled ? 'Withdraw via Paystack' : 'Request Payout'}
             </Button>
-            {!dashboard?.canRequestPayout && (
+            {dashboard && dashboard.availableBalance <= 0 && (
               <p className="text-xs text-center text-gray-400 mt-2">
-                Payouts are currently unavailable
+                You have no earnings to withdraw yet
               </p>
             )}
             {dashboard?.autoPayoutEnabled && dashboard?.canRequestPayout && (

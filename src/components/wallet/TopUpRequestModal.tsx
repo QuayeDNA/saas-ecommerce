@@ -132,7 +132,16 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
       try {
         const { publicKey, configured } = await walletService.getPaystackPublicKey();
         setPaystackPublicKey(publicKey || null);
-        setPaystackEnabled(Boolean(publicKey && configured));
+        // paystackEnabled is only true when the key is present, Paystack is configured,
+        // AND the admin has specifically enabled Paystack for wallet top-ups
+        let walletTopUpAllowed = true;
+        try {
+          const apiSettings = await settingsService.getApiSettings();
+          walletTopUpAllowed = apiSettings.paystackWalletTopUpEnabled ?? false;
+        } catch {
+          walletTopUpAllowed = false;
+        }
+        setPaystackEnabled(Boolean(publicKey && configured && walletTopUpAllowed));
       } catch {
         setPaystackEnabled(false);
       }
@@ -391,8 +400,8 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                 type="button"
                 onClick={() => setMode('request')}
                 className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 ${mode === 'request'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
-                    : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                  : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
                   }`}
               >
                 {mode === 'request' && (
@@ -417,10 +426,10 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                 disabled={!paystackEnabled || !canHaveWallet(user?.userType ?? '')}
                 title={!paystackEnabled ? 'Paystack not configured' : undefined}
                 className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${!paystackEnabled || !canHaveWallet(user?.userType ?? '')
-                    ? 'border-gray-200 bg-gray-50 text-gray-400'
-                    : mode === 'instant'
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
-                      : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
+                  ? 'border-gray-200 bg-gray-50 text-gray-400'
+                  : mode === 'instant'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                    : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
                   }`}
               >
                 {mode === 'instant' && (

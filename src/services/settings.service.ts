@@ -25,6 +25,8 @@ export interface ApiSettings {
   apiEndpoint: string;
   // Paystack
   paystackEnabled?: boolean;
+  paystackWalletTopUpEnabled?: boolean;
+  paystackStorefrontEnabled?: boolean;
   paystackTestPublicKey?: string;
   paystackTestSecretKey?: string; // returned only in non-production builds
   paystackLivePublicKey?: string;
@@ -72,6 +74,11 @@ export interface FeeSettings {
   platformPayoutFeePercent: number;
   /** Whether agents can withdraw directly via Paystack without admin approval */
   autoPayoutEnabled: boolean;
+  /** Minimum amounts agents must request per destination type */
+  minimumPayoutAmounts: {
+    mobile_money: number;
+    bank_account: number;
+  };
 }
 
 export interface PasswordResetRequest {

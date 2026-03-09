@@ -775,8 +775,8 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                             <div className="text-right shrink-0">
                                 <p className="font-mono text-gray-600">{item.customerPhone}</p>
                                 <span className={`text-[10px] font-bold ${item.processingStatus === 'completed' ? 'text-green-600' :
-                                        item.processingStatus === 'failed' ? 'text-red-500' :
-                                            item.processingStatus === 'processing' ? 'text-blue-500' : 'text-amber-500'
+                                    item.processingStatus === 'failed' ? 'text-red-500' :
+                                        item.processingStatus === 'processing' ? 'text-blue-500' : 'text-amber-500'
                                     }`}>{item.processingStatus}</span>
                             </div>
                         </div>
@@ -1111,9 +1111,18 @@ const PublicStore: React.FC = () => {
         setOrderResult(null);
         setPaystackStatus('idle');
         setOrderStep('details');
-        // Default payment method
+        // Default payment method — skip paystack if not enabled
         const methods = storeData?.storefront.paymentMethods || [];
-        setPaymentType(methods.some(m => m.type === 'mobile_money') ? 'mobile_money' : 'paystack');
+        const paystackOk = storeData?.storefront.paystackStorefrontEnabled ?? false;
+        const hasMomo = methods.some(m => m.type === 'mobile_money');
+        const hasPaystack = methods.some(m => m.type === 'paystack');
+        if (hasMomo) {
+            setPaymentType('mobile_money');
+        } else if (hasPaystack && paystackOk) {
+            setPaymentType('paystack');
+        } else {
+            setPaymentType(methods[0]?.type ?? 'mobile_money');
+        }
         setShowOrderDialog(true);
     }, [storeData]);
 
@@ -1555,9 +1564,13 @@ const PublicStore: React.FC = () => {
         const isAfa = bundle.provider?.toUpperCase() === 'AFA';
         const hasData = bundle.dataVolume != null && bundle.dataVolume > 0;
         const rawMethods = storeData?.storefront.paymentMethods || [];
+        const paystackStorefrontEnabled = storeData?.storefront.paystackStorefrontEnabled ?? false;
+        // Only inject Paystack as a fallback option when Paystack is enabled for storefronts
         const paymentMethods = rawMethods.some(m => m.type === 'paystack')
-            ? rawMethods
-            : [{ type: 'paystack' as const, details: {}, isActive: true }, ...rawMethods];
+            ? rawMethods.filter(m => m.type !== 'paystack' || paystackStorefrontEnabled)
+            : paystackStorefrontEnabled
+                ? [{ type: 'paystack' as const, details: {}, isActive: true }, ...rawMethods]
+                : rawMethods;
         const selectedPayment = paymentMethods.find(m => m.type === paymentType) || paymentMethods[0];
 
         // amount shown to customer (with fee if paystack)

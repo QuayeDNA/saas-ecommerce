@@ -71,6 +71,7 @@ const DEFAULT_FEE_SETTINGS: FeeSettings = {
   payoutFeeBearer: "agent",
   platformPayoutFeePercent: 0,
   autoPayoutEnabled: false,
+  minimumPayoutAmounts: { mobile_money: 1.0, bank_account: 50.0 },
 };
 
 const mergeWithDefaults = (data: Partial<FeeSettings>): FeeSettings => ({
@@ -79,6 +80,10 @@ const mergeWithDefaults = (data: Partial<FeeSettings>): FeeSettings => ({
   paystackTransferFees: {
     ...DEFAULT_FEE_SETTINGS.paystackTransferFees,
     ...(data.paystackTransferFees ?? {}),
+  },
+  minimumPayoutAmounts: {
+    ...DEFAULT_FEE_SETTINGS.minimumPayoutAmounts,
+    ...(data.minimumPayoutAmounts ?? {}),
   },
 });
 
@@ -500,6 +505,64 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                 </div>
               </Section>
 
+              {/* ── Minimum Payout Amounts ───────────────────────────────── */}
+              <Section
+                title="Minimum Payout Amounts"
+                icon="🔒"
+                iconBg="bg-orange-100"
+                panelBg="bg-orange-50"
+                panelBorder="border-orange-200"
+              >
+                <p className="text-xs text-gray-500 -mt-1">
+                  The lowest amount an agent can request per destination type. Requests below this are rejected.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField label="Mobile Money minimum">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={String(formData.minimumPayoutAmounts?.mobile_money ?? 1.0)}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          minimumPayoutAmounts: {
+                            ...prev.minimumPayoutAmounts,
+                            mobile_money: parseFloat(e.target.value) || 0,
+                          },
+                        }))
+                      }
+                      helperText="Min amount for MoMo withdrawals"
+                      leftIcon={
+                        <span className="text-xs font-medium text-gray-500">GH₵</span>
+                      }
+                    />
+                  </FormField>
+
+                  <FormField label="Bank transfer minimum">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={String(formData.minimumPayoutAmounts?.bank_account ?? 50.0)}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          minimumPayoutAmounts: {
+                            ...prev.minimumPayoutAmounts,
+                            bank_account: parseFloat(e.target.value) || 0,
+                          },
+                        }))
+                      }
+                      helperText="Min amount for bank transfers"
+                      leftIcon={
+                        <span className="text-xs font-medium text-gray-500">GH₵</span>
+                      }
+                    />
+                  </FormField>
+                </div>
+              </Section>
+
               {/* ── Auto-Payout ──────────────────────────────────────────── */}
               <Section
                 title="Automatic Payout"
@@ -534,8 +597,8 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
 
                 <div
                   className={`flex items-start gap-3 rounded-lg px-3 py-2.5 border text-sm ${formData.autoPayoutEnabled
-                      ? "bg-amber-50 border-amber-200 text-amber-800"
-                      : "bg-white border-gray-200 text-gray-600"
+                    ? "bg-amber-50 border-amber-200 text-amber-800"
+                    : "bg-white border-gray-200 text-gray-600"
                     }`}
                 >
                   <span className="mt-0.5 flex-shrink-0">

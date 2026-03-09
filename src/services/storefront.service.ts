@@ -253,6 +253,7 @@ export interface PublicStorefront {
       details: Record<string, unknown>;
       isActive: boolean;
     }>;
+    paystackStorefrontEnabled?: boolean;
   };
   // backward-compatible flat list
   bundles: PublicBundle[];

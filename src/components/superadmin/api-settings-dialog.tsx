@@ -57,9 +57,10 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     setIsLoading(true);
 
     try {
-      // In production: test key is never shown/submitted; omit blank live secret to preserve existing.
+      // In production: test keys are never shown/submitted; omit blank live secret to preserve existing.
       const payload: Partial<ApiSettings> = { ...formData };
       if (!import.meta.env.DEV) {
+        delete payload.paystackTestPublicKey;
         delete payload.paystackTestSecretKey;
         if (!payload.paystackLiveSecretKey) delete payload.paystackLiveSecretKey;
       }
@@ -143,16 +144,14 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       placeholder="Enter MTN API key"
                       className="font-mono"
                       rightIcon={
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="xs"
-                          iconOnly
+                          className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
                           aria-label={showKeys.mtn ? 'Hide MTN key' : 'Reveal MTN key'}
                           onClick={() => toggleKeyVisibility('mtn')}
                         >
                           {showKeys.mtn ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
+                        </button>
                       }
                     />
                   </FormField>
@@ -186,16 +185,14 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       placeholder="Enter Telecel API key"
                       className="font-mono"
                       rightIcon={
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="xs"
-                          iconOnly
+                          className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
                           aria-label={showKeys.telecel ? 'Hide Telecel key' : 'Reveal Telecel key'}
                           onClick={() => toggleKeyVisibility('telecel')}
                         >
                           {showKeys.telecel ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
+                        </button>
                       }
                     />
                   </FormField>
@@ -229,16 +226,14 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       placeholder="Enter AirtelTigo API key"
                       className="font-mono"
                       rightIcon={
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="xs"
-                          iconOnly
+                          className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
                           aria-label={showKeys.airtelTigo ? 'Hide AirtelTigo key' : 'Reveal AirtelTigo key'}
                           onClick={() => toggleKeyVisibility('airtelTigo')}
                         >
                           {showKeys.airtelTigo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
+                        </button>
                       }
                     />
                   </FormField>
@@ -263,31 +258,61 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       checked={formData.paystackEnabled || false}
                       onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackEnabled: checked }))}
                     />
-                    <span className="text-sm text-gray-700">Enable Paystack</span>
+                    <span className="text-sm text-gray-700">Enable Paystack (global)</span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={formData.paystackWalletTopUpEnabled || false}
+                      onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackWalletTopUpEnabled: checked }))}
+                      disabled={!formData.paystackEnabled}
+                    />
+                    <span className={`text-sm ${formData.paystackEnabled ? 'text-gray-700' : 'text-gray-400'}`}>
+                      Allow Paystack for wallet top-ups
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={formData.paystackStorefrontEnabled || false}
+                      onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackStorefrontEnabled: checked }))}
+                      disabled={!formData.paystackEnabled}
+                    />
+                    <span className={`text-sm ${formData.paystackEnabled ? 'text-gray-700' : 'text-gray-400'}`}>
+                      Allow Paystack for storefront orders
+                    </span>
                   </div>
 
                   {import.meta.env.DEV && (
-                    <FormField label="Test Secret Key">
-                      <Input
-                        type={showKeys.paystackTestSecret ? 'text' : 'password'}
-                        value={formData.paystackTestSecretKey || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, paystackTestSecretKey: e.target.value }))}
-                        placeholder="sk_test_..."
-                        className="font-mono"
-                        rightIcon={
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="xs"
-                            iconOnly
-                            aria-label={showKeys.paystackTestSecret ? 'Hide test secret' : 'Reveal test secret'}
-                            onClick={() => setShowKeys(prev => ({ ...prev, paystackTestSecret: !prev.paystackTestSecret }))}
-                          >
-                            {showKeys.paystackTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </Button>
-                        }
-                      />
-                    </FormField>
+                    <>
+                      <FormField label="Test Public Key">
+                        <Input
+                          value={formData.paystackTestPublicKey || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, paystackTestPublicKey: e.target.value }))}
+                          placeholder="pk_test_..."
+                          className="font-mono"
+                        />
+                      </FormField>
+                      <FormField label="Test Secret Key">
+                        <Input
+                          type={showKeys.paystackTestSecret ? 'text' : 'password'}
+                          value={formData.paystackTestSecretKey || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, paystackTestSecretKey: e.target.value }))}
+                          placeholder="sk_test_..."
+                          className="font-mono"
+                          rightIcon={
+                            <button
+                              type="button"
+                              className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                              aria-label={showKeys.paystackTestSecret ? 'Hide test secret' : 'Reveal test secret'}
+                              onClick={() => setShowKeys(prev => ({ ...prev, paystackTestSecret: !prev.paystackTestSecret }))}
+                            >
+                              {showKeys.paystackTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          }
+                        />
+                      </FormField>
+                    </>
                   )}
 
                   <FormField label={import.meta.env.DEV ? "Live Public Key (optional)" : "Live Public Key"}>
@@ -307,16 +332,14 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       placeholder={import.meta.env.DEV ? "sk_live_..." : (currentSettings.paystackLiveSecretExists ? "(stored on server)" : "sk_live_...")}
                       className="font-mono"
                       rightIcon={
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="xs"
-                          iconOnly
+                          className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
                           aria-label={showKeys.paystackLiveSecret ? 'Hide live secret' : 'Reveal live secret'}
                           onClick={() => setShowKeys(prev => ({ ...prev, paystackLiveSecret: !prev.paystackLiveSecret }))}
                         >
                           {showKeys.paystackLiveSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
+                        </button>
                       }
                     />
                     {!import.meta.env.DEV && currentSettings.paystackLiveSecretExists && (
