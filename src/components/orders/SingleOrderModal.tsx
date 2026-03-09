@@ -99,37 +99,20 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
     }
   }, [isOpen]);
 
-  // Validate phone number - simplified validation
+  // Normalize phone: strip all spaces and convert +233/233 prefix to 0
+  const normalizePhone = (phone: string) =>
+    phone.replace(/\s/g, "").replace(/^\+?233/, "0");
+
+  // Validate phone number
   const validatePhone = (phone: string): boolean => {
-    // Remove any non-digit characters except +
-    const cleanPhone = phone.replace(/[^\d+]/g, "");
+    const normalized = normalizePhone(phone);
 
-    // Convert to local format if it starts with +233
-    let localPhone = cleanPhone;
-    if (cleanPhone.startsWith("+233")) {
-      localPhone = "0" + cleanPhone.substring(4);
-    } else if (cleanPhone.startsWith("233")) {
-      localPhone = "0" + cleanPhone.substring(3);
-    }
-
-    // Check for unnecessary spaces between digits
-    if (phone.includes(" ") && phone.replace(/\s/g, "").length === 10) {
-      setPhoneError("Remove unnecessary spaces between digits");
+    if (!/^\d{10}$/.test(normalized)) {
+      setPhoneError("Phone number must be exactly 10 digits starting with 0");
       return false;
     }
 
-    // Check length - must be exactly 10 digits
-    if (localPhone.length !== 10) {
-      if (localPhone.length > 10) {
-        setPhoneError("Phone number must be exactly 10 digits");
-      } else {
-        setPhoneError("Phone number must be exactly 10 digits");
-      }
-      return false;
-    }
-
-    // Check if it starts with 0
-    if (!localPhone.startsWith("0")) {
+    if (!normalized.startsWith("0")) {
       setPhoneError("Phone number must start with 0");
       return false;
     }
@@ -163,7 +146,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
         price: userPrice,
         currency: bundle.currency,
       },
-      customerPhone: customerPhone.replace(/^\+?233/, "0"),
+      customerPhone: normalizePhone(customerPhone),
       totalPrice: userPrice,
     };
 
@@ -200,20 +183,20 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
       const orderData: CreateSingleOrderData = {
         packageGroupId:
           typeof bundle.packageId === "object" &&
-          bundle.packageId !== null &&
-          "_id" in bundle.packageId
+            bundle.packageId !== null &&
+            "_id" in bundle.packageId
             ? (bundle.packageId as { _id: string })._id
             : bundle.packageId,
         packageItemId: bundle._id || "",
-        customerPhone: customerPhone.replace(/^\+?233/, "0"),
+        customerPhone: normalizePhone(customerPhone),
         // Only include bundleSize for non-AFA bundles
         ...(bundle.dataVolume && bundle.dataUnit
           ? {
-              bundleSize: {
-                value: bundle.dataVolume,
-                unit: bundle.dataUnit as "MB" | "GB",
-              },
-            }
+            bundleSize: {
+              value: bundle.dataVolume,
+              unit: bundle.dataUnit as "MB" | "GB",
+            },
+          }
           : {}),
         quantity: 1,
       };
@@ -234,20 +217,20 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
         const orderData: CreateSingleOrderData = {
           packageGroupId:
             typeof bundle.packageId === "object" &&
-            bundle.packageId !== null &&
-            "_id" in bundle.packageId
+              bundle.packageId !== null &&
+              "_id" in bundle.packageId
               ? (bundle.packageId as { _id: string })._id
               : bundle.packageId,
           packageItemId: bundle._id || "",
-          customerPhone: customerPhone.replace(/^\+?233/, "0"),
+          customerPhone: normalizePhone(customerPhone),
           // Only include bundleSize for non-AFA bundles
           ...(bundle.dataVolume && bundle.dataUnit
             ? {
-                bundleSize: {
-                  value: bundle.dataVolume,
-                  unit: bundle.dataUnit as "MB" | "GB",
-                },
-              }
+              bundleSize: {
+                value: bundle.dataVolume,
+                unit: bundle.dataUnit as "MB" | "GB",
+              },
+            }
             : {}),
           quantity: 1,
         };
@@ -394,7 +377,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                     <FaClock className="text-green-500" />
                     <span>
                       {bundle.validity === "unlimited" &&
-                      bundle.validityUnit === "unlimited"
+                        bundle.validityUnit === "unlimited"
                         ? "Unlimited"
                         : `${bundle.validity} ${bundle.validityUnit}`}
                     </span>
@@ -534,27 +517,25 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
               onClick={handleConfirmOrder}
               disabled={loading || siteStatus?.isSiteOpen === false}
               className="flex-1"
+              leftIcon={
+                loading ? (
+                  <Spinner size="sm" />
+                ) : siteStatus && !siteStatus.isSiteOpen ? (
+                  <FaTimes />
+                ) : (
+                  <FaCheckCircle />
+                )
+              }
               style={{
                 backgroundColor: providerColors.primary,
                 color: providerColors.text,
               }}
             >
-              {loading ? (
-                <>
-                  <Spinner size="sm" />
-                  Processing...
-                </>
-              ) : siteStatus && !siteStatus.isSiteOpen ? (
-                <>
-                  <FaTimes />
-                  Site Under Maintenance
-                </>
-              ) : (
-                <>
-                  <FaCheckCircle />
-                  Confirm Order
-                </>
-              )}
+              {loading
+                ? "Processing..."
+                : siteStatus && !siteStatus.isSiteOpen
+                  ? "Site Under Maintenance"
+                  : "Confirm Order"}
             </Button>
           </div>
         </DialogFooter>

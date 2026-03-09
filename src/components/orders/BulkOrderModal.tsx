@@ -114,38 +114,14 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     ? bundles.filter((bundle: Bundle) => bundle.isActive)
     : [];
 
-  // Validate phone number - simplified validation
+  // Validate phone number (expects already-normalized 10-digit string)
   const validatePhone = (phone: string): string | null => {
-    // Remove any non-digit characters except +
-    const cleanPhone = phone.replace(/[^\d+]/g, "");
-
-    // Convert to local format if it starts with +233
-    let localPhone = cleanPhone;
-    if (cleanPhone.startsWith("+233")) {
-      localPhone = "0" + cleanPhone.substring(4);
-    } else if (cleanPhone.startsWith("233")) {
-      localPhone = "0" + cleanPhone.substring(3);
+    if (!/^\d{10}$/.test(phone)) {
+      return "Phone number must be exactly 10 digits starting with 0";
     }
-
-    // Check for unnecessary spaces between digits
-    if (phone.includes(" ") && phone.replace(/\s/g, "").length === 10) {
-      return "Remove unnecessary spaces between digits";
-    }
-
-    // Check length - must be exactly 10 digits
-    if (localPhone.length !== 10) {
-      if (localPhone.length > 10) {
-        return "Phone number must be exactly 10 digits";
-      } else {
-        return "Phone number must be exactly 10 digits";
-      }
-    }
-
-    // Check if it starts with 0
-    if (!localPhone.startsWith("0")) {
+    if (!phone.startsWith("0")) {
       return "Phone number must start with 0";
     }
-
     return null;
   };
 
@@ -156,11 +132,16 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
     for (const element of lines) {
       const line = element.trim();
       if (!line) continue;
-      // Parse format: "Number 10" (assume GB) - handle multiple spaces
+      // Parse format: "Number 10" (assume GB)
+      // Last token is the GB value; everything before it joined = phone (handles spaces within phone)
       const parts = line.split(/\s+/);
       if (parts.length < 2) continue;
-      const phoneNum = parts[0];
-      const gbValue = parts[1];
+      const gbValue = parts[parts.length - 1];
+      // Normalize phone: join all non-GB tokens, strip spaces, convert +233/233 to 0
+      const phoneNum = parts
+        .slice(0, -1)
+        .join("")
+        .replace(/^\+?233/, "0");
       // Check for non-numeric characters (other than .) in gbValue
       if (/[^0-9.]/.test(gbValue)) {
         items.push({
@@ -471,9 +452,9 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     style={
                       importMethod === "file"
                         ? {
-                            backgroundColor: providerColors.primary,
-                            color: providerColors.text,
-                          }
+                          backgroundColor: providerColors.primary,
+                          color: providerColors.text,
+                        }
                         : {}
                     }
                   >
@@ -489,9 +470,9 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     style={
                       importMethod === "manual"
                         ? {
-                            backgroundColor: providerColors.primary,
-                            color: providerColors.text,
-                          }
+                          backgroundColor: providerColors.primary,
+                          color: providerColors.text,
+                        }
                         : {}
                     }
                   >
