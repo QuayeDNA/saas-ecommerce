@@ -54,6 +54,8 @@ export interface WalletSettings {
     super_dealer: number;
     default: number;
   };
+  /** Global minimum applied specifically to Paystack instant top-ups */
+  paystackMinimumTopUpAmount: number;
 }
 
 export interface FeeSettings {
@@ -222,7 +224,12 @@ class SettingsService {
   // Wallet Settings
   async getWalletSettings(): Promise<WalletSettings> {
     const response = await apiClient.get("/api/settings/wallet");
-    return response.data;
+    // backend may omit the paystackMinimumTopUpAmount when missing
+    const data: WalletSettings = response.data;
+    if (data.paystackMinimumTopUpAmount === undefined) {
+      data.paystackMinimumTopUpAmount = 0;
+    }
+    return data;
   }
 
   async updateWalletSettings(
@@ -230,7 +237,11 @@ class SettingsService {
   ): Promise<WalletSettings> {
     const response = await apiClient.put("/api/settings/wallet", settings);
     this._allSettingsCache = null;
-    return response.data;
+    const data: WalletSettings = response.data;
+    if (data.paystackMinimumTopUpAmount === undefined) {
+      data.paystackMinimumTopUpAmount = 0;
+    }
+    return data;
   }
 
   // Fee Settings (Paystack collection fees, platform fees, payout fees)

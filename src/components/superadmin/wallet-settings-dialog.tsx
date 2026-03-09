@@ -28,6 +28,16 @@ export const WalletSettingsDialog: React.FC<WalletSettingsDialogProps> = ({
   onSuccess,
 }) => {
   const [formData, setFormData] = useState<WalletSettings>(currentSettings);
+
+  // ensure the new field exists when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormData((prev) => ({
+        ...currentSettings,
+        paystackMinimumTopUpAmount: currentSettings.paystackMinimumTopUpAmount || 0,
+      }));
+    }
+  }, [isOpen, currentSettings]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -125,6 +135,32 @@ export const WalletSettingsDialog: React.FC<WalletSettingsDialogProps> = ({
                 Set the minimum amounts users can top-up their wallets with for
                 each user type.
               </p>
+            </div>
+
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-medium text-blue-900 mb-2">
+                Paystack Minimum
+              </h3>
+              <p className="text-sm text-blue-700">
+                Global minimum amount (GH₵) that applies when customers top up
+                instantly via Paystack. Leave zero to disable.
+              </p>
+              <FormField>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.paystackMinimumTopUpAmount}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      paystackMinimumTopUpAmount: parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                  placeholder="0.00"
+                  leftIcon={<span className="text-gray-500">₵</span>}
+                />
+              </FormField>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

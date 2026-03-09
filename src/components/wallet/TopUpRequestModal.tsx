@@ -93,6 +93,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   const [fieldErrors, setFieldErrors] = useState<Partial<FormState>>({});
 
   const [minimumAmount, setMinimumAmount] = useState(10);
+  const [paystackMinimum, setPaystackMinimum] = useState(0);
   const [paystackEnabled, setPaystackEnabled] = useState(false);
   const [paystackPublicKey, setPaystackPublicKey] = useState<string | null>(null);
 
@@ -125,6 +126,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
         const userType = user?.userType ?? 'agent';
         const key = userType as keyof typeof minimums;
         setMinimumAmount(minimums[key] ?? minimums.default ?? 10);
+        setPaystackMinimum(walletSettings.paystackMinimumTopUpAmount ?? 0);
       } catch {
         // Use default minimum
       }
@@ -160,9 +162,17 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   // ── Derived state ─────────────────────────────────────────────────────────
 
   const parsedAmount = useMemo(() => parseFloat(form.amount || ''), [form.amount]);
+  // effective minimum depends on mode – instant top-ups must satisfy both user-specific
+  // threshold and the global paystack minimum
+  const effectiveMinimum = useMemo(() => {
+    if (mode === 'instant') {
+      return Math.max(minimumAmount, paystackMinimum);
+    }
+    return minimumAmount;
+  }, [mode, minimumAmount, paystackMinimum]);
   const isAmountValid = useMemo(
-    () => !Number.isNaN(parsedAmount) && parsedAmount >= minimumAmount && parsedAmount <= 10_000,
-    [parsedAmount, minimumAmount]
+    () => !Number.isNaN(parsedAmount) && parsedAmount >= effectiveMinimum && parsedAmount <= 10_000,
+    [parsedAmount, effectiveMinimum]
   );
 
   // ── Fee preview ───────────────────────────────────────────────────────────
@@ -209,7 +219,10 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
     const raw = form.amount.trim();
     if (!raw) return setError('amount', 'Amount is required'), false;
     if (Number.isNaN(parsedAmount)) return setError('amount', 'Enter a valid number'), false;
-    if (parsedAmount < minimumAmount) return setError('amount', `Minimum amount is GH₵${minimumAmount}`), false;
+    const minReq = mode === 'instant' ? effectiveMinimum : minimumAmount;
+    if (parsedAmount < minReq) {
+      return setError('amount', `Minimum amount is GH₵${minReq}`), false;
+    }
     if (parsedAmount > 10_000) return setError('amount', 'Maximum amount is GH₵10,000'), false;
     return true;
   };
@@ -455,9 +468,9 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
               id="amount"
               label={`Amount (GH₵)`}
               type="number"
-              min={minimumAmount}
+              min={effectiveMinimum}
               step="0.01"
-              placeholder={`Minimum GH₵${minimumAmount}`}
+              placeholder={`Minimum GH₵${effectiveMinimum}`}
               value={form.amount}
               onChange={(e) => updateField('amount', e.target.value)}
               isInvalid={Boolean(fieldErrors.amount)}
@@ -507,6 +520,11 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
             ) : (
               <InfoBox>
                 Pay instantly via Paystack. Your wallet is credited automatically on payment confirmation — no admin approval needed.
+                {paystackMinimum > 0 && (
+                  <p className="mt-1 text-xs text-white/80">
+                    Minimum GH₵{paystackMinimum} applies to instant top-ups.
+                  </p>
+                )}
               </InfoBox>
             )}
           </div>

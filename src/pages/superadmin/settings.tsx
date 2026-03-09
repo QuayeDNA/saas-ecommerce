@@ -421,6 +421,10 @@ export default function SuperAdminSettingsPage() {
                     <div className="text-sm text-gray-600">Default Minimum</div>
                     <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.default}</div>
                   </div>
+                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between col-span-full sm:col-span-2">
+                    <div className="text-sm text-gray-600">Paystack Minimum</div>
+                    <div className="font-medium">GH₵{data.walletSettings.paystackMinimumTopUpAmount ?? 0}</div>
+                  </div>
                 </div>
               </Card>
 
