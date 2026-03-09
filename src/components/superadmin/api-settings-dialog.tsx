@@ -265,7 +265,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                     <Switch
                       checked={formData.paystackWalletTopUpEnabled || false}
                       onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackWalletTopUpEnabled: checked }))}
-                      disabled={!formData.paystackEnabled}
+                      isDisabled={!formData.paystackEnabled}
                     />
                     <span className={`text-sm ${formData.paystackEnabled ? 'text-gray-700' : 'text-gray-400'}`}>
                       Allow Paystack for wallet top-ups
@@ -276,7 +276,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                     <Switch
                       checked={formData.paystackStorefrontEnabled || false}
                       onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackStorefrontEnabled: checked }))}
-                      disabled={!formData.paystackEnabled}
+                      isDisabled={!formData.paystackEnabled}
                     />
                     <span className={`text-sm ${formData.paystackEnabled ? 'text-gray-700' : 'text-gray-400'}`}>
                       Allow Paystack for storefront orders
