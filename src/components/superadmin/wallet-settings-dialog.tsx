@@ -141,7 +141,7 @@ export const WalletSettingsDialog: React.FC<WalletSettingsDialogProps> = ({
               <h3 className="font-medium text-blue-900 mb-2">
                 Paystack Minimum
               </h3>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-blue-700 mb-2">
                 Global minimum amount (GH₵) that applies when customers top up
                 instantly via Paystack. Leave zero to disable.
               </p>
