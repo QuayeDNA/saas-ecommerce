@@ -1247,7 +1247,8 @@ const PublicStore: React.FC = () => {
                 }
             }
         } catch (err) {
-            setOrderError(err instanceof Error ? err.message : 'Failed to place order. Please try again.');
+            const axiosMsg = (err as any)?.response?.data?.message;
+            setOrderError(axiosMsg ?? (err instanceof Error ? err.message : 'Failed to place order. Please try again.'));
             if (popup && !(popup as any).closed) { try { (popup as any).close(); } catch { /* */ } }
         } finally {
             setSubmitting(false);
