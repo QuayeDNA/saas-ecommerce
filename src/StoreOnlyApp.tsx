@@ -1,8 +1,9 @@
 /**
  * StoreOnlyApp — rendered when VITE_STORE_ONLY=true (dedicated storefront domain).
  *
- * This strips out every admin/agent provider and exposes a single route:
- *   /:businessName  →  PublicStorePage
+ * Routes:
+ *   /                →  StoreLandingPage  (discovery / platform homepage)
+ *   /:businessName   →  PublicStorePage   (individual agent store)
  *
  * The second Vercel project that points to the custom domain builds with
  * VITE_STORE_ONLY=true set in its environment variables. No code is duplicated.
@@ -14,14 +15,12 @@ import { ThemeProvider } from "./design-system";
 import { ToastProvider } from "./design-system/components/toast";
 import { PageLoader } from "./components/page-loader";
 
+const StoreLandingPage = lazy(() => import("./pages/public/store-landing-page"));
+
 const PublicStorePage = lazy(() =>
     import("./pages/public/public-store").then((m) => ({
         default: m.PublicStorePage,
     }))
-);
-
-const NotFoundPage = lazy(() =>
-    import("./pages/not-found-page").then((m) => ({ default: m.NotFoundPage }))
 );
 
 export default function StoreOnlyApp() {
@@ -29,7 +28,16 @@ export default function StoreOnlyApp() {
         <ThemeProvider initialTheme="default">
             <ToastProvider>
                 <Routes>
-                    {/* Primary route: customdomain.com/:businessName */}
+                    {/* Root: customdomain.com/ → landing + discovery page */}
+                    <Route
+                        path="/"
+                        element={
+                            <Suspense fallback={<PageLoader />}>
+                                <StoreLandingPage />
+                            </Suspense>
+                        }
+                    />
+                    {/* Store: customdomain.com/:businessName */}
                     <Route
                         path="/:businessName"
                         element={
@@ -38,12 +46,12 @@ export default function StoreOnlyApp() {
                             </Suspense>
                         }
                     />
-                    {/* Fallback for root and unrecognised paths */}
+                    {/* Any unrecognised path falls back to the landing page */}
                     <Route
                         path="*"
                         element={
                             <Suspense fallback={<PageLoader />}>
-                                <NotFoundPage />
+                                <StoreLandingPage />
                             </Suspense>
                         }
                     />

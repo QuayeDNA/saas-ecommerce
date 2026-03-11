@@ -28,6 +28,7 @@ import {
   type StorefrontData,
 } from "../../services/storefront.service";
 import { getApiErrorMessage } from "../../utils/error-helpers";
+import { getStoreUrl } from "../../utils/store-url";
 import {
   Store,
   Phone,
@@ -571,10 +572,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     }
   };
 
-  const getStorefrontUrl = () => {
-    const storeBase = import.meta.env.VITE_STORE_BASE_URL ?? `${window.location.origin}/store`;
-    return `${storeBase}/${storefront.businessName}`;
-  };
+  const getStorefrontUrl = () => getStoreUrl(storefront.businessName);
 
   const copyStorefrontUrl = async () => {
     try {

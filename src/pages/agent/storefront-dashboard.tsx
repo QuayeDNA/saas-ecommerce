@@ -52,6 +52,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { getApiErrorMessage } from "../../utils/error-helpers";
+import { getStoreUrl } from "../../utils/store-url";
 
 // Import storefront components
 import { StorefrontManager } from "../../components/storefront/store-setup-wizard";
@@ -156,8 +157,7 @@ export const StorefrontDashboardPage: React.FC = () => {
 
   const getStorefrontUrl = () => {
     if (!storefront) return "";
-    const storeBase = import.meta.env.VITE_STORE_BASE_URL ?? `${window.location.origin}/store`;
-    return `${storeBase}/${storefront.businessName}`;
+    return getStoreUrl(storefront.businessName);
   };
 
   const copyStoreUrl = async () => {

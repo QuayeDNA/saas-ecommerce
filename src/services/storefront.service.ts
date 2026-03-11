@@ -584,6 +584,18 @@ class StorefrontService {
   // Public Storefront (Customer-facing)
   // =========================================================================
 
+  /** Minimal store info returned by the discover/random endpoint */
+  async getRandomStorefronts(limit = 6): Promise<Array<{
+    businessName: string;
+    displayName: string;
+    description?: string;
+    branding?: { logoUrl?: string; tagline?: string };
+    settings?: { theme?: string };
+  }>> {
+    const response = await apiClient.get(`${this.basePath}/discover/random`, { params: { limit } });
+    return response.data.data;
+  }
+
   async getPublicStorefront(businessName: string): Promise<PublicStorefront> {
     const response = await apiClient.get(`${this.basePath}/${businessName}`);
     return response.data.data;

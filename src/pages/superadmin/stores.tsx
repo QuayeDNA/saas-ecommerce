@@ -56,6 +56,7 @@ import {
   X,
   DollarSign,
 } from "lucide-react";
+import { getStoreUrl } from "../../utils/store-url";
 
 // =========================================================================
 // Helper Components
@@ -366,7 +367,7 @@ function StoreDetailDialog({
             variant="outline"
             size="sm"
             leftIcon={<ExternalLink className="w-4 h-4" />}
-            onClick={() => window.open(`/store/${store.businessName}`, "_blank")}
+            onClick={() => window.open(getStoreUrl(store.businessName), "_blank")}
           >
             Visit
           </Button>
@@ -1144,7 +1145,7 @@ export default function StoresPage() {
                                         variant="ghost"
                                         size="sm"
                                         leftIcon={<ExternalLink className="w-4 h-4" />}
-                                        onClick={() => window.open(`/store/${store.businessName}`, "_blank")}
+                                        onClick={() => window.open(getStoreUrl(store.businessName), "_blank")}
                                         aria-label="Visit store"
                                       />
                                       {!store.isApproved && (
@@ -1244,7 +1245,7 @@ export default function StoresPage() {
                                     variant="ghost"
                                     size="xs"
                                     leftIcon={<ExternalLink className="w-3.5 h-3.5" />}
-                                    onClick={() => window.open(`/store/${store.businessName}`, "_blank")}
+                                    onClick={() => window.open(getStoreUrl(store.businessName), "_blank")}
                                     aria-label="Visit store"
                                   />
                                   {!store.isApproved && (

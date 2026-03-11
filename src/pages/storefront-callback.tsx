@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { PageLoader } from '../components/page-loader';
 import { Button, Card, CardBody } from '../design-system';
 import { storefrontService } from '../services/storefront.service';
+import { getStoreUrl } from '../utils/store-url';
 
 type VerifyStatus = 'idle' | 'verifying' | 'success' | 'failed';
 
 export const StorefrontCallbackPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const reference = searchParams.get('reference') || undefined;
-  const navigate = useNavigate();
   const { storefrontId } = useParams();
   const [status, setStatus] = useState<VerifyStatus>('idle');
   const [message, setMessage] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export const StorefrontCallbackPage: React.FC = () => {
               <h2 className="text-2xl font-semibold text-green-600">Payment successful</h2>
               <p className="mt-2 text-gray-600">{message}</p>
               <div className="mt-6">
-                <Button onClick={() => (window.opener && !window.opener.closed) ? window.close() : navigate(`/store/${storefrontId}`)}>
+                <Button onClick={() => (window.opener && !window.opener.closed) ? window.close() : (window.location.href = getStoreUrl(storefrontId ?? ''))}>
                   {window.opener && !window.opener.closed ? 'Close' : 'Back to Store'}
                 </Button>
               </div>
@@ -113,7 +113,7 @@ export const StorefrontCallbackPage: React.FC = () => {
               <h2 className="text-2xl font-semibold text-red-600">Verification pending</h2>
               <p className="mt-2 text-gray-600">{message}</p>
               <div className="mt-6">
-                <Button onClick={() => (window.opener && !window.opener.closed) ? window.close() : navigate(`/store/${storefrontId}`)}>
+                <Button onClick={() => (window.opener && !window.opener.closed) ? window.close() : (window.location.href = getStoreUrl(storefrontId ?? ''))}>
                   {window.opener && !window.opener.closed ? 'Close' : 'Back to Store'}
                 </Button>
               </div>
