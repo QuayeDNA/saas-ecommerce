@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { DataGrid } from "react-data-grid";
 import type { Order } from "../../types/order";
-import { Badge, Dialog, Alert } from "../../design-system";
+import { Badge, Dialog, Alert, Skeleton } from "../../design-system";
 import {
   FaFileExcel,
   FaDownload,
@@ -12,6 +12,7 @@ import {
   FaCheckSquare,
   FaSquare,
   FaClock,
+  FaTabletAlt,
 } from "react-icons/fa";
 import { useOrder } from "../../contexts/OrderContext";
 import { isOrderLocked } from "../../utils/order-lock";
@@ -48,7 +49,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
   const [processingType, setProcessingType] = useState<"afa" | "data" | "mtn" | "telecel" | "at" | null>(null);
   const [batchSize, setBatchSize] = useState(10);
   const [statusUpdate, setStatusUpdate] = useState<"none" | "processing" | "completed">("processing");
-  
+
   // Progress state
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [processingProgress, setProcessingProgress] = useState({
@@ -186,10 +187,10 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
         .join("\n");
 
       // Determine provider name for display
-      const providerName = type === "afa" ? "AFA" : 
-                          type === "mtn" ? "MTN" :
-                          type === "telecel" ? "TELECEL" :
-                          type === "at" ? "AT" : "Data";
+      const providerName = type === "afa" ? "AFA" :
+        type === "mtn" ? "MTN" :
+          type === "telecel" ? "TELECEL" :
+            type === "at" ? "AT" : "Data";
 
       // Copy to clipboard
       try {
@@ -209,7 +210,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
       // If not copy-only and status update is requested
       if (!copyOnly && statusUpdate !== "none") {
         const batches = chunkArray(actionableOrders, batchSize);
-        
+
         // Initialize progress state before showing dialog
         setProcessingProgress({
           current: 0,
@@ -217,7 +218,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
           currentBatch: 0,
           totalBatches: batches.length,
         });
-        
+
         // Small delay to ensure state is set before showing dialog
         await new Promise(resolve => setTimeout(resolve, 100));
         setShowProgressDialog(true);
@@ -251,7 +252,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
 
         setShowProgressDialog(false);
         showAlert("success", `Successfully updated ${actionableOrders.length} orders to ${statusUpdate}!`);
-        
+
         // Clear selection after successful processing
         setSelectedOrderIds([]);
       }
@@ -354,132 +355,132 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
         resizable: true,
         sortable: true,
       },
-  {
-    key: "contactNumber",
-    name: "Contact Number",
-    width: 150,
-    resizable: true,
-    sortable: true,
-  },
-  {
-    key: "dataVolume",
-    name: "Volume/Service",
-    width: 120,
-    resizable: true,
-    sortable: true,
-  },
-  {
-    key: "providerName",
-    name: "Provider",
-    width: 120,
-    resizable: true,
-    sortable: true,
-  },
-  {
-    key: "status",
-    name: "Status",
-    width: 120,
-    resizable: true,
-    sortable: true,
-    renderCell: ({ row }: { row: ExcelRow }) => (
-      <Badge
-        variant="subtle"
-        colorScheme={
-          row.status === "completed"
-            ? "success"
-            : row.status === "processing"
-            ? "warning"
-            : row.status === "cancelled"
-            ? "error"
-            : row.status === "failed"
-            ? "error"
-            : "default"
-        }
-        className="text-xs"
-      >
-        {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
-      </Badge>
-    ),
-  },
-  {
-    key: "date",
-    name: "Date",
-    width: 120,
-    resizable: true,
-    sortable: true,
-  },
-  {
-    key: "total",
-    name: "Total (GHS)",
-    width: 120,
-    resizable: true,
-    sortable: true,
-    renderCell: ({ row }: { row: ExcelRow }) => (
-      <span className="font-mono text-sm">
-        {row.total.toLocaleString("en-GH", {
-          style: "currency",
-          currency: "GHS",
-          minimumFractionDigits: 2,
-        })}
-      </span>
-    ),
-  },
-  {
-    key: "orderType",
-    name: "Order Type",
-    width: 100,
-    resizable: true,
-    sortable: true,
-    renderCell: ({ row }: { row: ExcelRow }) => (
-      <Badge
-        variant="subtle"
-        colorScheme={row.orderType === "bulk" ? "warning" : "default"}
-        className="text-xs"
-      >
-        {row.orderType.charAt(0).toUpperCase() + row.orderType.slice(1)}
-      </Badge>
-    ),
-  },
-  {
-    key: "paymentStatus",
-    name: "Payment",
-    width: 100,
-    resizable: true,
-    sortable: true,
-    renderCell: ({ row }: { row: ExcelRow }) => (
-      <Badge
-        variant="subtle"
-        colorScheme={
-          row.paymentStatus === "paid"
-            ? "success"
-            : row.paymentStatus === "failed"
-            ? "error"
-            : "warning"
-        }
-        className="text-xs"
-      >
-        {row.paymentStatus.charAt(0).toUpperCase() + row.paymentStatus.slice(1)}
-      </Badge>
-    ),
-  },
-],
+      {
+        key: "contactNumber",
+        name: "Contact Number",
+        width: 150,
+        resizable: true,
+        sortable: true,
+      },
+      {
+        key: "dataVolume",
+        name: "Volume/Service",
+        width: 120,
+        resizable: true,
+        sortable: true,
+      },
+      {
+        key: "providerName",
+        name: "Provider",
+        width: 120,
+        resizable: true,
+        sortable: true,
+      },
+      {
+        key: "status",
+        name: "Status",
+        width: 120,
+        resizable: true,
+        sortable: true,
+        renderCell: ({ row }: { row: ExcelRow }) => (
+          <Badge
+            variant="subtle"
+            colorScheme={
+              row.status === "completed"
+                ? "success"
+                : row.status === "processing"
+                  ? "warning"
+                  : row.status === "cancelled"
+                    ? "error"
+                    : row.status === "failed"
+                      ? "error"
+                      : "default"
+            }
+            className="text-xs"
+          >
+            {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+          </Badge>
+        ),
+      },
+      {
+        key: "date",
+        name: "Date",
+        width: 120,
+        resizable: true,
+        sortable: true,
+      },
+      {
+        key: "total",
+        name: "Total (GHS)",
+        width: 120,
+        resizable: true,
+        sortable: true,
+        renderCell: ({ row }: { row: ExcelRow }) => (
+          <span className="font-mono text-sm">
+            {row.total.toLocaleString("en-GH", {
+              style: "currency",
+              currency: "GHS",
+              minimumFractionDigits: 2,
+            })}
+          </span>
+        ),
+      },
+      {
+        key: "orderType",
+        name: "Order Type",
+        width: 100,
+        resizable: true,
+        sortable: true,
+        renderCell: ({ row }: { row: ExcelRow }) => (
+          <Badge
+            variant="subtle"
+            colorScheme={row.orderType === "bulk" ? "warning" : "default"}
+            className="text-xs"
+          >
+            {row.orderType.charAt(0).toUpperCase() + row.orderType.slice(1)}
+          </Badge>
+        ),
+      },
+      {
+        key: "paymentStatus",
+        name: "Payment",
+        width: 100,
+        resizable: true,
+        sortable: true,
+        renderCell: ({ row }: { row: ExcelRow }) => (
+          <Badge
+            variant="subtle"
+            colorScheme={
+              row.paymentStatus === "paid"
+                ? "success"
+                : row.paymentStatus === "failed"
+                  ? "error"
+                  : "warning"
+            }
+            className="text-xs"
+          >
+            {row.paymentStatus.charAt(0).toUpperCase() + row.paymentStatus.slice(1)}
+          </Badge>
+        ),
+      },
+    ],
     [selectedOrderIds]
   );
-  
+
   // Transform orders to Excel format
   const excelRows = useMemo(() => {
     return orders.map((order) => {
       // Get the first item's data volume and provider
       const firstItem = order.items[0];
       const isAfaOrder = firstItem?.packageDetails?.provider === 'AFA';
-      
+
       // Extract Ghana Card number from notes
       const extractGhanaCardFromNotes = (notes: string | undefined) => {
         if (!notes) return null;
         const match = notes.match(/Ghana Card:\s*([A-Z0-9-]+)/i);
         return match ? match[1] : null;
       };
-      
+
       let dataVolume;
       if (isAfaOrder) {
         // For AFA orders, show Ghana Card number or service type
@@ -565,113 +566,146 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">Loading Excel view...</span>
+      <div className="space-y-3 p-4">
+        <div className="flex items-center gap-3 mb-2">
+          <Skeleton className="h-6 w-6 rounded" />
+          <Skeleton className="h-5 w-32 rounded" />
+        </div>
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-10 w-full rounded-lg" />
+        {[...Array(6)].map((_, i) => (
+          <Skeleton key={i} className="h-9 w-full rounded" />
+        ))}
       </div>
     );
   }
 
   return (
     <div className="space-y-3 sm:space-y-4 w-full h-full flex flex-col">
-      {/* Excel Header */}
+      {/* Mobile notice — DataGrid needs a wide viewport */}
+      <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg sm:hidden">
+        <FaTabletAlt className="text-blue-500 mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-blue-700 leading-snug">
+          Excel view is optimised for wider screens. Switch to{" "}
+          <strong>Cards view</strong> on mobile for a better experience.
+        </p>
+      </div>
       <div className="flex flex-col bg-white p-3 sm:p-4 rounded-lg border border-gray-200 gap-3">
         {/* Title and Count */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <div className="flex items-center gap-2">
-              <FaFileExcel className="text-green-600 text-lg sm:text-xl flex-shrink-0" />
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-                Excel View
-              </h3>
-            </div>
-            <span className="text-xs sm:text-sm text-gray-500">
-              {sortedRows.length} orders • {selectedOrderIds.length} selected
+          <div className="flex items-center gap-2">
+            <FaFileExcel className="text-green-600 text-lg flex-shrink-0" />
+            <h3 className="text-base font-semibold text-gray-900">Excel View</h3>
+            <span className="text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
+              {sortedRows.length} orders
             </span>
           </div>
+          {selectedOrderIds.length > 0 && (
+            <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
+              {selectedOrderIds.length} selected
+            </span>
+          )}
         </div>
 
         {/* Selection Controls */}
         <div className="flex flex-wrap gap-2">
           <button
             onClick={handleSelectAllPending}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
           >
             <FaCheckSquare className="text-xs" />
-            Select All Pending
+            Select Pending
           </button>
           <button
             onClick={handleDeselectAll}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            disabled={selectedOrderIds.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <FaSquare className="text-xs" />
             Deselect All
           </button>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons — one per provider */}
         <div className="flex flex-wrap gap-2">
+          {/* AFA */}
           <button
             onClick={handleCopyProcessAFAOrders}
             disabled={isProcessing || selectedAFAOrders.length === 0}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
-              isProcessing || selectedAFAOrders.length === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-purple-600 hover:bg-purple-700"
-            } text-white`}
+            title={selectedAFAOrders.length === 0 ? "Select AFA orders first" : undefined}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isProcessing || selectedAFAOrders.length === 0
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                : "bg-purple-600 hover:bg-purple-700 text-white"
+              }`}
           >
-            <FaCopy className="text-xs sm:text-sm" />
-            <span>Copy/Process AFA Orders ({selectedAFAOrders.length})</span>
+            <FaCopy className="text-xs" />
+            AFA
+            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${selectedAFAOrders.length === 0 ? "bg-gray-200 text-gray-500" : "bg-white/20 text-white"
+              }`}>
+              {selectedAFAOrders.length}
+            </span>
           </button>
-          
-          {/* MTN Button */}
+
+          {/* MTN */}
           <button
             onClick={handleCopyProcessMTNOrders}
             disabled={isProcessing || selectedMTNOrders.length === 0}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
-              isProcessing || selectedMTNOrders.length === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-yellow-500 hover:bg-yellow-600"
-            } text-white`}
+            title={selectedMTNOrders.length === 0 ? "Select MTN orders first" : undefined}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isProcessing || selectedMTNOrders.length === 0
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                : "bg-yellow-500 hover:bg-yellow-600 text-white"
+              }`}
           >
-            <FaCopy className="text-xs sm:text-sm" />
-            <span>Copy/Process MTN ({selectedMTNOrders.length})</span>
+            <FaCopy className="text-xs" />
+            MTN
+            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${selectedMTNOrders.length === 0 ? "bg-gray-200 text-gray-500" : "bg-white/20 text-white"
+              }`}>
+              {selectedMTNOrders.length}
+            </span>
           </button>
 
-          {/* TELECEL Button */}
+          {/* TELECEL */}
           <button
             onClick={handleCopyProcessTelecelOrders}
             disabled={isProcessing || selectedTelecelOrders.length === 0}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
-              isProcessing || selectedTelecelOrders.length === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-red-600 hover:bg-red-700"
-            } text-white`}
+            title={selectedTelecelOrders.length === 0 ? "Select TELECEL orders first" : undefined}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isProcessing || selectedTelecelOrders.length === 0
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                : "bg-red-600 hover:bg-red-700 text-white"
+              }`}
           >
-            <FaCopy className="text-xs sm:text-sm" />
-            <span>Copy/Process TELECEL ({selectedTelecelOrders.length})</span>
+            <FaCopy className="text-xs" />
+            TELECEL
+            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${selectedTelecelOrders.length === 0 ? "bg-gray-200 text-gray-500" : "bg-white/20 text-white"
+              }`}>
+              {selectedTelecelOrders.length}
+            </span>
           </button>
 
-          {/* AT (AirtelTigo) Button */}
+          {/* AT */}
           <button
             onClick={handleCopyProcessATOrders}
             disabled={isProcessing || selectedATOrders.length === 0}
-            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
-              isProcessing || selectedATOrders.length === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            } text-white`}
+            title={selectedATOrders.length === 0 ? "Select AT orders first" : undefined}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isProcessing || selectedATOrders.length === 0
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
           >
-            <FaCopy className="text-xs sm:text-sm" />
-            <span>Copy/Process AT ({selectedATOrders.length})</span>
+            <FaCopy className="text-xs" />
+            AT
+            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${selectedATOrders.length === 0 ? "bg-gray-200 text-gray-500" : "bg-white/20 text-white"
+              }`}>
+              {selectedATOrders.length}
+            </span>
           </button>
 
           <button
             onClick={handleExport}
-            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+            className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium ml-auto"
           >
-            <FaDownload className="text-xs sm:text-sm" />
-            <span>Export CSV</span>
+            <FaDownload className="text-xs" />
+            Export CSV
           </button>
         </div>
       </div>
@@ -744,21 +778,21 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Process {processingType === "afa" ? "AFA" : 
-                        processingType === "mtn" ? "MTN" :
-                        processingType === "telecel" ? "TELECEL" :
-                        processingType === "at" ? "AT" : "Data"} Orders
+                Process {processingType === "afa" ? "AFA" :
+                  processingType === "mtn" ? "MTN" :
+                    processingType === "telecel" ? "TELECEL" :
+                      processingType === "at" ? "AT" : "Data"} Orders
               </h3>
               <p className="text-sm text-gray-600">
                 {processingType === "afa"
                   ? `Selected: ${selectedAFAOrders.length} AFA orders`
                   : processingType === "mtn"
-                  ? `Selected: ${selectedMTNOrders.length} MTN orders`
-                  : processingType === "telecel"
-                  ? `Selected: ${selectedTelecelOrders.length} TELECEL orders`
-                  : processingType === "at"
-                  ? `Selected: ${selectedATOrders.length} AT orders`
-                  : `Selected: ${selectedDataOrders.length} Data orders`}
+                    ? `Selected: ${selectedMTNOrders.length} MTN orders`
+                    : processingType === "telecel"
+                      ? `Selected: ${selectedTelecelOrders.length} TELECEL orders`
+                      : processingType === "at"
+                        ? `Selected: ${selectedATOrders.length} AT orders`
+                        : `Selected: ${selectedDataOrders.length} Data orders`}
               </p>
             </div>
           </div>
@@ -772,47 +806,46 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
               <pre className="text-xs font-mono text-gray-700 whitespace-pre-wrap">
                 {processingType === "afa"
                   ? selectedAFAOrders
-                      .slice(0, 3)
-                      .map(formatAFAOrder)
-                      .join("\n")
+                    .slice(0, 3)
+                    .map(formatAFAOrder)
+                    .join("\n")
                   : processingType === "mtn"
-                  ? selectedMTNOrders
+                    ? selectedMTNOrders
                       .slice(0, 3)
                       .map(formatDataOrder)
                       .join("\n")
-                  : processingType === "telecel"
-                  ? selectedTelecelOrders
-                      .slice(0, 3)
-                      .map(formatDataOrder)
-                      .join("\n")
-                  : processingType === "at"
-                  ? selectedATOrders
-                      .slice(0, 3)
-                      .map(formatDataOrder)
-                      .join("\n")
-                  : selectedDataOrders
-                      .slice(0, 3)
-                      .map(formatDataOrder)
-                      .join("\n")}
+                    : processingType === "telecel"
+                      ? selectedTelecelOrders
+                        .slice(0, 3)
+                        .map(formatDataOrder)
+                        .join("\n")
+                      : processingType === "at"
+                        ? selectedATOrders
+                          .slice(0, 3)
+                          .map(formatDataOrder)
+                          .join("\n")
+                        : selectedDataOrders
+                          .slice(0, 3)
+                          .map(formatDataOrder)
+                          .join("\n")}
                 {(processingType === "afa"
                   ? selectedAFAOrders.length
                   : processingType === "mtn"
-                  ? selectedMTNOrders.length
-                  : processingType === "telecel"
-                  ? selectedTelecelOrders.length
-                  : processingType === "at"
-                  ? selectedATOrders.length
-                  : selectedDataOrders.length) > 3 &&
-                  `\n... and ${
-                    (processingType === "afa"
-                      ? selectedAFAOrders.length
-                      : processingType === "mtn"
-                      ? selectedMTNOrders.length
-                      : processingType === "telecel"
+                    ? selectedMTNOrders.length
+                    : processingType === "telecel"
                       ? selectedTelecelOrders.length
                       : processingType === "at"
-                      ? selectedATOrders.length
-                      : selectedDataOrders.length) - 3
+                        ? selectedATOrders.length
+                        : selectedDataOrders.length) > 3 &&
+                  `\n... and ${(processingType === "afa"
+                    ? selectedAFAOrders.length
+                    : processingType === "mtn"
+                      ? selectedMTNOrders.length
+                      : processingType === "telecel"
+                        ? selectedTelecelOrders.length
+                        : processingType === "at"
+                          ? selectedATOrders.length
+                          : selectedDataOrders.length) - 3
                   } more`}
               </pre>
             </div>
@@ -882,10 +915,10 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={() => setShowProcessDialog(false)}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
             >
               Cancel
             </button>
@@ -893,15 +926,15 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
               onClick={() =>
                 processOrders(
                   processingType === "afa" ? selectedAFAOrders :
-                  processingType === "mtn" ? selectedMTNOrders :
-                  processingType === "telecel" ? selectedTelecelOrders :
-                  processingType === "at" ? selectedATOrders :
-                  selectedDataOrders,
+                    processingType === "mtn" ? selectedMTNOrders :
+                      processingType === "telecel" ? selectedTelecelOrders :
+                        processingType === "at" ? selectedATOrders :
+                          selectedDataOrders,
                   processingType!,
                   true
                 )
               }
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
             >
               Copy Only
             </button>
@@ -909,17 +942,17 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
               onClick={() =>
                 processOrders(
                   processingType === "afa" ? selectedAFAOrders :
-                  processingType === "mtn" ? selectedMTNOrders :
-                  processingType === "telecel" ? selectedTelecelOrders :
-                  processingType === "at" ? selectedATOrders :
-                  selectedDataOrders,
+                    processingType === "mtn" ? selectedMTNOrders :
+                      processingType === "telecel" ? selectedTelecelOrders :
+                        processingType === "at" ? selectedATOrders :
+                          selectedDataOrders,
                   processingType!,
                   false
                 )
               }
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
             >
-              Copy & Process
+              Copy &amp; Process
             </button>
           </div>
         </div>
@@ -928,7 +961,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
       {/* Progress Dialog */}
       <Dialog
         isOpen={showProgressDialog}
-        onClose={() => {}}
+        onClose={() => { }}
         size="md"
       >
         <div className="p-6">
@@ -973,13 +1006,12 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
               return (
                 <div
                   key={index}
-                  className={`flex items-center gap-2 p-2 rounded ${
-                    isComplete
+                  className={`flex items-center gap-2 p-2 rounded ${isComplete
                       ? "bg-green-50 text-green-700"
                       : isCurrent
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-gray-50 text-gray-500"
-                  }`}
+                        ? "bg-blue-50 text-blue-700"
+                        : "bg-gray-50 text-gray-500"
+                    }`}
                 >
                   {isComplete && <FaCheck className="text-green-600" />}
                   {isCurrent && <FaSpinner className="text-blue-600 animate-spin" />}

@@ -420,7 +420,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       await updateOrderStatus(orderId, newStatus);
-      addToast("Order status updated successfully", "success");
     } catch {
       addToast("Failed to update order status", "error");
     }
@@ -806,8 +805,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 <button
                   onClick={() => setViewMode("cards")}
                   className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${viewMode === "cards"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
                     }`}
                 >
                   Cards
@@ -816,8 +815,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                 <button
                   onClick={() => setViewMode("table")}
                   className={`hidden lg:block px-3 py-1 text-sm font-medium rounded-md transition-colors ${viewMode === "table"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
                     }`}
                 >
                   Table
@@ -826,8 +825,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   <button
                     onClick={() => setViewMode("excel")}
                     className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${viewMode === "excel"
-                        ? "bg-white text-gray-900 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
                       }`}
                   >
                     Excel
@@ -843,12 +842,10 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
+                    leftIcon={<FaCheckSquare style={{ color: "var(--color-primary-600)" }} />}
                     onClick={handleSelectAll}
-                    className="flex items-center gap-2 flex-1 sm:flex-none justify-center"
+                    className="flex items-centerLook flex-1 sm:flex-none justify-center"
                   >
-                    <FaCheckSquare
-                      style={{ color: "var(--color-primary-600)" }}
-                    />
                     <span className="text-xs sm:text-sm">Smart Select</span>
                   </Button>
                   {selectedOrders.length > 0 && (
@@ -1000,8 +997,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               <button
                 onClick={() => setActiveTab("all")}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "all"
-                    ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 style={
                   activeTab === "all"
@@ -1017,8 +1014,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               <button
                 onClick={() => setActiveTab("reported")}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "reported"
-                    ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 style={
                   activeTab === "reported"

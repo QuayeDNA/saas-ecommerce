@@ -10,7 +10,6 @@ const UsersPage = lazy(() => import("../pages/superadmin/users"));
 const UserDetailsPage = lazy(() => import("../pages/superadmin/user-details"));
 const ProvidersPage = lazy(() => import("../pages/superadmin/providers"));
 const OrdersPage = lazy(() => import("../pages/superadmin/orders"));
-const WalletPage = lazy(() => import("../pages/superadmin/wallet"));
 const WalletTopUpsPage = lazy(
   () => import("../pages/superadmin/wallet-top-ups")
 );
@@ -99,14 +98,6 @@ const superadminRoutes: RouteObject = {
         {
           path: "wallet",
           children: [
-            {
-              index: true,
-              element: (
-                <Suspense fallback={<PageLoader />}>
-                  <WalletPage />
-                </Suspense>
-              ),
-            },
             {
               path: "top-ups",
               element: (

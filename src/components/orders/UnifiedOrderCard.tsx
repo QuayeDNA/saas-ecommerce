@@ -2,13 +2,15 @@
 import React, { useState } from "react";
 import {
   FaWifi,
-  FaChevronRight,
+  FaChevronDown,
   FaTimes,
   FaUser,
   FaPhone,
   FaDatabase,
   FaMoneyBillWave,
   FaExclamationTriangle,
+  FaLock,
+  FaTag,
 } from "react-icons/fa";
 import { Button } from "../../design-system";
 import { Select } from "../../design-system/components/select";
@@ -123,19 +125,43 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-green-700 text-gray-200";
+        return "bg-green-600 text-white";
       case "processing":
-        return "bg-blue-700 text-gray-200";
+        return "bg-blue-600 text-white";
       case "failed":
-        return "bg-red-700 text-gray-200";
+        return "bg-red-600 text-white";
       case "cancelled":
-        return "bg-red-700 text-gray-200";
+        return "bg-gray-500 text-white";
       case "pending":
-        return "bg-yellow-700 text-gray-200";
+        return "bg-yellow-500 text-white";
       case "confirmed":
-        return "bg-purple-700 text-gray-200";
+        return "bg-purple-600 text-white";
+      case "draft":
+        return "bg-slate-400 text-white";
       default:
-        return "bg-gray-700 text-gray-200";
+        return "bg-gray-600 text-white";
+    }
+  };
+
+  const getStatusBorderColor = (status: string) => {
+    switch (status) {
+      case "completed": return "border-l-green-500";
+      case "processing": return "border-l-blue-500";
+      case "failed": return "border-l-red-500";
+      case "cancelled": return "border-l-gray-400";
+      case "pending": return "border-l-yellow-400";
+      case "confirmed": return "border-l-purple-500";
+      case "draft": return "border-l-slate-400";
+      default: return "border-l-gray-300";
+    }
+  };
+
+  const getPaymentStatusStyle = (paymentStatus: string) => {
+    switch (paymentStatus) {
+      case "paid": return "bg-green-100 text-green-700";
+      case "failed": return "bg-red-100 text-red-700";
+      case "pending": return "bg-yellow-100 text-yellow-700";
+      default: return "bg-gray-100 text-gray-600";
     }
   };
 
@@ -381,9 +407,9 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 border-l-4 ${getStatusBorderColor(order.status)} hover:shadow-md transition-shadow`}>
       <div className="p-4">
-        {/* Header - Order Number, Date, and Status */}
+        {/* Header - Order Number, Date, Status, Payment */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {isAdmin && onSelect && (
@@ -391,55 +417,58 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => onSelect(order._id!)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0 h-4 w-4"
+                aria-label={`Select order ${order.orderNumber}`}
               />
             )}
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold text-gray-900">
+              <h3 className="text-sm font-semibold text-gray-900 leading-tight">
                 {order.orderNumber}
               </h3>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-400 mt-0.5">
                 {formatDate(order.createdAt)}
               </p>
             </div>
           </div>
 
-          {/* Status Badge */}
-          <div className="flex-shrink-0 ml-3">
+          {/* Status Badge + Lock */}
+          <div className="flex-shrink-0 ml-2 flex flex-col items-end gap-1">
             <div className="relative">
               {canAdminChangeStatus(order) ? (
                 <button
                   onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusColor(
                     order.status
-                  )} hover:bg-opacity-80 transition-colors status-dropdown`}
+                  )} hover:opacity-90 transition-opacity status-dropdown`}
+                  aria-label={`Change status, currently ${order.status}`}
                 >
-                  <span>{order.status}</span>
-                  <FaChevronRight className="text-xs ml-1" />
+                  <span className="capitalize">{order.status}</span>
+                  <FaChevronDown className="text-[10px] ml-0.5" />
                 </button>
               ) : (
                 <div
-                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusColor(
                     order.status
                   )}`}
-                  title={isOrderLocked(order) ? "This order is locked (24h+ in terminal status)" : undefined}
                 >
-                  <span>{order.status}</span>
+                  {isOrderLocked(order) && <FaLock className="text-[10px]" />}
+                  <span className="capitalize">{order.status}</span>
                 </div>
               )}
 
               {canAdminChangeStatus(order) && statusDropdownOpen && (
-                <div className="absolute z-10 mt-1 right-0 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown min-w-32">
+                <div className="absolute z-20 mt-1 right-0 bg-white rounded-lg shadow-xl border border-gray-200 status-dropdown min-w-36">
                   <div className="py-1 flex flex-col">
                     {statusOptions.map((option) => (
                       <button
                         key={option.value}
                         onClick={() => handleStatusChange(option.value)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${option.value === order.status
-                            ? "bg-blue-50 text-blue-700"
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center gap-2 ${option.value === order.status
+                            ? "bg-blue-50 text-blue-700 font-medium"
                             : "text-gray-700"
                           }`}
                       >
+                        <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${option.color}`} />
                         {option.label}
                       </button>
                     ))}
@@ -447,6 +476,21 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Payment status pill */}
+            {order.paymentStatus && (
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusStyle(order.paymentStatus)}`}>
+                {order.paymentStatus === "paid" ? "Paid" : order.paymentStatus === "failed" ? "Payment Failed" : "Unpaid"}
+              </span>
+            )}
+
+            {/* Locked indicator chip (mobile-visible) */}
+            {isOrderLocked(order) && !canAdminChangeStatus(order) && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                <FaLock className="text-[9px]" />
+                Locked
+              </span>
+            )}
           </div>
         </div>
 
@@ -518,53 +562,54 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
           {/* Type */}
           <div className="flex items-center gap-2 text-sm">
-            <FaUser className="text-gray-400 w-4 h-4 flex-shrink-0" />
+            <FaTag className="text-gray-400 w-4 h-4 flex-shrink-0" />
             <span className="text-gray-700 font-medium min-w-0 w-16">
               Type:
             </span>
-            <span className="text-gray-900 capitalize">
-              {order.orderType} • {order.items?.length || 0} item(s)
+            <span className="text-gray-900">
+              {order.orderType === "storefront"
+                ? "Storefront Sale"
+                : order.orderType === "bulk"
+                  ? "Bulk"
+                  : "Regular"}{" "}
+              <span className="text-gray-500 text-xs">• {order.items?.length || 0} item{order.items?.length !== 1 ? "s" : ""}</span>
             </span>
           </div>
         </div>
 
-        {/* Cancel Action */}
-        {canUserCancelOrder(order) && (
-          <div className="flex justify-start">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onCancel(order._id!)}
-              className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400 px-3 py-1 text-sm"
-            >
-              <FaTimes className="w-3 h-3 mr-1" />
-              {order.status === "draft" ? "Delete Draft" : "Cancel"}
-            </Button>
-          </div>
-        )}
+        {/* Action row */}
+        {(canUserCancelOrder(order) || canUserReportOrder(order) || (order.reported && !isAdmin)) && (
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {canUserCancelOrder(order) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onCancel(order._id!)}
+                className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400 px-3 py-1 text-xs"
+              >
+                <FaTimes className="w-3 h-3 mr-1" />
+                {order.status === "draft" ? "Delete Draft" : "Cancel Order"}
+              </Button>
+            )}
 
-        {/* Report Action */}
-        {canUserReportOrder(order) && (
-          <div className="flex justify-start mt-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleReportClick}
-              className="text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400 px-3 py-1 text-sm"
-            >
-              <FaExclamationTriangle className="w-3 h-3 mr-1" />
-              Report Issue
-            </Button>
-          </div>
-        )}
+            {canUserReportOrder(order) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleReportClick}
+                className="text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400 px-3 py-1 text-xs"
+              >
+                <FaExclamationTriangle className="w-3 h-3 mr-1" />
+                Report Issue
+              </Button>
+            )}
 
-        {/* Already Reported Indicator */}
-        {order.reported && !isAdmin && (
-          <div className="flex justify-start mt-2">
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-              <FaExclamationTriangle className="w-3 h-3 mr-1" />
-              Already Reported
-            </span>
+            {order.reported && !isAdmin && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                <FaExclamationTriangle className="w-3 h-3" />
+                Issue Reported
+              </span>
+            )}
           </div>
         )}
 
