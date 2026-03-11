@@ -156,7 +156,8 @@ export const StorefrontDashboardPage: React.FC = () => {
 
   const getStorefrontUrl = () => {
     if (!storefront) return "";
-    return `${window.location.origin}/store/${storefront.businessName}`;
+    const storeBase = import.meta.env.VITE_STORE_BASE_URL ?? `${window.location.origin}/store`;
+    return `${storeBase}/${storefront.businessName}`;
   };
 
   const copyStoreUrl = async () => {

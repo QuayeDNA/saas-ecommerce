@@ -133,14 +133,14 @@ function getSystemDescription(displayName: string): string {
 /** SVG data-URI used as the store logo when none is set */
 function getSystemLogoDataUrl(initials: string, theme: string = 'blue'): string {
   const themeColors: Record<string, [string, string]> = {
-    blue:   ['#2563EB', '#1E40AF'],
-    green:  ['#16A34A', '#15803D'],
+    blue: ['#2563EB', '#1E40AF'],
+    green: ['#16A34A', '#15803D'],
     purple: ['#7C3AED', '#6D28D9'],
     orange: ['#EA580C', '#C2410C'],
-    red:    ['#DC2626', '#B91C1C'],
-    teal:   ['#0D9488', '#0F766E'],
+    red: ['#DC2626', '#B91C1C'],
+    teal: ['#0D9488', '#0F766E'],
     indigo: ['#4F46E5', '#4338CA'],
-    pink:   ['#DB2777', '#BE185D'],
+    pink: ['#DB2777', '#BE185D'],
   };
   const [from, to] = themeColors[theme] || themeColors.blue;
   const letter = (initials || 'S').charAt(0).toUpperCase();
@@ -485,9 +485,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         || getSystemDescription(storefront.displayName || formData.businessName || storefront.businessName);
       const resolvedLogoUrl = brandingData.logoUrl.trim()
         || getSystemLogoDataUrl(
-            (storefront.displayName || formData.businessName || storefront.businessName).charAt(0),
-            brandingData.theme,
-          );
+          (storefront.displayName || formData.businessName || storefront.businessName).charAt(0),
+          brandingData.theme,
+        );
 
       const updateData = {
         description: resolvedDescription,
@@ -571,8 +571,10 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     }
   };
 
-  const getStorefrontUrl = () =>
-    `${window.location.origin}/store/${storefront.businessName}`;
+  const getStorefrontUrl = () => {
+    const storeBase = import.meta.env.VITE_STORE_BASE_URL ?? `${window.location.origin}/store`;
+    return `${storeBase}/${storefront.businessName}`;
+  };
 
   const copyStorefrontUrl = async () => {
     try {

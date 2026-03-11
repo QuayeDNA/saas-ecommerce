@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -5,6 +7,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import "./index.css";
 import App from "./App.tsx";
+import StoreOnlyApp from "./StoreOnlyApp.tsx";
+
+const isStoreOnly = import.meta.env.VITE_STORE_ONLY === 'true';
 
 // Create a client for React Query
 const queryClient = new QueryClient();
@@ -64,7 +69,7 @@ if (checkVersion()) {
     <StrictMode>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <App />
+          {isStoreOnly ? <StoreOnlyApp /> : <App />}
           <Analytics />
         </QueryClientProvider>
       </BrowserRouter>
