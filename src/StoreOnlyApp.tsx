@@ -6,7 +6,8 @@
  *   /:businessName   →  PublicStorePage   (individual agent store)
  *
  * The second Vercel project that points to the custom domain builds with
- * VITE_STORE_ONLY=true set in its environment variables. No code is duplicated.
+ * VITE_STORE_ONLY=true set in its environment variables.
+ * Dedicated to DirectData brand — no code duplication needed.
  */
 
 import { lazy, Suspense } from "react";

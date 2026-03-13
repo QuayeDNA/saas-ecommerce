@@ -47,6 +47,38 @@ async function loadPaystackScript(): Promise<void> {
     });
 }
 
+// ─── OG Meta Tags Helper (for agent store sharing) ───────────────────────────
+
+function setOGMetaTag(property: string, content: string) {
+    let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null;
+    if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('property', property);
+        document.head.appendChild(el);
+    }
+    el.setAttribute('content', content);
+}
+
+function updateStorefrontOGTags(storefront: PublicStorefront['storefront'], bundles: PublicBundle[]) {
+    const storeTitle = storefront.displayName || storefront.businessName;
+    const storeDesc = storefront.description || 'Instant data bundles from trusted agents';
+    const bundleCount = bundles.length;
+    const networks = [...new Set(bundles.map(b => b.provider).filter(Boolean))].join(', ') || 'multiple networks';
+
+    const ogTitle = `${storeTitle} | DirectData`;
+    const ogDesc = `${storeDesc} · ${bundleCount} bundles available on ${networks}`;
+
+    document.title = `${storeTitle} | DirectData`;
+    setOGMetaTag('og:title', ogTitle);
+    setOGMetaTag('og:description', ogDesc);
+    setOGMetaTag('og:image', storefront.branding?.logoUrl || '/logo-192.svg');
+    setOGMetaTag('og:url', window.location.href);
+    setOGMetaTag('og:type', 'website');
+    setOGMetaTag('twitter:card', 'summary_large_image');
+    setOGMetaTag('twitter:title', ogTitle);
+    setOGMetaTag('twitter:description', ogDesc);
+    setOGMetaTag('twitter:image', storefront.branding?.logoUrl || '/logo-192.svg');
+}
 
 
 /** Single-item order (replaces multi-item cart) */
@@ -988,8 +1020,10 @@ const PublicStore: React.FC = () => {
     useEffect(() => { fetchStore(); }, [fetchStore]);
 
     useEffect(() => {
-        if (storeData) document.title = `${storeData.storefront.displayName} | Data Bundles`;
-        return () => { document.title = 'DataHub'; };
+        if (storeData) {
+            updateStorefrontOGTags(storeData.storefront, storeData.bundles);
+        }
+        return () => { document.title = 'DirectData'; };
     }, [storeData]);
 
     // Paystack popup message listener
