@@ -52,11 +52,10 @@ export const LoginPage = () => {
     }
   }, [authState, navigate]);
 
-  // Clear errors on mount
+  // Set page title
   useEffect(() => {
-    clearErrors();
-    setLocalError(null);
-  }, [clearErrors]);
+    document.title = "BryteLinks - Login";
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -174,11 +173,11 @@ export const LoginPage = () => {
                       {(localError ?? authState.error)?.includes(
                         "Too many"
                       ) && (
-                        <div className="text-red-600 text-xs mt-2 font-medium">
-                          💡 Tip: Wait a moment before retrying to avoid further
-                          delays
-                        </div>
-                      )}
+                          <div className="text-red-600 text-xs mt-2 font-medium">
+                            💡 Tip: Wait a moment before retrying to avoid further
+                            delays
+                          </div>
+                        )}
                     </div>
                   </Alert>
                 )}

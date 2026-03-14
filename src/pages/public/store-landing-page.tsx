@@ -1,28 +1,18 @@
 /**
- * StoreLandingPage — shown when a visitor lands on the storefront domain root
- * (e.g. https://www.directdata.shop/) without a specific /:businessName path.
- *
- * Modern ecommerce landing page with store discovery.
- * Users can browse featured stores, explore all stores, or search for a specific agent.
- * OG meta tags are updated for platform branding.
+ * StoreLandingPage — Modern ecommerce landing page for DirectData
+ * Mobile-first, responsive design with engaging visuals and clear CTAs
+ * Showcases the DirectData platform for instant data bundle purchases
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storefrontService } from '../../services/storefront.service';
-import { FaMagnifyingGlass, FaFire, FaArrowRight, FaStore } from 'react-icons/fa6';
 
 // ─── Platform config ──────────────────────────────────────────────────────────
 
-const PLATFORM_NAME = 'DirectData';
-const PLATFORM_TAGLINE = 'Instant data bundles from trusted agents — fast, reliable, no hassle.';
-const OG_DESCRIPTION = 'Get instant mobile data bundles from verified agents across Ghana. MTN, Vodafone, AirtelTigo and more.';
-const PLATFORM_BENEFITS = [
-    { icon: '⚡', title: 'Instant Delivery', desc: 'Get bundles in seconds' },
-    { icon: '🔒', title: 'Trusted Agents', desc: 'Verified & reliable sellers' },
-    { icon: '💰', title: 'Best Prices', desc: 'Competitive rates guaranteed' },
-    { icon: '📱', title: 'All Networks', desc: 'MTN, Vodafone, AirtelTigo & more' },
-];
+const PLATFORM_NAME = import.meta.env.VITE_STORE_PLATFORM_NAME ?? 'DirectData';
+const PLATFORM_TAGLINE = 'Instant data bundles from trusted agents — at your fingertips.';
+const OG_DESCRIPTION = 'Get instant mobile data bundles from verified agents across Ghana. MTN, Vodafone, AirtelTigo and more. Fast, reliable, no hassle.';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -36,47 +26,23 @@ function setMetaTag(property: string, content: string) {
     el.setAttribute('content', content);
 }
 
-function Spinner() {
+// ─── Components ──────────────────────────────────────────────────────────────
+
+function LoadingSpinner() {
     return (
-        <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
             <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
         </svg>
     );
 }
 
-interface StorefrontPreview {
-    businessName: string;
-    displayName?: string;
-    description?: string;
-    agentName?: string;
-}
-
-// ─── Store Card ────────────────────────────────────────────────────────────────
-
-function StoreCard({ store, onSelect }: { store: StorefrontPreview; onSelect: () => void }) {
+function FeatureBadge({ icon, text }: { icon: string; text: string }) {
     return (
-        <button
-            onClick={onSelect}
-            className="group relative overflow-hidden rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 text-left p-5 hover:-translate-y-1"
-        >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-100/0 group-hover:from-blue-50 group-hover:to-blue-100/50 transition-colors duration-300" />
-            <div className="relative z-10">
-                <div className="flex items-start justify-between mb-2">
-                    <FaStore className="w-5 h-5 text-blue-600" />
-                    <FaArrowRight className="w-4 h-4 text-gray-300 group-hover:text-blue-600 transition-colors duration-300 translate-x-2 group-hover:translate-x-0" />
-                </div>
-                <h3 className="font-bold text-gray-900 text-sm line-clamp-2 mb-1">
-                    {store.displayName || store.businessName}
-                </h3>
-                {store.agentName && (
-                    <p className="text-xs text-gray-500 mb-2">By {store.agentName}</p>
-                )}
-                <p className="text-xs text-gray-600 line-clamp-2">
-                    {store.description || 'Premium data bundles at competitive prices'}
-                </p>
-            </div>
-        </button>
+        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
+            <span className="text-lg">{icon}</span>
+            <span className="text-sm font-medium text-white">{text}</span>
+        </div>
     );
 }
 
@@ -84,38 +50,31 @@ function StoreCard({ store, onSelect }: { store: StorefrontPreview; onSelect: ()
 
 export default function StoreLandingPage() {
     const navigate = useNavigate();
-    const [allStores, setAllStores] = useState<StorefrontPreview[]>([]);
+    const [storeNames, setStoreNames] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [redirecting, setRedirecting] = useState(false);
 
-    // Update OG meta tags for the platform
+    // Update OG meta tags for the store domain
     useEffect(() => {
         const title = `${PLATFORM_NAME} — Buy Data Bundles Instantly`;
         document.title = title;
         setMetaTag('og:title', title);
         setMetaTag('og:description', OG_DESCRIPTION);
-        setMetaTag('og:image', '/logo-192.svg');
+        setMetaTag('og:image', '/android-chrome-512x512.png');
         setMetaTag('og:url', window.location.href);
         setMetaTag('og:type', 'website');
         setMetaTag('twitter:card', 'summary_large_image');
         setMetaTag('twitter:title', title);
         setMetaTag('twitter:description', OG_DESCRIPTION);
-        setMetaTag('twitter:image', '/logo-192.svg');
+        setMetaTag('twitter:image', '/android-chrome-512x512.png');
     }, []);
 
-    // Load stores on mount
     const loadStores = useCallback(async () => {
         try {
-            setLoading(true);
-            const data = await storefrontService.getRandomStorefronts(50);
-            setAllStores(data.map((s: any) => ({
-                businessName: s.businessName,
-                displayName: s.displayName || s.businessName,
-                description: s.description,
-                agentName: s.agentName,
-            })));
-        } catch (error) {
-            console.error('Failed to load stores:', error);
+            const data = await storefrontService.getRandomStorefronts(6);
+            setStoreNames(data.map((s: { businessName: string }) => s.businessName));
+        } catch {
+            // keep storeNames empty — button will be disabled
         } finally {
             setLoading(false);
         }
@@ -125,201 +84,119 @@ export default function StoreLandingPage() {
         loadStores();
     }, [loadStores]);
 
-    // Filter stores based on search term
-    const filteredStores = useMemo(() => {
-        if (!searchTerm.trim()) {
-            return allStores.slice(0, 12); // Show first 12 if no search
-        }
-        const term = searchTerm.toLowerCase();
-        return allStores.filter(s =>
-            s.displayName?.toLowerCase().includes(term) ||
-            s.businessName.toLowerCase().includes(term) ||
-            s.agentName?.toLowerCase().includes(term)
-        ).slice(0, 20);
-    }, [searchTerm, allStores]);
-
-    // Featured stores (first 6)
-
-    const handleSelectStore = (businessName: string) => {
-        setTimeout(() => navigate(`/${businessName}`), 150);
+    const handleShopNow = () => {
+        if (storeNames.length === 0) return;
+        setRedirecting(true);
+        const pick = storeNames[Math.floor(Math.random() * storeNames.length)];
+        setTimeout(() => navigate(`/${pick}`), 300);
     };
 
-    const handleRandomStore = () => {
-        if (allStores.length === 0) return;
-        const randomStore = allStores[Math.floor(Math.random() * allStores.length)];
-        handleSelectStore(randomStore.businessName);
-    };
+    const noStores = !loading && storeNames.length === 0;
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/30 to-white overflow-x-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 relative overflow-hidden">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-20 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+                <div className="absolute bottom-20 right-10 w-40 h-40 bg-yellow-300 rounded-full blur-3xl"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-pink-300 rounded-full blur-3xl"></div>
+            </div>
 
-            {/* Hero Section */}
-            <div className="relative overflow-hidden border-b border-gray-200/50 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 px-6 py-16 sm:py-24">
-                {/* Animated background elements */}
-                <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute -top-40 -left-40 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-                    <div className="absolute -bottom-20 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-                </div>
+            {/* Floating Elements */}
+            <div className="absolute top-16 left-8 animate-bounce" style={{ animationDelay: '0s' }}>
+                📱
+            </div>
+            <div className="absolute top-32 right-12 animate-bounce" style={{ animationDelay: '1s' }}>
+                📶
+            </div>
+            <div className="absolute bottom-24 left-16 animate-bounce" style={{ animationDelay: '2s' }}>
+                ⚡
+            </div>
 
-                <div className="relative z-10 max-w-5xl mx-auto text-center">
-                    {/* Logo / Icon */}
-                    <div className="flex justify-center mb-6">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-lg">
-                            <span className="text-2xl font-black bg-gradient-to-br from-blue-600 to-indigo-600 bg-clip-text text-transparent">DD</span>
-                        </div>
+            <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
+                {/* Logo Section */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-2xl shadow-2xl mb-6 transform hover:scale-105 transition-transform duration-300">
+                        <span className="text-4xl font-black text-blue-600">DD</span>
                     </div>
 
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-4 tracking-tight">
+                    <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white mb-4 tracking-tight">
                         {PLATFORM_NAME}
                     </h1>
 
-                    <p className="text-lg sm:text-xl text-blue-50 max-w-2xl mx-auto mb-8 leading-relaxed">
+                    <p className="text-lg sm:text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed font-medium">
                         {PLATFORM_TAGLINE}
                     </p>
-
-                    {/* Search Bar */}
-                    <div className="flex gap-2 max-w-xl mx-auto mb-8">
-                        <div className="flex-1 relative">
-                            <FaMagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input
-                                type="text"
-                                placeholder="Search stores or agents..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 pr-4 py-3 rounded-full bg-white text-gray-900 placeholder-gray-500 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                            />
-                        </div>
-                        <button
-                            onClick={handleRandomStore}
-                            disabled={loading || allStores.length === 0}
-                            className="px-6 py-3 rounded-full bg-white text-blue-600 font-semibold hover:bg-blue-50 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Surprise Me
-                        </button>
-                    </div>
-
-                    {/* Status message */}
-                    {loading && (
-                        <p className="text-sm text-blue-100 flex items-center justify-center gap-2">
-                            <Spinner /> Loading stores...
-                        </p>
-                    )}
                 </div>
-            </div>
 
-            {/* Benefits Grid */}
-            <div className="px-6 py-16 sm:py-20 max-w-5xl mx-auto">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-                    {PLATFORM_BENEFITS.map((benefit, idx) => (
-                        <div key={idx} className="text-center">
-                            <div className="text-3xl mb-2">{benefit.icon}</div>
-                            <h3 className="font-bold text-gray-900 text-sm mb-1">{benefit.title}</h3>
-                            <p className="text-xs text-gray-600 leading-tight">{benefit.desc}</p>
-                        </div>
-                    ))}
+                {/* Feature Badges */}
+                <div className="flex flex-wrap justify-center gap-3 mb-10 max-w-md sm:max-w-lg">
+                    <FeatureBadge icon="🚀" text="Instant Delivery" />
+                    <FeatureBadge icon="🛡️" text="Trusted Agents" />
+                    <FeatureBadge icon="💰" text="Best Prices" />
                 </div>
-            </div>
 
-            {/* Stores Section */}
-            <div className="px-6 py-12 sm:py-16 max-w-5xl mx-auto">
-                {/* Section header */}
-                <div className="flex items-center gap-2 mb-8">
-                    {searchTerm ? (
-                        <>
-                            <FaMagnifyingGlass className="w-5 h-5 text-blue-600" />
-                            <h2 className="text-2xl font-bold text-gray-900">
-                                Search Results
-                            </h2>
-                            {filteredStores.length > 0 && (
-                                <span className="ml-auto text-sm text-gray-500">
-                                    {filteredStores.length} store{filteredStores.length !== 1 ? 's' : ''} found
-                                </span>
+                {/* CTA Section */}
+                <div className="text-center">
+                    <button
+                        onClick={handleShopNow}
+                        disabled={redirecting || loading || noStores}
+                        className="group relative inline-flex items-center gap-3 px-8 py-5 bg-white text-blue-600 font-bold text-lg rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-6"
+                    >
+                        <span className="relative z-10">
+                            {redirecting ? (
+                                <>Finding your store...</>
+                            ) : loading ? (
+                                <>Loading stores...</>
+                            ) : noStores ? (
+                                'No stores available yet'
+                            ) : (
+                                'Shop Data Bundles Now'
                             )}
-                        </>
-                    ) : (
-                        <>
-                            <FaFire className="w-5 h-5 text-orange-500" />
-                            <h2 className="text-2xl font-bold text-gray-900">Featured Stores</h2>
-                        </>
-                    )}
+                        </span>
+
+                        {redirecting || loading ? (
+                            <LoadingSpinner />
+                        ) : (
+                            <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        )}
+                    </button>
+
+                    <p className="text-blue-200 text-sm max-w-sm mx-auto">
+                        Join thousands of customers getting instant data bundles from verified Ghanaian agents
+                    </p>
                 </div>
 
-                {/* No results / No stores */}
-                {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[...Array(6)].map((_, i) => (
-                            <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse" />
-                        ))}
+                {/* Stats Section */}
+                <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-2xl mx-auto text-center">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <div className="text-2xl font-bold text-white">10K+</div>
+                        <div className="text-blue-200 text-sm">Happy Customers</div>
                     </div>
-                ) : filteredStores.length === 0 ? (
-                    <div className="text-center py-12">
-                        {searchTerm ? (
-                            <>
-                                <FaMagnifyingGlass className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                <p className="text-gray-600 mb-2">No stores match "{searchTerm}"</p>
-                                <button
-                                    onClick={() => setSearchTerm('')}
-                                    className="text-blue-600 font-semibold hover:underline"
-                                >
-                                    View all stores
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <FaStore className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                <p className="text-gray-600">No stores available yet. Check back soon!</p>
-                            </>
-                        )}
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <div className="text-2xl font-bold text-white">500+</div>
+                        <div className="text-blue-200 text-sm">Active Agents</div>
                     </div>
-                ) : (
-                    <>
-                        {/* Store grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                            {filteredStores.map((store) => (
-                                <div key={store.businessName} className="cursor-pointer">
-                                    <StoreCard
-                                        store={store}
-                                        onSelect={() => handleSelectStore(store.businessName)}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <div className="text-2xl font-bold text-white">24/7</div>
+                        <div className="text-blue-200 text-sm">Support</div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <div className="text-2xl font-bold text-white">MTN</div>
+                        <div className="text-blue-200 text-sm">Vodafone & More</div>
+                    </div>
+                </div>
 
-                        {/* View more hint */}
-                        {!searchTerm && allStores.length > 12 && (
-                            <div className="text-center pt-6 border-t border-gray-200">
-                                <p className="text-sm text-gray-600 mb-4">
-                                    {allStores.length} active stores available
-                                </p>
-                                <div className="flex items-center justify-center gap-1 text-blue-600 text-sm font-semibold">
-                                    <FaMagnifyingGlass className="w-4 h-4" />
-                                    Use search to discover more
-                                </div>
-                            </div>
-                        )}
-                    </>
+                {noStores && (
+                    <div className="mt-8 text-center">
+                        <p className="text-blue-200 text-sm bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 inline-block border border-white/20">
+                            Check back soon — amazing stores are coming!
+                        </p>
+                    </div>
                 )}
             </div>
-
-            {/* Footer CTA */}
-            {!loading && allStores.length > 0 && (
-                <div className="px-6 py-12 bg-gradient-to-t from-blue-50 to-transparent border-t border-gray-200/50">
-                    <div className="max-w-2xl mx-auto text-center">
-                        <h3 className="text-lg font-bold text-gray-900 mb-3">Ready to shop?</h3>
-                        <p className="text-gray-600 mb-6">
-                            Browse stores above or let us surprise you with a random selection
-                        </p>
-                        <button
-                            onClick={handleRandomStore}
-                            disabled={loading || allStores.length === 0}
-                            className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-200/50"
-                        >
-                            <FaFire className="w-4 h-4" />
-                            Explore Now
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

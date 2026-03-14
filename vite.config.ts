@@ -16,10 +16,10 @@ export default defineConfig({
         'android-chrome-512x512.png',
       ],
       manifest: {
-        name: 'BryteLinks - Telecom Solutions Platform',
-        short_name: 'BryteLinks',
+        name: 'DirectData — Instant Data Bundles',
+        short_name: 'DirectData',
         description:
-          'A modern SaaS platform for telecommunication services. Purchase airtime for MTN, Vodafone, and AirtelTigo networks in Ghana with ease.',
+          'A modern storefront for buying data bundles from trusted agents across Ghana.',
         theme_color: '#142850',
         background_color: '#142850',
         display: 'standalone',

@@ -47,7 +47,7 @@ async function loadPaystackScript(): Promise<void> {
     });
 }
 
-// ─── OG Meta Tags Helper (for agent store sharing) ───────────────────────────
+// ─── OG Meta Helpers (store-level sharing) ───────────────────────────────────
 
 function setOGMetaTag(property: string, content: string) {
     let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null;
@@ -60,25 +60,27 @@ function setOGMetaTag(property: string, content: string) {
 }
 
 function updateStorefrontOGTags(storefront: PublicStorefront['storefront'], bundles: PublicBundle[]) {
-    const storeTitle = storefront.displayName || storefront.businessName;
+    const storeTitle = storefront.displayName || storefront.businessName || 'DirectData';
     const storeDesc = storefront.description || 'Instant data bundles from trusted agents';
     const bundleCount = bundles.length;
     const networks = [...new Set(bundles.map(b => b.provider).filter(Boolean))].join(', ') || 'multiple networks';
 
     const ogTitle = `${storeTitle} | DirectData`;
     const ogDesc = `${storeDesc} · ${bundleCount} bundles available on ${networks}`;
+    const imageUrl = storefront.branding?.logoUrl || '/logo-192.svg';
 
-    document.title = `${storeTitle} | DirectData`;
+    document.title = ogTitle;
     setOGMetaTag('og:title', ogTitle);
     setOGMetaTag('og:description', ogDesc);
-    setOGMetaTag('og:image', storefront.branding?.logoUrl || '/logo-192.svg');
+    setOGMetaTag('og:image', imageUrl);
     setOGMetaTag('og:url', window.location.href);
     setOGMetaTag('og:type', 'website');
     setOGMetaTag('twitter:card', 'summary_large_image');
     setOGMetaTag('twitter:title', ogTitle);
     setOGMetaTag('twitter:description', ogDesc);
-    setOGMetaTag('twitter:image', storefront.branding?.logoUrl || '/logo-192.svg');
+    setOGMetaTag('twitter:image', imageUrl);
 }
+
 
 
 /** Single-item order (replaces multi-item cart) */

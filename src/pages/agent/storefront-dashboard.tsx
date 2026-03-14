@@ -1039,6 +1039,29 @@ export const StorefrontDashboardPage: React.FC = () => {
                       {urlCopied ? "Copied!" : "Copy Link"}
                     </Button>
                   </div>
+
+                  {/* Share preview */}
+                  <div className="mt-4 border border-gray-200 rounded-lg bg-gray-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={storefront.branding?.logoUrl || '/logo-192.svg'}
+                        alt="Store logo"
+                        className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-gray-900 line-clamp-2">
+                          {storefront.displayName || storefront.businessName} | DirectData
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                          {storefront.description || 'Instant data bundles from trusted agents across Ghana.'}
+                        </div>
+                        <div className="text-xs text-blue-600 mt-2 truncate">
+                          {getStorefrontUrl()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <p className="text-xs text-gray-500 mt-2">
                     Share this link with customers so they can browse and
                     purchase bundles from your store.

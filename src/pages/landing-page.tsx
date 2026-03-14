@@ -264,6 +264,11 @@ export const LandingPage: FC = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+   // Set page title
+    useEffect(() => {
+      document.title = "BryteLinks - Home";
+    }, []);
+
   const scrollTo = (id: string) => {
     sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth" });
     setIsMenuOpen(false);
