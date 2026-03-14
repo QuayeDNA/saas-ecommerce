@@ -141,6 +141,7 @@ export default async function handler(req, res) {
       "";
 
     let meta;
+    let ogContext = "platform";
     if (!context.isStorefrontHost) {
       meta = {
         ...BRYTELINKS_META,
@@ -148,12 +149,14 @@ export default async function handler(req, res) {
         url: context.fullUrl,
       };
     } else if (!context.businessName) {
+      ogContext = "storefront-root";
       meta = {
         ...DIRECTDATA_DEFAULT_META,
         image: toAbsoluteUrl(DIRECTDATA_DEFAULT_META.image, context.origin),
         url: context.fullUrl,
       };
     } else {
+      ogContext = "storefront-agent";
       meta = await resolveStoreMeta(
         apiBase,
         context.businessName,
@@ -198,6 +201,7 @@ export default async function handler(req, res) {
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, s-maxage=120, stale-while-revalidate=300");
+    res.setHeader("x-og-context", ogContext);
     res.status(200).send(html);
   } catch {
     res.status(500).send("Meta rendering failed");
