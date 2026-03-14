@@ -66,6 +66,7 @@ const PublicStorePage = lazy(() =>
     default: module.PublicStorePage,
   })),
 );
+const StoreLandingPage = lazy(() => import("../pages/public/store-landing-page"));
 // =============================================================================
 // LAZY LOADED COMPONENTS - DASHBOARD PAGES
 // =============================================================================
@@ -249,6 +250,18 @@ const publicRoutes: RouteObject[] = [
       </Suspense>
     ),
   },
+  ...(import.meta.env.DEV
+    ? [
+      {
+        path: "/dev/store-landing",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <StoreLandingPage />
+          </Suspense>
+        ),
+      } as RouteObject,
+    ]
+    : []),
   {
     path: "/404",
     element: (
