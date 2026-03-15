@@ -86,6 +86,7 @@ interface PaymentMethodForm {
 
 interface FormErrors {
   businessName?: string;
+  displayName?: string;
   phone?: string;
   email?: string;
   paymentMethods?: string;
