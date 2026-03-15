@@ -162,11 +162,13 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   // ── Derived state ─────────────────────────────────────────────────────────
 
   const parsedAmount = useMemo(() => parseFloat(form.amount || ''), [form.amount]);
-  // effective minimum depends on mode – instant top-ups must satisfy both user-specific
-  // threshold and the global paystack minimum
+  // effective minimum depends on mode:
+  // - request mode uses the user-type minimum (admin-defined per role)
+  // - instant (Paystack) mode uses the global Paystack minimum (regardless of role)
+  //   (fall back to the role minimum when Paystack minimum isn't configured)
   const effectiveMinimum = useMemo(() => {
     if (mode === 'instant') {
-      return Math.max(minimumAmount, paystackMinimum);
+      return paystackMinimum > 0 ? paystackMinimum : minimumAmount;
     }
     return minimumAmount;
   }, [mode, minimumAmount, paystackMinimum]);
