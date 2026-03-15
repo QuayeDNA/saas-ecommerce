@@ -83,6 +83,37 @@ function updateStorefrontOGTags(storefront: PublicStorefront['storefront'], bund
 
 
 
+function getSystemFooterText(businessName: string): string {
+    const FOOTER_TEXTS = [
+        "Powered by your go-to data partner.",
+        "Fast top-ups, trusted by many.",
+        "Your connection, our priority.",
+        "Serving data bundles with care.",
+        "Bringing you fast, reliable bundles.",
+        "Stay connected, stay productive.",
+        "Data made simple and affordable.",
+        "Quick bundle top-ups, anytime.",
+        "Trusted data deals for every network.",
+        "Your one-stop data shop.",
+        "Powered by great service and fast bundles.",
+        "Top-up in seconds, connect for hours.",
+        "Hassle-free data purchases every time.",
+        "Your data, your way.",
+        "Built for speed, designed for you.",
+        "Smart bundles, smarter savings.",
+        "Connecting Ghana, one bundle at a time.",
+        "Reliable data — delivered instantly.",
+        "Fast, friendly, and always available.",
+        "Your favourite source for mobile bundles.",
+    ];
+    let hash = 0;
+    for (let i = 0; i < businessName.length; i++) {
+        hash = (hash * 31 + businessName.charCodeAt(i)) >>> 0;
+    }
+    return FOOTER_TEXTS[hash % FOOTER_TEXTS.length];
+}
+
+
 /** Single-item order (replaces multi-item cart) */
 interface OrderItem {
     bundle: PublicBundle;
@@ -2122,40 +2153,51 @@ const PublicStore: React.FC = () => {
         const hasSocial = social && Object.values(social).some(Boolean);
         const hasContact = storefront.contactInfo &&
             (storefront.contactInfo.phone || storefront.contactInfo.email || storefront.contactInfo.whatsapp);
-        if (!hasSocial && !hasContact && !branding.footerText) return null;
+
+        // If the store has no contact/socials and the footer text is truly empty, hide the footer.
+        const footerText = (branding.footerText || '').trim() || getSystemFooterText(storefront.businessName);
+        if (!hasSocial && !hasContact && !footerText) return null;
 
         return (
             <footer className="border-t border-gray-100 bg-gray-50 px-4 py-8">
-                <div className="max-w-5xl mx-auto space-y-4 text-center">
-                    {hasSocial && (
-                        <div className="flex items-center justify-center gap-5">
-                            {social?.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition"><FaFacebook className="w-5 h-5" /></a>}
-                            {social?.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-500 transition"><FaTwitter className="w-5 h-5" /></a>}
-                            {social?.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-600 transition"><FaInstagram className="w-5 h-5" /></a>}
-                        </div>
-                    )}
-                    {hasContact && (
-                        <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
-                            {storefront.contactInfo?.phone && (
-                                <a href={`tel:${storefront.contactInfo.phone}`} className="flex items-center gap-1.5 hover:text-gray-800 transition">
-                                    <FaPhone className="w-3 h-3" />{storefront.contactInfo.phone}
-                                </a>
-                            )}
-                            {storefront.contactInfo?.whatsapp && (
-                                <a href={`https://wa.me/${storefront.contactInfo.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-1.5 text-[#25D366] hover:text-[#20BD5C] transition font-semibold">
-                                    <FaWhatsapp className="w-4 h-4" />WhatsApp
-                                </a>
-                            )}
-                            {storefront.contactInfo?.email && (
-                                <a href={`mailto:${storefront.contactInfo.email}`} className="flex items-center gap-1.5 hover:text-gray-800 transition">
-                                    <FaEnvelope className="w-3 h-3" />{storefront.contactInfo.email}
-                                </a>
-                            )}
-                        </div>
-                    )}
-                    {branding.footerText && <p className="text-xs text-gray-400">{branding.footerText}</p>}
-                    <p className="text-xs text-gray-300">Powered by DNAStudios</p>
+                <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="space-y-3 sm:space-y-0 text-center sm:text-left">
+                        {hasSocial && (
+                            <div className="flex items-center justify-center sm:justify-start gap-5">
+                                {social?.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition"><FaFacebook className="w-5 h-5" /></a>}
+                                {social?.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-500 transition"><FaTwitter className="w-5 h-5" /></a>}
+                                {social?.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-600 transition"><FaInstagram className="w-5 h-5" /></a>}
+                            </div>
+                        )}
+                        {hasContact && (
+                            <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm text-gray-500">
+                                {storefront.contactInfo?.phone && (
+                                    <a href={`tel:${storefront.contactInfo.phone}`} className="flex items-center gap-1.5 hover:text-gray-800 transition">
+                                        <FaPhone className="w-3 h-3" />{storefront.contactInfo.phone}
+                                    </a>
+                                )}
+                                {storefront.contactInfo?.whatsapp && (
+                                    <a href={`https://wa.me/${storefront.contactInfo.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 text-[#25D366] hover:text-[#20BD5C] transition font-semibold">
+                                        <FaWhatsapp className="w-4 h-4" />WhatsApp
+                                    </a>
+                                )}
+                                {storefront.contactInfo?.email && (
+                                    <a href={`mailto:${storefront.contactInfo.email}`} className="flex items-center gap-1.5 hover:text-gray-800 transition">
+                                        <FaEnvelope className="w-3 h-3" />{storefront.contactInfo.email}
+                                    </a>
+                                )}
+                            </div>
+                        )}
+                        <p className="text-xs text-gray-400">
+                            {footerText}
+                            <span className="mx-2 text-gray-300">|</span>
+                            <span className="font-medium text-gray-600">{storefront.businessName}</span>
+                        </p>
+                    </div>
+                    <p className="text-xs text-gray-300 text-center sm:text-right">
+                        Made with love by <a href="https://quayedna-portfolio.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">DNA Studios</a>
+                    </p>
                 </div>
             </footer>
         );

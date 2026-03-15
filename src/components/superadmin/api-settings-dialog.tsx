@@ -11,6 +11,7 @@ import {
   Switch,
 } from "../../design-system";
 import { Key, Smartphone, CreditCard, Eye, EyeOff } from "lucide-react";
+import { Badge } from "../../design-system/components/badge";
 import {
   settingsService,
   type ApiSettings,
@@ -35,9 +36,13 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     mtn: false,
     telecel: false,
     airtelTigo: false,
-    paystackTestSecret: false,
-    paystackLiveSecret: false,
   });
+
+  const formatMasked = (val?: string) => {
+    if (!val) return "Not configured";
+    if (val.length <= 10) return "••••••••";
+    return `${val.slice(0, 6)}…${val.slice(-4)}`;
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -57,13 +62,12 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     setIsLoading(true);
 
     try {
-      // In production: test keys are never shown/submitted; omit blank live secret to preserve existing.
+      // Keys are managed via environment variables; do not send them to the backend.
       const payload: Partial<ApiSettings> = { ...formData };
-      if (!import.meta.env.DEV) {
-        delete payload.paystackTestPublicKey;
-        delete payload.paystackTestSecretKey;
-        if (!payload.paystackLiveSecretKey) delete payload.paystackLiveSecretKey;
-      }
+      delete payload.paystackTestPublicKey;
+      delete payload.paystackTestSecretKey;
+      delete payload.paystackLivePublicKey;
+      delete payload.paystackLiveSecretKey;
 
       const result = await settingsService.updateApiSettings(payload as ApiSettings);
       onSuccess(result);
@@ -77,7 +81,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
 
   const handleClose = () => {
     setFormData(currentSettings);
-    setShowKeys({ mtn: false, telecel: false, airtelTigo: false, paystackTestSecret: false, paystackLiveSecret: false });
+    setShowKeys({ mtn: false, telecel: false, airtelTigo: false });
     onClose();
   };
 
@@ -283,69 +287,50 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                     </span>
                   </div>
 
-                  {import.meta.env.DEV && (
-                    <>
-                      <FormField label="Test Public Key">
-                        <Input
-                          value={formData.paystackTestPublicKey || ''}
-                          onChange={(e) => setFormData(prev => ({ ...prev, paystackTestPublicKey: e.target.value }))}
-                          placeholder="pk_test_..."
-                          className="font-mono"
-                        />
-                      </FormField>
-                      <FormField label="Test Secret Key">
-                        <Input
-                          type={showKeys.paystackTestSecret ? 'text' : 'password'}
-                          value={formData.paystackTestSecretKey || ''}
-                          onChange={(e) => setFormData(prev => ({ ...prev, paystackTestSecretKey: e.target.value }))}
-                          placeholder="sk_test_..."
-                          className="font-mono"
-                          rightIcon={
-                            <button
-                              type="button"
-                              className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
-                              aria-label={showKeys.paystackTestSecret ? 'Hide test secret' : 'Reveal test secret'}
-                              onClick={() => setShowKeys(prev => ({ ...prev, paystackTestSecret: !prev.paystackTestSecret }))}
-                            >
-                              {showKeys.paystackTestSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
-                          }
-                        />
-                      </FormField>
-                    </>
-                  )}
+                  <div className="p-4 bg-yellow-50 rounded-lg">
+                    <div className="font-medium text-yellow-900">Paystack key configuration</div>
+                    <div className="text-xs text-yellow-700 mt-1">
+                      Paystack keys are loaded from environment variables on the server. To change keys, update your environment (e.g. <code>.env</code>) and restart the backend.
+                    </div>
 
-                  <FormField label={import.meta.env.DEV ? "Live Public Key (optional)" : "Live Public Key"}>
-                    <Input
-                      value={formData.paystackLivePublicKey || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, paystackLivePublicKey: e.target.value }))}
-                      placeholder="pk_live_..."
-                      className="font-mono"
-                    />
-                  </FormField>
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="p-3 bg-white rounded border">
+                        <div className="text-xs text-gray-500">Live public key</div>
+                        <div className="mt-1 flex items-center justify-between gap-3">
+                          <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{formData.paystackLivePublicKey ? formatMasked(formData.paystackLivePublicKey) : 'Not configured'}</div>
+                          <Badge colorScheme={formData.paystackLivePublicKey ? 'success' : 'error'}>{formData.paystackLivePublicKey ? 'Configured' : 'Missing'}</Badge>
+                        </div>
+                      </div>
 
-                  <FormField label="Live Secret Key (optional)">
-                    <Input
-                      type={showKeys.paystackLiveSecret ? 'text' : 'password'}
-                      value={formData.paystackLiveSecretKey || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, paystackLiveSecretKey: e.target.value }))}
-                      placeholder={import.meta.env.DEV ? "sk_live_..." : (currentSettings.paystackLiveSecretExists ? "(stored on server)" : "sk_live_...")}
-                      className="font-mono"
-                      rightIcon={
-                        <button
-                          type="button"
-                          className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
-                          aria-label={showKeys.paystackLiveSecret ? 'Hide live secret' : 'Reveal live secret'}
-                          onClick={() => setShowKeys(prev => ({ ...prev, paystackLiveSecret: !prev.paystackLiveSecret }))}
-                        >
-                          {showKeys.paystackLiveSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      }
-                    />
-                    {!import.meta.env.DEV && currentSettings.paystackLiveSecretExists && (
-                      <div className="text-xs text-gray-500 mt-2">Secret stored on server — leave blank to keep existing value or enter a new key to replace.</div>
-                    )}
-                  </FormField>
+                      <div className="p-3 bg-white rounded border">
+                        <div className="text-xs text-gray-500">Live secret key</div>
+                        <div className="mt-1 flex items-center justify-between gap-3">
+                          <div className="text-sm text-gray-700">{currentSettings.paystackLiveSecretExists ? 'Configured' : 'Missing'}</div>
+                          <Badge colorScheme={currentSettings.paystackLiveSecretExists ? 'success' : 'error'}>{currentSettings.paystackLiveSecretExists ? 'Configured' : 'Missing'}</Badge>
+                        </div>
+                      </div>
+
+                      {import.meta.env.DEV && (
+                        <>
+                          <div className="p-3 bg-white rounded border">
+                            <div className="text-xs text-gray-500">Test public key</div>
+                            <div className="mt-1 flex items-center justify-between gap-3">
+                              <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{formData.paystackTestPublicKey ? formatMasked(formData.paystackTestPublicKey) : 'Not configured'}</div>
+                              <Badge colorScheme={formData.paystackTestPublicKey ? 'success' : 'error'}>{formData.paystackTestPublicKey ? 'Configured' : 'Missing'}</Badge>
+                            </div>
+                          </div>
+
+                          <div className="p-3 bg-white rounded border">
+                            <div className="text-xs text-gray-500">Test secret key</div>
+                            <div className="mt-1 flex items-center justify-between gap-3">
+                              <div className="text-sm text-gray-700">{currentSettings.paystackTestSecretExists ? 'Configured' : 'Missing'}</div>
+                              <Badge colorScheme={currentSettings.paystackTestSecretExists ? 'success' : 'error'}>{currentSettings.paystackTestSecretExists ? 'Configured' : 'Missing'}</Badge>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

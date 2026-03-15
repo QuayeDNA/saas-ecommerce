@@ -126,6 +126,37 @@ function getSystemTagline(businessName: string): string {
   return SYSTEM_TAGLINES[hash % SYSTEM_TAGLINES.length];
 }
 
+/** Deterministic placeholder footer text when none is set */
+function getSystemFooterText(businessName: string): string {
+  const FOOTER_TEXTS = [
+    "Powered by your go-to data partner.",
+    "Fast top-ups, trusted by many.",
+    "Your connection, our priority.",
+    "Serving data bundles with care.",
+    "Bringing you fast, reliable bundles.",
+    "Stay connected, stay productive.",
+    "Data made simple and affordable.",
+    "Quick bundle top-ups, anytime.",
+    "Trusted data deals for every network.",
+    "Your one-stop data shop.",
+    "Powered by great service and fast bundles.",
+    "Top-up in seconds, connect for hours.",
+    "Hassle-free data purchases every time.",
+    "Your data, your way.",
+    "Built for speed, designed for you.",
+    "Smart bundles, smarter savings.",
+    "Connecting Ghana, one bundle at a time.",
+    "Reliable data — delivered instantly.",
+    "Fast, friendly, and always available.",
+    "Your favourite source for mobile bundles.",
+  ];
+  let hash = 0;
+  for (let i = 0; i < businessName.length; i++) {
+    hash = (hash * 31 + businessName.charCodeAt(i)) >>> 0;
+  }
+  return FOOTER_TEXTS[hash % FOOTER_TEXTS.length];
+}
+
 /** Deterministic placeholder description for stores without one */
 function getSystemDescription(displayName: string): string {
   return `Welcome to ${displayName}! We offer fast, affordable data bundles from all major networks in Ghana. Order in seconds and stay connected all day.`;
@@ -203,12 +234,24 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   // Form state
   const [formData, setFormData] = useState({
     businessName: storefront.businessName || "",
+    displayName: storefront.displayName || "",
     description: storefront.description || "",
     phone: storefront.contactInfo?.phone || "",
     email: storefront.contactInfo?.email || "",
     whatsapp: storefront.contactInfo?.whatsapp || "",
     address: storefront.contactInfo?.address || "",
   });
+
+  const slugifyBusinessName = (value: string) => {
+    return value
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9_-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
 
   // Branding state
   const [brandingData, setBrandingData] = useState({
@@ -246,6 +289,12 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
       newErrors.businessName = "Business name is required";
     } else if (formData.businessName.length < 3) {
       newErrors.businessName = "Business name must be at least 3 characters";
+    }
+
+    if (!formData.displayName.trim()) {
+      newErrors.displayName = "Display name is required";
+    } else if (formData.displayName.length < 3) {
+      newErrors.displayName = "Display name must be at least 3 characters";
     }
 
     if (!formData.phone.trim()) {
@@ -429,7 +478,8 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     try {
       setIsLoading(true);
       const updateData = {
-        businessName: formData.businessName.trim(),
+        businessName: slugifyBusinessName(formData.businessName.trim()),
+        displayName: formData.displayName.trim(),
         description: formData.description.trim() || undefined,
         contactInfo: {
           phone: formData.phone.trim(),
@@ -490,6 +540,10 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
           brandingData.theme,
         );
 
+      const resolvedFooterText =
+        brandingData.footerText.trim() ||
+        getSystemFooterText(formData.businessName || storefront.businessName);
+
       const updateData = {
         description: resolvedDescription,
         branding: {
@@ -509,7 +563,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
           },
           layout: brandingData.layout,
           showBanner: brandingData.showBanner,
-          footerText: brandingData.footerText.trim() || undefined,
+          footerText: resolvedFooterText,
         },
         settings: {
           theme: brandingData.theme,
@@ -572,6 +626,8 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     }
   };
 
+  const businessSlugPreview = slugifyBusinessName(formData.businessName || storefront.businessName || '');
+  const storefrontUrlPreview = getStoreUrl(businessSlugPreview);
   const getStorefrontUrl = () => getStoreUrl(storefront.businessName);
 
   const copyStorefrontUrl = async () => {
@@ -876,15 +932,33 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               </h3>
             </div>
 
-            <FormField label="Business Name" required>
+            <FormField label="Business Name (URL slug)" required>
               <Input
                 value={formData.businessName}
                 onChange={(e) => handleFormChange("businessName", e.target.value)}
-                placeholder="Your business name"
+                placeholder="your-business-name"
                 leftIcon={<Store className="w-4 h-4" />}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                This controls your storefront URL and must be lowercase with no spaces.
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Preview: <span className="font-mono">{storefrontUrlPreview}</span>
+              </p>
               {errors.businessName && (
                 <p className="text-sm text-red-600 mt-1">{errors.businessName}</p>
+              )}
+            </FormField>
+
+            <FormField label="Display Name" required>
+              <Input
+                value={formData.displayName}
+                onChange={(e) => handleFormChange("displayName", e.target.value)}
+                placeholder="Your store name"
+                leftIcon={<Store className="w-4 h-4" />}
+              />
+              {errors.displayName && (
+                <p className="text-sm text-red-600 mt-1">{errors.displayName}</p>
               )}
             </FormField>
 
@@ -1046,11 +1120,15 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               <Input
                 value={brandingData.footerText}
                 onChange={(e) => handleBrandingChange("footerText", e.target.value)}
-                placeholder="e.g. © 2025 My Business. All rights reserved."
+                placeholder="Optional — leave blank to auto-generate a footer message."
                 maxLength={200}
               />
-              <p className="text-xs text-gray-400 mt-1 text-right">
-                {brandingData.footerText.length}/200 — Shown at the bottom of your store
+              <p className="text-xs text-gray-400 mt-1">
+                {brandingData.footerText.trim()
+                  ? `${brandingData.footerText.length}/200`
+                  : `Auto-generated when left blank: "${getSystemFooterText(
+                    formData.businessName || storefront.businessName,
+                  )}"`}
               </p>
             </FormField>
 

@@ -31,6 +31,7 @@ import {
   DialogFooter,
   Select,
 } from "../../design-system";
+import { getStoreUrl } from "../../utils/store-url";
 import { useToast } from "../../design-system";
 import {
   storefrontService,
@@ -339,6 +340,22 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
     address: "",
     paymentMethods: [],
   });
+
+  const slugifyBusinessName = (value: string) => {
+    return value
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9_-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  const businessUrlPreview = () => {
+    const slug = slugifyBusinessName(formData.businessName || '');
+    return slug ? getStoreUrl(slug) : '';
+  };
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Wizard steps configuration
@@ -648,7 +665,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
     setIsLoading(true);
     try {
       const storefrontData = {
-        businessName: formData.businessName.trim(),
+        businessName: formData.businessName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '').replace(/-+/g, '-'),
         displayName: formData.displayName.trim(),
         isActive: true,
         paymentMethods: formData.paymentMethods.filter((pm) => pm.isActive),
@@ -760,7 +777,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
         {currentStep === 0 && (
           <div className="space-y-5">
             <FormField
-              label="Business Name"
+              label="Business Name (URL slug)"
               required
             >
               <Input
@@ -768,10 +785,18 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                 onChange={(e) =>
                   handleFieldChange("businessName", e.target.value)
                 }
-                placeholder="Your business name"
+                placeholder="your-business-name"
                 leftIcon={<Store className="w-4 h-4" />}
                 useThemeColor
               />
+              <p className="text-xs text-gray-500 mt-1">
+                This is used in your storefront URL and must be lowercase with no spaces.
+              </p>
+              {businessUrlPreview() && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Preview: <span className="font-mono">{businessUrlPreview()}</span>
+                </p>
+              )}
             </FormField>
 
             <FormField

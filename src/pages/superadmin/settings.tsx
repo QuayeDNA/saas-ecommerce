@@ -331,34 +331,38 @@ export default function SuperAdminSettingsPage() {
                       </div>
 
                       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="p-3 bg-white rounded border">
-                          <div className="text-xs text-gray-500">Test public key</div>
-                          <div className="mt-1 flex items-center justify-between gap-3">
-                            <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackTestPublic ? (data.apiSettings.paystackTestPublicKey || 'Not configured') : formatMasked(data.apiSettings.paystackTestPublicKey)}</div>
-                            <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackTestPublic ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackTestPublic')}>{revealKeys.paystackTestPublic ? 'Hide' : 'Reveal'}</Button>
-                          </div>
-                        </div>
+                        {import.meta.env.DEV && (
+                          <>
+                            <div className="p-3 bg-white rounded border">
+                              <div className="text-xs text-gray-500">Test public key</div>
+                              <div className="mt-1 flex items-center justify-between gap-3">
+                                <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackTestPublic ? (data.apiSettings.paystackTestPublicKey || 'Not configured') : formatMasked(data.apiSettings.paystackTestPublicKey)}</div>
+                                <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackTestPublic ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackTestPublic')}>{revealKeys.paystackTestPublic ? 'Hide' : 'Reveal'}</Button>
+                              </div>
+                            </div>
 
-                        <div className="p-3 bg-white rounded border">
-                          <div className="text-xs text-gray-500">Test secret key</div>
-                          <div className="mt-1 flex items-center justify-between gap-3">
-                            {data.apiSettings.paystackTestSecretKey !== undefined ? (
-                              // dev: secret value returned — allow reveal
-                              <>
-                                <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackTestSecret ? (data.apiSettings.paystackTestSecretKey || 'Not configured') : formatMasked(data.apiSettings.paystackTestSecretKey)}</div>
-                                <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackTestSecret ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackTestSecret')}>{revealKeys.paystackTestSecret ? 'Hide' : 'Reveal'}</Button>
-                              </>
-                            ) : (
-                              // prod: secret redacted — show existence and let admin open dialog to replace
-                              <>
-                                <div className="text-sm text-gray-700">{data.apiSettings.paystackTestSecretExists ? 'Stored on server' : 'Not configured'}</div>
-                                <div className="flex items-center gap-2">
-                                  <Button size="sm" variant="ghost" leftIcon={<KeyIcon className="w-3 h-3" />} onClick={() => setApiDialogOpen(true)}>{data.apiSettings.paystackTestSecretExists ? 'Replace' : 'Set'}</Button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
+                            <div className="p-3 bg-white rounded border">
+                              <div className="text-xs text-gray-500">Test secret key</div>
+                              <div className="mt-1 flex items-center justify-between gap-3">
+                                {data.apiSettings.paystackTestSecretKey !== undefined ? (
+                                  // dev: secret value returned — allow reveal
+                                  <>
+                                    <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackTestSecret ? (data.apiSettings.paystackTestSecretKey || 'Not configured') : formatMasked(data.apiSettings.paystackTestSecretKey)}</div>
+                                    <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackTestSecret ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackTestSecret')}>{revealKeys.paystackTestSecret ? 'Hide' : 'Reveal'}</Button>
+                                  </>
+                                ) : (
+                                  // prod: secret redacted — show existence and let admin open dialog to replace
+                                  <>
+                                    <div className="text-sm text-gray-700">{data.apiSettings.paystackTestSecretExists ? 'Stored on server' : 'Not configured'}</div>
+                                    <div className="flex items-center gap-2">
+                                      <Button size="sm" variant="ghost" leftIcon={<KeyIcon className="w-3 h-3" />} onClick={() => setApiDialogOpen(true)}>{data.apiSettings.paystackTestSecretExists ? 'Replace' : 'Set'}</Button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
 
                         <div className="p-3 bg-white rounded border">
                           <div className="text-xs text-gray-500">Live public key</div>
@@ -371,7 +375,7 @@ export default function SuperAdminSettingsPage() {
                         <div className="p-3 bg-white rounded border">
                           <div className="text-xs text-gray-500">Live secret key</div>
                           <div className="mt-1 flex items-center justify-between gap-3">
-                            {data.apiSettings.paystackLiveSecretKey !== undefined ? (
+                            {import.meta.env.DEV && data.apiSettings.paystackLiveSecretKey !== undefined ? (
                               // dev: secret value returned — allow reveal
                               <>
                                 <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackLiveSecret ? (data.apiSettings.paystackLiveSecretKey || 'Not configured') : formatMasked(data.apiSettings.paystackLiveSecretKey)}</div>
