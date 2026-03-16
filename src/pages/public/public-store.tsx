@@ -217,6 +217,15 @@ const normalizePhone = (p: string) => {
     return c;
 };
 
+const normalizeWhatsappNumber = (value?: string) => {
+    if (!value) return '';
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('233')) return digits;
+    if (digits.startsWith('0')) return `233${digits.slice(1)}`;
+    return digits;
+};
+
 const isValidPhone = (p: string) => /^0\d{9}$/.test(normalizePhone(p));
 const fmtValidity = (v: number | string, u: string) =>
     v === 'unlimited' || u === 'unlimited' ? 'Unlimited' : `${v} ${u}`;
@@ -2119,7 +2128,7 @@ const PublicStore: React.FC = () => {
                                 {/* WhatsApp contact */}
                                 {storeData?.storefront.contactInfo?.whatsapp && (
                                     <a
-                                        href={`https://wa.me/${storeData.storefront.contactInfo.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I just placed order #${orderResult.orderNumber} for ${bundle.name} on ${normalizePhone(orderPhone)}`)}`}
+                                        href={`https://wa.me/${normalizeWhatsappNumber(storeData.storefront.contactInfo.whatsapp)}?text=${encodeURIComponent(`Hi, I just placed order #${orderResult.orderNumber} for ${bundle.name} on ${normalizePhone(orderPhone)}`)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-xl font-bold text-sm hover:bg-[#20BD5C] transition active:scale-95"
@@ -2177,7 +2186,7 @@ const PublicStore: React.FC = () => {
                                     </a>
                                 )}
                                 {storefront.contactInfo?.whatsapp && (
-                                    <a href={`https://wa.me/${storefront.contactInfo.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+                                    <a href={`https://wa.me/${normalizeWhatsappNumber(storefront.contactInfo.whatsapp)}`} target="_blank" rel="noopener noreferrer"
                                         className="flex items-center gap-1.5 text-[#25D366] hover:text-[#20BD5C] transition font-semibold">
                                         <FaWhatsapp className="w-4 h-4" />WhatsApp
                                     </a>

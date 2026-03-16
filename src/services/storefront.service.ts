@@ -1,4 +1,4 @@
-import { apiClient } from '@/utils/api-client';
+import { apiClient, publicApiClient } from '@/utils/api-client';
 import { AxiosError } from 'axios';
 
 // =========================================================================
@@ -597,12 +597,12 @@ class StorefrontService {
   }
 
   async getPublicStorefront(businessName: string): Promise<PublicStorefront> {
-    const response = await apiClient.get(`${this.basePath}/${businessName}`);
+    const response = await publicApiClient.get(`${this.basePath}/${businessName}`);
     return response.data.data;
   }
 
   async createPublicOrder(businessName: string, orderData: PublicOrderData): Promise<PublicOrderResult> {
-    const response = await apiClient.post(`${this.basePath}/${businessName}/order`, orderData);
+    const response = await publicApiClient.post(`${this.basePath}/${businessName}/order`, orderData);
     return response.data.data;
   }
 
@@ -610,7 +610,7 @@ class StorefrontService {
    * Verify a Paystack transaction reference for a storefront order (used by frontend callback)
    */
   async verifyPaystackReference(reference: string): Promise<{ success: boolean; message?: string }> {
-    const response = await apiClient.get(`${this.basePath}/paystack/verify?reference=${encodeURIComponent(reference)}`);
+    const response = await publicApiClient.get(`${this.basePath}/paystack/verify?reference=${encodeURIComponent(reference)}`);
     return response.data;
   }
 
@@ -619,7 +619,7 @@ class StorefrontService {
    * No authentication required — returns sanitised status only.
    */
   async trackOrder(businessName: string, ref: string): Promise<TrackedOrder> {
-    const response = await apiClient.get(
+    const response = await publicApiClient.get(
       `${this.basePath}/${encodeURIComponent(businessName)}/orders/track`,
       { params: { ref } }
     );

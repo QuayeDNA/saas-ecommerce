@@ -473,11 +473,21 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
   // --- API Actions ---
 
+  const normalizeWhatsappNumber = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("+")) return digits.replace(/\D/g, "");
+    if (digits.startsWith("233")) return digits;
+    if (digits.startsWith("0")) return `233${digits.slice(1)}`;
+    return digits;
+  };
+
   const saveGeneralSettings = async () => {
     if (!validateGeneral()) return;
 
     try {
       setIsLoading(true);
+      const normalizedWhatsapp = normalizeWhatsappNumber(formData.whatsapp);
       const updateData = {
         businessName: slugifyBusinessName(formData.businessName.trim()),
         displayName: formData.displayName.trim(),
@@ -485,7 +495,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         contactInfo: {
           phone: formData.phone.trim(),
           email: formData.email.trim() || undefined,
-          whatsapp: formData.whatsapp.trim() || undefined,
+          whatsapp: normalizedWhatsapp || undefined,
           address: formData.address.trim() || undefined,
         },
       };
