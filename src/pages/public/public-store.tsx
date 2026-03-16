@@ -783,7 +783,8 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
 
     const fetchLiveStatus = useCallback(async (entry: SavedOrderEntry) => {
         try {
-            const data = await storefrontService.trackOrder(businessName, entry.reference);
+            const lookupKey = entry.orderNumber || entry.reference;
+            const data = await storefrontService.trackOrder(businessName, lookupKey);
             setLiveData(prev => ({ ...prev, [entry.orderId]: data }));
             if (data.status !== entry.lastStatus) {
                 updateSavedStatus(businessName, entry.orderId, data.status);
@@ -799,10 +800,11 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
     }, [expandedId, liveData, fetchLiveStatus]);
 
     const handleManualTrack = useCallback(async () => {
-        if (!manualRef.trim()) return;
+        const lookup = manualRef.trim().toUpperCase();
+        if (!lookup) return;
         setTrackLoading(true); setTrackError(null); setTrackResult(null);
         try {
-            const data = await storefrontService.trackOrder(businessName, manualRef.trim());
+            const data = await storefrontService.trackOrder(businessName, lookup);
             setTrackResult(data);
         } catch (err) {
             setTrackError(err instanceof Error ? err.message : 'Order not found');
@@ -951,7 +953,7 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                             <p className="text-sm text-gray-400 mt-1 leading-relaxed">
                                 Orders placed on this device appear here for 24 hours.
                             </p>
-                            <p className="text-xs text-gray-300 mt-3">Have a reference? Use the lookup below.</p>
+                            <p className="text-xs text-gray-300 mt-3">Have an order number? Use the lookup below.</p>
                         </div>
                     ) : (
                         savedOrders.map(entry => renderOrderCard(entry))
@@ -963,14 +965,14 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                     <button
                         onClick={() => { setShowManual(m => !m); setTrackResult(null); setTrackError(null); }}
                         className="flex items-center justify-between w-full text-sm font-bold text-gray-600 hover:text-gray-900 transition">
-                        <span>Track by order reference</span>
+                        <span>Track by order number</span>
                         <FaChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showManual ? 'rotate-180' : ''}`} />
                     </button>
                     {showManual && (
                         <div className="space-y-2">
                             <input
                                 type="text"
-                                placeholder="Paste order ID or reference…"
+                                placeholder="Paste order number (e.g. BAGS-1234)…"
                                 value={manualRef}
                                 onChange={e => setManualRef(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleManualTrack()}
@@ -1267,7 +1269,8 @@ const PublicStore: React.FC = () => {
                 saveOrderEntry(businessName, {
                     orderId: result.orderId,
                     orderNumber: result.orderNumber,
-                    reference: reference || result.orderId,
+                    // Use the user-facing order number for tracking (BAGS-XXXX) instead of the payment reference.
+                    reference: result.orderNumber || reference || result.orderId,
                     bundleName: activeOrder.bundle.name,
                     provider: activeOrder.bundle.provider || '',
                     total: result.total,
@@ -1321,8 +1324,14 @@ const PublicStore: React.FC = () => {
                 }
             }
         } catch (err) {
-            const axiosMsg = (err as any)?.response?.data?.message;
-            setOrderError(axiosMsg ?? (err instanceof Error ? err.message : 'Failed to place order. Please try again.'));
+            const errorData = (err as any)?.response?.data;
+            const axiosMsg = errorData?.message;
+            const firstFieldError = Array.isArray(errorData?.errors) && errorData.errors.length > 0
+                ? errorData.errors[0]?.msg || errorData.errors[0]?.message
+                : null;
+            setOrderError(
+                firstFieldError || axiosMsg || (err instanceof Error ? err.message : 'Failed to place order. Please try again.')
+            );
         } finally {
             setSubmitting(false);
         }
