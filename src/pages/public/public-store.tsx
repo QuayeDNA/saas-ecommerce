@@ -1234,7 +1234,6 @@ const PublicStore: React.FC = () => {
         if (!businessName || !storeData || !canSubmitOrder || !activeOrder) return;
         setSubmitting(true);
         setOrderError(null);
-        let popup: Window | null = null;
         try {
             const phone = normalizePhone(orderPhone);
             const isAfa = activeOrder.bundle.provider?.toUpperCase() === 'AFA';
@@ -1310,22 +1309,20 @@ const PublicStore: React.FC = () => {
                         },
                     });
                     handler.openIframe();
-                } catch {
-                    popup = window.open('', '_blank');
-                    if (popup) {
-                        try { popup.location.href = paystackUrl; } catch {
-                            (popup as any).close();
-                            window.open(paystackUrl, '_blank');
-                        }
-                    } else {
-                        window.open(paystackUrl, '_blank');
-                    }
+                } catch (err) {
+                    // If the Paystack inline widget can't be opened (e.g. script blocked),
+                    // we fail gracefully and let the user retry.
+                    console.error('[PublicStore] Paystack inline checkout failed', err);
+                    addToast(
+                        'Unable to open Paystack checkout. Please try again or use a different browser.',
+                        'error',
+                        8000
+                    );
                 }
             }
         } catch (err) {
             const axiosMsg = (err as any)?.response?.data?.message;
             setOrderError(axiosMsg ?? (err instanceof Error ? err.message : 'Failed to place order. Please try again.'));
-            if (popup && !(popup as any).closed) { try { (popup as any).close(); } catch { /* */ } }
         } finally {
             setSubmitting(false);
         }

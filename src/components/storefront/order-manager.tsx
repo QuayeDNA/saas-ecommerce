@@ -215,9 +215,40 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
 
   const totalPages = Math.ceil(totalOrders / ITEMS_PER_PAGE);
 
-  const needsVerification = (order: StorefrontOrder) =>
-    order.status === "pending_payment" &&
-    !order.storefrontData?.paymentMethod?.verified;
+  const isPaystackOrder = (order: StorefrontOrder) =>
+    order.storefrontData?.paymentMethod?.type === 'paystack';
+
+  const needsManualVerification = (order: StorefrontOrder) =>
+    order.status === 'pending_payment' &&
+    !order.storefrontData?.paymentMethod?.verified &&
+    !isPaystackOrder(order);
+
+  const needsPaystackRetry = (order: StorefrontOrder) =>
+    order.status === 'pending_payment' &&
+    !order.storefrontData?.paymentMethod?.verified &&
+    isPaystackOrder(order);
+
+  const handleRetryPaystackVerification = async (order: StorefrontOrder) => {
+    setIsProcessing(true);
+    try {
+      const result = await storefrontService.verifyPaystackReference(`storefront_${order._id}`);
+      if (!result?.success) {
+        throw new Error(result?.message || 'Verification did not succeed');
+      }
+      addToast('Payment verified! Order is now processing.', 'success');
+      loadOrders();
+    } catch (error) {
+      console.error('Retry paystack verification failed:', error);
+      addToast(
+        getApiErrorMessage(error, 'Verification failed. We will keep retrying in the background.'),
+        'error',
+      );
+      // Refresh list so the latest status is visible (may still be pending)
+      loadOrders();
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // --- Loading ---
   if (isLoading) {
@@ -405,7 +436,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {needsVerification(order) ? (
+                        {needsManualVerification(order) ? (
                           <div className="flex gap-1.5">
                             <Button
                               size="xs"
@@ -430,6 +461,15 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                               Reject
                             </Button>
                           </div>
+                        ) : needsPaystackRetry(order) ? (
+                          <Button
+                            size="xs"
+                            variant="primary"
+                            onClick={() => handleRetryPaystackVerification(order)}
+                            isLoading={isProcessing}
+                          >
+                            Retry verification
+                          </Button>
                         ) : (
                           <Badge
                             colorScheme={
@@ -548,8 +588,8 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                       <span>{formatDate(order.createdAt)}</span>
                     </div>
 
-                    {/* Quick verify/reject */}
-                    {needsVerification(order) && (
+                    {/* Quick verify/retry */}
+                    {needsManualVerification(order) && (
                       <div className="mt-3 flex gap-2">
                         <Button
                           size="sm"
@@ -574,6 +614,19 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                           leftIcon={<XCircle className="w-3.5 h-3.5" />}
                         >
                           Reject
+                        </Button>
+                      </div>
+                    )}
+                    {needsPaystackRetry(order) && (
+                      <div className="mt-3">
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          className="w-full"
+                          onClick={() => handleRetryPaystackVerification(order)}
+                          isLoading={isProcessing}
+                        >
+                          Retry verification
                         </Button>
                       </div>
                     )}
@@ -642,7 +695,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                   </span>
 
                   {/* Action */}
-                  {needsVerification(order) && (
+                  {needsManualVerification(order) && (
                     <div className="flex gap-1 shrink-0">
                       <Button
                         size="xs"
@@ -654,6 +707,21 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                         leftIcon={<CheckCircle className="w-3 h-3" />}
                       >
                         Verify
+                      </Button>
+                    </div>
+                  )}
+                  {needsPaystackRetry(order) && (
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        size="xs"
+                        variant="primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRetryPaystackVerification(order);
+                        }}
+                        isLoading={isProcessing}
+                      >
+                        Retry
                       </Button>
                     </div>
                   )}
@@ -789,7 +857,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
             </DialogBody>
 
             <DialogFooter>
-              {needsVerification(selectedOrder) ? (
+              {needsManualVerification(selectedOrder) ? (
                 <div className="flex gap-2 w-full">
                   <Button
                     variant="success"
@@ -814,6 +882,18 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                     Reject
                   </Button>
                 </div>
+              ) : needsPaystackRetry(selectedOrder) ? (
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  isLoading={isProcessing}
+                  onClick={() => {
+                    setSelectedOrder(null);
+                    handleRetryPaystackVerification(selectedOrder);
+                  }}
+                >
+                  Retry verification
+                </Button>
               ) : (
                 <Button
                   variant="outline"
