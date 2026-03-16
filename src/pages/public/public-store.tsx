@@ -778,6 +778,14 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
     const [trackResult, setTrackResult] = useState<TrackedOrder | null>(null);
     const [trackError, setTrackError] = useState<string | null>(null);
     const [trackLoading, setTrackLoading] = useState(false);
+    const [showFullPhone, setShowFullPhone] = useState(false);
+
+    const maskPhone = (p?: string) => {
+        if (!p) return '';
+        const d = p.replace(/\D/g, '');
+        if (d.length < 7) return p;
+        return `${d.slice(0, 3)}***${d.slice(-3)}`;
+    };
 
     useEffect(() => { if (isOpen) setSavedOrders(loadSavedOrders(businessName)); }, [isOpen, businessName]);
 
@@ -849,7 +857,9 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                                 {item.dataVolume > 0 && <span className="text-gray-400 ml-1">· {item.dataVolume}{item.dataUnit}</span>}
                             </div>
                             <div className="text-right shrink-0">
-                                <p className="font-mono text-gray-600">{item.customerPhone}</p>
+                                <p className="font-mono text-gray-600">
+                                    {showFullPhone ? item.customerPhone : maskPhone(item.customerPhone)}
+                                </p>
                                 <span className={`text-[10px] font-bold ${item.processingStatus === 'completed' ? 'text-green-600' :
                                     item.processingStatus === 'failed' ? 'text-red-500' :
                                         item.processingStatus === 'processing' ? 'text-blue-500' : 'text-amber-500'
@@ -936,10 +946,18 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                             <p className="text-[11px] text-gray-400 leading-tight">Track your purchases on this device</p>
                         </div>
                     </div>
-                    <button onClick={onClose}
-                        className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition">
-                        <FaXmark className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setShowFullPhone(f => !f)}
+                            className="px-3 py-2 rounded-xl text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition"
+                        >
+                            {showFullPhone ? 'Hide phone' : 'Show full phone'}
+                        </button>
+                        <button onClick={onClose}
+                            className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition">
+                            <FaXmark className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Order list */}
