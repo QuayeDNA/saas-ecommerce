@@ -153,7 +153,7 @@ export interface StorefrontOrder {
       ghanaCardNumber?: string;
     };
     paymentMethod: {
-      type: 'mobile_money' | 'bank_transfer';
+      type: 'mobile_money' | 'bank_transfer' | 'paystack';
       reference?: string;
       paymentProofUrl?: string;
       verified: boolean;
