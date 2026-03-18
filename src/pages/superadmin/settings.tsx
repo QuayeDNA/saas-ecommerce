@@ -3,8 +3,8 @@ import { Edit, Key as KeyIcon, Eye, EyeOff, Smartphone, CreditCard } from "lucid
 import { Button } from "../../design-system/components/button";
 import { Card } from "../../design-system/components/card";
 import { Badge } from "../../design-system/components/badge";
-import { Alert } from "../../design-system/components/alert";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "../../design-system";
+import { useToast } from "../../design-system/components/toast";
 import { ColorSchemeSelector } from "../../components/common/color-scheme-selector";
 import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type SystemInfo } from "../../services/settings.service";
 import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog } from "../../components/superadmin";
@@ -24,7 +24,7 @@ export default function SuperAdminSettingsPage() {
 
   const [loading, setLoading] = useState(true);
   const [busyKeys, setBusyKeys] = useState<Record<string, boolean>>({});
-  const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
+  const { addToast } = useToast();
 
   // dialogs
   const [siteDialogOpen, setSiteDialogOpen] = useState(false);
@@ -46,7 +46,7 @@ export default function SuperAdminSettingsPage() {
         if (all.feeSettings) setFeeSettings(all.feeSettings);
       } catch (err) {
         console.error("Failed to load settings:", err);
-        if (mounted) setMessage({ type: "error", text: "Failed to load settings" });
+        if (mounted) addToast("Failed to load settings", "error");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -55,8 +55,6 @@ export default function SuperAdminSettingsPage() {
   }, []);
 
   const setBusy = useCallback((key: string, v: boolean) => setBusyKeys(prev => ({ ...prev, [key]: v })), []);
-
-  const clearMessage = useCallback(() => setMessage(null), []);
 
   // Optimistic toggle helpers — update local state first, then call API; revert on error
   const handleToggleSite = useCallback(async () => {
@@ -67,14 +65,14 @@ export default function SuperAdminSettingsPage() {
     try {
       const res = await settingsService.toggleSiteStatus();
       setData(d => d ? { ...d, siteSettings: { ...d.siteSettings, isSiteOpen: res.isSiteOpen } } : d);
-      setMessage({ type: "success", text: `Site ${res.isSiteOpen ? "opened" : "closed"} successfully` });
+      addToast(`Site ${res.isSiteOpen ? "opened" : "closed"} successfully`, "success");
     } catch {
       setData(d => d ? { ...d, siteSettings: { ...d.siteSettings, isSiteOpen: prev } } : d);
-      setMessage({ type: "error", text: "Failed to update site status" });
+      addToast("Failed to update site status", "error");
     } finally {
       setBusy("siteToggle", false);
     }
-  }, [data, setBusy]);
+  }, [data, setBusy, addToast]);
 
   const handleToggleSignupApproval = useCallback(async () => {
     if (!data) return;
@@ -83,14 +81,14 @@ export default function SuperAdminSettingsPage() {
     setBusy("signupToggle", true);
     try {
       await settingsService.updateSignupApprovalSetting(!prev);
-      setMessage({ type: "success", text: `Signup approval ${!prev ? "required" : "disabled"}` });
+      addToast(`Signup approval ${!prev ? "required" : "disabled"}`, "success");
     } catch {
       setData(d => d ? { ...d, signupApproval: { requireApprovalForSignup: prev } } : d);
-      setMessage({ type: "error", text: "Failed to update signup approval setting" });
+      addToast("Failed to update signup approval setting", "error");
     } finally {
       setBusy("signupToggle", false);
     }
-  }, [data, setBusy]);
+  }, [data, setBusy, addToast]);
 
   const handleToggleAutoApprove = useCallback(async () => {
     if (!data) return;
@@ -99,40 +97,40 @@ export default function SuperAdminSettingsPage() {
     setBusy("autoApproveToggle", true);
     try {
       await settingsService.updateAutoApproveStorefronts(!prev);
-      setMessage({ type: "success", text: `Storefront auto-approval ${!prev ? "enabled" : "disabled"}` });
+      addToast(`Storefront auto-approval ${!prev ? "enabled" : "disabled"}`, "success");
     } catch {
       setData(d => d ? { ...d, autoApproveStorefronts: { autoApproveStorefronts: prev } } : d);
-      setMessage({ type: "error", text: "Failed to update storefront auto-approval setting" });
+      addToast("Failed to update storefront auto-approval setting", "error");
     } finally {
       setBusy("autoApproveToggle", false);
     }
-  }, [data, setBusy]);
+  }, [data, setBusy, addToast]);
 
   // Dialog callbacks update the combined `data` object — prevents refetching
   const handleSiteSettingsSuccess = useCallback((settings: SiteSettings) => {
     setData(d => d ? { ...d, siteSettings: settings } : d);
-    setMessage({ type: "success", text: "Site settings updated" });
-  }, []);
+    addToast("Site settings updated", "success");
+  }, [addToast]);
 
   const handleApiSettingsSuccess = useCallback((settings: ApiSettings) => {
     setData(d => d ? { ...d, apiSettings: settings } : d);
-    setMessage({ type: "success", text: "API settings updated" });
-  }, []);
+    addToast("API settings updated", "success");
+  }, [addToast]);
 
   const handleFeeSettingsSuccess = useCallback((settings: FeeSettings) => {
     setFeeSettings(settings);
     setData(d => d ? { ...d, feeSettings: settings } : d);
-    setMessage({ type: 'success', text: 'Fee settings updated' });
-  }, []);
+    addToast('Fee settings updated', 'success');
+  }, [addToast]);
 
   const handleWalletSettingsSuccess = useCallback((settings: WalletSettings) => {
     setData(d => d ? { ...d, walletSettings: settings } : d);
-    setMessage({ type: "success", text: "Wallet settings updated" });
-  }, []);
+    addToast("Wallet settings updated", "success");
+  }, [addToast]);
 
   const handlePasswordChangeSuccess = useCallback(() => {
-    setMessage({ type: "success", text: "Admin password changed successfully. Please log in again." });
-  }, []);
+    addToast("Admin password changed successfully. Please log in again.", "success");
+  }, [addToast]);
 
   // derived values for compact templates
   const siteOpen = data?.siteSettings?.isSiteOpen ?? false;
@@ -193,12 +191,6 @@ export default function SuperAdminSettingsPage() {
           <p className="text-sm text-gray-600 mt-1">Manage site, API and wallet configuration</p>
         </div>
       </div>
-
-      {message && (
-        <Alert status={message.type === "error" ? "error" : message.type === "success" ? "success" : "info"} onClose={clearMessage} title={message.type === "error" ? "Error" : message.type === "success" ? "Success" : "Info"}>
-          {message.text}
-        </Alert>
-      )}
 
       {/* Tabs (mobile-first) */}
       <div className="">
