@@ -22,6 +22,26 @@ export const announcementService = {
     return response.data.data;
   },
 
+  async getPublicActiveAnnouncements(storefront?: string): Promise<Announcement[]> {
+    const params = new URLSearchParams();
+    if (storefront) params.append("storefront", storefront);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const response = await apiClient.get(
+      `${ANNOUNCEMENT_BASE_URL}/active/public${query}`
+    );
+    return response.data.data;
+  },
+
+  async getPublicUnreadAnnouncements(storefront?: string): Promise<Announcement[]> {
+    const params = new URLSearchParams();
+    if (storefront) params.append("storefront", storefront);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const response = await apiClient.get(
+      `${ANNOUNCEMENT_BASE_URL}/unread/public${query}`
+    );
+    return response.data.data;
+  },
+
   async markAsViewed(announcementId: string): Promise<void> {
     await apiClient.post(`${ANNOUNCEMENT_BASE_URL}/${announcementId}/view`);
   },

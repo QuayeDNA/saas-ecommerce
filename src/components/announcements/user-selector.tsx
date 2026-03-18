@@ -13,6 +13,7 @@ const USER_TYPES: { value: TargetAudience; label: string }[] = [
   { value: "dealer", label: "Dealers" },
   { value: "super_dealer", label: "Super Dealers" },
   { value: "admin", label: "Admins" },
+  { value: "public", label: "Public (Storefront Customers)" },
 ];
 
 export const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({

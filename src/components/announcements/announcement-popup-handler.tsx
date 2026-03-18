@@ -7,8 +7,19 @@ import AnnouncementModal from "./announcement-modal";
  * AnnouncementPopupHandler automatically displays unread announcements as popups
  * Priority order: urgent > high > medium > low
  */
-export const AnnouncementPopupHandler: React.FC = () => {
-  const { announcements } = useAnnouncements();
+interface AnnouncementPopupHandlerProps {
+  announcements?: Announcement[];
+  onMarkAsViewed?: (announcementId: string) => Promise<void> | void;
+  onMarkAsAcknowledged?: (announcementId: string) => Promise<void> | void;
+}
+
+export const AnnouncementPopupHandler: React.FC<AnnouncementPopupHandlerProps> = ({
+  announcements: propAnnouncements,
+  onMarkAsViewed,
+  onMarkAsAcknowledged,
+}) => {
+  const { announcements: ctxAnnouncements } = useAnnouncements();
+  const announcements = propAnnouncements ?? ctxAnnouncements;
   const [currentAnnouncement, setCurrentAnnouncement] =
     useState<Announcement | null>(null);
   const [queue, setQueue] = useState<Announcement[]>([]);
@@ -71,6 +82,19 @@ export const AnnouncementPopupHandler: React.FC = () => {
     }, 500);
   };
 
+  // Helper to mark viewed/acknowledged; falls back to built-in API when missing
+  const handleMarkAsViewed = async (announcementId: string) => {
+    if (onMarkAsViewed) {
+      await onMarkAsViewed(announcementId);
+    }
+  };
+
+  const handleMarkAsAcknowledged = async (announcementId: string) => {
+    if (onMarkAsAcknowledged) {
+      await onMarkAsAcknowledged(announcementId);
+    }
+  };
+
   if (!currentAnnouncement) {
     return null;
   }
@@ -80,6 +104,8 @@ export const AnnouncementPopupHandler: React.FC = () => {
       announcement={currentAnnouncement}
       isOpen={isOpen}
       onClose={handleClose}
+      onViewed={handleMarkAsViewed}
+      onAcknowledged={handleMarkAsAcknowledged}
     />
   );
 };

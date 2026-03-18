@@ -16,7 +16,8 @@ export type TargetAudience =
   | "super_agent"
   | "dealer"
   | "super_dealer"
-  | "admin";
+  | "admin"
+  | "public";
 
 export type AnnouncementTemplateType =
   | "network_slow"
@@ -69,6 +70,7 @@ export interface CreateAnnouncementDTO {
   type: AnnouncementType;
   priority: AnnouncementPriority;
   targetAudience: TargetAudience[];
+  targetStorefront?: string;
   status?: AnnouncementStatus; // Now optional, defaults to "active"
   expiresAt?: string;
   template?: AnnouncementTemplateType;
@@ -83,6 +85,7 @@ export interface UpdateAnnouncementDTO {
   type?: AnnouncementType;
   priority?: AnnouncementPriority;
   targetAudience?: TargetAudience[];
+  targetStorefront?: string;
   status?: AnnouncementStatus;
   expiresAt?: string;
   template?: AnnouncementTemplateType;

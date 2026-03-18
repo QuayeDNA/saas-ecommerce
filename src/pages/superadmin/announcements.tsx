@@ -42,6 +42,7 @@ export const AnnouncementsPage: React.FC = () => {
     type: "info",
     priority: "medium",
     targetAudience: [],
+    targetStorefront: "",
     status: "active", // Changed from "draft" to "active" as new default
     actionRequired: false,
   });
@@ -173,6 +174,7 @@ export const AnnouncementsPage: React.FC = () => {
       type: "info",
       priority: "medium",
       targetAudience: [],
+      targetStorefront: "",
       status: "active", // Changed from "draft" to "active" as new default
       actionRequired: false,
     });
@@ -189,6 +191,7 @@ export const AnnouncementsPage: React.FC = () => {
       targetAudience: Array.isArray(announcement.targetAudience)
         ? announcement.targetAudience
         : [], // Handle old announcements with string targetAudience
+      targetStorefront: (announcement as any).targetStorefront || "",
       status: announcement.status,
       expiresAt: announcement.expiresAt,
       actionRequired: announcement.actionRequired,
@@ -666,6 +669,24 @@ export const AnnouncementsPage: React.FC = () => {
                   setFormData({ ...formData, targetAudience: types })
                 }
               />
+
+              {formData.targetAudience.includes("public") && (
+                <div className="mt-2">
+                  <Input
+                    label="Target Storefront (optional)"
+                    value={formData.targetStorefront || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        targetStorefront: e.target.value,
+                      })
+                    }
+                    placeholder="e.g. my-business-name"
+                    helperText="Leave empty to target all public storefronts."
+                    className="text-sm"
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Select

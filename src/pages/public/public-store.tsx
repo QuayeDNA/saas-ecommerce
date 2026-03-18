@@ -14,12 +14,16 @@ import {
 import { getProviderColors } from '../../utils/provider-colors';
 import storefrontService from '../../services/storefront.service';
 import { walletService } from '../../services/wallet-service';
+import announcementService from '../../services/announcement.service';
+import { websocketService } from '../../services/websocket.service';
 import { useToast } from '../../design-system/components/toast';
 import { useSiteStatus } from '../../contexts/site-status-context';
+import AnnouncementPopupHandler from '../../components/announcements/announcement-popup-handler';
 import type {
     PublicBundle, PublicStorefront, PublicOrderData,
     PublicOrderResult, StorefrontBranding, TrackedOrder,
 } from '../../services/storefront.service';
+import type { Announcement } from '../../types/announcement';
 import {
     FaCircleCheck, FaTriangleExclamation, FaIdCard,
     FaArrowRight, FaArrowLeft, FaPhone, FaEnvelope,
@@ -1083,6 +1087,14 @@ const PublicStore: React.FC = () => {
     // ── Track order drawer ────────────────────────────────────────────────────
     const [showTrackDrawer, setShowTrackDrawer] = useState(false);
 
+    // ── Public announcements (for storefront customers) ─────────────────────────
+    const [publicAnnouncements, setPublicAnnouncements] = useState<Announcement[]>([]);
+    const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(new Set());
+    const [viewedPublicAnnouncements, setViewedPublicAnnouncements] = useState<Set<string>>(new Set());
+
+    const storeViewedKey = businessName ? `public_announcements_viewed_${businessName}` : null;
+    const storeDismissedKey = businessName ? `public_announcements_dismissed_${businessName}` : null;
+
     // ==========================================================================
     // Data fetching
     // ==========================================================================
@@ -1109,6 +1121,98 @@ const PublicStore: React.FC = () => {
         }
         return () => { document.title = 'DirectData'; };
     }, [storeData]);
+
+    // Public announcement persistence
+    const viewedKey = businessName ? `public_announcements_viewed_${businessName}` : null;
+    const dismissedKey = businessName ? `public_announcements_dismissed_${businessName}` : null;
+
+    const markPublicAnnouncementViewed = useCallback((id: string) => {
+        if (!viewedKey) return;
+        setViewedPublicAnnouncements((prev) => {
+            const next = new Set(prev);
+            next.add(id);
+            try {
+                localStorage.setItem(viewedKey, JSON.stringify(Array.from(next)));
+            } catch {
+                // ignore storage errors
+            }
+            return next;
+        });
+    }, [viewedKey]);
+
+    const dismissPublicAnnouncement = useCallback((id: string) => {
+        if (!dismissedKey) return;
+        setDismissedAnnouncements((prev) => {
+            const next = new Set(prev);
+            next.add(id);
+            try {
+                localStorage.setItem(dismissedKey, JSON.stringify(Array.from(next)));
+            } catch {
+                // ignore storage errors
+            }
+            return next;
+        });
+    }, [dismissedKey]);
+
+    // Public announcements for storefront customers
+    useEffect(() => {
+        if (!businessName) return;
+
+        if (viewedKey) {
+            const storedViewed = localStorage.getItem(viewedKey);
+            if (storedViewed) {
+                try {
+                    const parsed: string[] = JSON.parse(storedViewed);
+                    setViewedPublicAnnouncements(new Set(parsed));
+                } catch {
+                    // ignore
+                }
+            }
+        }
+
+        if (dismissedKey) {
+            const storedDismissed = localStorage.getItem(dismissedKey);
+            if (storedDismissed) {
+                try {
+                    const parsed: string[] = JSON.parse(storedDismissed);
+                    setDismissedAnnouncements(new Set(parsed));
+                } catch {
+                    // ignore
+                }
+            }
+        }
+
+        const fetchAnnouncements = async () => {
+            try {
+                const announcements = await announcementService.getPublicActiveAnnouncements(businessName);
+                setPublicAnnouncements(announcements);
+            } catch (err) {
+                // ignore errors for guests
+                console.warn("Failed to load public announcements", err);
+            }
+        };
+
+        fetchAnnouncements();
+
+        // Connect to WS so announcements can be pushed in realtime
+        websocketService.connect(`public:${businessName}`);
+        const handleAnnouncement = (data: unknown) => {
+            const announcement = data as Announcement;
+            if (!announcement || !announcement._id) return;
+            setPublicAnnouncements((prev) => {
+                const exists = prev.some((a) => a._id === announcement._id);
+                if (exists) {
+                    return prev.map((a) => (a._id === announcement._id ? announcement : a));
+                }
+                return [announcement, ...prev];
+            });
+        };
+        websocketService.on("announcement", handleAnnouncement);
+
+        return () => {
+            websocketService.off("announcement", handleAnnouncement);
+        };
+    }, [businessName, viewedKey, dismissedKey, storeViewedKey, storeDismissedKey]);
 
     // Paystack popup message listener
     useEffect(() => {
@@ -1500,15 +1604,35 @@ const PublicStore: React.FC = () => {
     // Toolbar: Search + View Toggle + Provider Carousel
     // ==========================================================================
 
-    const renderToolbar = () => (
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
-            <div className="max-w-5xl mx-auto px-4 py-3 space-y-3">
-                {storeClosed && (
-                    <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
-                        <strong className="font-semibold">Store temporarily closed:</strong> {storeClosedMessage}
-                    </div>
-                )}
-                {/* Search + view toggle row */}
+    const renderToolbar = () => {
+        const publicAnnouncement = publicAnnouncements.find(
+            (a) => !dismissedAnnouncements.has(a._id)
+        );
+
+        return (
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+                <div className="max-w-5xl mx-auto px-4 py-3 space-y-3">
+                    {publicAnnouncement && (
+                        <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800 flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <div className="font-semibold">{publicAnnouncement.title}</div>
+                                <div className="truncate text-xs text-blue-700 mt-1">{publicAnnouncement.message}</div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => dismissPublicAnnouncement(publicAnnouncement._id)}
+                                className="text-blue-500 hover:text-blue-700 text-xs font-semibold"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    )}
+                    {storeClosed && (
+                        <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
+                            <strong className="font-semibold">Store temporarily closed:</strong> {storeClosedMessage}
+                        </div>
+                    )}
+                    {/* Search + view toggle row */}
                 <div className="flex items-center gap-2">
                     <div className="relative flex-1">
                         <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
@@ -1576,7 +1700,7 @@ const PublicStore: React.FC = () => {
                 )}
             </div>
         </div>
-    );
+    )};
 
     // ==========================================================================
     // Bundle Sections
@@ -2292,6 +2416,14 @@ const PublicStore: React.FC = () => {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
+
+            <AnnouncementPopupHandler
+                announcements={publicAnnouncements.filter(
+                    (a) => !dismissedAnnouncements.has(a._id) && !viewedPublicAnnouncements.has(a._id)
+                )}
+                onMarkAsViewed={markPublicAnnouncementViewed}
+                onMarkAsAcknowledged={markPublicAnnouncementViewed}
+            />
 
             {renderHeader()}
             {renderToolbar()}

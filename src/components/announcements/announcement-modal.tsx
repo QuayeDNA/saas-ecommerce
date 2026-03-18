@@ -19,25 +19,47 @@ interface AnnouncementModalProps {
   announcement: Announcement;
   isOpen: boolean;
   onClose: () => void;
+  /** Optional callback to mark as viewed (useful for anonymous/public contexts) */
+  onViewed?: (announcementId: string) => Promise<void> | void;
+  /** Optional callback to mark as acknowledged (useful for anonymous/public contexts) */
+  onAcknowledged?: (announcementId: string) => Promise<void> | void;
 }
 
 export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
   announcement,
   isOpen,
   onClose,
+  onViewed,
+  onAcknowledged,
 }) => {
   const { markAsViewed, markAsAcknowledged } = useAnnouncements();
+
+  const markViewed = React.useCallback(async () => {
+    if (onViewed) {
+      await onViewed(announcement._id);
+      return;
+    }
+    await markAsViewed(announcement._id);
+  }, [announcement._id, markAsViewed, onViewed]);
+
+  const markAcknowledged = React.useCallback(async () => {
+    if (onAcknowledged) {
+      await onAcknowledged(announcement._id);
+      return;
+    }
+    await markAsAcknowledged(announcement._id);
+  }, [announcement._id, markAsAcknowledged, onAcknowledged]);
 
   // Mark as viewed when modal opens
   React.useEffect(() => {
     if (isOpen && !announcement.hasViewed) {
-      markAsViewed(announcement._id);
+      void markViewed();
     }
-  }, [isOpen, announcement._id, announcement.hasViewed, markAsViewed]);
+  }, [isOpen, announcement.hasViewed, markViewed]);
 
   const handleAcknowledge = async () => {
     if (!announcement.hasAcknowledged) {
-      await markAsAcknowledged(announcement._id);
+      await markAcknowledged();
     }
     onClose();
   };
