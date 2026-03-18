@@ -15,6 +15,7 @@ import { getProviderColors } from '../../utils/provider-colors';
 import storefrontService from '../../services/storefront.service';
 import { walletService } from '../../services/wallet-service';
 import { useToast } from '../../design-system/components/toast';
+import { useSiteStatus } from '../../contexts/site-status-context';
 import type {
     PublicBundle, PublicStorefront, PublicOrderData,
     PublicOrderResult, StorefrontBranding, TrackedOrder,
@@ -25,6 +26,7 @@ import {
     FaStore, FaChevronDown, FaWifi,
     FaMagnifyingGlass, FaFire, FaBolt, FaTag,
     FaChevronLeft, FaChevronRight, FaBagShopping, FaBoxOpen, FaXmark,
+    FaEye, FaEyeSlash,
 } from 'react-icons/fa6';
 import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 
@@ -514,8 +516,8 @@ const FeaturedSection = memo((
 // Bundle Card — provider-color gradient, card-only layout
 // =============================================================================
 
-const BundleCard = memo(({ bundle, selected, onBuy }: {
-    bundle: PublicBundle; selected: boolean; onBuy: (b: PublicBundle) => void;
+const BundleCard = memo(({ bundle, selected, onBuy, disabled }: {
+    bundle: PublicBundle; selected: boolean; onBuy: (b: PublicBundle) => void; disabled?: boolean;
 }) => {
     const pc = getProviderColors(bundle.provider);
     const isAfa = bundle.provider?.toUpperCase() === 'AFA';
@@ -523,8 +525,8 @@ const BundleCard = memo(({ bundle, selected, onBuy }: {
 
     return (
         <article
-            onClick={() => onBuy(bundle)}
-            className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.04] hover:-translate-y-1 active:scale-[0.97] select-none"
+            onClick={disabled ? undefined : () => onBuy(bundle)}
+            className={`group relative rounded-2xl overflow-hidden transition-all duration-300 select-none ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:scale-[1.04] hover:-translate-y-1 active:scale-[0.97]'}`}
             style={{
                 background: `linear-gradient(145deg, ${pc.primary}, ${pc.secondary})`,
                 boxShadow: selected
@@ -532,9 +534,10 @@ const BundleCard = memo(({ bundle, selected, onBuy }: {
                     : `0 6px 20px ${pc.primary}40`,
             }}
             role="button"
-            tabIndex={0}
-            onKeyDown={e => e.key === 'Enter' && onBuy(bundle)}
-            aria-label={`Buy ${bundle.name} — ${fmt(bundle.price)}`}
+            tabIndex={disabled ? -1 : 0}
+            onKeyDown={e => !disabled && e.key === 'Enter' && onBuy(bundle)}
+            aria-label={`${disabled ? 'Orders paused' : `Buy ${bundle.name} — ${fmt(bundle.price)}`}`}
+            aria-disabled={disabled}
         >
             {/* Top shimmer edge */}
             <div className="absolute inset-x-0 top-0 h-px bg-white/40" />
@@ -778,7 +781,16 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
     const [trackResult, setTrackResult] = useState<TrackedOrder | null>(null);
     const [trackError, setTrackError] = useState<string | null>(null);
     const [trackLoading, setTrackLoading] = useState(false);
-    const [showFullPhone, setShowFullPhone] = useState(false);
+    const [showFullPhoneForOrder, setShowFullPhoneForOrder] = useState<Set<string>>(new Set());
+
+    const toggleShowFullPhoneForOrder = useCallback((orderId: string) => {
+        setShowFullPhoneForOrder(prev => {
+            const next = new Set(prev);
+            if (next.has(orderId)) next.delete(orderId);
+            else next.add(orderId);
+            return next;
+        });
+    }, []);
 
     const maskPhone = (p?: string) => {
         if (!p) return '';
@@ -822,55 +834,66 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
     const fmtDate = (iso: string | null) =>
         !iso ? '—' : new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-    const renderTimeline = (order: TrackedOrder) => (
-        <div className="pt-3">
-            {order.timeline.map((step, idx) => {
-                const isLast = idx === order.timeline.length - 1;
-                const dotColor = step.failed ? '#EF4444' : step.done ? '#22C55E' : '#D1D5DB';
-                return (
-                    <div key={idx} className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                            <div className="w-3 h-3 rounded-full border-2 mt-1 shrink-0"
-                                style={{ borderColor: dotColor, backgroundColor: (step.done || step.failed) ? dotColor : 'white' }} />
-                            {!isLast && (
-                                <div className="w-0.5 flex-1 min-h-[22px] mt-0.5"
-                                    style={{ backgroundColor: step.done ? '#22C55E' : '#E5E7EB' }} />
-                            )}
-                        </div>
-                        <div className={`${isLast ? 'pb-1' : 'pb-3'}`}>
-                            <p className={`text-sm font-semibold leading-tight ${step.failed ? 'text-red-600' : step.done ? 'text-gray-900' : 'text-gray-400'
-                                }`}>{step.event}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                                {step.at ? fmtDate(step.at) : (step.done ? '' : 'Pending…')}
-                            </p>
-                        </div>
-                    </div>
-                );
-            })}
-            {order.items.length > 0 && (
-                <div className="mt-2 pt-3 border-t border-gray-100 space-y-2">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Bundle Details</p>
-                    {order.items.map((item, i) => (
-                        <div key={i} className="flex items-start justify-between text-xs gap-2">
-                            <div className="min-w-0">
-                                <span className="font-semibold text-gray-800">{item.bundleName}</span>
-                                {item.dataVolume > 0 && <span className="text-gray-400 ml-1">· {item.dataVolume}{item.dataUnit}</span>}
+    const renderTimeline = (order: TrackedOrder) => {
+        const showFull = showFullPhoneForOrder.has(order.orderId);
+        return (
+            <div className="pt-3">
+                {order.timeline.map((step, idx) => {
+                    const isLast = idx === order.timeline.length - 1;
+                    const dotColor = step.failed ? '#EF4444' : step.done ? '#22C55E' : '#D1D5DB';
+                    return (
+                        <div key={idx} className="flex gap-3">
+                            <div className="flex flex-col items-center">
+                                <div className="w-3 h-3 rounded-full border-2 mt-1 shrink-0"
+                                    style={{ borderColor: dotColor, backgroundColor: (step.done || step.failed) ? dotColor : 'white' }} />
+                                {!isLast && (
+                                    <div className="w-0.5 flex-1 min-h-[22px] mt-0.5"
+                                        style={{ backgroundColor: step.done ? '#22C55E' : '#E5E7EB' }} />
+                                )}
                             </div>
-                            <div className="text-right shrink-0">
-                                <p className="font-mono text-gray-600">
-                                    {showFullPhone ? item.customerPhone : maskPhone(item.customerPhone)}
+                            <div className={`${isLast ? 'pb-1' : 'pb-3'}`}>
+                                <p className={`text-sm font-semibold leading-tight ${step.failed ? 'text-red-600' : step.done ? 'text-gray-900' : 'text-gray-400'
+                                    }`}>{step.event}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                    {step.at ? fmtDate(step.at) : (step.done ? '' : 'Pending…')}
                                 </p>
-                                <span className={`text-[10px] font-bold ${item.processingStatus === 'completed' ? 'text-green-600' :
-                                    item.processingStatus === 'failed' ? 'text-red-500' :
-                                        item.processingStatus === 'processing' ? 'text-blue-500' : 'text-amber-500'
-                                    }`}>{item.processingStatus}</span>
                             </div>
                         </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
+                    );
+                })}
+                {order.items.length > 0 && (
+                    <div className="mt-2 pt-3 border-t border-gray-100 space-y-2">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Bundle Details</p>
+                        {order.items.map((item, i) => (
+                            <div key={i} className="flex items-start justify-between text-xs gap-2">
+                                <div className="min-w-0">
+                                    <span className="font-semibold text-gray-800">{item.bundleName}</span>
+                                    {item.dataVolume > 0 && <span className="text-gray-400 ml-1">· {item.dataVolume}{item.dataUnit}</span>}
+                                </div>
+                                <div className="text-right shrink-0 flex items-center gap-2">
+                                    <p className="font-mono text-gray-600">
+                                        {showFull ? item.customerPhone : maskPhone(item.customerPhone)}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleShowFullPhoneForOrder(order.orderId)}
+                                        className="flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-100 transition"
+                                        aria-label={showFull ? 'Hide phone number' : 'Show full phone number'}
+                                    >
+                                        {showFull ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                                    </button>
+                                    <span className={`text-[10px] font-bold ${item.processingStatus === 'completed' ? 'text-green-600' :
+                                        item.processingStatus === 'failed' ? 'text-red-500' :
+                                            item.processingStatus === 'processing' ? 'text-blue-500' : 'text-amber-500'
+                                        }`}>{item.processingStatus}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const renderOrderCard = (entry: SavedOrderEntry) => {
         const cfg = ORDER_STATUS_CFG[entry.lastStatus] ?? ORDER_STATUS_CFG.pending;
@@ -947,12 +970,6 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setShowFullPhone(f => !f)}
-                            className="px-3 py-2 rounded-xl text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition"
-                        >
-                            {showFullPhone ? 'Hide phone' : 'Show full phone'}
-                        </button>
                         <button onClick={onClose}
                             className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition">
                             <FaXmark className="w-3.5 h-3.5" />
@@ -1024,6 +1041,11 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
 const PublicStore: React.FC = () => {
     const { businessName } = useParams<{ businessName: string }>();
     const { addToast } = useToast();
+    const { siteStatus } = useSiteStatus();
+
+    const storeClosed = siteStatus?.isSiteOpen === false;
+    const storeClosedMessage = siteStatus?.customMessage ||
+        'The site is currently closed for maintenance. Orders are temporarily disabled.';
 
     // ── Data ─────────────────────────────────────────────────────────────────────
     const [storeData, setStoreData] = useState<PublicStorefront | null>(null);
@@ -1197,6 +1219,11 @@ const PublicStore: React.FC = () => {
     // ==========================================================================
 
     const openOrderDialog = useCallback((bundle: PublicBundle) => {
+        if (storeClosed) {
+            addToast(storeClosedMessage, 'warning', 5000);
+            return;
+        }
+
         setActiveOrder({ bundle, customerPhone: '' });
         setOrderPhone('');
         setOrderCustomerName('');
@@ -1220,7 +1247,7 @@ const PublicStore: React.FC = () => {
             setPaymentType(methods[0]?.type ?? 'mobile_money');
         }
         setShowOrderDialog(true);
-    }, [storeData]);
+    }, [storeClosed, storeClosedMessage, storeData, addToast]);
 
     const closeOrderDialog = useCallback(() => {
         if (orderStep === 'confirmation') {
@@ -1476,6 +1503,11 @@ const PublicStore: React.FC = () => {
     const renderToolbar = () => (
         <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
             <div className="max-w-5xl mx-auto px-4 py-3 space-y-3">
+                {storeClosed && (
+                    <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
+                        <strong className="font-semibold">Store temporarily closed:</strong> {storeClosedMessage}
+                    </div>
+                )}
                 {/* Search + view toggle row */}
                 <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -1558,7 +1590,13 @@ const PublicStore: React.FC = () => {
         const renderPackageBundles = (bundles: PublicBundle[]) => (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {bundles.map(b => (
-                    <BundleCard key={b._id} bundle={b} selected={activeOrder?.bundle._id === b._id} onBuy={openOrderDialog} />
+                    <BundleCard
+                        key={b._id}
+                        bundle={b}
+                        selected={activeOrder?.bundle._id === b._id}
+                        disabled={storeClosed}
+                        onBuy={openOrderDialog}
+                    />
                 ))}
             </div>
         );
@@ -1710,6 +1748,14 @@ const PublicStore: React.FC = () => {
                     </div>
                 </div>
 
+                {storeClosed && (
+                    <div className="px-5 pb-4">
+                        <Alert status="warning">
+                            {storeClosedMessage}
+                        </Alert>
+                    </div>
+                )}
+
                 {/* ── STEP 1: Details ── */}
                 {orderStep === 'details' && (
                     <>
@@ -1833,7 +1879,7 @@ const PublicStore: React.FC = () => {
                             <div className="flex gap-2 w-full">
                                 <Button variant="secondary" onClick={closeOrderDialog} className="shrink-0">Cancel</Button>
                                 <button
-                                    disabled={!step1Valid}
+                                    disabled={!step1Valid || storeClosed}
                                     onClick={confirmDetails}
                                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40"
                                     style={{ backgroundColor: theme.primary }}
@@ -1995,7 +2041,7 @@ const PublicStore: React.FC = () => {
                                     <FaArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
                                 </Button>
                                 <button
-                                    disabled={!canSubmitOrder || submitting}
+                                    disabled={!canSubmitOrder || submitting || storeClosed}
                                     onClick={submitOrder}
                                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50"
                                     style={{ backgroundColor: theme.primary }}
