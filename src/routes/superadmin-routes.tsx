@@ -28,7 +28,7 @@ const AnnouncementsPage = lazy(
   () => import("../pages/superadmin/announcements")
 );
 const StoresPage = lazy(() => import("../pages/superadmin/stores"));
-// PayoutsPage removed — payouts are accessed from the Stores page
+const PayoutHistoryPage = lazy(() => import("../pages/superadmin/payout-history"));
 const AnalyticsPage = lazy(() => import("../pages/superadmin/analytics"));
 
 const superadminRoutes: RouteObject = {
@@ -103,6 +103,14 @@ const superadminRoutes: RouteObject = {
               element: (
                 <Suspense fallback={<PageLoader />}>
                   <WalletTopUpsPage />
+                </Suspense>
+              ),
+            },
+            {
+              path: "payouts",
+              element: (
+                <Suspense fallback={<PageLoader />}>
+                  <PayoutHistoryPage />
                 </Suspense>
               ),
             },

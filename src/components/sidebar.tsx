@@ -192,6 +192,11 @@ const getSuperAdminNavItems = (): NavItem[] => [
         icon: <FaCreditCard />,
       },
       {
+        label: "Payouts",
+        path: "/superadmin/wallet/payouts",
+        icon: <FaMoneyBillWave />,
+      },
+      {
         label: "Transaction History",
         path: "/superadmin/wallet/history",
         icon: <FaHistory />,

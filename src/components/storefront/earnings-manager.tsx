@@ -136,6 +136,12 @@ export const EarningsManager: React.FC = () => {
       return;
     }
 
+    // Prevent requests that would be entirely consumed by fees
+    if (feeEstimate && feeEstimate.feeBearer === 'agent' && feeEstimate.netAmount <= 0) {
+      addToast(`Amount must exceed total fees (GH₵ ${feeEstimate.totalFee.toFixed(2)}) to result in a positive payout.`, 'error');
+      return;
+    }
+
     const dest: PayoutDestination = { type: destType } as PayoutDestination;
 
     if (destType === 'mobile_money') {
@@ -535,7 +541,12 @@ export const EarningsManager: React.FC = () => {
               className="flex-1"
               onClick={submitRequest}
               isLoading={submitting}
-              disabled={submitting || !amount || Number(amount) < minimumPayout}
+              disabled={
+                submitting ||
+                !amount ||
+                Number(amount) < minimumPayout ||
+                (feeEstimate?.feeBearer === 'agent' && feeEstimate.netAmount <= 0)
+              }
               leftIcon={<ArrowDownToLine className="w-4 h-4" />}
             >
               {dashboard?.autoPayoutEnabled ? 'Withdraw Now' : 'Request Payout'}

@@ -10,10 +10,12 @@ import {
   Button,
   Select,
 } from "../../design-system";
+import { useToast } from "../../design-system/components/toast";
 import {
   settingsService,
   type FeeSettings,
 } from "../../services/settings.service";
+import { walletService } from "../../services/wallet-service";
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
@@ -95,11 +97,18 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
   currentSettings,
   onSuccess,
 }) => {
+  const { addToast } = useToast();
   const [formData, setFormData] = useState<FeeSettings>(
     currentSettings || DEFAULT_FEE_SETTINGS
   );
   const [isLoading, setIsLoading] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(false);
+  const [autoPayoutStatus, setAutoPayoutStatus] = useState<{
+    canAutoPayout: boolean;
+    paystackConfigured: boolean;
+    message: string;
+  } | null>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -113,11 +122,38 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
           .catch(() => setFormData(DEFAULT_FEE_SETTINGS))
           .finally(() => setLoadingSettings(false));
       }
+
+      // Check whether auto payout is actually available (Paystack keys + config)
+      setAvailabilityLoading(true);
+      walletService.getAutoPayoutAvailability()
+        .then((status) => setAutoPayoutStatus(status))
+        .catch((err) => {
+          console.warn('Failed to load auto payout availability', err);
+          setAutoPayoutStatus({
+            canAutoPayout: false,
+            paystackConfigured: false,
+            message: 'Unable to determine Paystack payout availability',
+          });
+        })
+        .finally(() => setAvailabilityLoading(false));
     }
   }, [isOpen, currentSettings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent enabling auto payout when it's not available.
+    if (formData.autoPayoutEnabled && autoPayoutStatus && !autoPayoutStatus.canAutoPayout) {
+      addToast(
+        autoPayoutStatus.paystackConfigured
+          ? 'Auto payout is currently unavailable. Verify Paystack settings or use manual payout mode.'
+          : 'Auto payout requires Paystack to be configured (API keys). Configure Paystack in API settings first.',
+        'error'
+      );
+      setFormData((prev) => ({ ...prev, autoPayoutEnabled: false }));
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await settingsService.updateFeeSettings(formData);
@@ -125,6 +161,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
       onClose();
     } catch (error) {
       console.error("Failed to update fee settings:", error);
+      addToast('Failed to update fee settings', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -596,16 +633,19 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                 </FormField>
 
                 <div
-                  className={`flex items-start gap-3 rounded-lg px-3 py-2.5 border text-sm ${formData.autoPayoutEnabled
-                    ? "bg-amber-50 border-amber-200 text-amber-800"
-                    : "bg-white border-gray-200 text-gray-600"
-                    }`}
+                  className={`flex items-start gap-3 rounded-lg px-3 py-2.5 border text-sm ${
+                    formData.autoPayoutEnabled ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-white border-gray-200 text-gray-600"
+                  }`}
                 >
                   <span className="mt-0.5 flex-shrink-0">
                     {formData.autoPayoutEnabled ? "⚠️" : "ℹ️"}
                   </span>
                   <span>
-                    {formData.autoPayoutEnabled
+                    {availabilityLoading
+                      ? "Checking Paystack auto-payout availability…"
+                      : autoPayoutStatus && !autoPayoutStatus.canAutoPayout
+                      ? `Auto payout is unavailable: ${autoPayoutStatus.message}`
+                      : formData.autoPayoutEnabled
                       ? "Automatic mode deducts funds from your Paystack balance immediately. Ensure Paystack transfers are enabled and your account balance is sufficient."
                       : "Manual mode gives you full control — each payout request waits for an admin to approve and trigger the transfer."}
                   </span>

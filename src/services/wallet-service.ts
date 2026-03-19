@@ -316,6 +316,45 @@ export const walletService = {
     return response.data.data;
   },
 
+  getAutoPayoutAvailability: async () => {
+    const response = await apiClient.get<{ success: boolean; data: { autoPayoutEnabled: boolean; canAutoPayout: boolean; paystackConfigured: boolean; message: string } }>(
+      '/api/wallet/admin/payouts/availability'
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Admin: Get payout request history (with optional filters)
+   */
+  getAdminPayoutHistory: async (
+    page = 1,
+    limit = 25,
+    status?: string,
+    userId?: string,
+    search?: string,
+    startDate?: string,
+    endDate?: string
+  ) => {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+    if (status) params.append("status", status);
+    if (userId) params.append("userId", userId);
+    if (search) params.append("search", search);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
+    const response = await apiClient.get<{
+      success: boolean;
+      data: {
+        payouts: PayoutRequestItem[];
+        pagination: { total: number; page: number; limit: number; pages: number };
+      };
+    }>(`/api/wallet/admin/payouts/history?${params.toString()}`);
+
+    return response.data.data;
+  },
+
   /**
    * Admin: Get all wallet transactions performed by admin
    * @param page Page number
