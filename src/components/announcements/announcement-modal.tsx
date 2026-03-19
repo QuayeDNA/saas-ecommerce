@@ -39,7 +39,10 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
       await onViewed(announcement._id);
       return;
     }
-    await markAsViewed(announcement._id);
+    // Only mark as viewed if not public context
+    if (markAsViewed) {
+      await markAsViewed(announcement._id);
+    }
   }, [announcement._id, markAsViewed, onViewed]);
 
   const markAcknowledged = React.useCallback(async () => {
@@ -47,7 +50,10 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
       await onAcknowledged(announcement._id);
       return;
     }
-    await markAsAcknowledged(announcement._id);
+    // Only mark as acknowledged if not public context
+    if (markAsAcknowledged) {
+      await markAsAcknowledged(announcement._id);
+    }
   }, [announcement._id, markAsAcknowledged, onAcknowledged]);
 
   // Mark as viewed when modal opens

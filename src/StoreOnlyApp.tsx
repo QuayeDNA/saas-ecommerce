@@ -32,7 +32,7 @@ export default function StoreOnlyApp() {
         <ThemeProvider initialTheme="default">
             <ToastProvider>
                 <SiteStatusProvider>
-                    <AnnouncementProvider>
+                    <AnnouncementProvider isPublic={true}>
                         <MaintenanceBanner />
                         <Routes>
                             {/* Root: customdomain.com/ → landing + discovery page */}
