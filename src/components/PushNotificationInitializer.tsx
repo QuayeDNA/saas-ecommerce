@@ -18,14 +18,17 @@ const PushNotificationInitializer: React.FC = () => {
           await pushNotificationService.init();
           console.log("Push notifications initialized");
 
-          // Request permission if not already granted
-          const permission = await pushNotificationService.requestPermission();
-          console.log("Notification permission:", permission);
+          const permission = pushNotificationService.getPermissionStatus();
+          console.log("Current notification permission:", permission);
 
           if (permission === "granted") {
-            console.log("Subscribing to push notifications...");
+            console.log("Permission already granted, ensuring subscription");
             const subscribed = await pushNotificationService.subscribe();
             console.log("Subscription result:", subscribed);
+          } else if (permission === "default") {
+            console.log("Notification permission is default; user must enable notifications from profile settings.");
+          } else {
+            console.warn("Notification permission is denied; user should enable browser notifications.");
           }
         } catch (error) {
           console.error("Failed to initialize push notifications:", error);

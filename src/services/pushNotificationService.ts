@@ -11,6 +11,36 @@ class PushNotificationService {
   private vapidPublicKey: string | null = null;
   private isSubscribed = false;
 
+  isPushSupported(): boolean {
+    return (
+      typeof window !== "undefined" &&
+      "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      "Notification" in window
+    );
+  }
+
+  getPermissionStatus(): NotificationPermission {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return "denied";
+    }
+    return Notification.permission;
+  }
+
+  async ensureSubscribedIfGranted(): Promise<boolean> {
+    if (this.getPermissionStatus() !== "granted") {
+      console.warn("[Push] Notification permission is not granted");
+      return false;
+    }
+
+    if (!this.isPushSupported()) {
+      console.warn("[Push] Push not supported in this browser");
+      return false;
+    }
+
+    return this.subscribe();
+  }
+
   /**
    * Initialize push notifications
    */
@@ -32,6 +62,12 @@ class PushNotificationService {
       const subscription = await registration.pushManager.getSubscription();
       this.isSubscribed = !!subscription;
       console.log("[Push] Already subscribed:", this.isSubscribed);
+
+      // If permission was already granted and we have no active subscription, try to subscribe automatically
+      if (this.getPermissionStatus() === "granted" && !this.isSubscribed) {
+        console.log("[Push] Permission granted but not subscribed, attempting subscription...");
+        await this.subscribe();
+      }
     } catch (error) {
       console.error("[Push] Init failed:", error);
     }

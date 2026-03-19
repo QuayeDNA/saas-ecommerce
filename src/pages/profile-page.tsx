@@ -8,6 +8,7 @@ import {
   Badge,
   Alert,
   Skeleton,
+  useToast,
 } from "../design-system";
 import { EditProfileDialog } from "../components/common/edit-profile-dialog";
 import { ChangePasswordDialog } from "../components/common/change-password-dialog";
@@ -47,6 +48,12 @@ export const ProfilePage: React.FC = () => {
     announcements: true,
   });
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
+  const [browserPermission, setBrowserPermission] = useState<NotificationPermission>(
+    typeof window !== "undefined" && "Notification" in window
+      ? Notification.permission
+      : "denied"
+  );
+  const { addToast } = useToast();
 
   const refreshProfile = async () => {
     try {
@@ -97,6 +104,12 @@ export const ProfilePage: React.FC = () => {
 
     loadPushPreferences();
   }, [authState.user]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setBrowserPermission(Notification.permission);
+    }
+  }, []);
 
   const getUserTypeColor = (
     userType: string
@@ -161,6 +174,34 @@ export const ProfilePage: React.FC = () => {
       console.error("Failed to update push preferences:", error);
       // Revert on error
       setPushPreferences(pushPreferences);
+    }
+  };
+
+  const handleEnableBrowserNotifications = async () => {
+    if (!pushNotificationService.isPushSupported()) {
+      addToast("Push notifications are not supported in this browser.", "error");
+      return;
+    }
+
+    const permission = await pushNotificationService.requestPermission();
+    setBrowserPermission(permission);
+
+    if (permission !== "granted") {
+      addToast(
+        "Push permission denied. Please allow notifications in your browser settings.",
+        "error"
+      );
+      return;
+    }
+
+    const subscribed = await pushNotificationService.subscribe();
+    if (subscribed) {
+      addToast("Push notifications enabled successfully.", "success");
+    } else {
+      addToast(
+        "Failed to register push subscription. Check console for details.",
+        "error"
+      );
     }
   };
 
@@ -684,6 +725,33 @@ export const ProfilePage: React.FC = () => {
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
+                  </div>
+
+                  <div className="mt-3 p-3 border border-gray-200 rounded-md bg-gray-50">
+                    <p className="text-sm font-medium text-gray-800">
+                      Browser permission: {browserPermission}
+                    </p>
+                    {browserPermission === "default" && (
+                      <Button
+                        color="primary"
+                        size="sm"
+                        onClick={handleEnableBrowserNotifications}
+                      >
+                        Enable Browser Notifications
+                      </Button>
+                    )}
+                    {browserPermission === "denied" && (
+                      <p className="text-sm text-red-600">
+                        Browser notifications are blocked. Please allow
+                        notifications in your browser settings and refresh the
+                        page.
+                      </p>
+                    )}
+                    {browserPermission === "granted" && (
+                      <p className="text-sm text-green-600">
+                        Browser notifications are enabled.
+                      </p>
+                    )}
                   </div>
 
                   {pushPreferences.enabled && (
