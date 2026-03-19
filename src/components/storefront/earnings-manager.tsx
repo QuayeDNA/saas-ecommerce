@@ -256,8 +256,8 @@ export const EarningsManager: React.FC = () => {
 
       {/* ── Transfer fee notice ───────────────────────────────────────────────── */}
       {dashboard?.payoutFeeBearer === 'agent' && dashboard?.transferFees && (
-        <div className="flex items-start gap-3 p-3.5 bg-blue-50 border border-blue-100 rounded-xl text-sm">
-          <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+        <div className="flex items-center gap-3 p-3.5 bg-blue-50 border border-blue-100 rounded-xl text-sm">
+          <Info className="w-4 h-4 text-blue-500 shrink-0" />
           <div className="text-gray-600">
             <span className="font-semibold text-gray-800">Transfer fees (deducted from payout):</span>{' '}
             Mobile Money — GH₵ {dashboard.transferFees.mobile_money.toFixed(2)} Paystack

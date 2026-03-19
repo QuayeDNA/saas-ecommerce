@@ -297,21 +297,33 @@ export const walletService = {
   },
 
   approvePayout: async (payoutId: string, transferReference?: string) => {
+    if (!payoutId) {
+      throw new Error('Payout identifier is required to approve a payout');
+    }
     const response = await apiClient.put<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/approve`, { transferReference });
     return response.data.data;
   },
 
   rejectPayout: async (payoutId: string, reason?: string) => {
+    if (!payoutId) {
+      throw new Error('Payout identifier is required to reject a payout');
+    }
     const response = await apiClient.put<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/reject`, { reason });
     return response.data.data;
   },
 
   processPayout: async (payoutId: string) => {
+    if (!payoutId) {
+      throw new Error('Payout identifier is required to process a payout');
+    }
     const response = await apiClient.post<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/process`);
     return response.data.data;
   },
 
   markPayoutComplete: async (payoutId: string, transferReference?: string) => {
+    if (!payoutId) {
+      throw new Error('Payout identifier is required to mark a payout complete');
+    }
     const response = await apiClient.put<{ success: boolean; data: PayoutRequestItem }>(`/api/wallet/admin/payouts/${payoutId}/complete`, { transferReference });
     return response.data.data;
   },

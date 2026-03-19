@@ -726,7 +726,16 @@ export default function StoresPage() {
     if (agentId) await openPayoutsForAgent(agentId as string);
   };
 
-  const handleApprovePayout = (payout: any) => {
+  const handleApprovePayout = (payoutOrId: any) => {
+    const payout = typeof payoutOrId === 'string'
+      ? agentPayouts.find(p => p._id === payoutOrId)
+      : payoutOrId;
+
+    if (!payout || !payout._id) {
+      addToast('Unable to determine which payout to approve.', 'error');
+      return;
+    }
+
     if (isPayoutNetZeroOrNegative(payout)) {
       addToast('Cannot approve a payout that leaves the agent with GH₵0. Increase the payout amount or adjust fees.', 'warning');
       return;
@@ -800,9 +809,9 @@ export default function StoresPage() {
 
   const handleProcessPayout = (payoutId: string) => {
     openConfirm({
-      title: 'Send via Paystack Transfer',
-      message: 'This will attempt a Paystack transfer (platform balance pays the agent) after the payout has been approved (earnings already deducted). If the transfer fails, the system will refund the agent automatically.',
-      confirmLabel: 'Start Transfer',
+      title: 'Send via Paystack',
+      message: 'This transfers money directly from your Paystack account balance to the agent. Note: You must have sufficient funds on Paystack and "Transfers" enabled. If it fails, this payout stays here so you can pay manually or reject it.',
+      confirmLabel: 'Send Money',
       variant: 'primary',
       hasInput: false,
       inputLabel: '',
@@ -811,28 +820,26 @@ export default function StoresPage() {
         setPayoutActionLoading(payoutId);
         try {
           const updated = await walletService.processPayout(payoutId);
-          addToast('Paystack transfer initiated — awaiting webhook confirmation', 'success');
+          addToast('Paystack transfer initiated successfully', 'success');
+          // Update local state, then refresh fully
           setAgentPayouts(prev => prev.map(p => p._id === payoutId ? { ...p, ...updated, status: 'processing' } : p));
-          fetchData().catch(() => { });
+          refreshPayouts().catch(() => {});
         } catch (err: unknown) {
+          refreshPayouts().catch(() => {}); // Always refresh list on failure so the failure note is visible!
+          
           const apiErr = (err as any)?.response?.data;
           const code = apiErr?.code as string | undefined;
           const message = apiErr?.message ?? (err instanceof Error ? err.message : 'Failed to process payout transfer');
 
           if (code === 'NOT_APPROVED') {
-            addToast('This payout must be approved first. Click “Approve & Deduct” to deduct earnings, then retry.', 'warning');
+            addToast('This payout must be approved first. Click “Approve & Deduct” to deduct earnings.', 'warning');
           } else if (code === 'ALREADY_PROCESSING') {
-            addToast('This payout is already being processed. Please wait a moment and refresh.', 'info');
+            addToast('This transfer is already processing.', 'info');
           } else if (code === 'PAYSTACK_NOT_CONFIGURED') {
-            addToast('Paystack transfers are not configured. Use manual payout or configure Paystack transfers.', 'error');
-          } else if (code === 'TRANSFER_FAILED') {
-            addToast(`Transfer failed: ${message}. The system will refund the agent; you can also pay manually and then click “Mark as Paid”.`, 'error');
+            addToast('Paystack is not configured. Please use manual payout.', 'error');
           } else {
-            addToast(message, 'error');
+            addToast(`Transfer blocked: ${message}. Try manual payout instead.`, 'error');
           }
-
-          // Ensure UI reflects the latest status (approved/failed/refunded)
-          fetchData().catch(() => {});
           throw err;
         } finally {
           setPayoutActionLoading(null);
@@ -844,23 +851,21 @@ export default function StoresPage() {
   const handleMarkPayoutPaid = (payout: any) => {
     const transferFailed = !!payout.paystackTransfer?.failureReason || payout.status === 'failed';
     openConfirm({
-      title: 'Mark Payout as Manually Paid',
-      message: transferFailed
-        ? 'Paystack transfer failed. Only mark this payout as paid after you have manually sent money to the agent and entered a transfer reference.'
-        : 'Only mark this payout as paid after you have already sent money to the agent via MoMo or bank transfer. This does NOT send money—it just finalizes the payout record.',
+      title: 'Manual Payment (Mark as Paid)',
+      message: 'Step 1: Open your bank app, mobile money app, or Paystack dashboard.\nStep 2: Send the exact Net Amount to the agent.\nStep 3: Click "Mark as Paid" below to record the payment and update the agent\'s dashboard.',
       confirmLabel: 'Mark as Paid',
       variant: 'success',
       hasInput: true,
       inputRequired: transferFailed,
-      inputLabel: 'Transfer Reference',
-      inputPlaceholder: transferFailed ? 'Enter reference (required)' : 'e.g. MoMo transaction ID or bank ref',
+      inputLabel: 'Transfer Reference (Required if previously failed)',
+      inputPlaceholder: 'e.g. MoMo transaction ID or Bank Reference',
       onConfirm: async (ref?: string) => {
         setPayoutActionLoading(payout._id);
         try {
           const updated = await walletService.markPayoutComplete(payout._id, ref || undefined);
-          addToast('Payout marked as completed', 'success');
+          addToast('Payout successfully marked as completed.', 'success');
           setAgentPayouts(prev => prev.map(p => p._id === payout._id ? { ...p, ...updated, status: 'completed' } : p));
-          fetchData().catch(() => { });
+          refreshPayouts().catch(() => { });
         } catch (err: unknown) {
           addToast((err instanceof Error ? err.message : null) || 'Failed to mark payout complete', 'error');
           throw err;
@@ -1505,7 +1510,7 @@ export default function StoresPage() {
                                 <Button
                                   size="sm"
                                   variant="success"
-                                  onClick={() => handleApprovePayout(p._id)}
+                                  onClick={() => handleApprovePayout(p)}
                                   isLoading={payoutActionLoading === p._id}
                                   disabled={!!payoutActionLoading || bulkApproveLoading || isPayoutNetZeroOrNegative(p)}
                                   title={isPayoutNetZeroOrNegative(p)

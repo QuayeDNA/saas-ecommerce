@@ -214,10 +214,12 @@ export default function PayoutHistoryPage() {
     setActionLoading(payoutId);
     try {
       const updated = await walletService.processPayout(payoutId);
-      addToast("Paystack transfer initiated — awaiting webhook confirmation", "success");
+      addToast("Paystack transfer initiated successfully", "success");
       setPayouts((prev) => prev.map((p) => (p._id === payoutId ? { ...p, ...updated, status: "processing" } : p)));
       void refresh();
+      closeConfirmModal();
     } catch (err: unknown) {
+      void refresh(); // Ensure list reflects failure directly
       type ApiErrorData = { code?: string; status?: string; message?: string };
       type ApiError = { response?: { data?: ApiErrorData } };
       const apiErr = (err as ApiError).response?.data;
@@ -229,15 +231,11 @@ export default function PayoutHistoryPage() {
       } else if (code === "ALREADY_PROCESSING") {
         addToast("This payout is already being processed. Please wait and refresh.", "info");
       } else if (code === "PAYSTACK_NOT_CONFIGURED") {
-        addToast("Paystack transfers are not configured — use manual payout or enable Paystack.", "error");
-      } else if (code === "TRANSFER_FAILED") {
-        addToast(`Transfer failed: ${message}. You can send funds manually and then mark as paid.`, "error");
+        addToast("Paystack transfers are not configured — use manual payout.", "error");
       } else {
-        addToast(message, "error");
+        addToast(`Transfer blocked: ${message}. Try manual payout instead.`, "error");
       }
-
-      // Force refresh to ensure status is updated (e.g., marked failed and refunded)
-      void refresh();
+      closeConfirmModal();
     } finally {
       setActionLoading(null);
     }
@@ -467,6 +465,14 @@ export default function PayoutHistoryPage() {
                             >
                               Mark Paid
                             </Button>
+                            <Button
+                              size="xs"
+                              variant="danger"
+                              onClick={() => handleReject(payout._id)}
+                              isLoading={actionLoading === payout._id}
+                            >
+                              Reject
+                            </Button>
                           </>
                         )}
                         {isProcessing && (
@@ -510,38 +516,34 @@ export default function PayoutHistoryPage() {
           {confirmModal.type === 'process' ? (
             <>
               <p className="text-sm text-gray-700">
-                This will attempt to transfer funds to the agent via Paystack.
-                If the transfer fails, the system will automatically refund the agent's earnings and mark the payout as failed.
+                This transfers money directly from your Paystack account balance to the agent.
               </p>
               <ul className="list-disc list-inside text-sm text-gray-600 mt-3 space-y-1">
-                <li>Step 1: Ensure the payout is approved (deducts the agent's earnings).</li>
-                <li>Step 2: The system initiates a Paystack transfer (platform pays out).</li>
-                <li>
-                  Step 3: If the transfer fails, you can pay the agent manually and then use
-                  “Mark paid” to finalize.
-                </li>
+                <li>You must have sufficient funds on Paystack and "Transfers" enabled.</li>
+                <li>If it fails, this payout stays here so you can pay manually or reject it.</li>
               </ul>
               {confirmModal.payout?.paystackTransfer?.failureReason && (
                 <div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-                  <div className="font-medium">Last failure:</div>
-                  <div>{confirmModal.payout.paystackTransfer.failureReason}</div>
+                  <div className="font-medium">Previous failure:</div>
+                  <div className="mt-1">{confirmModal.payout.paystackTransfer.failureReason}</div>
                 </div>
               )}
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-700">
-                Marking a payout as paid does not initiate a transfer. Only do this after you have manually sent funds to the agent.
+              <p className="text-sm text-gray-700 mb-2">
+                Use this to manually record a payment outside this platform.
               </p>
-              <ul className="list-disc list-inside text-sm text-gray-600 mt-3 space-y-1">
-                <li>Step 1: Send money to the agent (MoMo / bank transfer).</li>
-                <li>Step 2: Enter a reference (optional) and confirm to complete the payout record.</li>
+              <ul className="list-none text-sm text-gray-600 space-y-2 mb-4">
+                <li><strong className="text-gray-800">Step 1:</strong> Open your bank app, mobile money app, or Paystack dashboard.</li>
+                <li><strong className="text-gray-800">Step 2:</strong> Send the exact Net Amount to the agent's destination account.</li>
+                <li><strong className="text-gray-800">Step 3:</strong> Enter the reference (optional) below and click "Mark as Paid".</li>
               </ul>
-              <FormField label="Transfer reference (optional)" className="mt-4">
+              <FormField label="Transfer reference (Recommended)" className="mt-4">
                 <Input
                   value={confirmInput}
                   onChange={(e) => setConfirmInput(e.target.value)}
-                  placeholder="e.g. MoMo txn ID or bank ref"
+                  placeholder="e.g. MoMo transaction ID or Bank Reference"
                 />
               </FormField>
             </>
