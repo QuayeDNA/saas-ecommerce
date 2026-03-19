@@ -6,7 +6,6 @@ import {
   Button,
   Badge,
   Alert,
-  Spinner,
   Skeleton,
   Input,
   Tabs,
@@ -173,11 +172,11 @@ export const StorefrontDashboardPage: React.FC = () => {
     }
   };
 
-  // Loading state — skeleton matching page structure
+  // Loading state — skeleton placeholders per section
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-        {/* Header card skeleton */}
+        {/* Header skeleton */}
         <Card>
           <CardBody>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -198,14 +197,19 @@ export const StorefrontDashboardPage: React.FC = () => {
 
         {/* Tab bar skeleton */}
         <div className="bg-white rounded-lg border border-gray-200 px-3 sm:px-6 py-3 sm:py-4">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} variant="rectangular" height="2.25rem" width="100px" />
+              <Skeleton
+                key={i}
+                variant="rectangular"
+                height="2.25rem"
+                width="100px"
+              />
             ))}
           </div>
         </div>
 
-        {/* Stat cards skeleton — 2 col mobile / 4 col desktop */}
+        {/* Dashboard skeleton sections */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i}>
@@ -218,7 +222,6 @@ export const StorefrontDashboardPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Content cards skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[...Array(2)].map((_, i) => (
             <Card key={i} variant="outlined">
@@ -234,7 +237,6 @@ export const StorefrontDashboardPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Bottom row skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[...Array(2)].map((_, i) => (
             <Card key={i} variant="outlined">
@@ -491,8 +493,13 @@ export const StorefrontDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardBody>
                   {analyticsLoading ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Spinner size="sm" />
+                    <div className="space-y-2">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100">
+                          <Skeleton variant="text" height="0.75rem" width="120px" />
+                          <Skeleton variant="text" height="0.75rem" width="90px" />
+                        </div>
+                      ))}
                     </div>
                   ) : analytics ? (
                     <div className="space-y-0.5">
@@ -583,8 +590,13 @@ export const StorefrontDashboardPage: React.FC = () => {
                 </CardHeader>
                 <CardBody>
                   {analyticsLoading ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Spinner size="sm" />
+                    <div className="grid grid-cols-2 gap-2">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="p-2 bg-gray-100 rounded-lg">
+                          <Skeleton variant="text" height="0.75rem" width="80px" className="mb-2" />
+                          <Skeleton variant="text" height="1.1rem" width="70px" />
+                        </div>
+                      ))}
                     </div>
                   ) : analytics ? (
                     <div className="grid grid-cols-2 gap-2">
@@ -883,8 +895,23 @@ export const StorefrontDashboardPage: React.FC = () => {
                   </CardHeader>
                   <CardBody>
                     {analyticsLoading ? (
-                      <div className="flex items-center justify-center py-6">
-                        <Spinner size="sm" />
+                      <div className="space-y-3 py-4">
+                        {[...Array(3)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <Skeleton variant="text" height="1rem" width="40%" className="mb-2" />
+                              <Skeleton variant="text" height="0.85rem" width="55%" className="mb-1" />
+                              <Skeleton variant="text" height="0.75rem" width="30%" />
+                            </div>
+                            <div className="text-right">
+                              <Skeleton variant="text" height="1rem" width="60px" />
+                              <Skeleton variant="text" height="0.75rem" width="60px" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ) : recentOrders.length === 0 ? (
                       <div className="text-center py-6">

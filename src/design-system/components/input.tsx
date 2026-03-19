@@ -297,7 +297,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="relative">
           {/* Left icon */}
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <div className="absolute inset-y-0 left-0 bottom-2 flex items-center pl-3 pointer-events-none">
               <div className={`text-gray-400 ${sizeClasses.iconSize[size]}`}>
                 {leftIcon}
               </div>

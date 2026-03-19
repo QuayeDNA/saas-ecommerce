@@ -182,10 +182,7 @@ export const EarningsManager: React.FC = () => {
       <Card variant="elevated">
         <CardBody className="p-0 overflow-hidden">
           {/* Gradient header */}
-          <div
-            className="px-5 pt-5 pb-6 text-white"
-            style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #EC4899 100%)' }}
-          >
+          <div className="px-5 pt-5 pb-6 text-white bg-gradient-to-r from-slate-700 to-slate-800 rounded-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">

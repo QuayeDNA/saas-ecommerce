@@ -222,7 +222,6 @@ export default function PayoutHistoryPage() {
       type ApiError = { response?: { data?: ApiErrorData } };
       const apiErr = (err as ApiError).response?.data;
       const code = apiErr?.code;
-      const status = apiErr?.status;
       const message = apiErr?.message ?? (err instanceof Error ? err.message : "Failed to process payout transfer");
 
       if (code === "NOT_APPROVED") {

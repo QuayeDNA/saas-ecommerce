@@ -13,8 +13,9 @@ import {
   TabsTrigger,
   TabsContent,
   FormField,
-  Spinner,
   Switch,
+  Skeleton,
+  LoadingCard,
 } from "../../design-system";
 import { useToast } from "../../design-system";
 import {
@@ -382,14 +383,25 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
   // -------------------------------------------------------------------------
   if (isLoading) {
     return (
-      <Card>
-        <CardBody className="flex items-center justify-center py-12">
-          <Spinner size="lg" />
-          <span className="ml-3 text-sm text-gray-600">
-            Loading pricing data...
-          </span>
-        </CardBody>
-      </Card>
+      <div className="space-y-4 sm:space-y-6">
+        <Card>
+          <CardBody>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <Skeleton variant="text" height="1.5rem" width="220px" className="mb-2" />
+                <Skeleton variant="text" height="1rem" width="240px" />
+              </div>
+              <Skeleton variant="rectangular" height="2.25rem" width="150px" />
+            </div>
+          </CardBody>
+        </Card>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, idx) => (
+            <LoadingCard key={idx} lines={4} showAvatar className="h-40" />
+          ))}
+        </div>
+      </div>
     );
   }
 

@@ -30,6 +30,7 @@ import {
   DialogBody,
   DialogFooter,
   Select,
+  LoadingCard,
 } from "../../design-system";
 import { getStoreUrl } from "../../utils/store-url";
 import { useToast } from "../../design-system";
@@ -133,17 +134,9 @@ export const StorefrontManager: React.FC<StorefrontManagerProps> = ({
 
   if (isLoading) {
     return (
-      <Card variant="elevated" className="max-w-2xl mx-auto">
-        <CardBody className="p-8 text-center">
-          <Loader2 className="w-12 h-12 text-primary-600 animate-spin mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Loading your storefront
-          </h3>
-          <p className="text-gray-600 text-sm">
-            Checking your business information...
-          </p>
-        </CardBody>
-      </Card>
+      <div className="max-w-2xl mx-auto">
+        <LoadingCard lines={5} showAvatar className="max-w-2xl mx-auto" />
+      </div>
     );
   }
 

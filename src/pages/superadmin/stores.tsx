@@ -817,7 +817,6 @@ export default function StoresPage() {
         } catch (err: unknown) {
           const apiErr = (err as any)?.response?.data;
           const code = apiErr?.code as string | undefined;
-          const status = apiErr?.status as string | undefined;
           const message = apiErr?.message ?? (err instanceof Error ? err.message : 'Failed to process payout transfer');
 
           if (code === 'NOT_APPROVED') {

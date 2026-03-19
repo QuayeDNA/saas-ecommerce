@@ -14,12 +14,13 @@ import {
   Alert,
   Pagination,
   FormField,
-  Spinner,
   Dialog,
   DialogHeader,
   DialogBody,
   DialogFooter,
   Textarea,
+  Skeleton,
+  LoadingTable,
 } from "../../design-system";
 import { useToast } from "../../design-system";
 import { SearchAndFilter } from "../common/SearchAndFilter";
@@ -253,14 +254,21 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
   // --- Loading ---
   if (isLoading) {
     return (
-      <Card>
-        <CardBody className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Spinner size="lg" />
-            <p className="mt-3 text-sm text-gray-600">Loading orders...</p>
-          </div>
-        </CardBody>
-      </Card>
+      <div className="space-y-4 sm:space-y-6">
+        <Card>
+          <CardBody>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <Skeleton variant="text" height="1.5rem" width="180px" className="mb-2" />
+                <Skeleton variant="text" height="1rem" width="240px" />
+              </div>
+              <Skeleton variant="rectangular" height="2.25rem" width="120px" />
+            </div>
+          </CardBody>
+        </Card>
+
+        <LoadingTable rows={5} columns={8} />
+      </div>
     );
   }
 
