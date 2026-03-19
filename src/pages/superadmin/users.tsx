@@ -460,7 +460,7 @@ export default function SuperAdminUsersPage() {
                   </div>
                 </div>
                 {/* Other card skeletons */}
-                {Array.from({ length: 3 }).map((_, index) => (
+                {Array.from({ length: 2 }).map((_, index) => (
                   <div key={index + 1} className="bg-white rounded-lg shadow p-4 sm:p-6">
                     <div className="animate-pulse">
                       <div className="flex items-center justify-between">
@@ -503,36 +503,38 @@ export default function SuperAdminUsersPage() {
 
       {/* View Mode Toggle and Search */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">View:</span>
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => handleViewModeChange("card")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "card"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-                  }`}
-              >
-                <FaTh className="w-4 h-4" />
-                Cards
-              </button>
-              <button
-                onClick={() => handleViewModeChange("list")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "list"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-                  }`}
-              >
-                <FaList className="w-4 h-4" />
-                List
-              </button>
+        <div className="grid grid-cols-1 gap-4">
+          {/* View Mode Toggle (top-right) */}
+          <div className="flex justify-end">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">View:</span>
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => handleViewModeChange("card")}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "card"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                    }`}
+                >
+                  <FaTh className="w-4 h-4" />
+                  Cards
+                </button>
+                <button
+                  onClick={() => handleViewModeChange("list")}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === "list"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                    }`}
+                >
+                  <FaList className="w-4 h-4" />
+                  List
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Search and Filters */}
-          <div className="flex-1 max-w-2xl">
+          <div className="w-full">
             <SearchAndFilter
               searchTerm={search}
               onSearchChange={setSearch}

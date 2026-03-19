@@ -25,6 +25,7 @@ import {
   TableRow,
   TableHeaderCell,
   TableCell,
+  Pagination,
 } from "../../design-system";
 import { useToast } from "../../design-system";
 import { walletService } from '../../services/wallet-service';
@@ -494,6 +495,11 @@ export default function StoresPage() {
   const [autoApprove, setAutoApprove] = useState(false);
   const [autoApproveLoading, setAutoApproveLoading] = useState(false);
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   // Payouts drawer (admin)
   const [payoutsDrawerOpen, setPayoutsDrawerOpen] = useState(false);
   const [payoutsLoading, setPayoutsLoading] = useState(false);
@@ -548,20 +554,35 @@ export default function StoresPage() {
     return typeof store.agentId === 'object' ? (store.agentId as any)._id as string : store.agentId as string;
   };
 
+  // Debounce search input to avoid lots of rapid requests
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
   // Fetch data
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      const statusFilter = filter === 'all' ? undefined : filter;
+      const paging = { limit, offset: (page - 1) * limit };
+
       const [storesRes, statsRes, autoApproveRes, allPayoutsRes] = await Promise.all([
-        storefrontService.getAdminStorefronts(),
+        storefrontService.getAdminStorefronts({ status: statusFilter, search: debouncedSearch || undefined, ...paging }),
         storefrontService.getAdminStats(),
         settingsService.getAutoApproveStorefronts(),
         walletService.getPendingPayouts().catch(() => [] as any[]),
       ]);
+
       setStores(storesRes.storefronts);
+      setTotal(storesRes.total);
       setStats(statsRes);
       setAutoApprove(autoApproveRes.autoApproveStorefronts);
+
       // Build pending payout count map per agent
       const map: Record<string, number> = {};
       (allPayoutsRes as any[]).forEach((p: any) => {
@@ -577,7 +598,7 @@ export default function StoresPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filter, debouncedSearch, page, limit]);
 
   useEffect(() => {
     fetchData();
@@ -823,10 +844,10 @@ export default function StoresPage() {
           addToast('Paystack transfer initiated successfully', 'success');
           // Update local state, then refresh fully
           setAgentPayouts(prev => prev.map(p => p._id === payoutId ? { ...p, ...updated, status: 'processing' } : p));
-          refreshPayouts().catch(() => {});
+          refreshPayouts().catch(() => { });
         } catch (err: unknown) {
-          refreshPayouts().catch(() => {}); // Always refresh list on failure so the failure note is visible!
-          
+          refreshPayouts().catch(() => { }); // Always refresh list on failure so the failure note is visible!
+
           const apiErr = (err as any)?.response?.data;
           const code = apiErr?.code as string | undefined;
           const message = apiErr?.message ?? (err instanceof Error ? err.message : 'Failed to process payout transfer');
@@ -916,30 +937,18 @@ export default function StoresPage() {
     });
   };
 
-  // Filtering
-  const filteredStores = stores.filter(store => {
-    if (filter === "active" && !(store.isApproved && store.isActive && !store.suspendedByAdmin)) return false;
-    if (filter === "pending" && store.isApproved) return false;
-    if (filter === "suspended" && !store.suspendedByAdmin) return false;
-    if (filter === "inactive" && (store.isActive || !store.isApproved || store.suspendedByAdmin)) return false;
+  // Filtering is now handled server-side; we use returned page results.
+  const filteredStores = stores;
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const name = (store.displayName || store.businessName || "").toLowerCase();
-      const agentName = (typeof store.agentId === "object" ? store.agentId.fullName : "").toLowerCase();
-      const agentEmail = (typeof store.agentId === "object" ? store.agentId.email : "").toLowerCase();
-      return name.includes(q) || agentName.includes(q) || agentEmail.includes(q);
-    }
-    return true;
-  });
-
-  // Stats for tabs
+  // Stats for tabs (fallback to current page counts if stats not yet loaded)
   const counts = {
-    all: stores.length,
-    active: stores.filter(s => s.isApproved && s.isActive && !s.suspendedByAdmin).length,
-    pending: stores.filter(s => !s.isApproved).length,
-    suspended: stores.filter(s => s.suspendedByAdmin).length,
-    inactive: stores.filter(s => s.isActive === false && s.isApproved && !s.suspendedByAdmin).length,
+    all: stats?.totalStores ?? stores.length,
+    active: stats?.activeStores ?? stores.filter(s => s.isApproved && s.isActive && !s.suspendedByAdmin).length,
+    pending: stats?.pendingApproval ?? stores.filter(s => !s.isApproved).length,
+    suspended: stats?.suspendedStores ?? stores.filter(s => s.suspendedByAdmin).length,
+    inactive: stats
+      ? stats.totalStores - (stats.activeStores + stats.pendingApproval + stats.suspendedStores)
+      : stores.filter(s => s.isActive === false && s.isApproved && !s.suspendedByAdmin).length,
   };
 
   // =========================================================================
@@ -1061,13 +1070,16 @@ export default function StoresPage() {
             <Input
               leftIcon={<Search className="w-4 h-4" />}
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search stores, agents, emails..."
               size="sm"
             />
 
             {/* Filter Tabs */}
-            <Tabs value={filter} onValueChange={setFilter}>
+            <Tabs value={filter} onValueChange={(value) => { setFilter(value); setPage(1); }}>
               <TabsList className="w-full overflow-x-auto">
                 <TabsTrigger value="all">
                   All <Badge size="xs" colorScheme="gray" variant="subtle" className="ml-1.5">{counts.all}</Badge>
@@ -1339,7 +1351,23 @@ export default function StoresPage() {
 
                       {/* Results count */}
                       <div className="px-3 sm:px-4 py-2.5 bg-gray-50 border-t border-gray-100 text-xs sm:text-sm text-gray-500">
-                        Showing {filteredStores.length} of {stores.length} stores
+                        Showing {(total === 0 ? 0 : (page - 1) * limit + 1)} - {Math.min(page * limit, total)} of {total} stores
+                      </div>
+
+                      {/* Pagination controls */}
+                      <div className="px-3 sm:px-4 pt-2 pb-4 bg-gray-50 border-t border-gray-100">
+                        <Pagination
+                          currentPage={page}
+                          totalPages={Math.max(1, Math.ceil(total / limit))}
+                          totalItems={total}
+                          itemsPerPage={limit}
+                          onPageChange={(next) => setPage(next)}
+                          onItemsPerPageChange={(nextLimit) => {
+                            setLimit(nextLimit);
+                            setPage(1);
+                          }}
+                          showInfo={false}
+                        />
                       </div>
                     </>
                   )}
