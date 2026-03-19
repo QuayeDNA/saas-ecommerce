@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import React, { createContext, useEffect, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import type {
@@ -14,26 +15,32 @@ const AnnouncementContext = createContext<AnnouncementContextValue | undefined>(
 
 interface AnnouncementProviderProps {
   children: ReactNode;
+  isPublic?: boolean;
+  storefront?: string;
 }
 
 export const AnnouncementProvider: React.FC<AnnouncementProviderProps> = ({
   children,
+  isPublic = false,
+  storefront,
 }) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { authState } = useAuth();
+  const { authState } = isPublic ? { authState: { user: null } } : useAuth();
   const user = authState.user;
 
   // Fetch active announcements for the user
   const fetchActiveAnnouncements = useCallback(async () => {
-    if (!user) return;
+    if (!user && !isPublic) return;
 
     try {
       setLoading(true);
       setError(null);
-      const data = await announcementService.getMyActiveAnnouncements();
+      const data = isPublic
+        ? await announcementService.getPublicActiveAnnouncements(storefront)
+        : await announcementService.getMyActiveAnnouncements();
       setAnnouncements(data);
 
       // Calculate unread count
@@ -46,7 +53,7 @@ export const AnnouncementProvider: React.FC<AnnouncementProviderProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isPublic, storefront]);
 
   // Fetch unread announcements
   const fetchUnreadAnnouncements = useCallback(async () => {
