@@ -568,7 +568,10 @@ export default function StoresPage() {
     setLoading(true);
     setError(null);
     try {
-      const statusFilter = filter === 'all' ? undefined : filter;
+      const statusFilter =
+        filter === 'all'
+          ? undefined
+          : (filter as 'active' | 'inactive' | 'suspended' | 'pending' | 'approved');
       const paging = { limit, offset: (page - 1) * limit };
 
       const [storesRes, statsRes, autoApproveRes, allPayoutsRes] = await Promise.all([
