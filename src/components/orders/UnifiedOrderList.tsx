@@ -301,13 +301,34 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     // Handle order status update (for agents and admins)
     const handleOrderStatusUpdated = (data: unknown) => {
       console.log("🔄 Order status updated:", data);
-      orderStatusUpdatedCount++;
 
-      // Cancel existing timer and set new one
-      if (toastTimerId) {
-        clearTimeout(toastTimerId);
+      // Attempt to use detailed payload if available
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        "count" in data &&
+        typeof (data as any).count === "number"
+      ) {
+        const eventData = data as {
+          count: number;
+          status: string;
+          orderIds?: string[];
+        };
+
+        orderStatusUpdatedCount += eventData.count;
+
+        const base = eventData.count === 1 ? "1 order" : `${eventData.count} orders`;
+        const state = eventData.status ? ` to ${eventData.status}` : "";
+        addToast(`${base} updated${state}.`, "info");
+      } else {
+        orderStatusUpdatedCount++;
+
+        // Cancel existing timer and set new one
+        if (toastTimerId) {
+          clearTimeout(toastTimerId);
+        }
+        toastTimerId = setTimeout(showBatchedToast, 2000);
       }
-      toastTimerId = setTimeout(showBatchedToast, 2000);
 
       fetchOrders(); // Refresh orders list
       if (isAdmin || isAgent) {
