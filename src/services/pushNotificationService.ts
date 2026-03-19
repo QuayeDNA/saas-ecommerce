@@ -223,6 +223,24 @@ class PushNotificationService {
     }
   }
 
+  async sendTestNotification(
+    title = "Test Notification",
+    body = "This is a test push notification",
+    url = "/"
+  ): Promise<boolean> {
+    try {
+      const response = await apiClient.post("/api/push/test", {
+        title,
+        body,
+        url,
+      });
+      return response.data.success === true;
+    } catch (error) {
+      console.error("[Push] sendTestNotification failed:", error);
+      return false;
+    }
+  }
+
   /**
    * Update notification preferences on server
    */

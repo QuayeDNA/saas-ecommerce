@@ -7,6 +7,7 @@ import { Spinner, Tabs, TabsList, TabsTrigger } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
 import { ColorSchemeSelector } from "../../components/common/color-scheme-selector";
 import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type SystemInfo } from "../../services/settings.service";
+import pushNotificationService from "../../services/pushNotificationService";
 import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog } from "../../components/superadmin";
 import { FeeSettingsDialog } from "../../components/superadmin/fee-settings-dialog";
 
@@ -33,6 +34,7 @@ export default function SuperAdminSettingsPage() {
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [feeDialogOpen, setFeeDialogOpen] = useState(false);
   const [feeSettings, setFeeSettings] = useState<FeeSettings | null>(null);
+  const [testPushLoading, setTestPushLoading] = useState(false);
 
   // single load + client cache via settingsService.getAllSettings()
   useEffect(() => {
@@ -130,6 +132,27 @@ export default function SuperAdminSettingsPage() {
 
   const handlePasswordChangeSuccess = useCallback(() => {
     addToast("Admin password changed successfully. Please log in again.", "success");
+  }, [addToast]);
+
+  const handleSendTestPush = useCallback(async () => {
+    setTestPushLoading(true);
+    try {
+      const success = await pushNotificationService.sendTestNotification(
+        "Test Notification",
+        "This is a test push notification from Superadmin settings",
+        "/"
+      );
+      if (success) {
+        addToast("Test push notification sent. Check your browser notification tray.", "success");
+      } else {
+        addToast("Failed to send test push notification. See logs.", "error");
+      }
+    } catch (error) {
+      console.error("Test push action error:", error);
+      addToast("Unexpected error while sending test push notification.", "error");
+    } finally {
+      setTestPushLoading(false);
+    }
   }, [addToast]);
 
   // derived values for compact templates
@@ -509,6 +532,17 @@ export default function SuperAdminSettingsPage() {
                     </div>
                     <Badge colorScheme={data.systemInfo.databaseStatus === 'connected' ? 'success' : 'warning'}>{data.systemInfo.databaseStatus}</Badge>
                   </div>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleSendTestPush}
+                    isLoading={testPushLoading}
+                  >
+                    Send Test Push Notification
+                  </Button>
                 </div>
               </Card>
 
