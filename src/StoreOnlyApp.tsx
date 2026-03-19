@@ -16,6 +16,7 @@ import { ThemeProvider } from "./design-system";
 import { ToastProvider } from "./design-system/components/toast";
 import { PageLoader } from "./components/page-loader";
 import { SiteStatusProvider } from "./contexts/site-status-context";
+import { AnnouncementProvider } from "./contexts/AnnouncementContext";
 import { MaintenanceBanner } from "./components/maintenance-banner";
 
 const StoreLandingPage = lazy(() => import("./pages/public/store-landing-page"));
@@ -31,36 +32,38 @@ export default function StoreOnlyApp() {
         <ThemeProvider initialTheme="default">
             <ToastProvider>
                 <SiteStatusProvider>
-                    <MaintenanceBanner />
-                    <Routes>
-                        {/* Root: customdomain.com/ → landing + discovery page */}
-                        <Route
-                            path="/"
-                            element={
-                                <Suspense fallback={<PageLoader />}>
-                                    <StoreLandingPage />
-                                </Suspense>
-                            }
-                        />
-                        {/* Store: customdomain.com/:businessName */}
-                        <Route
-                            path="/:businessName"
-                            element={
-                                <Suspense fallback={<PageLoader />}>
-                                    <PublicStorePage />
-                                </Suspense>
-                            }
-                        />
-                        {/* Any unrecognised path falls back to the landing page */}
-                        <Route
-                            path="*"
-                            element={
-                                <Suspense fallback={<PageLoader />}>
-                                    <StoreLandingPage />
-                                </Suspense>
-                            }
-                        />
-                    </Routes>
+                    <AnnouncementProvider>
+                        <MaintenanceBanner />
+                        <Routes>
+                            {/* Root: customdomain.com/ → landing + discovery page */}
+                            <Route
+                                path="/"
+                                element={
+                                    <Suspense fallback={<PageLoader />}>
+                                        <StoreLandingPage />
+                                    </Suspense>
+                                }
+                            />
+                            {/* Store: customdomain.com/:businessName */}
+                            <Route
+                                path="/:businessName"
+                                element={
+                                    <Suspense fallback={<PageLoader />}>
+                                        <PublicStorePage />
+                                    </Suspense>
+                                }
+                            />
+                            {/* Any unrecognised path falls back to the landing page */}
+                            <Route
+                                path="*"
+                                element={
+                                    <Suspense fallback={<PageLoader />}>
+                                        <StoreLandingPage />
+                                    </Suspense>
+                                }
+                            />
+                        </Routes>
+                    </AnnouncementProvider>
                 </SiteStatusProvider>
             </ToastProvider>
         </ThemeProvider>
