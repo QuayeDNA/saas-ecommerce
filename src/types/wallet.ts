@@ -122,5 +122,6 @@ export interface EarningsDashboard {
     mobile_money: number;
     bank_account: number;
   };
+  canAutoPayout?: boolean; // new field to indicate if auto payout is possible based on settings and configuration
 }
 

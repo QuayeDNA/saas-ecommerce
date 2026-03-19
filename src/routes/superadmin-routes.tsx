@@ -28,7 +28,7 @@ const AnnouncementsPage = lazy(
   () => import("../pages/superadmin/announcements")
 );
 const StoresPage = lazy(() => import("../pages/superadmin/stores"));
-const PayoutHistoryPage = lazy(() => import("../pages/superadmin/payout-history"));
+const PayoutManagement = lazy(() => import("../pages/superadmin/payout-management"))
 const AnalyticsPage = lazy(() => import("../pages/superadmin/analytics"));
 
 const superadminRoutes: RouteObject = {
@@ -110,7 +110,7 @@ const superadminRoutes: RouteObject = {
               path: "payouts",
               element: (
                 <Suspense fallback={<PageLoader />}>
-                  <PayoutHistoryPage />
+                  <PayoutManagement />
                 </Suspense>
               ),
             },

@@ -54,23 +54,10 @@ import {
   Eye,
   User,
   Mail,
-  X,
   DollarSign,
 } from "lucide-react";
+import PayoutDrawer from "../../components/superadmin/payout-drawer";
 import { getStoreUrl } from "../../utils/store-url";
-
-function getPayoutNetAmount(payout: any) {
-  if (typeof payout.netAmount === "number") return payout.netAmount;
-  if (typeof payout.amount === "number" && typeof payout.transferFee === "number") {
-    return payout.amount - payout.transferFee;
-  }
-  return undefined;
-}
-
-function isPayoutNetZeroOrNegative(payout: any) {
-  const net = getPayoutNetAmount(payout);
-  return typeof net === "number" ? net <= 0 : false;
-}
 
 // =========================================================================
 // Helper Components
@@ -500,14 +487,18 @@ export default function StoresPage() {
   const [total, setTotal] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  const [payoutMode, setPayoutMode] = useState({
+    autoPayoutEnabled: false,
+    canAutoPayout: false,
+    paystackConfigured: false,
+  });
+
   // Payouts drawer (admin)
   const [payoutsDrawerOpen, setPayoutsDrawerOpen] = useState(false);
   const [payoutsLoading, setPayoutsLoading] = useState(false);
   const [agentPayouts, setAgentPayouts] = useState<any[]>([]);
-  const [payoutActionLoading, setPayoutActionLoading] = useState<string | null>(null);
   const [pendingPayoutsMap, setPendingPayoutsMap] = useState<Record<string, number>>({});
   const [selectedPayoutsStore, setSelectedPayoutsStore] = useState<AdminStorefrontData | null>(null);
-  const [bulkApproveLoading, setBulkApproveLoading] = useState(false);
 
   // Confirm dialog
   const [confirmOpts, setConfirmOpts] = useState<ConfirmOpts>(CONFIRM_CLOSED);
@@ -547,13 +538,6 @@ export default function StoresPage() {
     }
   };
 
-  // Reactive helper — get current agent ID from selected payouts store
-  const getPayoutsAgentId = () => {
-    const store = selectedPayoutsStore || selectedStore;
-    if (!store) return null;
-    return typeof store.agentId === 'object' ? (store.agentId as any)._id as string : store.agentId as string;
-  };
-
   // Debounce search input to avoid lots of rapid requests
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -574,17 +558,28 @@ export default function StoresPage() {
           : (filter as 'active' | 'inactive' | 'suspended' | 'pending' | 'approved');
       const paging = { limit, offset: (page - 1) * limit };
 
-      const [storesRes, statsRes, autoApproveRes, allPayoutsRes] = await Promise.all([
+      const [storesRes, statsRes, autoApproveRes, allPayoutsRes, payoutModeRes] = await Promise.all([
         storefrontService.getAdminStorefronts({ status: statusFilter, search: debouncedSearch || undefined, ...paging }),
         storefrontService.getAdminStats(),
         settingsService.getAutoApproveStorefronts(),
         walletService.getPendingPayouts().catch(() => [] as any[]),
+        walletService.getAutoPayoutAvailability().catch(() => ({
+          autoPayoutEnabled: false,
+          canAutoPayout: false,
+          paystackConfigured: false,
+          message: "",
+        })),
       ]);
 
       setStores(storesRes.storefronts);
       setTotal(storesRes.total);
       setStats(statsRes);
       setAutoApprove(autoApproveRes.autoApproveStorefronts);
+      setPayoutMode({
+        autoPayoutEnabled: payoutModeRes.autoPayoutEnabled,
+        canAutoPayout: payoutModeRes.canAutoPayout,
+        paystackConfigured: payoutModeRes.paystackConfigured,
+      });
 
       // Build pending payout count map per agent
       const map: Record<string, number> = {};
@@ -748,196 +743,6 @@ export default function StoresPage() {
     }
     const agentId = typeof store.agentId === 'object' ? (store.agentId as any)._id : store.agentId;
     if (agentId) await openPayoutsForAgent(agentId as string);
-  };
-
-  const handleApprovePayout = (payoutOrId: any) => {
-    const payout = typeof payoutOrId === 'string'
-      ? agentPayouts.find(p => p._id === payoutOrId)
-      : payoutOrId;
-
-    if (!payout || !payout._id) {
-      addToast('Unable to determine which payout to approve.', 'error');
-      return;
-    }
-
-    if (isPayoutNetZeroOrNegative(payout)) {
-      addToast('Cannot approve a payout that leaves the agent with GH₵0. Increase the payout amount or adjust fees.', 'warning');
-      return;
-    }
-
-    openConfirm({
-      title: 'Approve Payout',
-      message: "The agent's earnings will be deducted and the payout will be marked ready for transfer.",
-      confirmLabel: 'Approve',
-      variant: 'success',
-      hasInput: false,
-      inputLabel: '',
-      inputPlaceholder: '',
-      onConfirm: async () => {
-        setPayoutActionLoading(payout._id);
-        try {
-          await walletService.approvePayout(payout._id);
-          addToast('Payout approved — ready for Paystack transfer', 'success');
-          // Reactive update — no full reload needed
-          setAgentPayouts(prev => prev.map(p => p._id === payout._id ? { ...p, status: 'approved' } : p));
-          const agentId = getPayoutsAgentId();
-          if (agentId) setPendingPayoutsMap(prev => ({
-            ...prev,
-            [agentId]: Math.max(0, (prev[agentId] || 0) - 1),
-          }));
-          fetchData().catch(() => { });
-        } catch (err: unknown) {
-          addToast((err instanceof Error ? err.message : null) || 'Failed to approve payout', 'error');
-          throw err;
-        } finally {
-          setPayoutActionLoading(null);
-        }
-      },
-    });
-  };
-
-  const handleRejectPayout = (payoutId: string) => {
-    openConfirm({
-      title: 'Reject Payout',
-      message: 'The agent will be notified and can submit a new request.',
-      confirmLabel: 'Reject',
-      variant: 'danger',
-      hasInput: true,
-      inputLabel: 'Rejection reason (optional)',
-      inputPlaceholder: 'e.g. Invalid account details, insufficient verification…',
-      onConfirm: async (reason) => {
-        setPayoutActionLoading(payoutId);
-        try {
-          await walletService.rejectPayout(payoutId, reason || undefined);
-          addToast('Payout rejected', 'success');
-          // Reactive update
-          setAgentPayouts(prev => prev.map(p => p._id === payoutId
-            ? { ...p, status: 'rejected', rejectionReason: reason || 'Rejected by administrator' }
-            : p
-          ));
-          const agentId = getPayoutsAgentId();
-          if (agentId) setPendingPayoutsMap(prev => ({
-            ...prev,
-            [agentId]: Math.max(0, (prev[agentId] || 0) - 1),
-          }));
-          fetchData().catch(() => { });
-        } catch (err: unknown) {
-          addToast((err instanceof Error ? err.message : null) || 'Failed to reject payout', 'error');
-          throw err;
-        } finally {
-          setPayoutActionLoading(null);
-        }
-      },
-    });
-  };
-
-  const handleProcessPayout = (payoutId: string) => {
-    openConfirm({
-      title: 'Send via Paystack',
-      message: 'This transfers money directly from your Paystack account balance to the agent. Note: You must have sufficient funds on Paystack and "Transfers" enabled. If it fails, this payout stays here so you can pay manually or reject it.',
-      confirmLabel: 'Send Money',
-      variant: 'primary',
-      hasInput: false,
-      inputLabel: '',
-      inputPlaceholder: '',
-      onConfirm: async () => {
-        setPayoutActionLoading(payoutId);
-        try {
-          const updated = await walletService.processPayout(payoutId);
-          addToast('Paystack transfer initiated successfully', 'success');
-          // Update local state, then refresh fully
-          setAgentPayouts(prev => prev.map(p => p._id === payoutId ? { ...p, ...updated, status: 'processing' } : p));
-          refreshPayouts().catch(() => { });
-        } catch (err: unknown) {
-          refreshPayouts().catch(() => { }); // Always refresh list on failure so the failure note is visible!
-
-          const apiErr = (err as any)?.response?.data;
-          const code = apiErr?.code as string | undefined;
-          const message = apiErr?.message ?? (err instanceof Error ? err.message : 'Failed to process payout transfer');
-
-          if (code === 'NOT_APPROVED') {
-            addToast('This payout must be approved first. Click “Approve & Deduct” to deduct earnings.', 'warning');
-          } else if (code === 'ALREADY_PROCESSING') {
-            addToast('This transfer is already processing.', 'info');
-          } else if (code === 'PAYSTACK_NOT_CONFIGURED') {
-            addToast('Paystack is not configured. Please use manual payout.', 'error');
-          } else {
-            addToast(`Transfer blocked: ${message}. Try manual payout instead.`, 'error');
-          }
-          throw err;
-        } finally {
-          setPayoutActionLoading(null);
-        }
-      },
-    });
-  };
-
-  const handleMarkPayoutPaid = (payout: any) => {
-    const transferFailed = !!payout.paystackTransfer?.failureReason || payout.status === 'failed';
-    openConfirm({
-      title: 'Manual Payment (Mark as Paid)',
-      message: 'Step 1: Open your bank app, mobile money app, or Paystack dashboard.\nStep 2: Send the exact Net Amount to the agent.\nStep 3: Click "Mark as Paid" below to record the payment and update the agent\'s dashboard.',
-      confirmLabel: 'Mark as Paid',
-      variant: 'success',
-      hasInput: true,
-      inputRequired: transferFailed,
-      inputLabel: 'Transfer Reference (Required if previously failed)',
-      inputPlaceholder: 'e.g. MoMo transaction ID or Bank Reference',
-      onConfirm: async (ref?: string) => {
-        setPayoutActionLoading(payout._id);
-        try {
-          const updated = await walletService.markPayoutComplete(payout._id, ref || undefined);
-          addToast('Payout successfully marked as completed.', 'success');
-          setAgentPayouts(prev => prev.map(p => p._id === payout._id ? { ...p, ...updated, status: 'completed' } : p));
-          refreshPayouts().catch(() => { });
-        } catch (err: unknown) {
-          addToast((err instanceof Error ? err.message : null) || 'Failed to mark payout complete', 'error');
-          throw err;
-        } finally {
-          setPayoutActionLoading(null);
-        }
-      },
-    });
-  };
-
-  const handleBulkApprove = () => {
-    const pending = agentPayouts.filter(p => p.status === 'pending');
-    if (pending.length === 0) return;
-
-    const valid = pending.filter(p => !isPayoutNetZeroOrNegative(p));
-    const skipped = pending.length - valid.length;
-
-    openConfirm({
-      title: `Approve All ${pending.length} Payout${pending.length > 1 ? 's' : ''}`,
-      message: `Each agent's earnings will be deducted for all ${pending.length} pending payout request${pending.length > 1 ? 's' : ''}.` +
-        (skipped > 0 ? ` ${skipped} payout${skipped > 1 ? 's' : ''} cannot be approved because the net amount is GH₵0.00 or less.` : ''),
-      confirmLabel: `Approve All`,
-      variant: 'success',
-      hasInput: false,
-      inputLabel: '',
-      inputPlaceholder: '',
-      onConfirm: async () => {
-        setBulkApproveLoading(true);
-        let approved = 0;
-        for (const p of valid) {
-          try {
-            await walletService.approvePayout(p._id);
-            approved++;
-          } catch {
-            // continue with remaining
-          }
-        }
-        setBulkApproveLoading(false);
-        if (approved > 0) {
-          addToast(`${approved} payout${approved > 1 ? 's' : ''} approved`, 'success');
-          // Reactive update
-          setAgentPayouts(prev => prev.map(p => p.status === 'pending' && !isPayoutNetZeroOrNegative(p) ? { ...p, status: 'approved' } : p));
-          const agentId = getPayoutsAgentId();
-          if (agentId) setPendingPayoutsMap(prev => ({ ...prev, [agentId]: 0 }));
-          fetchData().catch(() => { });
-        }
-      },
-    });
   };
 
   // Filtering is now handled server-side; we use returned page results.
@@ -1381,266 +1186,17 @@ export default function StoresPage() {
         </CardBody>
       </Card>
 
-      {/* Payout Side Drawer */}
-      {payoutsDrawerOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={() => setPayoutsDrawerOpen(false)}
-          />
-
-          {/* Slide-in panel */}
-          <div className="fixed right-0 top-0 h-full w-full sm:w-[520px] z-50 bg-white shadow-2xl flex flex-col">
-
-            {/* Drawer header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b bg-white shrink-0">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-blue-600 shrink-0" />
-                  <h3 className="font-semibold text-gray-900">Payout Requests</h3>
-                </div>
-                {selectedPayoutsStore && (
-                  <p className="text-xs text-gray-500 mt-0.5 truncate">
-                    {selectedPayoutsStore.displayName || selectedPayoutsStore.businessName}
-                    {(() => {
-                      const agent = typeof selectedPayoutsStore.agentId === 'object' ? selectedPayoutsStore.agentId : null;
-                      return agent ? ` · ${agent.fullName}` : '';
-                    })()}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {agentPayouts.filter(p => p.status === 'pending').length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="success"
-                    onClick={handleBulkApprove}
-                    isLoading={bulkApproveLoading}
-                    disabled={!!payoutActionLoading || bulkApproveLoading}
-                  >
-                    Approve All ({agentPayouts.filter(p => p.status === 'pending').length})
-                  </Button>
-                )}
-                <Button
-                  iconOnly
-                  size="sm"
-                  variant="ghost"
-                  leftIcon={<RefreshCw className={`w-4 h-4 ${payoutsLoading ? 'animate-spin' : ''}`} />}
-                  onClick={refreshPayouts}
-                  disabled={payoutsLoading}
-                  aria-label="Refresh"
-                />
-                <button
-                  onClick={() => setPayoutsDrawerOpen(false)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-            </div>
-
-            {/* Scrollable payout list */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {payoutsLoading ? (
-                <div className="flex items-center justify-center py-16">
-                  <Spinner size="lg" />
-                </div>
-              ) : agentPayouts.length === 0 ? (
-                <div className="py-16 text-center">
-                  <DollarSign className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-gray-500">No payout requests</p>
-                  <p className="text-xs text-gray-400 mt-1">This agent has no pending, approved, or processing payouts.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {agentPayouts.map(p => {
-                    const isPending = p.status === 'pending';
-                    const isApproved = p.status === 'approved';
-                    const isProcessing = p.status === 'processing';
-                    const isFailed = p.status === 'failed';
-                    const isActionable = isPending || isApproved || isProcessing || isFailed;
-                    const statusColor = isPending ? 'warning' : isApproved || isProcessing ? 'info' : p.status === 'completed' ? 'success' : isFailed ? 'error' : 'error';
-                    const statusLabel = isPending ? 'Pending Review' : isApproved ? 'Approved' : isProcessing ? 'Processing' : p.status === 'completed' ? 'Completed' : p.status === 'rejected' ? 'Rejected' : isFailed ? 'Failed' : p.status;
-
-                    return (
-                      <div key={p._id} className={`border rounded-xl p-4 ${isActionable ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 bg-white'}`}>
-                        {/* Header row */}
-                        <div className="flex items-start justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge colorScheme={statusColor as 'warning' | 'info' | 'success' | 'error'}>{statusLabel}</Badge>
-                            <span className="text-xs text-gray-500">
-                              {new Date(p.requestedAt || p.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-lg font-bold">GH₵ {p.amount.toFixed(2)}</div>
-                          </div>
-                        </div>
-
-                        {/* Details grid */}
-                        <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                          <div>
-                            <div className="text-xs text-gray-500">Destination</div>
-                            <div className="font-medium text-sm">
-                              {p.destination.type === 'mobile_money'
-                                ? `${p.destination.mobileProvider} — ${p.destination.phoneNumber}`
-                                : `Bank — ${p.destination.accountNumber || ''}`}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500">Fee Bearer</div>
-                            <div className="font-medium capitalize text-sm">{p.metadata?.feeBearer || 'agent'}</div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500">Transfer Fee</div>
-                            <div className="font-medium text-orange-600 text-sm">
-                              {p.transferFee != null ? `GH₵ ${p.transferFee.toFixed(2)}` : '—'}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500">Agent Receives</div>
-                            <div className={`font-medium text-sm ${isPayoutNetZeroOrNegative(p) ? 'text-red-600' : 'text-green-600'}`}>
-                              {(() => {
-                                const net = getPayoutNetAmount(p);
-                                return typeof net === 'number' ? `GH₵ ${net.toFixed(2)}` : `GH₵ ${p.amount.toFixed(2)}`;
-                              })()}
-                            </div>
-                            {isPayoutNetZeroOrNegative(p) && (
-                              <div className="text-xs text-red-600 mt-1">
-                                Fee equals or exceeds amount; agent receives nothing. Increase payout amount or adjust fees.
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Paystack transfer ref */}
-                        {p.paystackTransfer?.transferReference && (
-                          <div className="bg-gray-50 rounded-lg p-2 text-xs text-gray-600 mb-3">
-                            <span className="font-medium">Transfer ref:</span> {p.paystackTransfer.transferReference}
-                            {p.paystackTransfer.transferCode && <> &bull; <span className="font-medium">Code:</span> {p.paystackTransfer.transferCode}</>}
-                            {p.paystackTransfer.failureReason && (
-                              <div className="mt-2 space-y-2">
-                                <div className="text-red-500">
-                                  <span className="font-medium">Failure:</span> {p.paystackTransfer.failureReason}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  If Paystack transfer failed, you can send the money manually (Paystack dashboard or mobile money), then click “Mark as Paid” and provide the transfer reference.
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Action buttons */}
-                        {isActionable && (
-                          <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
-                            {isPending && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="success"
-                                  onClick={() => handleApprovePayout(p)}
-                                  isLoading={payoutActionLoading === p._id}
-                                  disabled={!!payoutActionLoading || bulkApproveLoading || isPayoutNetZeroOrNegative(p)}
-                                  title={isPayoutNetZeroOrNegative(p)
-                                    ? 'Cannot approve a payout that leaves the agent with GH₵0 or negative after fees.'
-                                    : undefined}
-                                >
-                                  Approve & Deduct
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="danger"
-                                  onClick={() => handleRejectPayout(p._id)}
-                                  isLoading={payoutActionLoading === p._id}
-                                  disabled={!!payoutActionLoading || bulkApproveLoading}
-                                >
-                                  Reject
-                                </Button>
-                              </>
-                            )}
-                            {isApproved && (
-                              <div className="flex gap-2 flex-wrap">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleProcessPayout(p._id)}
-                                  isLoading={payoutActionLoading === p._id}
-                                  disabled={!!payoutActionLoading || bulkApproveLoading || isPayoutNetZeroOrNegative(p)}
-                                  title={isPayoutNetZeroOrNegative(p)
-                                    ? "This payout leaves the agent with GH₵0.00 after fees. Increase the amount before sending."
-                                    : "Send money via Paystack Transfers API"}
-                                >
-                                  Send via Paystack
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="success"
-                                  onClick={() => handleMarkPayoutPaid(p)}
-                                  isLoading={payoutActionLoading === p._id}
-                                  disabled={!!payoutActionLoading || bulkApproveLoading}
-                                  title="You sent money manually — mark this payout as complete"
-                                >
-                                  Mark as Paid
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="danger"
-                                  onClick={() => handleRejectPayout(p._id)}
-                                  isLoading={payoutActionLoading === p._id}
-                                  disabled={!!payoutActionLoading || bulkApproveLoading}
-                                  title="Decline this payout and refund the amount to the agent if already deducted"
-                                >
-                                  Decline
-                                </Button>
-                              </div>
-                            )}
-                            {(isProcessing || p.status === 'failed') && (
-                              <div className="flex gap-2 flex-wrap">
-                                <Button
-                                  size="sm"
-                                  variant="success"
-                                  onClick={() => handleMarkPayoutPaid(p)}
-                                  isLoading={payoutActionLoading === p._id}
-                                  disabled={!!payoutActionLoading || bulkApproveLoading}
-                                  title="You sent money manually — mark this payout as complete"
-                                >
-                                  Mark as Paid
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="danger"
-                                  onClick={() => handleRejectPayout(p._id)}
-                                  isLoading={payoutActionLoading === p._id}
-                                  disabled={!!payoutActionLoading || bulkApproveLoading}
-                                  title="Decline this payout and refund the amount to the agent if already deducted"
-                                >
-                                  Decline
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {isProcessing && (
-                          <div className="text-xs text-blue-600 pt-2 border-t border-gray-200">
-                            Transfer in progress — awaiting Paystack webhook confirmation…
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Drawer footer */}
-            <div className="px-5 py-3 border-t bg-gray-50 shrink-0 text-xs text-gray-500 text-center">
-              {agentPayouts.length > 0 && `${agentPayouts.length} payout request${agentPayouts.length > 1 ? 's' : ''} total`}
-            </div>
-          </div>
-        </>
-      )}
+      <PayoutDrawer
+        open={payoutsDrawerOpen}
+        payouts={agentPayouts}
+        loading={payoutsLoading}
+        title="Payout Requests"
+        subtitle={selectedPayoutsStore ? `${selectedPayoutsStore.displayName || selectedPayoutsStore.businessName}` : undefined}
+        autoMode={payoutMode.canAutoPayout}
+        paystackConfigured={payoutMode.paystackConfigured}
+        onClose={() => setPayoutsDrawerOpen(false)}
+        onRefresh={refreshPayouts}
+      />
 
       {/* Store Detail Dialog */}
       <StoreDetailDialog

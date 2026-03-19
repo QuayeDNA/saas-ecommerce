@@ -1,3 +1,4 @@
+// src/components/storefront/earnings-manager.tsx
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Card,
@@ -30,7 +31,15 @@ import {
   Info,
   Smartphone,
   Building2,
+  Zap,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const MOMO_PROVIDERS = [
   { value: 'MTN', label: 'MTN Mobile Money' },
@@ -43,14 +52,57 @@ function isValidGhanaPhone(phone: string) {
   return /^0\d{9}$/.test(cleaned) || /^233\d{9}$/.test(cleaned);
 }
 
-const STATUS_CONFIG: Record<string, { color: 'success' | 'warning' | 'error' | 'info'; label: string }> = {
-  pending: { color: 'warning', label: 'Pending Review' },
-  approved: { color: 'info', label: 'Approved' },
-  processing: { color: 'info', label: 'Processing' },
-  completed: { color: 'success', label: 'Completed' },
-  rejected: { color: 'error', label: 'Rejected' },
-  failed: { color: 'error', label: 'Failed' },
+// ─── Status display config ─────────────────────────────────────────────────
+
+type StatusColor = 'success' | 'warning' | 'error' | 'info';
+
+const STATUS_CONFIG: Record<string, { color: StatusColor; label: string; icon: React.ReactNode }> = {
+  pending:    { color: 'warning', label: 'Pending Review',  icon: <Clock className="w-3 h-3" /> },
+  approved:   { color: 'info',    label: 'Approved',        icon: <CheckCircle2 className="w-3 h-3" /> },
+  processing: { color: 'info',    label: 'Processing',      icon: <Loader2 className="w-3 h-3 animate-spin" /> },
+  completed:  { color: 'success', label: 'Completed',       icon: <CheckCircle2 className="w-3 h-3" /> },
+  rejected:   { color: 'error',   label: 'Rejected',        icon: <XCircle className="w-3 h-3" /> },
+  failed:     { color: 'error',   label: 'Failed',          icon: <AlertCircle className="w-3 h-3" /> },
 };
+
+// ─── Payout mode banner ───────────────────────────────────────────────────────
+
+interface ModeBannerProps {
+  autoPayoutEnabled: boolean;
+  canRequestPayout: boolean;
+}
+
+const ModeBanner: React.FC<ModeBannerProps> = ({ autoPayoutEnabled, canRequestPayout }) => {
+  if (!canRequestPayout) return null;
+
+  if (autoPayoutEnabled) {
+    return (
+      <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm">
+        <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shrink-0">
+          <Zap className="w-3.5 h-3.5 text-white" />
+        </div>
+        <div className="text-emerald-800">
+          <span className="font-semibold">Instant withdrawals enabled.</span>{' '}
+          <span className="text-emerald-700">Your transfer is sent automatically via Paystack — no admin approval needed.</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
+        <Clock className="w-3.5 h-3.5 text-white" />
+      </div>
+      <div className="text-blue-800">
+        <span className="font-semibold">Manual review mode.</span>{' '}
+        <span className="text-blue-700">Payout requests are reviewed by an admin before processing. Allow 5–30 minutes after approval.</span>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export const EarningsManager: React.FC = () => {
   const { addToast } = useToast();
@@ -59,7 +111,7 @@ export const EarningsManager: React.FC = () => {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Request form
+  // Form state
   const [amount, setAmount] = useState<number | ''>('');
   const [destType, setDestType] = useState<'mobile_money' | 'bank_account'>('mobile_money');
   const [momoProvider, setMomoProvider] = useState('MTN');
@@ -73,8 +125,7 @@ export const EarningsManager: React.FC = () => {
       setLoading(true);
       const data = await walletService.getEarningsDashboard();
       setDashboard(data);
-    } catch (err: unknown) {
-      console.error(err);
+    } catch {
       addToast('Failed to load earnings', 'error');
     } finally {
       setLoading(false);
@@ -83,20 +134,20 @@ export const EarningsManager: React.FC = () => {
 
   useEffect(() => { void load(); }, [load]);
 
-  // ── Fee calculation ─────────────────────────────────────────────────────────
+  // ── Fee calculation ────────────────────────────────────────────────────────
   const feeEstimate = useMemo(() => {
     if (!dashboard?.transferFees || !amount || Number(amount) <= 0) return null;
-
-    const paystackFlatFee = destType === 'bank_account'
+    const paystackFlatFee  = destType === 'bank_account'
       ? dashboard.transferFees.bank_account
       : dashboard.transferFees.mobile_money;
     const platformFeePercent = dashboard.platformPayoutFeePercent || 0;
-    const numAmt = Number(amount);
+    const numAmt     = Number(amount);
     const platformFee = Math.round(numAmt * platformFeePercent) / 100;
-    const totalFee = Math.round((paystackFlatFee + platformFee) * 100) / 100;
-    const feeBearer = dashboard.payoutFeeBearer || 'agent';
-    const netAmount = feeBearer === 'agent' ? Math.max(0, Math.round((numAmt - totalFee) * 100) / 100) : numAmt;
-
+    const totalFee   = Math.round((paystackFlatFee + platformFee) * 100) / 100;
+    const feeBearer  = dashboard.payoutFeeBearer || 'agent';
+    const netAmount  = feeBearer === 'agent'
+      ? Math.max(0, Math.round((numAmt - totalFee) * 100) / 100)
+      : numAmt;
     return { paystackFlatFee, platformFee, totalFee, netAmount, feeBearer, platformFeePercent };
   }, [amount, destType, dashboard]);
 
@@ -108,7 +159,10 @@ export const EarningsManager: React.FC = () => {
       : (amounts.mobile_money ?? 1);
   }, [destType, dashboard]);
 
-  // ── Actions ─────────────────────────────────────────────────────────────────
+  // canAutoPayout = setting enabled AND Paystack configured — the definitive mode flag.
+  const isAutoMode = dashboard?.canAutoPayout ?? false;
+
+  // ── Dialog actions ─────────────────────────────────────────────────────────
   const openRequest = () => {
     setAmount('');
     setPhone('');
@@ -121,67 +175,59 @@ export const EarningsManager: React.FC = () => {
   };
 
   const submitRequest = async () => {
-    if (!amount || Number(amount) <= 0) {
-      addToast('Enter a valid amount', 'error');
-      return;
-    }
-
+    if (!amount || Number(amount) <= 0) { addToast('Enter a valid amount', 'error'); return; }
     const numericAmount = Number(amount);
     if (numericAmount < minimumPayout) {
-      addToast(`Minimum payout for ${destType === 'bank_account' ? 'bank transfer' : 'mobile money'} is GH₵ ${minimumPayout.toFixed(2)}`, 'error');
+      addToast(`Minimum payout is GH₵ ${minimumPayout.toFixed(2)}`, 'error');
       return;
     }
     if (dashboard && numericAmount > dashboard.availableBalance) {
       addToast('Amount exceeds your available earnings', 'error');
       return;
     }
-
-    // Prevent requests that would be entirely consumed by fees
     if (feeEstimate && feeEstimate.feeBearer === 'agent' && feeEstimate.netAmount <= 0) {
-      addToast(`Amount must exceed total fees (GH₵ ${feeEstimate.totalFee.toFixed(2)}) to result in a positive payout.`, 'error');
+      addToast(`Amount must exceed the total fee (GH₵ ${feeEstimate.totalFee.toFixed(2)})`, 'error');
       return;
     }
 
     const dest: PayoutDestination = { type: destType } as PayoutDestination;
-
     if (destType === 'mobile_money') {
       if (!isValidGhanaPhone(phone)) { addToast('Enter a valid Ghana mobile number', 'error'); return; }
       dest.mobileProvider = momoProvider;
-      dest.phoneNumber = phone.replace(/\s+/g, '');
+      dest.phoneNumber    = phone.replace(/\s+/g, '');
     } else {
-      if (!bankCode || !accountNumber) { addToast('Provide bank and account number', 'error'); return; }
-      dest.bankCode = bankCode.trim();
+      if (!bankCode || !accountNumber) { addToast('Provide bank code and account number', 'error'); return; }
+      dest.bankCode      = bankCode.trim();
       dest.accountNumber = accountNumber.trim();
       if (accountName) dest.accountName = accountName.trim();
     }
 
     try {
       setSubmitting(true);
-      const { autoPayoutEnabled } = await walletService.requestPayout(numericAmount, dest);
-      if (autoPayoutEnabled) {
+      const result = await walletService.requestPayout(numericAmount, dest);
+      const auto   = result.autoPayoutEnabled;
+
+      if (auto) {
         addToast('Transfer initiated — you will be notified when it completes', 'success');
       } else {
-        addToast('Payout requested — awaiting admin review', 'success');
+        addToast('Payout requested — an admin will review it shortly', 'success');
       }
       setShowRequestDialog(false);
       void load();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Request failed';
-      addToast(msg, 'error');
-      console.error(err);
+      addToast(err instanceof Error ? err.message : 'Request failed', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
 
-      {/* ── Balance hero card ─────────────────────────────────────────────────── */}
+      {/* ── Balance hero ──────────────────────────────────────────────────── */}
       <Card variant="elevated">
         <CardBody className="p-0 overflow-hidden">
-          {/* Gradient header */}
           <div className="px-5 pt-5 pb-6 text-white bg-gradient-to-r from-slate-700 to-slate-800 rounded-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -230,53 +276,58 @@ export const EarningsManager: React.FC = () => {
             </div>
           </div>
 
-          {/* CTA */}
-          <div className="px-5 pb-5 pt-3 bg-white">
+          {/* Mode banner + CTA */}
+          <div className="px-5 pb-5 pt-3 bg-white space-y-3">
+            {dashboard && (
+              <ModeBanner
+                autoPayoutEnabled={isAutoMode}
+                canRequestPayout={dashboard.canRequestPayout}
+              />
+            )}
+
             <Button
               className="w-full"
               onClick={openRequest}
               disabled={!(dashboard && dashboard.availableBalance > 0)}
-              leftIcon={<ArrowDownToLine className="w-4 h-4" />}
+              leftIcon={isAutoMode
+                ? <Zap className="w-4 h-4" />
+                : <ArrowDownToLine className="w-4 h-4" />
+              }
             >
-              {dashboard?.autoPayoutEnabled ? 'Withdraw via Paystack' : 'Request Payout'}
+              {isAutoMode ? 'Withdraw Instantly' : 'Request Payout'}
             </Button>
+
             {dashboard && dashboard.availableBalance <= 0 && (
-              <p className="text-xs text-center text-gray-400 mt-2">
-                You have no earnings to withdraw yet
-              </p>
-            )}
-            {dashboard?.autoPayoutEnabled && dashboard?.canRequestPayout && (
-              <p className="text-xs text-center text-green-600 mt-2 flex items-center justify-center gap-1">
-                <span>⚡</span> Instant transfer — no admin approval needed
+              <p className="text-xs text-center text-gray-400">
+                Complete storefront sales to earn and withdraw
               </p>
             )}
           </div>
         </CardBody>
       </Card>
 
-      {/* ── Transfer fee notice ───────────────────────────────────────────────── */}
+      {/* ── Transfer fee notice (only when agent bears fees) ──────────────── */}
       {dashboard?.payoutFeeBearer === 'agent' && dashboard?.transferFees && (
-        <div className="flex items-center gap-3 p-3.5 bg-blue-50 border border-blue-100 rounded-xl text-sm">
-          <Info className="w-4 h-4 text-blue-500 shrink-0" />
+        <div className="flex items-start gap-3 p-3.5 bg-blue-50 border border-blue-100 rounded-xl text-sm">
+          <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
           <div className="text-gray-600">
-            <span className="font-semibold text-gray-800">Transfer fees (deducted from payout):</span>{' '}
-            Mobile Money — GH₵ {dashboard.transferFees.mobile_money.toFixed(2)} Paystack
-            {(dashboard.platformPayoutFeePercent ?? 0) > 0 && ` + ${dashboard.platformPayoutFeePercent}% platform`},&nbsp;
-            Bank Account — GH₵ {dashboard.transferFees.bank_account.toFixed(2)} Paystack
-            {(dashboard.platformPayoutFeePercent ?? 0) > 0 && ` + ${dashboard.platformPayoutFeePercent}% platform`}.
+            <span className="font-semibold text-gray-800">Fees deducted from your payout:</span>{' '}
+            Mobile Money GH₵ {dashboard.transferFees.mobile_money.toFixed(2)}
+            {(dashboard.platformPayoutFeePercent ?? 0) > 0 && ` + ${dashboard.platformPayoutFeePercent}% platform`}
+            {' · '}
+            Bank GH₵ {dashboard.transferFees.bank_account.toFixed(2)}
+            {(dashboard.platformPayoutFeePercent ?? 0) > 0 && ` + ${dashboard.platformPayoutFeePercent}% platform`}
           </div>
         </div>
       )}
 
-      {/* ── Payout history ────────────────────────────────────────────────────── */}
+      {/* ── Payout history ─────────────────────────────────────────────────── */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ArrowDownToLine className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                Payout History
-              </h3>
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Payout History</h3>
             </div>
             {dashboard && (
               <Badge colorScheme="gray" variant="subtle" size="sm">
@@ -287,7 +338,7 @@ export const EarningsManager: React.FC = () => {
         </CardHeader>
 
         <CardBody className="p-0">
-          {/* Mobile card list (below sm) */}
+          {/* Mobile card list */}
           <div className="sm:hidden">
             {!dashboard || dashboard.recentPayouts.length === 0 ? (
               <div className="text-center py-10 text-sm text-gray-500">
@@ -296,7 +347,7 @@ export const EarningsManager: React.FC = () => {
             ) : (
               <div className="divide-y divide-gray-100">
                 {dashboard.recentPayouts.map((p: PayoutRequestItem) => {
-                  const cfg = STATUS_CONFIG[p.status] ?? { color: 'info' as const, label: p.status };
+                  const cfg = STATUS_CONFIG[p.status] ?? { color: 'info' as StatusColor, label: p.status, icon: null };
                   return (
                     <div key={p._id} className="flex items-start justify-between gap-3 px-4 py-3">
                       <div className="flex items-start gap-3">
@@ -316,17 +367,24 @@ export const EarningsManager: React.FC = () => {
                             {new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </p>
                           {p.status === 'rejected' && p.rejectionReason && (
-                            <p className="text-xs text-red-500 mt-1 max-w-[200px] truncate" title={p.rejectionReason}>
+                            <p className="text-xs text-red-500 mt-1 max-w-[200px]" title={p.rejectionReason}>
                               {p.rejectionReason}
+                            </p>
+                          )}
+                          {p.status === 'failed' && p.paystackTransfer?.failureReason && (
+                            <p className="text-xs text-red-500 mt-1">
+                              {p.paystackTransfer.failureReason}
                             </p>
                           )}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <Badge colorScheme={cfg.color} variant="subtle" size="sm">{cfg.label}</Badge>
+                        <Badge colorScheme={cfg.color} variant="subtle" size="sm">
+                          <span className="flex items-center gap-1">{cfg.icon}{cfg.label}</span>
+                        </Badge>
                         {p.netAmount != null && (
                           <p className="text-xs text-green-600 font-medium mt-1">
-                            Net: GH₵ {p.netAmount.toFixed(2)}
+                            Receive: GH₵ {p.netAmount.toFixed(2)}
                           </p>
                         )}
                       </div>
@@ -337,7 +395,7 @@ export const EarningsManager: React.FC = () => {
             )}
           </div>
 
-          {/* Desktop table (sm and above) */}
+          {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <Table size="sm">
               <TableHeader>
@@ -353,7 +411,7 @@ export const EarningsManager: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {(dashboard?.recentPayouts || []).map((p: PayoutRequestItem) => {
-                  const cfg = STATUS_CONFIG[p.status] ?? { color: 'info' as const, label: p.status };
+                  const cfg = STATUS_CONFIG[p.status] ?? { color: 'info' as StatusColor, label: p.status, icon: null };
                   return (
                     <TableRow key={p._id}>
                       <TableCell className="whitespace-nowrap text-xs">
@@ -389,10 +447,17 @@ export const EarningsManager: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge colorScheme={cfg.color} variant="subtle" size="sm">{cfg.label}</Badge>
+                        <Badge colorScheme={cfg.color} variant="subtle" size="sm">
+                          <span className="flex items-center gap-1">{cfg.icon}{cfg.label}</span>
+                        </Badge>
                         {p.status === 'rejected' && p.rejectionReason && (
                           <div className="text-xs text-red-500 mt-1 max-w-[150px] truncate" title={p.rejectionReason}>
                             {p.rejectionReason}
+                          </div>
+                        )}
+                        {p.status === 'failed' && p.paystackTransfer?.failureReason && (
+                          <div className="text-xs text-orange-500 mt-1 max-w-[150px] truncate" title={p.paystackTransfer.failureReason}>
+                            {p.paystackTransfer.failureReason}
                           </div>
                         )}
                       </TableCell>
@@ -415,12 +480,17 @@ export const EarningsManager: React.FC = () => {
         </CardBody>
       </Card>
 
-      {/* ── Request payout dialog ─────────────────────────────────────────────── */}
+      {/* ── Request payout dialog ─────────────────────────────────────────── */}
       <Dialog isOpen={showRequestDialog} onClose={() => setShowRequestDialog(false)} size="sm">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <ArrowDownToLine className="w-5 h-5 text-gray-500" />
-            <h3 className="text-lg font-semibold">Request Payout</h3>
+            {isAutoMode
+              ? <Zap className="w-5 h-5 text-emerald-500" />
+              : <ArrowDownToLine className="w-5 h-5 text-gray-500" />
+            }
+            <h3 className="text-lg font-semibold">
+              {isAutoMode ? 'Instant Withdrawal' : 'Request Payout'}
+            </h3>
           </div>
         </DialogHeader>
 
@@ -434,6 +504,19 @@ export const EarningsManager: React.FC = () => {
               </span>
             </div>
 
+            {/* Mode notice */}
+            {isAutoMode ? (
+              <div className="flex items-center gap-2.5 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800">
+                <Zap className="w-4 h-4 shrink-0" />
+                Transfer sent automatically via Paystack — funds arrive in minutes.
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+                <Clock className="w-4 h-4 shrink-0" />
+                An admin will review and process this request. Allow 5–30 minutes after approval.
+              </div>
+            )}
+
             <FormField label="Amount (GHS)">
               <Input
                 value={amount === '' ? '' : String(amount)}
@@ -443,7 +526,7 @@ export const EarningsManager: React.FC = () => {
                 max={dashboard?.availableBalance}
                 placeholder={`Min: GH₵ ${minimumPayout.toFixed(2)}`}
                 leftIcon={<span className="text-sm font-medium text-gray-500">GH₵</span>}
-                helperText={`Minimum payout: GH₵ ${minimumPayout.toFixed(2)}`}
+                helperText={`Minimum: GH₵ ${minimumPayout.toFixed(2)}`}
               />
             </FormField>
 
@@ -496,13 +579,13 @@ export const EarningsManager: React.FC = () => {
             {feeEstimate && (
               <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3.5 space-y-2 text-sm">
                 <div className="flex justify-between text-gray-600">
-                  <span>Payout amount</span>
+                  <span>Withdrawal amount</span>
                   <span className="font-medium">GH₵ {Number(amount).toFixed(2)}</span>
                 </div>
                 {feeEstimate.feeBearer === 'agent' && (
                   <>
                     <div className="flex justify-between text-orange-600">
-                      <span>Paystack flat fee ({destType === 'bank_account' ? 'bank' : 'MoMo'})</span>
+                      <span>Paystack fee ({destType === 'bank_account' ? 'bank' : 'MoMo'})</span>
                       <span>− GH₵ {feeEstimate.paystackFlatFee.toFixed(2)}</span>
                     </div>
                     {feeEstimate.platformFeePercent > 0 && (
@@ -513,19 +596,17 @@ export const EarningsManager: React.FC = () => {
                     )}
                   </>
                 )}
+                {feeEstimate.feeBearer === 'platform' && (
+                  <div className="text-xs text-green-600">Platform covers the transfer fee — you receive the full amount.</div>
+                )}
                 <div className="flex justify-between border-t border-indigo-200 pt-2 font-semibold">
                   <span className="text-gray-700">You receive</span>
-                  <span className="text-green-600">GH₵ {feeEstimate.netAmount.toFixed(2)}</span>
+                  <span className={feeEstimate.netAmount <= 0 ? 'text-red-600' : 'text-green-600'}>
+                    GH₵ {feeEstimate.netAmount.toFixed(2)}
+                  </span>
                 </div>
               </div>
             )}
-
-            {/* Manual/auto notice */}
-            <p className="text-xs text-gray-400">
-              {dashboard?.autoPayoutEnabled
-                ? '⚡ Auto-payout is enabled. Your transfer will be sent via Paystack immediately after submission.'
-                : 'Payout requests are reviewed by admin. Processing takes 5–30 minutes after approval.'}
-            </p>
           </div>
         </DialogBody>
 
@@ -544,9 +625,12 @@ export const EarningsManager: React.FC = () => {
                 Number(amount) < minimumPayout ||
                 (feeEstimate?.feeBearer === 'agent' && feeEstimate.netAmount <= 0)
               }
-              leftIcon={<ArrowDownToLine className="w-4 h-4" />}
+              leftIcon={isAutoMode
+                ? <Zap className="w-4 h-4" />
+                : <ArrowDownToLine className="w-4 h-4" />
+              }
             >
-              {dashboard?.autoPayoutEnabled ? 'Withdraw Now' : 'Request Payout'}
+              {isAutoMode ? 'Withdraw Now' : 'Submit Request'}
             </Button>
           </div>
         </DialogFooter>
