@@ -28,7 +28,9 @@ export const AnnouncementProvider: React.FC<AnnouncementProviderProps> = ({
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { authState } = isPublic ? { authState: { user: null } } : useAuth();
+
+  // For public contexts, skip auth entirely
+  const authState = isPublic ? { user: null } : useAuth().authState;
   const user = authState.user;
 
   // Fetch active announcements for the user
