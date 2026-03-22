@@ -285,8 +285,9 @@ export const walletService = {
     return response.data.data;
   },
 
-  requestPayout: async (amount: number, destination: PayoutDestination): Promise<{ data: PayoutRequestItem; autoPayoutEnabled: boolean }> => {
-    const response = await apiClient.post<{ success: boolean; data: PayoutRequestItem; autoPayoutEnabled: boolean }>("/api/wallet/payouts/request", { amount, destination });
+  requestPayout: async (amount: number, destination?: PayoutDestination): Promise<{ data: PayoutRequestItem; autoPayoutEnabled: boolean }> => {
+    const payload = destination ? { amount, destination } : { amount };
+    const response = await apiClient.post<{ success: boolean; data: PayoutRequestItem; autoPayoutEnabled: boolean }>("/api/wallet/payouts/request", payload);
     return { data: response.data.data, autoPayoutEnabled: response.data.autoPayoutEnabled ?? false };
   },
 

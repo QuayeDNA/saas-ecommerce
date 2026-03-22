@@ -449,8 +449,8 @@ export const StorefrontDashboardPage: React.FC = () => {
         <TabsContent value="overview">
           <div className="space-y-4 sm:space-y-6">
             {/* ── Analytics Stats ─────────────────────────────────────────── */}
-            {/* Row 1: primary KPIs — 2 cols mobile / 4 cols desktop */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* Row 1: primary KPIs — 2 cols mobile / 5 cols desktop */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
               <StatCard
                 title="Gross Revenue"
                 value={analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0)}
@@ -459,10 +459,17 @@ export const StorefrontDashboardPage: React.FC = () => {
                 size="md"
               />
               <StatCard
-                title="Net Profit"
+                title="Net Profit (All Time)"
                 value={analyticsLoading ? "—" : formatCurrency(analytics?.totalProfit ?? 0)}
                 subtitle="Secured (completed orders)"
                 icon={<TrendingUp className="w-4 h-4" />}
+                size="md"
+              />
+              <StatCard
+                title="Net Profit (Today)"
+                value={analyticsLoading ? "—" : formatCurrency(analytics?.todayNetProfit ?? 0)}
+                subtitle={`${analytics?.todayCompletedOrders ?? 0} completed today`}
+                icon={<CheckCircle2 className="w-4 h-4" />}
                 size="md"
               />
               <StatCard
@@ -480,6 +487,46 @@ export const StorefrontDashboardPage: React.FC = () => {
                 size="md"
               />
             </div>
+
+            {/* Profit vs earnings explainer */}
+            {analytics && earnings && (
+              <Card variant="outlined">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4 text-emerald-600" />
+                    <h3 className="text-base font-semibold">Profit vs Earnings Breakdown</h3>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                    <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                      <p className="text-xs text-gray-500">Net Profit (All Time)</p>
+                      <p className="text-sm font-bold text-gray-900">{formatCurrency(analytics.totalProfit)}</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                      <p className="text-xs text-gray-500">Net Profit (Today)</p>
+                      <p className="text-sm font-bold text-gray-900">{formatCurrency(analytics.todayNetProfit ?? 0)}</p>
+                    </div>
+                    <div className="rounded-lg border border-green-100 bg-green-50 px-3 py-2">
+                      <p className="text-xs text-green-700">Total Earned (Credited)</p>
+                      <p className="text-sm font-bold text-green-800">{formatCurrency(earnings.totalEarned)}</p>
+                    </div>
+                    <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
+                      <p className="text-xs text-blue-700">Total Withdrawn (Completed)</p>
+                      <p className="text-sm font-bold text-blue-800">{formatCurrency(earnings.totalWithdrawn)}</p>
+                    </div>
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                      <p className="text-xs text-emerald-700">Available Earnings</p>
+                      <p className="text-sm font-bold text-emerald-800">{formatCurrency(earnings.availableBalance)}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3">
+                    Net Profit tracks completed storefront order markup. Earnings tracks credited ledger balance and payout movements.
+                    Available Earnings reflects what can be withdrawn now.
+                  </p>
+                </CardBody>
+              </Card>
+            )}
 
             {/* Row 2: Revenue breakdown + Order status */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

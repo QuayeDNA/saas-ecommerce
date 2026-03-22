@@ -72,13 +72,17 @@ export type PayoutDestinationType = 'mobile_money' | 'bank_account';
 
 export interface PayoutDestination {
   type: PayoutDestinationType;
-  mobileProvider?: string; // MTN|VOD|ATL
+  mobileProvider?: string; // MTN|TELECEL|AT
   phoneNumber?: string; // e.g. 0244123456
   bankCode?: string; // free-text bank code/name
   accountNumber?: string;
   accountName?: string;
   recipientName?: string;
   recipientCode?: string;
+}
+
+export interface SavedPayoutAccount extends PayoutDestination {
+  updatedAt?: string | Date;
 }
 
 export type PayoutStatus = 'pending' | 'approved' | 'processing' | 'completed' | 'failed' | 'rejected';
@@ -111,6 +115,7 @@ export interface EarningsDashboard {
   totalWithdrawn: number;
   recentPayouts: PayoutRequestItem[];
   canRequestPayout: boolean;
+  savedPayoutAccount?: SavedPayoutAccount | null;
   transferFees?: {
     mobile_money: number;
     bank_account: number;

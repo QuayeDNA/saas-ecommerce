@@ -43,8 +43,8 @@ import {
 
 const MOMO_PROVIDERS = [
   { value: 'MTN', label: 'MTN Mobile Money' },
-  { value: 'VOD', label: 'Vodafone Cash' },
-  { value: 'ATL', label: 'AirtelTigo Money' },
+  { value: 'TELECEL', label: 'Telecel Cash' },
+  { value: 'AT', label: 'AT Money' },
 ];
 
 function isValidGhanaPhone(phone: string) {
@@ -57,12 +57,12 @@ function isValidGhanaPhone(phone: string) {
 type StatusColor = 'success' | 'warning' | 'error' | 'info';
 
 const STATUS_CONFIG: Record<string, { color: StatusColor; label: string; icon: React.ReactNode }> = {
-  pending:    { color: 'warning', label: 'Pending Review',  icon: <Clock className="w-3 h-3" /> },
-  approved:   { color: 'info',    label: 'Approved',        icon: <CheckCircle2 className="w-3 h-3" /> },
-  processing: { color: 'info',    label: 'Processing',      icon: <Loader2 className="w-3 h-3 animate-spin" /> },
-  completed:  { color: 'success', label: 'Completed',       icon: <CheckCircle2 className="w-3 h-3" /> },
-  rejected:   { color: 'error',   label: 'Rejected',        icon: <XCircle className="w-3 h-3" /> },
-  failed:     { color: 'error',   label: 'Failed',          icon: <AlertCircle className="w-3 h-3" /> },
+  pending: { color: 'warning', label: 'Pending Review', icon: <Clock className="w-3 h-3" /> },
+  approved: { color: 'info', label: 'Approved', icon: <CheckCircle2 className="w-3 h-3" /> },
+  processing: { color: 'info', label: 'Processing', icon: <Loader2 className="w-3 h-3 animate-spin" /> },
+  completed: { color: 'success', label: 'Completed', icon: <CheckCircle2 className="w-3 h-3" /> },
+  rejected: { color: 'error', label: 'Rejected', icon: <XCircle className="w-3 h-3" /> },
+  failed: { color: 'error', label: 'Failed', icon: <AlertCircle className="w-3 h-3" /> },
 };
 
 // ─── Payout mode banner ───────────────────────────────────────────────────────
@@ -119,6 +119,8 @@ export const EarningsManager: React.FC = () => {
   const [bankCode, setBankCode] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
+  const [useSavedAccount, setUseSavedAccount] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -137,15 +139,15 @@ export const EarningsManager: React.FC = () => {
   // ── Fee calculation ────────────────────────────────────────────────────────
   const feeEstimate = useMemo(() => {
     if (!dashboard?.transferFees || !amount || Number(amount) <= 0) return null;
-    const paystackFlatFee  = destType === 'bank_account'
+    const paystackFlatFee = destType === 'bank_account'
       ? dashboard.transferFees.bank_account
       : dashboard.transferFees.mobile_money;
     const platformFeePercent = dashboard.platformPayoutFeePercent || 0;
-    const numAmt     = Number(amount);
+    const numAmt = Number(amount);
     const platformFee = Math.round(numAmt * platformFeePercent) / 100;
-    const totalFee   = Math.round((paystackFlatFee + platformFee) * 100) / 100;
-    const feeBearer  = dashboard.payoutFeeBearer || 'agent';
-    const netAmount  = feeBearer === 'agent'
+    const totalFee = Math.round((paystackFlatFee + platformFee) * 100) / 100;
+    const feeBearer = dashboard.payoutFeeBearer || 'agent';
+    const netAmount = feeBearer === 'agent'
       ? Math.max(0, Math.round((numAmt - totalFee) * 100) / 100)
       : numAmt;
     return { paystackFlatFee, platformFee, totalFee, netAmount, feeBearer, platformFeePercent };
@@ -164,13 +166,35 @@ export const EarningsManager: React.FC = () => {
 
   // ── Dialog actions ─────────────────────────────────────────────────────────
   const openRequest = () => {
+    const saved = dashboard?.savedPayoutAccount;
+
     setAmount('');
-    setPhone('');
-    setBankCode('');
-    setAccountNumber('');
-    setAccountName('');
-    setDestType('mobile_money');
-    setMomoProvider('MTN');
+    setUseSavedAccount(Boolean(saved));
+    setEditingAccount(!saved);
+
+    if (saved?.type === 'mobile_money') {
+      setDestType('mobile_money');
+      setMomoProvider(saved.mobileProvider || 'MTN');
+      setPhone(saved.phoneNumber || '');
+      setBankCode('');
+      setAccountNumber('');
+      setAccountName(saved.accountName || saved.recipientName || '');
+    } else if (saved?.type === 'bank_account') {
+      setDestType('bank_account');
+      setBankCode(saved.bankCode || '');
+      setAccountNumber(saved.accountNumber || '');
+      setAccountName(saved.accountName || saved.recipientName || '');
+      setPhone('');
+      setMomoProvider('MTN');
+    } else {
+      setDestType('mobile_money');
+      setMomoProvider('MTN');
+      setPhone('');
+      setBankCode('');
+      setAccountNumber('');
+      setAccountName('');
+    }
+
     setShowRequestDialog(true);
   };
 
@@ -190,22 +214,30 @@ export const EarningsManager: React.FC = () => {
       return;
     }
 
-    const dest: PayoutDestination = { type: destType } as PayoutDestination;
-    if (destType === 'mobile_money') {
-      if (!isValidGhanaPhone(phone)) { addToast('Enter a valid Ghana mobile number', 'error'); return; }
-      dest.mobileProvider = momoProvider;
-      dest.phoneNumber    = phone.replace(/\s+/g, '');
-    } else {
-      if (!bankCode || !accountNumber) { addToast('Provide bank code and account number', 'error'); return; }
-      dest.bankCode      = bankCode.trim();
-      dest.accountNumber = accountNumber.trim();
-      if (accountName) dest.accountName = accountName.trim();
+    let destinationToSend: PayoutDestination | undefined;
+    const shouldUseSaved = useSavedAccount && !editingAccount && dashboard?.savedPayoutAccount;
+
+    if (!shouldUseSaved) {
+      const dest: PayoutDestination = { type: destType } as PayoutDestination;
+      if (destType === 'mobile_money') {
+        if (!isValidGhanaPhone(phone)) { addToast('Enter a valid Ghana mobile number', 'error'); return; }
+        if (!accountName.trim()) { addToast('Enter mobile money account name', 'error'); return; }
+        dest.mobileProvider = momoProvider;
+        dest.phoneNumber = phone.replace(/\s+/g, '');
+        dest.accountName = accountName.trim();
+      } else {
+        if (!bankCode || !accountNumber) { addToast('Provide bank code and account number', 'error'); return; }
+        dest.bankCode = bankCode.trim();
+        dest.accountNumber = accountNumber.trim();
+        if (accountName) dest.accountName = accountName.trim();
+      }
+      destinationToSend = dest;
     }
 
     try {
       setSubmitting(true);
-      const result = await walletService.requestPayout(numericAmount, dest);
-      const auto   = result.autoPayoutEnabled;
+      const result = await walletService.requestPayout(numericAmount, destinationToSend);
+      const auto = result.autoPayoutEnabled;
 
       if (auto) {
         addToast('Transfer initiated — you will be notified when it completes', 'success');
@@ -222,6 +254,8 @@ export const EarningsManager: React.FC = () => {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  const savedAccount = dashboard?.savedPayoutAccount;
+
   return (
     <div className="space-y-4">
 
@@ -530,49 +564,94 @@ export const EarningsManager: React.FC = () => {
               />
             </FormField>
 
-            <FormField label="Payout Method">
-              <Select
-                value={destType}
-                onChange={(v: string) => setDestType(v as 'mobile_money' | 'bank_account')}
-                options={[
-                  { value: 'mobile_money', label: '📱 Mobile Money' },
-                  { value: 'bank_account', label: '🏦 Bank Account' },
-                ]}
-              />
-            </FormField>
+            {useSavedAccount && savedAccount && !editingAccount ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Saved payout account</p>
+                    <p className="text-xs text-gray-500">Paystack-supported method for quick withdrawals</p>
+                  </div>
+                  <Button variant="secondary" size="sm" onClick={() => setEditingAccount(true)}>
+                    Edit
+                  </Button>
+                </div>
 
-            {destType === 'mobile_money' ? (
-              <div className="space-y-3">
-                <FormField label="Mobile Network">
-                  <Select value={momoProvider} onChange={(v) => setMomoProvider(v)} options={MOMO_PROVIDERS} />
-                </FormField>
-                <FormField label="Mobile Money Number">
-                  <Input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="0244 123 456"
-                    helperText="Ghana number — e.g. 0244123456"
-                  />
-                </FormField>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <FormField label="Bank Code">
-                  <Input
-                    value={bankCode}
-                    onChange={(e) => setBankCode(e.target.value)}
-                    placeholder="e.g. GCB, ECOBANK"
-                  />
-                </FormField>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <FormField label="Account Number">
-                    <Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} />
-                  </FormField>
-                  <FormField label="Account Name (optional)">
-                    <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} />
-                  </FormField>
+                <div className="mt-3 text-sm text-gray-700">
+                  {savedAccount.type === 'mobile_money' ? (
+                    <p>
+                      <span className="font-medium">Mobile Money:</span> {savedAccount.mobileProvider} - {savedAccount.phoneNumber}
+                      {savedAccount.accountName ? ` (${savedAccount.accountName})` : ''}
+                    </p>
+                  ) : (
+                    <p>
+                      <span className="font-medium">Bank:</span> {savedAccount.bankCode} - {savedAccount.accountNumber}
+                      {savedAccount.accountName ? ` (${savedAccount.accountName})` : ''}
+                    </p>
+                  )}
                 </div>
               </div>
+            ) : (
+              <>
+                <FormField label="Payout Method">
+                  <Select
+                    value={destType}
+                    onChange={(v: string) => setDestType(v as 'mobile_money' | 'bank_account')}
+                    options={[
+                      { value: 'mobile_money', label: '📱 Mobile Money (Paystack)' },
+                      { value: 'bank_account', label: '🏦 Bank Account (Paystack)' },
+                    ]}
+                  />
+                </FormField>
+
+                {destType === 'mobile_money' ? (
+                  <div className="space-y-3">
+                    <FormField label="Mobile Network">
+                      <Select value={momoProvider} onChange={(v) => setMomoProvider(v)} options={MOMO_PROVIDERS} />
+                    </FormField>
+                    <FormField label="Mobile Money Number">
+                      <Input
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="0244 123 456"
+                        helperText="This account will be saved for faster future payouts"
+                      />
+                    </FormField>
+                    <FormField label="Account Name">
+                      <Input
+                        value={accountName}
+                        onChange={(e) => setAccountName(e.target.value)}
+                        placeholder="Enter full account name"
+                      />
+                    </FormField>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <FormField label="Bank Code">
+                      <Input
+                        value={bankCode}
+                        onChange={(e) => setBankCode(e.target.value)}
+                        placeholder="e.g. GCB, ECOBANK"
+                      />
+                    </FormField>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FormField label="Account Number">
+                        <Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} />
+                      </FormField>
+                      <FormField label="Account Name (optional)">
+                        <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} />
+                      </FormField>
+                    </div>
+                  </div>
+                )}
+
+                {useSavedAccount && (
+                  <div className="flex justify-end">
+                    <Button variant="ghost" size="sm" onClick={() => setEditingAccount(false)}>
+                      Use saved account instead
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Fee breakdown */}

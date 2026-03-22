@@ -176,6 +176,10 @@ export interface StorefrontAnalytics {
   totalCost: number;
   /** Net profit (markup) — only from completed orders */
   totalProfit: number;
+  /** Net profit from orders completed today */
+  todayNetProfit: number;
+  /** Number of orders completed today */
+  todayCompletedOrders: number;
   /** Markup locked in pending-payment orders */
   pendingProfit: number;
   /** Markup locked in confirmed orders */
