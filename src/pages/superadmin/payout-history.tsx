@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { isAxiosError } from "axios";
 import {
   Badge,
   Button,
@@ -109,6 +110,19 @@ function statusColor(status: string) {
   }
 }
 
+function getApiErrorMessage(err: unknown, fallback: string) {
+  if (isAxiosError(err)) {
+    const data = err.response?.data as { message?: string; error?: string } | string | undefined;
+    if (typeof data === "string" && data.trim()) return data;
+    if (data && typeof data === "object") {
+      return data.message || data.error || err.message || fallback;
+    }
+    return err.message || fallback;
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+}
+
 export default function PayoutHistoryPage() {
   const { addToast } = useToast();
   const [payouts, setPayouts] = useState<PayoutRequestItem[]>([]);
@@ -189,7 +203,7 @@ export default function PayoutHistoryPage() {
       addToast("Payout approved — earnings deducted; you can now send the transfer.", "success");
       void refresh();
     } catch (err: unknown) {
-      addToast((err instanceof Error ? err.message : "Failed to approve payout") || "Failed to approve payout", "error");
+      addToast(getApiErrorMessage(err, "Failed to approve payout"), "error");
     } finally {
       setActionLoading(null);
     }
@@ -204,7 +218,7 @@ export default function PayoutHistoryPage() {
       addToast("Payout rejected", "success");
       void refresh();
     } catch (err: unknown) {
-      addToast((err instanceof Error ? err.message : "Failed to reject payout") || "Failed to reject payout", "error");
+      addToast(getApiErrorMessage(err, "Failed to reject payout"), "error");
     } finally {
       setActionLoading(null);
     }
@@ -220,11 +234,10 @@ export default function PayoutHistoryPage() {
       closeConfirmModal();
     } catch (err: unknown) {
       void refresh(); // Ensure list reflects failure directly
-      type ApiErrorData = { code?: string; status?: string; message?: string };
-      type ApiError = { response?: { data?: ApiErrorData } };
-      const apiErr = (err as ApiError).response?.data;
-      const code = apiErr?.code;
-      const message = apiErr?.message ?? (err instanceof Error ? err.message : "Failed to process payout transfer");
+      const apiErr = isAxiosError(err) ? err.response?.data : undefined;
+      const apiErrObj = apiErr && typeof apiErr === "object" ? (apiErr as { code?: string }) : undefined;
+      const code = apiErrObj?.code;
+      const message = getApiErrorMessage(err, "Failed to process payout transfer");
 
       if (code === "NOT_APPROVED") {
         addToast("This payout must be approved before sending. Approve first.", "warning");
@@ -248,7 +261,7 @@ export default function PayoutHistoryPage() {
       addToast("Payout marked as completed", "success");
       void refresh();
     } catch (err: unknown) {
-      addToast((err instanceof Error ? err.message : "Failed to mark payout as completed") || "Failed to mark payout as completed", "error");
+      addToast(getApiErrorMessage(err, "Failed to mark payout as completed"), "error");
     } finally {
       setActionLoading(null);
     }
@@ -366,133 +379,133 @@ export default function PayoutHistoryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6}>
-                  <div className="py-8 text-center text-sm text-gray-500">Loading payouts…</div>
-                </TableCell>
-              </TableRow>
-            ) : payouts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6}>
-                  <div className="py-10 text-center text-sm text-gray-500">
-                    {hasFilters
-                      ? "No payouts match your filters."
-                      : "No payout requests found."}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              payouts.map((payout) => {
-                const isPending = payout.status === "pending";
-                const isApproved = payout.status === "approved";
-                const isProcessing = payout.status === "processing";
-                const isCompleted = payout.status === "completed";
-                const isFailed = payout.status === "failed" || payout.status === "rejected";
-                return (
-                  <TableRow key={payout._id}>
-                    <TableCell>
-                      <div className="text-sm font-medium text-gray-900">{formatDate(payout.requestedAt)}</div>
-                      <div className="text-xs text-gray-500">{formatDate(payout.createdAt)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium text-gray-900">{userDisplay(payout.user)}</div>
-                      <div className="text-xs text-gray-500">{userEmail(payout.user)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-semibold text-gray-900">{formatCurrency(payout.amount)}</div>
-                      {typeof payout.netAmount === "number" && (
-                        <div className="text-xs text-gray-500">Net: {formatCurrency(payout.netAmount)}</div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-gray-900">{destinationDisplay(payout.destination)}</div>
-                      {payout.destination?.type === "mobile_money" && (
-                        <div className="text-xs text-gray-500">{payout.destination.mobileProvider}</div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge colorScheme={statusColor(payout.status)} size="sm">
-                        {payout.status}
-                      </Badge>
-                      {payout.paystackTransfer?.failureReason && (
-                        <div className="text-xs text-red-600 mt-1">
-                          {payout.paystackTransfer.failureReason}
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <div className="py-8 text-center text-sm text-gray-500">Loading payouts…</div>
+                  </TableCell>
+                </TableRow>
+              ) : payouts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <div className="py-10 text-center text-sm text-gray-500">
+                      {hasFilters
+                        ? "No payouts match your filters."
+                        : "No payout requests found."}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                payouts.map((payout) => {
+                  const isPending = payout.status === "pending";
+                  const isApproved = payout.status === "approved";
+                  const isProcessing = payout.status === "processing";
+                  const isCompleted = payout.status === "completed";
+                  const isFailed = payout.status === "failed" || payout.status === "rejected";
+                  return (
+                    <TableRow key={payout._id}>
+                      <TableCell>
+                        <div className="text-sm font-medium text-gray-900">{formatDate(payout.requestedAt)}</div>
+                        <div className="text-xs text-gray-500">{formatDate(payout.createdAt)}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium text-gray-900">{userDisplay(payout.user)}</div>
+                        <div className="text-xs text-gray-500">{userEmail(payout.user)}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-semibold text-gray-900">{formatCurrency(payout.amount)}</div>
+                        {typeof payout.netAmount === "number" && (
+                          <div className="text-xs text-gray-500">Net: {formatCurrency(payout.netAmount)}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-900">{destinationDisplay(payout.destination)}</div>
+                        {payout.destination?.type === "mobile_money" && (
+                          <div className="text-xs text-gray-500">{payout.destination.mobileProvider}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge colorScheme={statusColor(payout.status)} size="sm">
+                          {payout.status}
+                        </Badge>
+                        {payout.paystackTransfer?.failureReason && (
+                          <div className="text-xs text-red-600 mt-1">
+                            {payout.paystackTransfer.failureReason}
+                          </div>
+                        )}
+                        {payout.status === 'failed' && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Tip: Send funds manually (MoMo/bank), then click “Mark Paid”.
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {isPending && (
+                            <>
+                              <Button
+                                size="xs"
+                                variant="success"
+                                onClick={() => handleApprove(payout._id)}
+                                isLoading={actionLoading === payout._id}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="danger"
+                                onClick={() => handleReject(payout._id)}
+                                isLoading={actionLoading === payout._id}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          {isApproved && (
+                            <>
+                              <Button
+                                size="xs"
+                                onClick={() => openProcessModal(payout)}
+                                isLoading={actionLoading === payout._id}
+                              >
+                                Send via Paystack
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="success"
+                                onClick={() => openMarkPaidModal(payout)}
+                                isLoading={actionLoading === payout._id}
+                              >
+                                Mark Paid
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="danger"
+                                onClick={() => handleReject(payout._id)}
+                                isLoading={actionLoading === payout._id}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          {isProcessing && (
+                            <span className="text-xs text-blue-600">Processing…</span>
+                          )}
+                          {isCompleted && (
+                            <span className="text-xs text-green-600">Completed</span>
+                          )}
+                          {isFailed && (
+                            <span className="text-xs text-red-600">Needs attention</span>
+                          )}
                         </div>
-                      )}
-                      {payout.status === 'failed' && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Tip: Send funds manually (MoMo/bank), then click “Mark Paid”.
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {isPending && (
-                          <>
-                            <Button
-                              size="xs"
-                              variant="success"
-                              onClick={() => handleApprove(payout._id)}
-                              isLoading={actionLoading === payout._id}
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              size="xs"
-                              variant="danger"
-                              onClick={() => handleReject(payout._id)}
-                              isLoading={actionLoading === payout._id}
-                            >
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {isApproved && (
-                          <>
-                            <Button
-                              size="xs"
-                              onClick={() => openProcessModal(payout)}
-                              isLoading={actionLoading === payout._id}
-                            >
-                              Send via Paystack
-                            </Button>
-                            <Button
-                              size="xs"
-                              variant="success"
-                              onClick={() => openMarkPaidModal(payout)}
-                              isLoading={actionLoading === payout._id}
-                            >
-                              Mark Paid
-                            </Button>
-                            <Button
-                              size="xs"
-                              variant="danger"
-                              onClick={() => handleReject(payout._id)}
-                              isLoading={actionLoading === payout._id}
-                            >
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {isProcessing && (
-                          <span className="text-xs text-blue-600">Processing…</span>
-                        )}
-                        {isCompleted && (
-                          <span className="text-xs text-green-600">Completed</span>
-                        )}
-                        {isFailed && (
-                          <span className="text-xs text-red-600">Needs attention</span>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
 
       <div className="flex items-center justify-end">

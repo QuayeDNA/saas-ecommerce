@@ -247,7 +247,13 @@ export const EarningsManager: React.FC = () => {
       setShowRequestDialog(false);
       void load();
     } catch (err: unknown) {
-      addToast(err instanceof Error ? err.message : 'Request failed', 'error');
+      const message =
+        typeof err === 'object' && err !== null && 'response' in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : err instanceof Error
+            ? err.message
+            : undefined;
+      addToast(message || 'Request failed', 'error');
     } finally {
       setSubmitting(false);
     }
