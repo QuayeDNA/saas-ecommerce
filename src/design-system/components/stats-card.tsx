@@ -31,7 +31,6 @@ export const StatCard: React.FC<StatCardProps> = ({
       subtitle: "text-xs mt-0.5 sm:mt-1",
       icon: "text-xs sm:text-sm",
       iconContainer: "p-1.5 sm:p-2",
-      cardPadding: "p-0 sm:p-3",
     },
     md: {
       title: "text-xs sm:text-sm font-medium text-gray-300",
@@ -39,7 +38,6 @@ export const StatCard: React.FC<StatCardProps> = ({
       subtitle: "text-xs sm:text-sm mt-0.5 sm:mt-1",
       icon: "text-sm sm:text-base lg:text-lg",
       iconContainer: "p-2 sm:p-2.5 lg:p-3",
-      cardPadding: "p-0 sm:p-4 lg:p-5",
     },
     lg: {
       title: "text-sm sm:text-base font-medium text-gray-300",
@@ -47,7 +45,6 @@ export const StatCard: React.FC<StatCardProps> = ({
       subtitle: "text-xs sm:text-sm mt-0.5 sm:mt-1",
       icon: "text-base sm:text-lg lg:text-xl",
       iconContainer: "p-2 sm:p-3 lg:p-4",
-      cardPadding: "p-0 sm:p-5 lg:p-6",
     },
   };
 
@@ -67,7 +64,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         e.currentTarget.style.backgroundColor = "var(--color-primary-500)";
       }}
     >
-      <CardBody className={`${classes.cardPadding} h-full`}>
+      <CardBody className={`h-full`}>
         <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4">
           <div className="flex-1 min-w-0">
             <p className={`${classes.title} mb-0.5 sm:mb-1 lg:mb-2 truncate`}>

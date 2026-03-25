@@ -3,6 +3,10 @@ import {
   Card,
   CardHeader,
   CardBody,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
   Button,
   Badge,
   Alert,
@@ -49,6 +53,7 @@ import {
   BarChart2,
   CheckCircle2,
   XCircle,
+  Info,
 } from "lucide-react";
 import { getApiErrorMessage } from "../../utils/error-helpers";
 import { getStoreUrl } from "../../utils/store-url";
@@ -77,6 +82,7 @@ export const StorefrontDashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
+  const [showBreakdownInfoModal, setShowBreakdownInfoModal] = useState(false);
 
   // Analytics & orders state
   const [analytics, setAnalytics] = useState<StorefrontAnalytics | null>(null);
@@ -488,54 +494,81 @@ export const StorefrontDashboardPage: React.FC = () => {
               />
             </div>
 
-            {/* Profit vs earnings explainer */}
-            {analytics && earnings && (
-              <Card variant="outlined">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <BarChart2 className="w-4 h-4 text-emerald-600" />
-                    <h3 className="text-base font-semibold">Profit vs Earnings Breakdown</h3>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-                    <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
-                      <p className="text-xs text-gray-500">Net Profit (All Time)</p>
-                      <p className="text-sm font-bold text-gray-900">{formatCurrency(analytics.totalProfit)}</p>
+            <Dialog
+              isOpen={showBreakdownInfoModal}
+              onClose={() => setShowBreakdownInfoModal(false)}
+              size="md"
+            >
+              <DialogHeader>
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-emerald-600" />
+                  <h3 className="text-base font-semibold">Profit vs Earnings Explained</h3>
+                </div>
+              </DialogHeader>
+              <DialogBody className="space-y-3 text-sm text-gray-700">
+                {analytics && earnings ? (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                        <p className="text-xs text-gray-500">Net Profit (All Time)</p>
+                        <p className="text-sm font-bold text-gray-900">{formatCurrency(analytics.totalProfit)}</p>
+                      </div>
+                      <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                        <p className="text-xs text-gray-500">Net Profit (Today)</p>
+                        <p className="text-sm font-bold text-gray-900">{formatCurrency(analytics.todayNetProfit ?? 0)}</p>
+                      </div>
+                      <div className="rounded-lg border border-green-100 bg-green-50 px-3 py-2">
+                        <p className="text-xs text-green-700">Total Earned (Credited)</p>
+                        <p className="text-sm font-bold text-green-800">{formatCurrency(earnings.totalEarned)}</p>
+                      </div>
+                      <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
+                        <p className="text-xs text-blue-700">Total Withdrawn (Completed)</p>
+                        <p className="text-sm font-bold text-blue-800">{formatCurrency(earnings.totalWithdrawn)}</p>
+                      </div>
+                      <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 sm:col-span-2">
+                        <p className="text-xs text-emerald-700">Available Earnings</p>
+                        <p className="text-sm font-bold text-emerald-800">{formatCurrency(earnings.availableBalance)}</p>
+                      </div>
                     </div>
-                    <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
-                      <p className="text-xs text-gray-500">Net Profit (Today)</p>
-                      <p className="text-sm font-bold text-gray-900">{formatCurrency(analytics.todayNetProfit ?? 0)}</p>
-                    </div>
-                    <div className="rounded-lg border border-green-100 bg-green-50 px-3 py-2">
-                      <p className="text-xs text-green-700">Total Earned (Credited)</p>
-                      <p className="text-sm font-bold text-green-800">{formatCurrency(earnings.totalEarned)}</p>
-                    </div>
-                    <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
-                      <p className="text-xs text-blue-700">Total Withdrawn (Completed)</p>
-                      <p className="text-sm font-bold text-blue-800">{formatCurrency(earnings.totalWithdrawn)}</p>
-                    </div>
-                    <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
-                      <p className="text-xs text-emerald-700">Available Earnings</p>
-                      <p className="text-sm font-bold text-emerald-800">{formatCurrency(earnings.availableBalance)}</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-3">
-                    Net Profit tracks completed storefront order markup. Earnings tracks credited ledger balance and payout movements.
-                    Available Earnings reflects what can be withdrawn now.
-                  </p>
-                </CardBody>
-              </Card>
-            )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Net Profit tracks completed storefront order markup. Earnings tracks credited ledger balance and payout movements.
+                      Available Earnings reflects what can be withdrawn now.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-gray-500">Breakdown data is not available yet.</p>
+                )}
+              </DialogBody>
+              <DialogFooter justify="end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBreakdownInfoModal(false)}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </Dialog>
 
             {/* Row 2: Revenue breakdown + Order status */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Revenue Breakdown */}
               <Card variant="outlined">
                 <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <BarChart2 className="w-4 h-4 text-indigo-500" />
-                    <h3 className="text-base font-semibold">Revenue Breakdown</h3>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <BarChart2 className="w-4 h-4 text-indigo-500" />
+                      <h3 className="text-base font-semibold">Revenue Breakdown</h3>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowBreakdownInfoModal(true)}
+                      leftIcon={<Info className="w-3.5 h-3.5" />}
+                    >
+                      Info
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardBody>
