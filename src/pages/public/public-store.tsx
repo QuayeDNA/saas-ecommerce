@@ -33,6 +33,7 @@ import {
     FaEye, FaEyeSlash,
 } from 'react-icons/fa6';
 import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
+import { StorefrontEntryMarker } from '../../contexts/storefront-session-context';
 
 // =============================================================================
 // Types
@@ -2416,6 +2417,10 @@ const PublicStore: React.FC = () => {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
+
+       {/* SECURITY: marks this browser session as storefront-only so that
+ *           system routes (/login, /register, etc.) are blocked for this tab */}
+ *       {businessName && <StorefrontEntryMarker businessName={businessName} />}
 
             <AnnouncementPopupHandler
                 announcements={publicAnnouncements.filter(

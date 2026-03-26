@@ -8,6 +8,7 @@ import { AppProvider } from "./providers/app-provider";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { CommissionProvider } from "./contexts/CommissionContext";
 import { AnnouncementProvider } from "./contexts/AnnouncementContext";
+import { StorefrontSessionProvider } from "./contexts/storefront-session-context";
 import { NetworkStatusIndicator } from "./components/network-status-indicator";
 import { MaintenanceBanner } from "./components/maintenance-banner";
 import { InstallPrompt } from "./components/install-prompt";
@@ -24,20 +25,17 @@ function App() {
     typeof window !== "undefined" &&
     localStorage.getItem("impersonation") === "true";
 
-  // Check if current route is authenticated (not public/auth routes)
-  const isAuthenticatedRoute = location.pathname.startsWith('/agent') ||
-    location.pathname.startsWith('/admin') ||
-    location.pathname.startsWith('/superadmin');
+  const isAuthenticatedRoute =
+    location.pathname.startsWith("/agent") ||
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/superadmin");
 
   const handleReturnToAdmin = async () => {
     try {
-      // Use centralized cleanup so cookies/localStorage are restored consistently
       await ImpersonationService.endImpersonation();
-      // endImpersonation dispatches auth:refresh — navigate to superadmin
       navigate("/superadmin");
     } catch (error) {
       console.error("Failed to end impersonation from banner:", error);
-      // Fallback: best-effort local restore + navigate
       const adminToken = localStorage.getItem("adminToken");
       if (adminToken) localStorage.setItem("token", adminToken);
       localStorage.removeItem("adminToken");
@@ -47,43 +45,51 @@ function App() {
   };
 
   return (
-    <>
-      {isImpersonating && isAuthenticatedRoute && (
-        <div className="sticky top-0 z-50 w-full bg-yellow-100 border-b border-yellow-300 p-2 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between shadow-sm">
-          <span className="text-yellow-800 font-semibold text-sm sm:text-base mb-2 sm:mb-0">
-            Impersonation Active: You are acting as another user.
-          </span>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={handleReturnToAdmin}
-            className="self-start sm:self-auto"
-          >
-            Return to Admin
-          </Button>
-        </div>
-      )}
-      <ThemeProvider initialTheme="default">
-        <ToastProvider>
-          <AppProvider>
-            <CommissionProvider>
-              <NotificationProvider>
-                <AnnouncementProvider>
-                  <PushNotificationInitializer />
-                  <div className={`min-h-screen flex flex-col ${isImpersonating && isAuthenticatedRoute ? 'pt-0' : ''}`}>
-                    <MaintenanceBanner />
-                    <div className="flex-1">{routeElement}</div>
-                    <NetworkStatusIndicator />
-                    <InstallPrompt />
-                    <AnnouncementPopupHandler />
-                  </div>
-                </AnnouncementProvider>
-              </NotificationProvider>
-            </CommissionProvider>
-          </AppProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </>
+    // StorefrontSessionProvider must wrap the entire app so the guard and
+    // marker can communicate via context regardless of which route is active.
+    <StorefrontSessionProvider>
+      <>
+        {isImpersonating && isAuthenticatedRoute && (
+          <div className="sticky top-0 z-50 w-full bg-yellow-100 border-b border-yellow-300 p-2 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between shadow-sm">
+            <span className="text-yellow-800 font-semibold text-sm sm:text-base mb-2 sm:mb-0">
+              Impersonation Active: You are acting as another user.
+            </span>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleReturnToAdmin}
+              className="self-start sm:self-auto"
+            >
+              Return to Admin
+            </Button>
+          </div>
+        )}
+        <ThemeProvider initialTheme="default">
+          <ToastProvider>
+            <AppProvider>
+              <CommissionProvider>
+                <NotificationProvider>
+                  <AnnouncementProvider>
+                    <PushNotificationInitializer />
+                    <div
+                      className={`min-h-screen flex flex-col ${
+                        isImpersonating && isAuthenticatedRoute ? "pt-0" : ""
+                      }`}
+                    >
+                      <MaintenanceBanner />
+                      <div className="flex-1">{routeElement}</div>
+                      <NetworkStatusIndicator />
+                      <InstallPrompt />
+                      <AnnouncementPopupHandler />
+                    </div>
+                  </AnnouncementProvider>
+                </NotificationProvider>
+              </CommissionProvider>
+            </AppProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </>
+    </StorefrontSessionProvider>
   );
 }
 

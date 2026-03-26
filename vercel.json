@@ -7,11 +7,15 @@
   },
   "rewrites": [
     {
+      "source": "/store/:path*",
+      "destination": "/index.html"
+    },
+    {
       "source": "/",
       "destination": "/api/og?path="
     },
     {
-      "source": "/((?!api/|assets/|images/|manifest$|.*\\..*).*)",
+      "source": "/((?!api/|assets/|images/|manifest$|store/|.*\\..*).*)",
       "destination": "/api/og?path=$1"
     },
     {

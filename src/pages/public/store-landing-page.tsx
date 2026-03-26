@@ -1,6 +1,9 @@
 /**
  * StoreLandingPage — Clean & Modern redesign
  * Light, simple, minimal — no overkill.
+ *
+ * On the consolidated domain this is served at brytelinks.com/store
+ * Individual stores are at brytelinks.com/store/:businessName
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -27,7 +30,10 @@ export default function StoreLandingPage() {
   const [loading, setLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
 
-  const storePathPrefix = import.meta.env.VITE_STORE_ONLY ? '' : '/store';
+  // Always /store on the consolidated domain.
+  // VITE_STORE_ONLY is no longer used in production but kept as a fallback
+  // for any legacy standalone-storefront deployments still in use.
+  const storePathPrefix = import.meta.env.VITE_STORE_ONLY === 'true' ? '' : '/store';
 
   useEffect(() => {
     const title = `${PLATFORM_NAME} — Buy Data Bundles Instantly`;

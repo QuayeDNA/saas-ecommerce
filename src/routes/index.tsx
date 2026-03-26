@@ -5,6 +5,7 @@ import type { RouteObject } from "react-router-dom";
 import { DashboardLayout } from "../layouts/dashboard-layout";
 import { PageLoader } from "../components/page-loader";
 import { ProtectedRoute } from "../components/protected-route";
+import { StorefrontRouteGuard } from "../contexts/storefront-session-context";
 import superadminRoutes from "./superadmin-routes";
 
 // =============================================================================
@@ -13,72 +14,75 @@ import superadminRoutes from "./superadmin-routes";
 const LandingPage = lazy(() =>
   import("../pages/landing-page").then((module) => ({
     default: module.LandingPage,
-  })),
+  }))
 );
 
 const LogoPage = lazy(() =>
   import("../components/common/BryteLinksLogoShowcase").then((module) => ({
     default: module.BryteLinksLogoShowcase,
-  })),
+  }))
 );
 const LoginPage = lazy(() =>
   import("../pages/login-page").then((module) => ({
     default: module.LoginPage,
-  })),
+  }))
 );
 const RegisterPage = lazy(() =>
   import("../pages/register-page").then((module) => ({
     default: module.RegisterPage,
-  })),
+  }))
 );
 const ForgotPasswordPage = lazy(() =>
   import("../pages/forgot-password-page").then((module) => ({
     default: module.ForgotPasswordPage,
-  })),
+  }))
 );
 const ResetPasswordPage = lazy(() =>
   import("../pages/reset-password-page").then((module) => ({
     default: module.ResetPasswordPage,
-  })),
+  }))
 );
 const VerifyAccountPage = lazy(() =>
   import("../pages/verify-account-page").then((module) => ({
     default: module.VerifyAccountPage,
-  })),
+  }))
 );
 const NotFoundPage = lazy(() =>
   import("../pages/not-found-page").then((module) => ({
     default: module.NotFoundPage,
-  })),
+  }))
 );
 const ForbiddenPage = lazy(() =>
   import("../pages/forbidden-page").then((module) => ({
     default: module.ForbiddenPage,
-  })),
+  }))
 );
 const PrivacyPolicyPage = lazy(() =>
   import("../pages/privacy-policy-page").then((module) => ({
     default: module.PrivacyPolicyPage,
-  })),
+  }))
 );
 const PublicStorePage = lazy(() =>
   import("../pages/public/public-store").then((module) => ({
     default: module.PublicStorePage,
-  })),
+  }))
 );
-const StoreLandingPage = lazy(() => import("../pages/public/store-landing-page"));
+const StoreLandingPage = lazy(
+  () => import("../pages/public/store-landing-page")
+);
+
 // =============================================================================
 // LAZY LOADED COMPONENTS - DASHBOARD PAGES
 // =============================================================================
 const DashboardPage = lazy(() =>
   import("../pages/dashboard-page").then((module) => ({
     default: module.DashboardPage,
-  })),
+  }))
 );
 const ProfilePage = lazy(() =>
   import("../pages/profile-page").then((module) => ({
     default: module.ProfilePage,
-  })),
+  }))
 );
 
 // =============================================================================
@@ -87,32 +91,37 @@ const ProfilePage = lazy(() =>
 const PackageManagementPage = lazy(() =>
   import("../pages/packages-page").then((module) => ({
     default: module.default,
-  })),
+  }))
 );
 const OrderManagementPage = lazy(() =>
   import("../pages/orders-page").then((module) => ({
     default: module.OrderManagementPage,
-  })),
+  }))
 );
 const AfaRegistrationPage = lazy(() =>
   import("../pages/afa-registration-page").then((module) => ({
     default: module.AfaRegistrationPage,
-  })),
+  }))
 );
 const WalletPage = lazy(() =>
   import("../pages/wallet-page").then((module) => ({
     default: module.WalletPage,
-  })),
+  }))
 );
-
 const WalletTopupCallbackPage = lazy(() =>
-  import("../pages/wallet-topup-callback").then((module) => ({ default: module.WalletTopupCallbackPage }))
+  import("../pages/wallet-topup-callback").then((module) => ({
+    default: module.WalletTopupCallbackPage,
+  }))
 );
-const StorefrontCallbackPage = lazy(() => import("../pages/storefront-callback").then((m) => ({ default: m.StorefrontCallbackPage })));
+const StorefrontCallbackPage = lazy(() =>
+  import("../pages/storefront-callback").then((m) => ({
+    default: m.StorefrontCallbackPage,
+  }))
+);
 const StorefrontDashboardPage = lazy(() =>
   import("../pages/agent/storefront-dashboard").then((module) => ({
     default: module.StorefrontDashboardPage,
-  })),
+  }))
 );
 
 // =============================================================================
@@ -121,38 +130,63 @@ const StorefrontDashboardPage = lazy(() =>
 const MtnPackagesPage = lazy(() =>
   import("../pages/mtn-packages-page").then((module) => ({
     default: module.MtnPackagesPage,
-  })),
+  }))
 );
 const TelecelPackagesPage = lazy(() =>
   import("../pages/telecel-packages-page").then((module) => ({
     default: module.TelecelPackagesPage,
-  })),
+  }))
 );
 const AtBigTimePackagesPage = lazy(() =>
   import("../pages/at-bigtime-packages").then((module) => ({
     default: module.AtBigTimePackagesPage,
-  })),
+  }))
 );
 const AtISharePremiumPackagesPage = lazy(() =>
   import("../pages/at-ishare-packages").then((module) => ({
     default: module.AtISharePremiumPackagesPage,
-  })),
+  }))
 );
 
 // =============================================================================
-// ROUTE CONFIGURATIONS
+// ROUTE GUARD WRAPPER
+// Renders children only if the visitor is NOT in a storefront session.
+// Storefront visitors who manually type /login, /register, etc. are redirected
+// back to their store. This is the security guard the client requested.
 // =============================================================================
 
-// Public routes configuration
+function SystemRouteElement({ element }: { element: React.ReactNode }) {
+  return (
+    <StorefrontRouteGuard allowedPrefixes={["/store", "/privacy-policy"]}>
+      {element}
+    </StorefrontRouteGuard>
+  );
+}
+
+// =============================================================================
+// PUBLIC ROUTES
+// Routes under /store/* are NOT wrapped in SystemRouteElement — they are the
+// storefront and must always be accessible.
+// Everything else (/, /login, /register, /forgot-password …) IS wrapped so a
+// storefront visitor can't sneak into the agent registration flow.
+// =============================================================================
+
 const publicRoutes: RouteObject[] = [
+  // ── Root: redirect to login (wrapped — storefront visitors bounce back) ──
   {
     path: "/",
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <LoginPage />
-      </Suspense>
+      <SystemRouteElement
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <LoginPage />
+          </Suspense>
+        }
+      />
     ),
   },
+
+  // ── Wallet / storefront callbacks (not system-access-sensitive) ───────────
   {
     path: "/wallet/topup/callback",
     element: (
@@ -169,6 +203,8 @@ const publicRoutes: RouteObject[] = [
       </Suspense>
     ),
   },
+
+  // ── Marketing landing page ────────────────────────────────────────────────
   {
     path: "/home",
     element: (
@@ -177,46 +213,70 @@ const publicRoutes: RouteObject[] = [
       </Suspense>
     ),
   },
+
+  // ── Auth routes — ALL wrapped with SystemRouteElement ────────────────────
   {
     path: "/login",
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <LoginPage />
-      </Suspense>
+      <SystemRouteElement
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <LoginPage />
+          </Suspense>
+        }
+      />
     ),
   },
   {
     path: "/register",
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <RegisterPage />
-      </Suspense>
+      <SystemRouteElement
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <RegisterPage />
+          </Suspense>
+        }
+      />
     ),
   },
   {
     path: "/forgot-password",
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <ForgotPasswordPage />
-      </Suspense>
+      <SystemRouteElement
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <ForgotPasswordPage />
+          </Suspense>
+        }
+      />
     ),
   },
   {
     path: "/reset-password/:token",
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <ResetPasswordPage />
-      </Suspense>
+      <SystemRouteElement
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <ResetPasswordPage />
+          </Suspense>
+        }
+      />
     ),
   },
   {
     path: "/verify-account",
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <VerifyAccountPage />
-      </Suspense>
+      <SystemRouteElement
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <VerifyAccountPage />
+          </Suspense>
+        }
+      />
     ),
   },
+
+  // ── Misc public pages ─────────────────────────────────────────────────────
   {
     path: "/forbidden",
     element: (
@@ -242,6 +302,17 @@ const publicRoutes: RouteObject[] = [
     ),
   },
 
+  // ── STOREFRONT ROUTES — never wrapped in SystemRouteElement ───────────────
+  // brytelinks.com/store           → discovery / landing page
+  // brytelinks.com/store/:name     → individual agent store
+  {
+    path: "/store",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <StoreLandingPage />
+      </Suspense>
+    ),
+  },
   {
     path: "/store/:businessName",
     element: (
@@ -250,18 +321,21 @@ const publicRoutes: RouteObject[] = [
       </Suspense>
     ),
   },
+
+  // Dev-only convenience route
   ...(import.meta.env.DEV
-    ? [
-      {
-        path: "/dev/store-landing",
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <StoreLandingPage />
-          </Suspense>
-        ),
-      } as RouteObject,
-    ]
+    ? ([
+        {
+          path: "/dev/store-landing",
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <StoreLandingPage />
+            </Suspense>
+          ),
+        },
+      ] as RouteObject[])
     : []),
+
   {
     path: "/404",
     element: (
@@ -272,13 +346,25 @@ const publicRoutes: RouteObject[] = [
   },
 ];
 
-// Agent routes configuration
+// =============================================================================
+// AGENT ROUTES — also wrapped so storefront visitors can't reach them
+// =============================================================================
+
 const agentRoutes: RouteObject[] = [
   {
     path: "/agent",
     element: (
-      <ProtectedRoute
-        allowedUserTypes={["agent", "super_agent", "dealer", "super_dealer"]}
+      <SystemRouteElement
+        element={
+          <ProtectedRoute
+            allowedUserTypes={[
+              "agent",
+              "super_agent",
+              "dealer",
+              "super_dealer",
+            ]}
+          />
+        }
       />
     ),
     children: [
@@ -366,7 +452,6 @@ const agentRoutes: RouteObject[] = [
               </Suspense>
             ),
           },
-
           {
             path: "storefront",
             element: (
@@ -389,11 +474,18 @@ const agentRoutes: RouteObject[] = [
   },
 ];
 
-// Admin routes configuration
+// =============================================================================
+// ADMIN ROUTES — also guarded
+// =============================================================================
+
 const adminRoutes: RouteObject[] = [
   {
     path: "/admin",
-    element: <ProtectedRoute allowedUserTypes={["super_admin"]} />,
+    element: (
+      <SystemRouteElement
+        element={<ProtectedRoute allowedUserTypes={["super_admin"]} />}
+      />
+    ),
     children: [
       {
         path: "dashboard",
@@ -433,17 +525,10 @@ const adminRoutes: RouteObject[] = [
 // MAIN ROUTES CONFIGURATION
 // =============================================================================
 export const routes: RouteObject[] = [
-  // Public routes
   ...publicRoutes,
-
-  // Protected routes by user type
   ...agentRoutes,
   ...adminRoutes,
-
-  // Super admin routes (separate layout)
   superadminRoutes,
-
-  // Catch all route - redirect to 404
   {
     path: "*",
     element: <Navigate to="/404" replace />,

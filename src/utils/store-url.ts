@@ -1,16 +1,20 @@
 /**
- * Returns the public-facing URL for a storefront.
+ * getStoreUrl — returns the public-facing URL for a storefront.
  *
- * When VITE_STORE_BASE_URL is set (i.e. a dedicated storefront domain has been
- * configured), links are built using that domain so customers always land on
- * the correct domain regardless of which app (main or store-only) generates
- * the link.
+ * On the consolidated domain (brytelinks.com) stores live at:
+ *   brytelinks.com/store/:businessName
  *
- * Falls back to origin/store/:businessName on the current host so the main
- * app continues to work without any env var during development.
+ * VITE_STORE_ONLY is kept for any legacy standalone deployments but
+ * is no longer used in the main production build.
  */
 export function getStoreUrl(businessName: string): string {
-  const base = import.meta.env.VITE_STORE_BASE_URL?.replace(/\/$/, '')
-    ?? `${window.location.origin}/store`;
-  return `${base}/${businessName}`;
+  const isStoreOnly = import.meta.env.VITE_STORE_ONLY === 'true';
+
+  if (isStoreOnly) {
+    // Standalone storefront domain: customdomain.com/:businessName
+    return `${window.location.origin}/${businessName}`;
+  }
+
+  // Consolidated domain: brytelinks.com/store/:businessName
+  return `${window.location.origin}/store/${businessName}`;
 }
