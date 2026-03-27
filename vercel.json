@@ -14,7 +14,7 @@
           "value": "directdata.shop"
         }
       ],
-      "destination": "https://brytelinks.com/store/$1",
+      "destination": "/store/$1",
       "permanent": true
     }
   ],
