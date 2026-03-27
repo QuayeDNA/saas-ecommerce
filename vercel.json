@@ -5,6 +5,19 @@
   "env": {
     "VITE_API_URL": "https://saas-ecommerce-backend.onrender.com"
   },
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "directdata.shop"
+        }
+      ],
+      "destination": "https://brytelinks.com/store/$1",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/store/:path*",
