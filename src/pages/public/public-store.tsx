@@ -1434,7 +1434,8 @@ const PublicStore: React.FC = () => {
             if (paystackUrl && reference) {
                 try {
                     await loadPaystackScript();
-                    const { publicKey } = await walletService.getPaystackPublicKey();
+                    const { publicKey, paystackEnabled: paystackAllowed } = await walletService.getPaystackPublicKey();
+                    if (!paystackAllowed) throw new Error('Paystack is disabled on this platform');
                     if (!publicKey) throw new Error('Paystack public key not available');
                     const PaystackPop = (window as any).PaystackPop;
                     if (!PaystackPop) throw new Error('Paystack script failed to load');
@@ -1634,74 +1635,75 @@ const PublicStore: React.FC = () => {
                         </div>
                     )}
                     {/* Search + view toggle row */}
-                <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                        <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
-                        <input
-                            type="search"
-                            placeholder="Search bundles…"
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent transition placeholder:text-gray-400"
-                            style={{ '--tw-ring-color': theme.primary + '40' } as React.CSSProperties}
-                        />
-                    </div>
-                    <button
-                        onClick={() => setShowTrackDrawer(true)}
-                        title="Track my orders"
-                        className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition whitespace-nowrap"
-                    >
-                        <FaBoxOpen className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">My Orders</span>
-                    </button>
-                </div>
-
-                {/* Provider carousel — only shown when multiple providers */}
-                {providers.length > 1 && (
-                    <div className="-mx-4 px-4">
-                        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 snap-x">
-                            {/* All */}
-                            <button
-                                onClick={() => setSelectedProvider('all')}
-                                className="shrink-0 snap-start flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border-2 transition-all"
-                                style={selectedProvider === 'all'
-                                    ? { borderColor: theme.primary, backgroundColor: theme.primary, color: '#fff' }
-                                    : { borderColor: '#E5E7EB', backgroundColor: '#fff', color: '#374151' }}
-                            >
-                                All · {storeData?.bundles.length ?? 0}
-                            </button>
-                            {providers.map(prov => {
-                                const pc = getProviderColors(prov.code);
-                                const isActive = selectedProvider === prov.code;
-                                const count = groupedBundles.get(prov.code)
-                                    ? Array.from(groupedBundles.get(prov.code)!.values()).reduce((s, a) => s + a.length, 0) : 0;
-                                return (
-                                    <button
-                                        key={prov.code}
-                                        onClick={() => setSelectedProvider(prov.code)}
-                                        className="shrink-0 snap-start flex items-center gap-2 px-3 py-2 rounded-full text-sm font-semibold border-2 transition-all"
-                                        style={isActive
-                                            ? { borderColor: pc.primary, backgroundColor: pc.primary, color: '#fff' }
-                                            : { borderColor: '#E5E7EB', backgroundColor: '#fff', color: '#374151' }}
-                                    >
-                                        {getLogoUrl(prov.logo) ? (
-                                            <img src={getLogoUrl(prov.logo)} alt={prov.name} className="w-4 h-4 rounded-full object-cover" />
-                                        ) : (
-                                            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-                                                style={{ backgroundColor: pc.primary }}>
-                                                {prov.name.charAt(0)}
-                                            </span>
-                                        )}
-                                        {prov.name} · {count}
-                                    </button>
-                                );
-                            })}
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                            <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
+                            <input
+                                type="search"
+                                placeholder="Search bundles…"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent transition placeholder:text-gray-400"
+                                style={{ '--tw-ring-color': theme.primary + '40' } as React.CSSProperties}
+                            />
                         </div>
+                        <button
+                            onClick={() => setShowTrackDrawer(true)}
+                            title="Track my orders"
+                            className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition whitespace-nowrap"
+                        >
+                            <FaBoxOpen className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">My Orders</span>
+                        </button>
                     </div>
-                )}
+
+                    {/* Provider carousel — only shown when multiple providers */}
+                    {providers.length > 1 && (
+                        <div className="-mx-4 px-4">
+                            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 snap-x">
+                                {/* All */}
+                                <button
+                                    onClick={() => setSelectedProvider('all')}
+                                    className="shrink-0 snap-start flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border-2 transition-all"
+                                    style={selectedProvider === 'all'
+                                        ? { borderColor: theme.primary, backgroundColor: theme.primary, color: '#fff' }
+                                        : { borderColor: '#E5E7EB', backgroundColor: '#fff', color: '#374151' }}
+                                >
+                                    All · {storeData?.bundles.length ?? 0}
+                                </button>
+                                {providers.map(prov => {
+                                    const pc = getProviderColors(prov.code);
+                                    const isActive = selectedProvider === prov.code;
+                                    const count = groupedBundles.get(prov.code)
+                                        ? Array.from(groupedBundles.get(prov.code)!.values()).reduce((s, a) => s + a.length, 0) : 0;
+                                    return (
+                                        <button
+                                            key={prov.code}
+                                            onClick={() => setSelectedProvider(prov.code)}
+                                            className="shrink-0 snap-start flex items-center gap-2 px-3 py-2 rounded-full text-sm font-semibold border-2 transition-all"
+                                            style={isActive
+                                                ? { borderColor: pc.primary, backgroundColor: pc.primary, color: '#fff' }
+                                                : { borderColor: '#E5E7EB', backgroundColor: '#fff', color: '#374151' }}
+                                        >
+                                            {getLogoUrl(prov.logo) ? (
+                                                <img src={getLogoUrl(prov.logo)} alt={prov.name} className="w-4 h-4 rounded-full object-cover" />
+                                            ) : (
+                                                <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                                                    style={{ backgroundColor: pc.primary }}>
+                                                    {prov.name.charAt(0)}
+                                                </span>
+                                            )}
+                                            {prov.name} · {count}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
-    )};
+        )
+    };
 
     // ==========================================================================
     // Bundle Sections
@@ -2418,9 +2420,9 @@ const PublicStore: React.FC = () => {
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-       {/* SECURITY: marks this browser session as storefront-only so that
+            {/* SECURITY: marks this browser session as storefront-only so that
  *           system routes (/login, /register, etc.) are blocked for this tab */}
- *       {businessName && <StorefrontEntryMarker businessName={businessName} />}
+            *       {businessName && <StorefrontEntryMarker businessName={businessName} />}
 
             <AnnouncementPopupHandler
                 announcements={publicAnnouncements.filter(

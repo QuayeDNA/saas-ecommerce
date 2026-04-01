@@ -138,16 +138,20 @@ export const walletService = {
    * Get Paystack public key + server-side configured status
    * Calls GET /api/wallet/paystack/public-key and returns { publicKey, configured }
    */
-  getPaystackPublicKey: async (): Promise<{ publicKey: string; configured: boolean }> => {
+  getPaystackPublicKey: async (): Promise<{ publicKey: string; configured: boolean; walletTopUpEnabled: boolean; paystackEnabled: boolean }> => {
     const response = await apiClient.get<{
       success: boolean;
       publicKey?: string;
       configured?: boolean;
+      walletTopUpEnabled?: boolean;
+      paystackEnabled?: boolean;
     }>("/api/wallet/paystack/public-key");
 
     return {
       publicKey: response.data?.publicKey || "",
       configured: Boolean(response.data?.configured),
+      walletTopUpEnabled: Boolean(response.data?.walletTopUpEnabled),
+      paystackEnabled: Boolean(response.data?.paystackEnabled),
     };
   },
 

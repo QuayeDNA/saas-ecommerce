@@ -132,18 +132,9 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
       }
 
       try {
-        const { publicKey, configured } = await walletService.getPaystackPublicKey();
+        const { publicKey, configured, walletTopUpEnabled, paystackEnabled: paystackAllowed } = await walletService.getPaystackPublicKey();
         setPaystackPublicKey(publicKey || null);
-        // paystackEnabled is only true when the key is present, Paystack is configured,
-        // AND the admin has specifically enabled Paystack for wallet top-ups
-        let walletTopUpAllowed = true;
-        try {
-          const apiSettings = await settingsService.getApiSettings();
-          walletTopUpAllowed = apiSettings.paystackWalletTopUpEnabled ?? false;
-        } catch {
-          walletTopUpAllowed = false;
-        }
-        setPaystackEnabled(Boolean(publicKey && configured && walletTopUpAllowed));
+        setPaystackEnabled(Boolean(publicKey && configured && walletTopUpEnabled && paystackAllowed));
       } catch {
         setPaystackEnabled(false);
       }
@@ -181,11 +172,13 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
 
   const collectionFeePreview = useMemo(() => {
     if (!feeSettings || !isAmountValid || Number.isNaN(parsedAmount)) return null;
-    const totalFeePercent =
-      (feeSettings.paystackCollectionFeePercent ?? 0) + (feeSettings.platformFeePercent ?? 0);
+    const paystackPercent = feeSettings.walletTopUpCollectionFeePercent ?? feeSettings.paystackCollectionFeePercent ?? 0;
+    const platformPercent = feeSettings.walletTopUpPlatformFeePercent ?? feeSettings.platformFeePercent ?? 0;
+    const delegateFees = feeSettings.walletTopUpDelegateFeesToCustomer ?? feeSettings.delegateFeesToCustomer ?? true;
+    const totalFeePercent = paystackPercent + platformPercent;
     if (totalFeePercent <= 0) return null;
 
-    if (feeSettings.delegateFeesToCustomer) {
+    if (delegateFees) {
       // delegateFeesToCustomer=true → agent PAYS the fee (gross-up)
       // Goal: wallet credited parsedAmount; agent charged parsedAmount + fee
       const agentPays = Math.round((parsedAmount / (1 - totalFeePercent / 100)) * 100) / 100;
