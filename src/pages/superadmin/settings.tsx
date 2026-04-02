@@ -76,6 +76,23 @@ export default function SuperAdminSettingsPage() {
     }
   }, [data, setBusy, addToast]);
 
+  const handleToggleStorefronts = useCallback(async () => {
+    if (!data) return;
+    const prev = data.siteSettings.storefrontsOpen ?? true;
+    setData(d => d ? { ...d, siteSettings: { ...d.siteSettings, storefrontsOpen: !prev } } : d);
+    setBusy("storefrontsToggle", true);
+    try {
+      const res = await settingsService.toggleStorefrontsAvailability();
+      setData(d => d ? { ...d, siteSettings: { ...d.siteSettings, storefrontsOpen: res.storefrontsOpen } } : d);
+      addToast(`Storefronts ${res.storefrontsOpen ? "opened" : "closed"} successfully`, "success");
+    } catch {
+      setData(d => d ? { ...d, siteSettings: { ...d.siteSettings, storefrontsOpen: prev } } : d);
+      addToast("Failed to update storefront availability", "error");
+    } finally {
+      setBusy("storefrontsToggle", false);
+    }
+  }, [data, setBusy, addToast]);
+
   const handleToggleSignupApproval = useCallback(async () => {
     if (!data) return;
     const prev = data.signupApproval.requireApprovalForSignup;
@@ -157,6 +174,7 @@ export default function SuperAdminSettingsPage() {
 
   // derived values for compact templates
   const siteOpen = data?.siteSettings?.isSiteOpen ?? false;
+  const storefrontsOpen = data?.siteSettings?.storefrontsOpen ?? true;
   const signupRequired = data?.signupApproval?.requireApprovalForSignup ?? false;
   const autoApprove = data?.autoApproveStorefronts?.autoApproveStorefronts ?? false;
 
@@ -252,6 +270,26 @@ export default function SuperAdminSettingsPage() {
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-sm font-medium text-gray-900">Maintenance message</div>
                     <div className="text-xs text-gray-500 mt-1">{data.siteSettings.customMessage || 'No custom message set'}</div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Storefront availability</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {storefrontsOpen
+                          ? 'All storefronts are open to customers'
+                          : 'All storefronts are closed by admin'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm font-medium ${storefrontsOpen ? 'text-green-600' : 'text-red-600'}`}>
+                        {storefrontsOpen ? 'Open' : 'Closed'}
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={storefrontsOpen} onChange={handleToggleStorefronts} disabled={!!busyKeys['storefrontsToggle']} />
+                        <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                      </label>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">

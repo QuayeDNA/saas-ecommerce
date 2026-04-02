@@ -1051,6 +1051,11 @@ const PublicStore: React.FC = () => {
     const storeClosed = siteStatus?.isSiteOpen === false;
     const storeClosedMessage = siteStatus?.customMessage ||
         'The site is currently closed for maintenance. Orders are temporarily disabled.';
+    const storefrontsOpen = siteStatus?.storefrontsOpen ?? true;
+    const storefrontsClosedMessage = siteStatus?.storefrontsClosedMessage ||
+        'Storefronts are temporarily closed by the admin. Please check back later.';
+    const storefrontsClosed = !storefrontsOpen;
+    const ordersClosed = storeClosed || storefrontsClosed;
 
     // ── Data ─────────────────────────────────────────────────────────────────────
     const [storeData, setStoreData] = useState<PublicStorefront | null>(null);
@@ -1328,6 +1333,10 @@ const PublicStore: React.FC = () => {
             addToast(storeClosedMessage, 'warning', 5000);
             return;
         }
+        if (storefrontsClosed) {
+            addToast(storefrontsClosedMessage, 'warning', 5000);
+            return;
+        }
 
         setActiveOrder({ bundle, customerPhone: '' });
         setOrderPhone('');
@@ -1352,7 +1361,7 @@ const PublicStore: React.FC = () => {
             setPaymentType(methods[0]?.type ?? 'mobile_money');
         }
         setShowOrderDialog(true);
-    }, [storeClosed, storeClosedMessage, storeData, addToast]);
+    }, [storeClosed, storeClosedMessage, storefrontsClosed, storefrontsClosedMessage, storeData, addToast]);
 
     const closeOrderDialog = useCallback(() => {
         if (orderStep === 'confirmation') {
@@ -1639,6 +1648,11 @@ const PublicStore: React.FC = () => {
                             <strong className="font-semibold">Store temporarily closed:</strong> {storeClosedMessage}
                         </div>
                     )}
+                    {storefrontsClosed && (
+                        <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
+                            <strong className="font-semibold">Storefronts closed by admin:</strong> {storefrontsClosedMessage}
+                        </div>
+                    )}
                     {/* Search + view toggle row */}
                     <div className="flex items-center gap-2">
                         <div className="relative flex-1">
@@ -1726,7 +1740,7 @@ const PublicStore: React.FC = () => {
                         key={b._id}
                         bundle={b}
                         selected={activeOrder?.bundle._id === b._id}
-                        disabled={storeClosed}
+                        disabled={ordersClosed}
                         onBuy={openOrderDialog}
                     />
                 ))}
@@ -1887,6 +1901,13 @@ const PublicStore: React.FC = () => {
                         </Alert>
                     </div>
                 )}
+                {storefrontsClosed && (
+                    <div className="px-5 pb-4">
+                        <Alert status="warning">
+                            {storefrontsClosedMessage}
+                        </Alert>
+                    </div>
+                )}
 
                 {/* ── STEP 1: Details ── */}
                 {orderStep === 'details' && (
@@ -2011,7 +2032,7 @@ const PublicStore: React.FC = () => {
                             <div className="flex gap-2 w-full">
                                 <Button variant="secondary" onClick={closeOrderDialog} className="shrink-0">Cancel</Button>
                                 <button
-                                    disabled={!step1Valid || storeClosed}
+                                    disabled={!step1Valid || ordersClosed}
                                     onClick={confirmDetails}
                                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40"
                                     style={{ backgroundColor: theme.primary }}
@@ -2173,7 +2194,7 @@ const PublicStore: React.FC = () => {
                                     <FaArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
                                 </Button>
                                 <button
-                                    disabled={!canSubmitOrder || submitting || storeClosed}
+                                    disabled={!canSubmitOrder || submitting || ordersClosed}
                                     onClick={submitOrder}
                                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50"
                                     style={{ backgroundColor: theme.primary }}
@@ -2441,6 +2462,36 @@ const PublicStore: React.FC = () => {
                 onMarkAsViewed={markPublicAnnouncementViewed}
                 onMarkAsAcknowledged={markPublicAnnouncementViewed}
             />
+
+            {storefrontsClosed && (
+                <Dialog
+                    isOpen={true}
+                    onClose={() => { }}
+                    size="sm"
+                    closeOnOverlay={false}
+                    overlayClassName="bg-black/60 backdrop-blur-sm"
+                >
+                    <DialogHeader className="border-b-0 pb-0">
+                        <div className="flex flex-col items-center text-center gap-3">
+                            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                                <FaStore className="w-7 h-7" />
+                            </div>
+                            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Storefronts Are Closed</h3>
+                        </div>
+                    </DialogHeader>
+                    <DialogBody className="space-y-3 text-center text-sm sm:text-base text-gray-700">
+                        <p>{storefrontsClosedMessage}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">
+                            Orders are paused for all storefronts until the admin reopens them.
+                        </p>
+                    </DialogBody>
+                    <DialogFooter justify="center" className="pt-0">
+                        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                            Check Again
+                        </Button>
+                    </DialogFooter>
+                </Dialog>
+            )}
 
             {renderHeader()}
             {renderToolbar()}

@@ -19,6 +19,7 @@ import {
   StatCard,
 } from "../../design-system";
 import { useToast } from "../../design-system";
+import { useSiteStatus } from "../../contexts/site-status-context";
 import {
   storefrontService,
   type StorefrontData,
@@ -73,6 +74,7 @@ const TABS = [
 
 export const StorefrontDashboardPage: React.FC = () => {
   const { addToast } = useToast();
+  const { siteStatus } = useSiteStatus();
   const [storefront, setStorefront] = useState<StorefrontData | null>(null);
   const [suspended, setSuspended] = useState(false);
   const [suspensionMessage, setSuspensionMessage] = useState<string | null>(
@@ -349,6 +351,7 @@ export const StorefrontDashboardPage: React.FC = () => {
     : 0;
   const earningsMismatch =
     earnings != null ? Math.abs(earningsDelta) > 0.01 : false;
+  const storefrontsOpen = siteStatus?.storefrontsOpen ?? true;
 
   return (
     <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
@@ -412,6 +415,12 @@ export const StorefrontDashboardPage: React.FC = () => {
           </div>
         </CardBody>
       </Card>
+
+      {!storefrontsOpen && (
+        <Alert status="warning" variant="left-accent">
+          All storefronts are currently closed by the admin. Customers cannot place new orders at this time.
+        </Alert>
+      )}
 
       {/* Suspension alert */}
       {suspended && suspensionMessage && (

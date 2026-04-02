@@ -12,6 +12,8 @@ import { useAuth } from "../hooks/use-auth";
 interface SiteStatus {
   isSiteOpen: boolean;
   customMessage: string;
+  storefrontsOpen?: boolean;
+  storefrontsClosedMessage?: string;
 }
 
 interface SiteStatusContextType {

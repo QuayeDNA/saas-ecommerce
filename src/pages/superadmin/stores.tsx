@@ -576,6 +576,8 @@ export default function StoresPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [autoApprove, setAutoApprove] = useState(false);
   const [autoApproveLoading, setAutoApproveLoading] = useState(false);
+  const [storefrontsOpen, setStorefrontsOpen] = useState(true);
+  const [storefrontsOpenLoading, setStorefrontsOpenLoading] = useState(false);
   const [reconciliation, setReconciliation] = useState<EarningsReconciliation | null>(null);
   const [reconciliationLoading, setReconciliationLoading] = useState(false);
   const [reconcileApplying, setReconcileApplying] = useState(false);
@@ -777,10 +779,11 @@ export default function StoresPage() {
           : (filter as 'active' | 'inactive' | 'suspended' | 'pending' | 'approved');
       const paging = { limit, offset: (page - 1) * limit };
 
-      const [storesRes, statsRes, autoApproveRes, allPayoutsRes, payoutModeRes] = await Promise.all([
+      const [storesRes, statsRes, autoApproveRes, siteSettingsRes, allPayoutsRes, payoutModeRes] = await Promise.all([
         storefrontService.getAdminStorefronts({ status: statusFilter, search: debouncedSearch || undefined, ...paging }),
         storefrontService.getAdminStats(),
         settingsService.getAutoApproveStorefronts(),
+        settingsService.getSiteSettings().catch(() => ({ storefrontsOpen: true })),
         walletService.getPendingPayouts().catch(() => [] as any[]),
         walletService.getAutoPayoutAvailability().catch(() => ({
           autoPayoutEnabled: false,
@@ -794,6 +797,7 @@ export default function StoresPage() {
       setTotal(storesRes.total);
       setStats(statsRes);
       setAutoApprove(autoApproveRes.autoApproveStorefronts);
+      setStorefrontsOpen(siteSettingsRes.storefrontsOpen ?? true);
       setPayoutMode({
         autoPayoutEnabled: payoutModeRes.autoPayoutEnabled,
         canAutoPayout: payoutModeRes.canAutoPayout,
@@ -1038,6 +1042,44 @@ export default function StoresPage() {
           ]}
         />
       )}
+
+      {/* Global Storefront Availability */}
+      <Card>
+        <CardBody className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-900">Storefront Availability</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {storefrontsOpen
+                ? "All storefronts are open to customers"
+                : "All storefronts are closed by admin"}
+            </p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={storefrontsOpen}
+              onChange={async () => {
+                setStorefrontsOpenLoading(true);
+                try {
+                  const res = await settingsService.toggleStorefrontsAvailability();
+                  setStorefrontsOpen(res.storefrontsOpen);
+                  addToast(`Storefronts ${res.storefrontsOpen ? "opened" : "closed"}`, "success");
+                } catch {
+                  addToast("Failed to update storefront availability", "error");
+                } finally {
+                  setStorefrontsOpenLoading(false);
+                }
+              }}
+              disabled={storefrontsOpenLoading}
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            <span className="ml-3 text-sm font-medium text-gray-900">
+              {storefrontsOpen ? "Open" : "Closed"}
+            </span>
+          </label>
+        </CardBody>
+      </Card>
 
       {/* Auto-Approve Toggle */}
       <Card>

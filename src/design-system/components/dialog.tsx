@@ -7,6 +7,7 @@ interface DialogProps {
   size?: "sm" | "md" | "lg" | "xl" | "full";
   closeOnOverlay?: boolean;
   className?: string;
+  overlayClassName?: string;
 }
 
 export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
@@ -18,6 +19,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
       size = "md",
       closeOnOverlay = true,
       className = "",
+      overlayClassName = "bg-black/50",
     },
     ref
   ) => {
@@ -55,7 +57,10 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center">
         <div
-          className="absolute inset-0 bg-black/50 transition-opacity"
+          className={[
+            "absolute inset-0 transition-opacity",
+            overlayClassName,
+          ].join(" ")}
           onClick={closeOnOverlay ? onClose : undefined}
         />
         <div

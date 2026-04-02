@@ -7,6 +7,8 @@ import { apiClient, publicApiClient } from "../utils/api-client";
 export interface SiteSettings {
   isSiteOpen: boolean;
   customMessage: string;
+  storefrontsOpen?: boolean;
+  storefrontsClosedMessage?: string;
 }
 
 export interface CommissionRates {
@@ -126,6 +128,12 @@ class SettingsService {
     return response.data;
   }
 
+  async toggleStorefrontsAvailability(): Promise<{ storefrontsOpen: boolean }> {
+    const response = await apiClient.post("/api/settings/storefronts/toggle");
+    this._allSettingsCache = null;
+    return response.data;
+  }
+
   async getSignupApprovalSetting(): Promise<{ requireApprovalForSignup: boolean }> {
     const response = await publicApiClient.get("/api/settings/signup-approval");
     return response.data;
@@ -152,6 +160,8 @@ class SettingsService {
   async getSiteStatus(): Promise<{
     isSiteOpen: boolean;
     customMessage: string;
+    storefrontsOpen?: boolean;
+    storefrontsClosedMessage?: string;
   }> {
     const response = await publicApiClient.get("/api/settings/site/status");
     return response.data;
