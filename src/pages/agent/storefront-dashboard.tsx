@@ -343,14 +343,6 @@ export const StorefrontDashboardPage: React.FC = () => {
     }
   };
 
-  const earningsExpected = earnings
-    ? earnings.totalEarned - earnings.totalWithdrawn
-    : 0;
-  const earningsDelta = earnings
-    ? earnings.availableBalance - earningsExpected
-    : 0;
-  const earningsMismatch =
-    earnings != null ? Math.abs(earningsDelta) > 0.01 : false;
   const storefrontsOpen = siteStatus?.storefrontsOpen ?? true;
 
   return (
@@ -519,12 +511,7 @@ export const StorefrontDashboardPage: React.FC = () => {
               />
             </div>
 
-            {!analyticsLoading && earningsMismatch && earnings && (
-              <Alert status="warning" variant="left-accent">
-                Available Earnings is {earningsDelta < 0 ? "short by" : "over by"} {formatCurrency(Math.abs(earningsDelta))}.
-                Total Earned ({formatCurrency(earnings.totalEarned)}) − Withdrawn ({formatCurrency(earnings.totalWithdrawn)}) = {formatCurrency(earningsExpected)}.
-              </Alert>
-            )}
+
 
             <Dialog
               isOpen={showBreakdownInfoModal}

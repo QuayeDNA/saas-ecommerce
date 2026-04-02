@@ -334,7 +334,7 @@ function StoreDetailDialog({
               )}
               {backfillPreview && backfillPreview.missingCount > 0 && (
                 <Alert status="warning" variant="left-accent">
-                  Missing {backfillPreview.missingCount} earnings credit(s)
+                  Missing {backfillPreview.missingCount} profit credit(s) from completed orders
                   (GH₵ {backfillPreview.totalMissingAmount.toFixed(2)}).
                 </Alert>
               )}

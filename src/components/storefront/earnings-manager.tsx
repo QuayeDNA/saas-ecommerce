@@ -4,7 +4,6 @@ import {
   Card,
   CardHeader,
   CardBody,
-  Alert,
   Button,
   Badge,
   Table,
@@ -161,17 +160,6 @@ export const EarningsManager: React.FC = () => {
       ? (amounts.bank_account ?? 50)
       : (amounts.mobile_money ?? 1);
   }, [destType, dashboard]);
-
-  const reconciliation = useMemo(() => {
-    if (!dashboard) return null;
-    const expectedAvailable = dashboard.totalEarned - dashboard.totalWithdrawn;
-    const delta = dashboard.availableBalance - expectedAvailable;
-    return {
-      expectedAvailable,
-      delta,
-      isMismatch: Math.abs(delta) > 0.01,
-    };
-  }, [dashboard]);
 
   const formatCurrency = (value: number) =>
     `GH₵ ${value.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -361,12 +349,7 @@ export const EarningsManager: React.FC = () => {
         </CardBody>
       </Card>
 
-      {reconciliation?.isMismatch && dashboard && (
-        <Alert status="warning" variant="left-accent">
-          Available Earnings is {reconciliation.delta < 0 ? 'short by' : 'over by'} {formatCurrency(Math.abs(reconciliation.delta))}.
-          Total Earned ({formatCurrency(dashboard.totalEarned)}) − Withdrawn ({formatCurrency(dashboard.totalWithdrawn)}) = {formatCurrency(reconciliation.expectedAvailable)}.
-        </Alert>
-      )}
+
 
       {/* ── Transfer fee notice (only when agent bears fees) ──────────────── */}
       {dashboard?.payoutFeeBearer === 'agent' && dashboard?.transferFees && (
