@@ -42,25 +42,32 @@ const SummaryRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label
   </div>
 );
 
-const StepIndicator: React.FC<{ current: number; total: number }> = ({ current, total }) => (
-  <div className="flex flex-col gap-2">
-    <div className="flex items-center justify-between">
-      {Array.from({ length: total }).map((_, i) => (
-        <React.Fragment key={i}>
+const StepProgress: React.FC<{ current: number; steps: string[] }> = ({ current, steps }) => (
+  <div className="flex items-center gap-1.5">
+    {steps.map((_, idx) => {
+      const stepNum = idx + 1;
+      return (
+        <React.Fragment key={stepNum}>
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${i + 1 <= current ? 'bg-white' : 'bg-white/20 text-white'
-              }`}
-            style={i + 1 <= current ? { color: 'var(--color-primary-500)' } : {}}
+            className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-black transition-all duration-300"
+            style={stepNum <= current
+              ? { backgroundColor: 'var(--color-primary-500)', color: '#fff' }
+              : { backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}
           >
-            {i + 1 < current ? <FaCheck className="w-3.5 h-3.5" /> : i + 1}
+            {stepNum < current ? <FaCheck className="w-3.5 h-3.5" /> : stepNum}
           </div>
-          {i < total - 1 && (
-            <div className={`flex-1 h-1 mx-2 transition-colors ${i + 1 < current ? 'bg-white' : 'bg-white/20'}`} />
+          {stepNum < steps.length && (
+            <div
+              className="flex-1 h-1 rounded-full transition-all duration-300"
+              style={{ backgroundColor: stepNum < current ? '#fff' : 'rgba(255,255,255,0.2)' }}
+            />
           )}
         </React.Fragment>
-      ))}
-    </div>
-    <p className="text-center text-xs text-white/80">Step {current} of {total}</p>
+      );
+    })}
+    <span className="ml-2 text-xs text-white/80 font-semibold whitespace-nowrap">
+      {steps[current - 1]}
+    </span>
   </div>
 );
 
@@ -373,7 +380,12 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
             </svg>
           </Button>
         </div>
-        {!isBlocked && <StepIndicator current={step} total={TOTAL_STEPS} />}
+        {!isBlocked && (
+          <StepProgress
+            current={step}
+            steps={["Amount & Method", "Confirm"]}
+          />
+        )}
       </DialogHeader>
 
       {/* ── Body ── */}

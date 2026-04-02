@@ -80,6 +80,35 @@ interface FormErrors {
   paymentMethods?: string;
 }
 
+const StepProgress: React.FC<{ current: number; steps: string[] }> = ({ current, steps }) => (
+  <div className="flex items-center gap-1.5">
+    {steps.map((_, idx) => {
+      const stepNum = idx + 1;
+      return (
+        <React.Fragment key={stepNum}>
+          <div
+            className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-black transition-all duration-300"
+            style={stepNum <= current
+              ? { backgroundColor: "var(--color-primary-500)", color: "#fff" }
+              : { backgroundColor: "rgba(255,255,255,0.2)", color: "#fff" }}
+          >
+            {stepNum < current ? <Check className="w-3.5 h-3.5" /> : stepNum}
+          </div>
+          {stepNum < steps.length && (
+            <div
+              className="flex-1 h-1 rounded-full transition-all duration-300"
+              style={{ backgroundColor: stepNum < current ? "#fff" : "rgba(255,255,255,0.2)" }}
+            />
+          )}
+        </React.Fragment>
+      );
+    })}
+    <span className="ml-2 text-xs text-white/80 font-semibold whitespace-nowrap">
+      {steps[current - 1]}
+    </span>
+  </div>
+);
+
 export const StorefrontManager: React.FC<StorefrontManagerProps> = ({
   onStorefrontCreated,
   hasCheckedExisting = false,
@@ -724,35 +753,11 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
           </div>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between mt-6">
-          {STEPS.map((step, index) => (
-            <div key={step.id} className="flex items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${index <= currentStep
-                  ? "bg-white text-primary-600"
-                  : "bg-white/20 text-white/70"
-                  }`}
-                style={
-                  index <= currentStep
-                    ? { color: "var(--color-primary-500)" }
-                    : undefined
-                }
-              >
-                {index < currentStep ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  index + 1
-                )}
-              </div>
-              {index < STEPS.length - 1 && (
-                <div
-                  className={`w-12 h-0.5 mx-2 transition-colors ${index < currentStep ? "bg-white" : "bg-white/20"
-                    }`}
-                />
-              )}
-            </div>
-          ))}
+        <div className="mt-6">
+          <StepProgress
+            current={currentStep + 1}
+            steps={STEPS.map((step) => step.title)}
+          />
         </div>
       </DialogHeader>
 
