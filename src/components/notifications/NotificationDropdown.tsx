@@ -64,6 +64,16 @@ export const NotificationDropdown: React.FC = () => {
     }
   };
 
+  const getCreatorLabel = (notification: Notification) => {
+    const creatorName = notification.metadata?.creatorName;
+    const creatorAgentCode = notification.metadata?.creatorAgentCode;
+    if (!creatorName && !creatorAgentCode) return null;
+    if (creatorName && creatorAgentCode) {
+      return `${creatorName} (${creatorAgentCode})`;
+    }
+    return creatorName || creatorAgentCode || null;
+  };
+
   const toggleNotificationExpansion = (notificationId: string) => {
     setExpandedNotifications(prev => {
       const newSet = new Set(prev);
@@ -223,6 +233,7 @@ export const NotificationDropdown: React.FC = () => {
                     {notifications.slice(0, 10).map((notification) => {
                       const isExpanded = expandedNotifications.has(notification._id);
                       const shouldTruncate = notification.message.length > 100;
+                      const creatorLabel = getCreatorLabel(notification);
 
                       return (
                         <div
@@ -254,6 +265,11 @@ export const NotificationDropdown: React.FC = () => {
                                     )}
                                   </div>
                                   <div className="mt-1">
+                                    {creatorLabel && (
+                                      <p className="text-xs text-gray-500">
+                                        Created by {creatorLabel}
+                                      </p>
+                                    )}
                                     <p className={`text-sm ${!notification.read ? 'text-gray-700' : 'text-gray-500'
                                       }`}>
                                       {isExpanded || !shouldTruncate

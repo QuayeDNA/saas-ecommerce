@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/contexts/NotificationContext.tsx
 import React, {
   createContext,
@@ -19,7 +20,6 @@ interface NotificationContextType {
   isLoading: boolean;
   error: string | null;
   fetchNotifications: () => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fetchAllNotifications: (
     page?: number,
     limit?: number,

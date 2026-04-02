@@ -169,6 +169,16 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
+  const getCreatorLabel = (notification: Notification) => {
+    const creatorName = notification.metadata?.creatorName;
+    const creatorAgentCode = notification.metadata?.creatorAgentCode;
+    if (!creatorName && !creatorAgentCode) return null;
+    if (creatorName && creatorAgentCode) {
+      return `${creatorName} (${creatorAgentCode})`;
+    }
+    return creatorName || creatorAgentCode || null;
+  };
+
   // Get notification icon
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -325,13 +335,15 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                 </div>
 
                 {/* Notification Items */}
-                {allNotifications.map((notification) => (
-                  <Card
-                    key={notification._id}
-                    variant="outlined"
-                    size="sm"
-                    className={!notification.read ? 'ring-1 ring-blue-200 bg-blue-50/40' : ''}
-                  >
+                {allNotifications.map((notification) => {
+                  const creatorLabel = getCreatorLabel(notification);
+                  return (
+                    <Card
+                      key={notification._id}
+                      variant="outlined"
+                      size="sm"
+                      className={!notification.read ? 'ring-1 ring-blue-200 bg-blue-50/40' : ''}
+                    >
                     <div className="flex gap-3">
                       <div className="flex-shrink-0 pt-1">
                         <input
@@ -366,6 +378,11 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                           </span>
                         </div>
 
+                        {creatorLabel && (
+                          <p className="text-xs text-gray-500 mb-1">
+                            Created by {creatorLabel}
+                          </p>
+                        )}
                         <p className="text-sm text-gray-600 mb-2 leading-relaxed">
                           {notification.message}
                         </p>
@@ -410,8 +427,9 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                         </div>
                       </div>
                     </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
