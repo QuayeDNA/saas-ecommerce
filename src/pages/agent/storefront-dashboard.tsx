@@ -341,6 +341,15 @@ export const StorefrontDashboardPage: React.FC = () => {
     }
   };
 
+  const earningsExpected = earnings
+    ? earnings.totalEarned - earnings.totalWithdrawn
+    : 0;
+  const earningsDelta = earnings
+    ? earnings.availableBalance - earningsExpected
+    : 0;
+  const earningsMismatch =
+    earnings != null ? Math.abs(earningsDelta) > 0.01 : false;
+
   return (
     <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
@@ -456,7 +465,7 @@ export const StorefrontDashboardPage: React.FC = () => {
           <div className="space-y-4 sm:space-y-6">
             {/* ── Analytics Stats ─────────────────────────────────────────── */}
             {/* Row 1: primary KPIs — 2 cols mobile / 5 cols desktop */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
               <StatCard
                 title="Gross Revenue"
                 value={analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0)}
@@ -486,6 +495,13 @@ export const StorefrontDashboardPage: React.FC = () => {
                 size="md"
               />
               <StatCard
+                title="Withdrawn Earnings"
+                value={analyticsLoading ? "—" : formatCurrency(earnings?.totalWithdrawn ?? 0)}
+                subtitle="Completed payouts"
+                icon={<ArrowDownRight className="w-4 h-4" />}
+                size="md"
+              />
+              <StatCard
                 title="Total Orders"
                 value={analyticsLoading ? "—" : analytics?.totalOrders ?? 0}
                 subtitle={`${analytics?.completedOrders ?? 0} completed`}
@@ -493,6 +509,13 @@ export const StorefrontDashboardPage: React.FC = () => {
                 size="md"
               />
             </div>
+
+            {!analyticsLoading && earningsMismatch && earnings && (
+              <Alert status="warning" variant="left-accent">
+                Available Earnings is {earningsDelta < 0 ? "short by" : "over by"} {formatCurrency(Math.abs(earningsDelta))}.
+                Total Earned ({formatCurrency(earnings.totalEarned)}) − Withdrawn ({formatCurrency(earnings.totalWithdrawn)}) = {formatCurrency(earningsExpected)}.
+              </Alert>
+            )}
 
             <Dialog
               isOpen={showBreakdownInfoModal}
@@ -1035,15 +1058,29 @@ export const StorefrontDashboardPage: React.FC = () => {
                               </p>
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="text-sm font-bold text-gray-900">
-                                {formatCurrency(order.storefrontData?.totalTierCost ?? order.total)}
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                {order.total !== (order.storefrontData?.totalTierCost ?? order.total) && (
-                                  <span className="text-gray-300 line-through mr-1">{formatCurrency(order.total)}</span>
-                                )}
-                                {formatRelativeTime(order.createdAt)}
-                              </p>
+                              {(() => {
+                                const tierCost = order.storefrontData?.totalTierCost;
+                                const markup = order.storefrontData?.totalMarkup;
+                                const hasMarkup = typeof tierCost === "number" && typeof markup === "number";
+                                const displayPrice = hasMarkup
+                                  ? tierCost + markup
+                                  : order.total;
+                                return (
+                                  <>
+                                    <p className="text-sm font-bold text-gray-900">
+                                      {formatCurrency(displayPrice)}
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                      {hasMarkup && markup > 0 && (
+                                        <span className="text-gray-300 line-through mr-1">
+                                          {formatCurrency(tierCost)}
+                                        </span>
+                                      )}
+                                      {formatRelativeTime(order.createdAt)}
+                                    </p>
+                                  </>
+                                );
+                              })()}
                             </div>
                           </div>
                         ))}

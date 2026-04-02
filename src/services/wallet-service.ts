@@ -6,6 +6,10 @@ import type {
   WalletTransaction,
   WalletAnalytics,
   EarningsDashboard,
+  EarningsReconciliation,
+  EarningsReconciliationAdjustment,
+  EarningsBackfillPreview,
+  EarningsBackfillResult,
   PayoutRequestItem,
   PayoutDestination,
 } from "../types/wallet";
@@ -154,6 +158,61 @@ export const walletService = {
       walletTopUpEnabled: Boolean(response.data?.walletTopUpEnabled),
       paystackEnabled: Boolean(response.data?.paystackEnabled),
     };
+  },
+
+  /**
+   * Admin: reconcile earnings vs withdrawals for a user
+   */
+  getEarningsReconciliation: async (userId: string): Promise<EarningsReconciliation> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: EarningsReconciliation;
+    }>(`/api/wallet/admin/earnings/reconcile?userId=${encodeURIComponent(userId)}`);
+
+    return response.data.data;
+  },
+
+  /**
+   * Admin: apply reconciliation adjustment (credit/debit) for a user
+   */
+  applyEarningsReconciliation: async (
+    userId: string,
+    reason?: string
+  ): Promise<EarningsReconciliationAdjustment> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      data: EarningsReconciliationAdjustment;
+    }>("/api/wallet/admin/earnings/reconcile/adjust", { userId, reason });
+
+    return response.data.data;
+  },
+
+  /**
+   * Admin: preview missing earnings credits for storefront orders
+   */
+  getEarningsBackfillPreview: async (userId: string, limit = 50): Promise<EarningsBackfillPreview> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: EarningsBackfillPreview;
+    }>(`/api/wallet/admin/earnings/backfill?userId=${encodeURIComponent(userId)}&limit=${limit}`);
+
+    return response.data.data;
+  },
+
+  /**
+   * Admin: apply missing earnings credits for storefront orders
+   */
+  applyEarningsBackfill: async (
+    userId: string,
+    reason?: string,
+    limit = 50
+  ): Promise<EarningsBackfillResult> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      data: EarningsBackfillResult;
+    }>("/api/wallet/admin/earnings/backfill/apply", { userId, reason, limit });
+
+    return response.data.data;
   },
 
   /**
