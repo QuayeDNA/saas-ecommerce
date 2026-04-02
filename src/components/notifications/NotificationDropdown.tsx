@@ -114,7 +114,7 @@ export const NotificationDropdown: React.FC = () => {
 
   const getNotificationBgColor = (type: string, isRead: boolean) => {
     if (isRead) return 'bg-white hover:bg-gray-50';
-    
+
     switch (type) {
       case 'success':
         return 'bg-green-50 hover:bg-green-100';
@@ -159,20 +159,20 @@ export const NotificationDropdown: React.FC = () => {
         {isOpen && (
           <>
             {/* Mobile Backdrop */}
-            <div 
-              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm sm:hidden" 
+            <div
+              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm sm:hidden"
               onClick={() => setIsOpen(false)}
               aria-hidden="true"
             />
-            
+
             {/* Dropdown Panel */}
-            <div 
+            <div
               ref={dropdownRef}
               className={`
                 notification-dropdown
-                z-50 bg-white rounded-xl shadow-xl border border-gray-200
-                fixed inset-x-4 top-16 w-auto max-h-[calc(100vh-5rem)]
-                sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:w-96 sm:max-h-96 sm:inset-x-auto
+                z-[60] bg-white rounded-xl shadow-xl border border-gray-200
+                fixed inset-x-3 top-16 w-auto max-h-[calc(100vh-5rem)]
+                sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:w-[26rem] sm:max-h-[70vh] sm:inset-x-auto
               `}
             >
               {/* Header */}
@@ -223,7 +223,7 @@ export const NotificationDropdown: React.FC = () => {
                     {notifications.slice(0, 10).map((notification) => {
                       const isExpanded = expandedNotifications.has(notification._id);
                       const shouldTruncate = notification.message.length > 100;
-                      
+
                       return (
                         <div
                           key={notification._id}
@@ -243,9 +243,8 @@ export const NotificationDropdown: React.FC = () => {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center space-x-2">
                                     <button
-                                      className={`text-sm font-medium text-left ${
-                                        !notification.read ? 'text-gray-900' : 'text-gray-700'
-                                      } hover:text-blue-600 transition-colors`}
+                                      className={`text-sm font-medium text-left ${!notification.read ? 'text-gray-900' : 'text-gray-700'
+                                        } hover:text-blue-600 transition-colors`}
                                       onClick={() => handleNotificationClick(notification)}
                                     >
                                       {notification.title}
@@ -255,11 +254,10 @@ export const NotificationDropdown: React.FC = () => {
                                     )}
                                   </div>
                                   <div className="mt-1">
-                                    <p className={`text-sm ${
-                                      !notification.read ? 'text-gray-700' : 'text-gray-500'
-                                    }`}>
-                                      {isExpanded || !shouldTruncate 
-                                        ? notification.message 
+                                    <p className={`text-sm ${!notification.read ? 'text-gray-700' : 'text-gray-500'
+                                      }`}>
+                                      {isExpanded || !shouldTruncate
+                                        ? notification.message
                                         : `${notification.message.substring(0, 100)}...`
                                       }
                                     </p>

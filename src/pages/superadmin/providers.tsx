@@ -13,8 +13,21 @@ import { ProviderFormModal } from "../../components/products/ProviderFormModal";
 import { SearchAndFilter } from "../../components/common/SearchAndFilter";
 import type { Provider } from "../../types/package";
 import type { ProviderFormData } from "../../components/products/ProviderFormModal";
-import { Button } from "../../design-system/components/button";
-import { colors } from "../../design-system/tokens";
+import {
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  CardHeader,
+  Pagination,
+  Skeleton,
+  Table,
+  TableHeader,
+  TableRow,
+  TableHeaderCell,
+  TableBody,
+  TableCell,
+} from "../../design-system";
 
 export default function SuperAdminProvidersPage() {
   const {
@@ -73,7 +86,7 @@ export default function SuperAdminProvidersPage() {
     setSearchTerm(value);
     // Auto-search when search term changes
     setTimeout(() => {
-      const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+      const fakeEvent = { preventDefault: () => { } } as React.FormEvent;
       handleSearch(fakeEvent);
     }, 300); // Debounce for better UX
   };
@@ -86,7 +99,7 @@ export default function SuperAdminProvidersPage() {
     }
     // Auto-search when filters change
     setTimeout(() => {
-      const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+      const fakeEvent = { preventDefault: () => { } } as React.FormEvent;
       handleSearch(fakeEvent);
     }, 100);
   };
@@ -186,11 +199,9 @@ export default function SuperAdminProvidersPage() {
     );
   };
 
-  const getStatusColor = (isActive: boolean, isDeleted: boolean) => {
-    if (isDeleted) return "text-red-600 bg-red-100";
-    return isActive
-      ? "text-green-600 bg-green-100"
-      : "text-yellow-600 bg-yellow-100";
+  const getStatusColorScheme = (isActive: boolean, isDeleted: boolean) => {
+    if (isDeleted) return "error" as const;
+    return isActive ? "success" as const : "warning" as const;
   };
 
   const getStatusText = (isActive: boolean, isDeleted: boolean) => {
@@ -198,17 +209,17 @@ export default function SuperAdminProvidersPage() {
     return isActive ? "Active" : "Inactive";
   };
 
-  const getProviderColor = (code: string) => {
+  const getProviderColorScheme = (code: string) => {
     switch (code) {
       case "MTN":
-        return "text-yellow-600 bg-yellow-100";
+        return "warning" as const;
       case "TELECEL":
-        return "text-red-600 bg-red-100";
+        return "error" as const;
       case "AT":
-        return "text-blue-600 bg-blue-100";
+        return "info" as const;
       // case 'GLO': return 'text-green-600 bg-green-100'; // Removed GLO support
       default:
-        return "text-gray-600 bg-gray-100";
+        return "gray" as const;
     }
   };
 
@@ -221,381 +232,352 @@ export default function SuperAdminProvidersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 pb-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center sm:flex-row flex-col gap-4">
-          <div>
-            <h1
-              className="text-2xl font-bold mb-2"
-              style={{ color: colors.brand.primary }}
-            >
-              Provider Management
-            </h1>
-            <p className="text-gray-600">
-              Manage telecom service providers and their configurations
-            </p>
+      <div
+        className="rounded-xl p-4 sm:p-6 text-white"
+        style={{ background: "linear-gradient(to right, var(--color-primary-500), var(--color-primary-700))" }}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-white/20 rounded-xl">
+              <FaChartBar className="text-xl sm:text-2xl" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold">Provider Management</h1>
+              <p className="text-xs sm:text-sm text-white/70 mt-0.5">
+                Manage telecom service providers and configurations
+              </p>
+            </div>
           </div>
           <Button
             onClick={handleCreateNew}
             leftIcon={<FaPlus />}
-            className="w-full sm:w-auto"
+            className="self-start sm:self-auto"
+            variant="secondary"
           >
             Add Provider
           </Button>
         </div>
-      </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Total Providers
-              </p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+        {/* Inline stats */}
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { label: "Total", value: stats.total, icon: <FaChartBar /> },
+            { label: "Active", value: stats.active, icon: <FaToggleOn /> },
+            { label: "Inactive", value: stats.inactive, icon: <FaToggleOff /> },
+            { label: "Deleted", value: stats.deleted, icon: <FaTrash /> },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-lg px-3 py-2.5 flex items-center gap-2 bg-white/15">
+              <span className="text-white/70 text-sm flex-shrink-0">{stat.icon}</span>
+              <div className="min-w-0">
+                <p className="text-white/70 text-[10px] font-medium uppercase tracking-wide truncate">{stat.label}</p>
+                <p className="text-white font-bold text-sm sm:text-base leading-tight truncate">{stat.value}</p>
+              </div>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <FaChartBar className="text-blue-600 text-xl" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Active Providers
-              </p>
-              <p className="text-2xl font-bold text-green-600">
-                {stats.active}
-              </p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <FaToggleOn className="text-green-600 text-xl" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Inactive Providers
-              </p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {stats.inactive}
-              </p>
-            </div>
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <FaToggleOff className="text-yellow-600 text-xl" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Deleted Providers
-              </p>
-              <p className="text-2xl font-bold text-red-600">{stats.deleted}</p>
-            </div>
-            <div className="p-3 bg-red-100 rounded-full">
-              <FaTrash className="text-red-600 text-xl" />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Provider Distribution */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Provider Distribution</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-yellow-50 rounded-lg">
-            <div className="text-2xl font-bold text-yellow-600">
-              {stats.mtn}
-            </div>
-            <div className="text-sm text-gray-600">MTN</div>
-          </div>
-          <div className="text-center p-4 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">
-              {stats.telecel}
-            </div>
-            <div className="text-sm text-gray-600">TELECEL</div>
-          </div>
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{stats.at}</div>
-            <div className="text-sm text-gray-600">AT</div>
-          </div>
-        </div>
+      {/* Provider distribution */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card>
+          <CardBody className="text-center">
+            <div className="text-xs text-gray-500">MTN</div>
+            <div className="text-lg font-bold text-yellow-600">{stats.mtn}</div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody className="text-center">
+            <div className="text-xs text-gray-500">TELECEL</div>
+            <div className="text-lg font-bold text-red-600">{stats.telecel}</div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody className="text-center">
+            <div className="text-xs text-gray-500">AT</div>
+            <div className="text-lg font-bold text-blue-600">{stats.at}</div>
+          </CardBody>
+        </Card>
       </div>
 
       {/* Search and Filters */}
-      <SearchAndFilter
-        searchTerm={searchTerm}
-        onSearchChange={handleSearchChange}
-        searchPlaceholder="Search by name, code, or description..."
-        enableAutoSearch={true}
-        debounceDelay={500}
-        filters={{
-          status: {
-            value: statusFilter,
-            options: [
-              { value: "", label: "All Status" },
-              { value: "active", label: "Active" },
-              { value: "inactive", label: "Inactive" },
-            ],
-            label: "Status",
-            placeholder: "All Status",
-          },
-          showDeleted: {
-            value: showDeleted ? "true" : "false",
-            options: [
-              { value: "false", label: "Hide Deleted" },
-              { value: "true", label: "Show Deleted" },
-            ],
-            label: "Deleted Providers",
-            placeholder: "Hide Deleted",
-          },
-        }}
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
-        onClearFilters={handleClearFilters}
-        showSearchButton={true}
-        showClearButton={true}
-        isLoading={loading}
-      />
+      <Card>
+        <CardBody>
+          <SearchAndFilter
+            searchTerm={searchTerm}
+            onSearchChange={handleSearchChange}
+            searchPlaceholder="Search by name, code, or description..."
+            enableAutoSearch={true}
+            debounceDelay={500}
+            filters={{
+              status: {
+                value: statusFilter,
+                options: [
+                  { value: "", label: "All Status" },
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                ],
+                label: "Status",
+                placeholder: "All Status",
+              },
+              showDeleted: {
+                value: showDeleted ? "true" : "false",
+                options: [
+                  { value: "false", label: "Hide Deleted" },
+                  { value: "true", label: "Show Deleted" },
+                ],
+                label: "Deleted Providers",
+                placeholder: "Hide Deleted",
+              },
+            }}
+            onFilterChange={handleFilterChange}
+            onSearch={handleSearch}
+            onClearFilters={handleClearFilters}
+            showSearchButton={true}
+            showClearButton={true}
+            isLoading={loading}
+          />
+        </CardBody>
+      </Card>
 
       {/* Bulk Actions */}
       {selectedProviders.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
+        <Card variant="outlined">
+          <CardBody className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-sm text-blue-800">
               {selectedProviders.length} provider(s) selected
             </span>
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleBulkAction("activate")}
-              >
-                <FaToggleOn className="mr-1" />
-                Activate
+              <Button size="sm" variant="outline" onClick={() => handleBulkAction("activate")}>
+                <FaToggleOn className="mr-1" /> Activate
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleBulkAction("deactivate")}
-              >
-                <FaToggleOff className="mr-1" />
-                Deactivate
+              <Button size="sm" variant="outline" onClick={() => handleBulkAction("deactivate")}>
+                <FaToggleOff className="mr-1" /> Deactivate
               </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={() => handleBulkAction("delete")}
-              >
-                <FaTrash className="mr-1" />
-                Delete
+              <Button size="sm" variant="danger" onClick={() => handleBulkAction("delete")}>
+                <FaTrash className="mr-1" /> Delete
               </Button>
             </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       )}
 
-      {/* Providers Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={
-                      selectedProviders.length === providers.length &&
-                      providers.length > 0
-                    }
-                    onChange={handleSelectAll}
-                    className="rounded"
-                  />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Provider
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Code
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sales Count
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                      <span className="ml-2">Loading providers...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : providers.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    No providers found.
-                  </td>
-                </tr>
-              ) : (
-                providers.map((provider) => (
-                  <tr key={provider._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedProviders.includes(provider._id)}
-                        onChange={() => handleSelectProvider(provider._id)}
-                        className="rounded"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        {provider.logo?.url && (
+      {/* Providers List */}
+      <Card noPadding>
+        <CardBody className="p-0">
+          {loading ? (
+            <div className="p-4 space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 border border-gray-100 rounded-lg">
+                  <Skeleton variant="circular" width={36} height={36} />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton height="0.875rem" width="40%" />
+                    <Skeleton height="0.75rem" width="60%" />
+                  </div>
+                  <Skeleton height="1rem" width="60px" />
+                </div>
+              ))}
+            </div>
+          ) : providers.length === 0 ? (
+            <div className="py-10 text-center text-sm text-gray-500">
+              No providers found.
+            </div>
+          ) : (
+            <>
+              {/* Mobile cards */}
+              <div className="sm:hidden divide-y divide-gray-100">
+                {providers.map((provider) => (
+                  <div key={provider._id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {provider.logo?.url ? (
                           <img
                             src={provider.logo.url}
                             alt={provider.logo.alt || provider.name}
-                            className="h-8 w-8 rounded-full mr-3"
+                            className="h-9 w-9 rounded-full"
                           />
+                        ) : (
+                          <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                            <FaChartBar />
+                          </div>
                         )}
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {provider.name}
-                          </div>
+                          <div className="text-sm font-semibold text-gray-900">{provider.name}</div>
                           {provider.description && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-xs text-gray-500 line-clamp-2">
                               {provider.description}
                             </div>
                           )}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getProviderColor(
-                          provider.code
-                        )}`}
-                      >
+                      <input
+                        type="checkbox"
+                        checked={selectedProviders.includes(provider._id)}
+                        onChange={() => handleSelectProvider(provider._id)}
+                        className="rounded mt-1"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                      <Badge colorScheme={getProviderColorScheme(provider.code)} size="xs">
                         {provider.code}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                          provider.isActive,
-                          provider.isDeleted
-                        )}`}
+                      </Badge>
+                      <Badge
+                        colorScheme={getStatusColorScheme(provider.isActive, provider.isDeleted)}
+                        size="xs"
                       >
                         {getStatusText(provider.isActive, provider.isDeleted)}
+                      </Badge>
+                      <span className="text-xs text-gray-500">
+                        Sales {provider.salesCount || 0}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {provider.salesCount || 0}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(provider.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          onClick={() => handleEdit(provider)}
-                        >
-                          <FaEdit className="w-3 h-3" />
-                        </Button>
-                        {!provider.isDeleted ? (
-                          <>
-                            <Button
-                              size="xs"
-                              variant="outline"
-                              onClick={() =>
-                                handleToggleStatus(
-                                  provider._id,
-                                  provider.isActive
-                                )
-                              }
-                            >
-                              {provider.isActive ? (
-                                <FaToggleOff className="w-3 h-3" />
-                              ) : (
-                                <FaToggleOn className="w-3 h-3" />
-                              )}
-                            </Button>
-                            <Button
-                              size="xs"
-                              variant="danger"
-                              onClick={() => handleDelete(provider._id)}
-                            >
-                              <FaTrash className="w-3 h-3" />
-                            </Button>
-                          </>
-                        ) : (
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button size="xs" variant="outline" onClick={() => handleEdit(provider)}>
+                        <FaEdit className="w-3 h-3" />
+                      </Button>
+                      {!provider.isDeleted ? (
+                        <>
                           <Button
                             size="xs"
                             variant="outline"
-                            onClick={() => handleRestore(provider._id)}
+                            onClick={() => handleToggleStatus(provider._id, provider.isActive)}
                           >
-                            <FaUndo className="w-3 h-3" />
+                            {provider.isActive ? <FaToggleOff className="w-3 h-3" /> : <FaToggleOn className="w-3 h-3" />}
                           </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                          <Button size="xs" variant="danger" onClick={() => handleDelete(provider._id)}>
+                            <FaTrash className="w-3 h-3" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button size="xs" variant="outline" onClick={() => handleRestore(provider._id)}>
+                          <FaUndo className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-      {/* Pagination */}
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHeaderCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedProviders.length === providers.length && providers.length > 0}
+                          onChange={handleSelectAll}
+                          className="rounded"
+                        />
+                      </TableHeaderCell>
+                      <TableHeaderCell>Provider</TableHeaderCell>
+                      <TableHeaderCell>Code</TableHeaderCell>
+                      <TableHeaderCell>Status</TableHeaderCell>
+                      <TableHeaderCell>Sales</TableHeaderCell>
+                      <TableHeaderCell>Created</TableHeaderCell>
+                      <TableHeaderCell>Actions</TableHeaderCell>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {providers.map((provider) => (
+                      <TableRow key={provider._id} className="hover:bg-gray-50">
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selectedProviders.includes(provider._id)}
+                            onChange={() => handleSelectProvider(provider._id)}
+                            className="rounded"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {provider.logo?.url ? (
+                              <img
+                                src={provider.logo.url}
+                                alt={provider.logo.alt || provider.name}
+                                className="h-8 w-8 rounded-full"
+                              />
+                            ) : (
+                              <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                                <FaChartBar />
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {provider.name}
+                              </div>
+                              {provider.description && (
+                                <div className="text-xs text-gray-500 line-clamp-1">
+                                  {provider.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge colorScheme={getProviderColorScheme(provider.code)} size="xs">
+                            {provider.code}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            colorScheme={getStatusColorScheme(provider.isActive, provider.isDeleted)}
+                            size="xs"
+                          >
+                            {getStatusText(provider.isActive, provider.isDeleted)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{provider.salesCount || 0}</TableCell>
+                        <TableCell className="text-xs text-gray-500">
+                          {new Date(provider.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button size="xs" variant="outline" onClick={() => handleEdit(provider)}>
+                              <FaEdit className="w-3 h-3" />
+                            </Button>
+                            {!provider.isDeleted ? (
+                              <>
+                                <Button
+                                  size="xs"
+                                  variant="outline"
+                                  onClick={() => handleToggleStatus(provider._id, provider.isActive)}
+                                >
+                                  {provider.isActive ? <FaToggleOff className="w-3 h-3" /> : <FaToggleOn className="w-3 h-3" />}
+                                </Button>
+                                <Button size="xs" variant="danger" onClick={() => handleDelete(provider._id)}>
+                                  <FaTrash className="w-3 h-3" />
+                                </Button>
+                              </>
+                            ) : (
+                              <Button size="xs" variant="outline" onClick={() => handleRestore(provider._id)}>
+                                <FaUndo className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
+        </CardBody>
+      </Card>
+
       {pagination.pages > 1 && (
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
-              of {pagination.total} results
-            </div>
-            <div className="flex space-x-2">
-              {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(
-                (page) => (
-                  <Button
-                    key={page}
-                    size="sm"
-                    variant={page === pagination.page ? "primary" : "outline"}
-                    onClick={() => fetchProviders(filters, { page })}
-                  >
-                    {page}
-                  </Button>
-                )
-              )}
-            </div>
-          </div>
+        <div className="border-t px-4 py-3">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.pages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={(page) => fetchProviders(filters, { page })}
+            onItemsPerPageChange={() => { }}
+          />
         </div>
       )}
 

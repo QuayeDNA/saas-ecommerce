@@ -1,27 +1,27 @@
 // src/components/notifications/NotificationManagementModal.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { 
-  Dialog, 
-  DialogHeader, 
-  DialogBody, 
+import {
+  Dialog,
+  DialogHeader,
+  DialogBody,
   DialogFooter,
-  Button, 
+  Button,
+  Card,
+  Pagination,
   Badge,
   Spinner,
   Alert
 } from '../../design-system';
-import { 
-  FaBell, 
-  FaCheck, 
-  FaTimes, 
-  FaTrash, 
-  FaEye, 
+import {
+  FaBell,
+  FaCheck,
+  FaTimes,
+  FaTrash,
+  FaEye,
   FaEyeSlash,
   FaFilter,
   FaExternalLinkAlt,
-  FaChevronLeft,
-  FaChevronRight,
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import type { Notification } from '../../services/notification.service';
@@ -35,16 +35,16 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
   isOpen,
   onClose
 }) => {
-  const { 
-    fetchAllNotifications, 
-    deleteNotification, 
+  const {
+    fetchAllNotifications,
+    deleteNotification,
     deleteMultipleNotifications,
     clearReadNotifications,
     clearAllNotifications,
     markAsRead,
     markAsUnread
   } = useNotifications();
-  
+
   const [allNotifications, setAllNotifications] = useState<Notification[]>([]);
   const [pagination, setPagination] = useState<{
     page: number;
@@ -64,7 +64,7 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
   const loadNotifications = useCallback(async (page = 1, filterType = filter) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const readFilter = filterType === 'read' ? true : filterType === 'unread' ? false : undefined;
       const result = await fetchAllNotifications(page, 20, readFilter);
@@ -99,7 +99,7 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
 
   // Handle notification selection
   const handleNotificationSelect = (notificationId: string) => {
-    setSelectedNotifications(prev => 
+    setSelectedNotifications(prev =>
       prev.includes(notificationId)
         ? prev.filter(id => id !== notificationId)
         : [...prev, notificationId]
@@ -118,7 +118,7 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
   // Handle delete selected
   const handleDeleteSelected = async () => {
     if (selectedNotifications.length === 0) return;
-    
+
     if (window.confirm(`Are you sure you want to delete ${selectedNotifications.length} notification(s)?`)) {
       await deleteMultipleNotifications(selectedNotifications);
       setSelectedNotifications([]);
@@ -185,52 +185,59 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="full" className="sm:max-w-4xl">
-      <DialogHeader>
-        <div className="flex items-center justify-between w-full">
-          <h3 className="text-lg font-semibold text-gray-900 truncate">
-            All Notifications
-          </h3>
-          <div className="flex items-center gap-1 ml-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearRead}
-              disabled={isLoading}
-              className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700"
-            >
-              Clear Read
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearAll}
-              disabled={isLoading}
-              className="text-xs px-2 py-1 text-red-600 hover:text-red-700"
-            >
-              Clear All
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 p-1"
-            >
-              <FaTimes className="w-4 h-4" />
-            </Button>
+      <DialogHeader className="p-0">
+        <div className="bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-t-lg">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center">
+                <FaBell className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-lg font-semibold truncate">All Notifications</h3>
+                <p className="text-xs text-white/80">Manage alerts and history</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearRead}
+                disabled={isLoading}
+                className="text-xs px-2 py-1 text-white/90 hover:text-white hover:bg-white/10"
+              >
+                Clear Read
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearAll}
+                disabled={isLoading}
+                className="text-xs px-2 py-1 text-white/90 hover:text-white hover:bg-white/10"
+              >
+                Clear All
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="text-white/80 hover:text-white p-1"
+              >
+                <FaTimes className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </DialogHeader>
 
-      <DialogBody className="flex-1 overflow-hidden p-0">
-        <div className="h-full flex flex-col">
+      <DialogBody className="flex-1 overflow-hidden bg-white">
+        <div className="h-full flex flex-col gap-4">
           {/* Filters Section */}
-          <div className="pb-3 border-b">
+          <Card variant="outlined" size="sm">
             <div className="flex flex-col gap-3">
-              {/* Filter Buttons */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FaFilter className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Filter:</span>
+                  <span className="text-sm font-medium text-gray-700">Filter</span>
                 </div>
                 {selectedNotifications.length > 0 && (
                   <div className="flex items-center gap-2">
@@ -250,13 +257,13 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                   </div>
                 )}
               </div>
-              
-              <div className="flex gap-2">
+
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   size="sm"
                   variant={filter === 'all' ? 'primary' : 'secondary'}
                   onClick={() => handleFilterChange('all')}
-                  className="text-sm flex-1 sm:flex-none"
+                  className="text-sm"
                 >
                   All
                 </Button>
@@ -264,7 +271,7 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                   size="sm"
                   variant={filter === 'unread' ? 'primary' : 'secondary'}
                   onClick={() => handleFilterChange('unread')}
-                  className="text-sm flex-1 sm:flex-none"
+                  className="text-sm"
                 >
                   Unread
                 </Button>
@@ -272,21 +279,19 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                   size="sm"
                   variant={filter === 'read' ? 'primary' : 'secondary'}
                   onClick={() => handleFilterChange('read')}
-                  className="text-sm flex-1 sm:flex-none"
+                  className="text-sm"
                 >
                   Read
                 </Button>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Error Alert */}
           {error && (
-            <div className="px-4 py-2">
-              <Alert status="error" className="text-sm">
-                {error}
-              </Alert>
-            </div>
+            <Alert status="error" className="text-sm">
+              {error}
+            </Alert>
           )}
 
           {/* Notifications List */}
@@ -307,32 +312,27 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                 </div>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="space-y-3">
                 {/* Select All */}
-                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedNotifications.length === allNotifications.length && allNotifications.length > 0}
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700 font-medium">
-                      Select All ({allNotifications.length})
-                    </span>
-                  </label>
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={selectedNotifications.length === allNotifications.length && allNotifications.length > 0}
+                    onChange={handleSelectAll}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="font-medium">Select All ({allNotifications.length})</span>
                 </div>
 
                 {/* Notification Items */}
                 {allNotifications.map((notification) => (
-                  <div
+                  <Card
                     key={notification._id}
-                    className={`px-4 py-4 hover:bg-gray-50 transition-colors ${
-                      !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                    }`}
+                    variant="outlined"
+                    size="sm"
+                    className={!notification.read ? 'ring-1 ring-blue-200 bg-blue-50/40' : ''}
                   >
                     <div className="flex gap-3">
-                      {/* Checkbox */}
                       <div className="flex-shrink-0 pt-1">
                         <input
                           type="checkbox"
@@ -342,12 +342,10 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                         />
                       </div>
 
-                      {/* Icon */}
                       <div className="flex-shrink-0 pt-1">
                         {getNotificationIcon(notification.type)}
                       </div>
 
-                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2 min-w-0">
@@ -367,13 +365,12 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                             {formatTimeAgo(notification.createdAt)}
                           </span>
                         </div>
-                        
-                        <p className="text-sm text-gray-600 mb-3 leading-relaxed">
+
+                        <p className="text-sm text-gray-600 mb-2 leading-relaxed">
                           {notification.message}
                         </p>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Button
                             size="sm"
                             variant="ghost"
@@ -413,7 +410,7 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             )}
@@ -421,48 +418,26 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
 
           {/* Pagination */}
           {pagination && pagination.pages > 1 && (
-            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-              <div className="flex flex-col gap-3">
-                <div className="text-xs text-gray-600 text-center">
-                  Showing {((currentPage - 1) * 20) + 1} to {Math.min(currentPage * 20, pagination.total)} of {pagination.total} notifications
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="text-sm px-3 py-1"
-                  >
-                    <FaChevronLeft className="w-3 h-3 mr-1" />
-                    Previous
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm text-gray-600">
-                      Page {currentPage} of {pagination.pages}
-                    </span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === pagination.pages}
-                    className="text-sm px-3 py-1"
-                  >
-                    Next
-                    <FaChevronRight className="w-3 h-3 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <Card variant="outlined" size="sm">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.pages}
+                totalItems={pagination.total}
+                itemsPerPage={20}
+                onPageChange={handlePageChange}
+                showPerPageSelector={false}
+                size="sm"
+                variant="compact"
+              />
+            </Card>
           )}
         </div>
       </DialogBody>
 
-      <DialogFooter className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-        <Button 
-          variant="outline" 
-          onClick={onClose} 
+      <DialogFooter className="border-t border-gray-200 bg-gray-50">
+        <Button
+          variant="outline"
+          onClick={onClose}
           className="w-full text-sm py-2"
         >
           Close
