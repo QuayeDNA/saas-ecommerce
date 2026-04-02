@@ -344,9 +344,9 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardBody className="p-4">
+          <CardBody>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500">Available balance</p>
@@ -371,6 +371,21 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
               </div>
               <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-blue-600" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Wallet balance</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatCurrency(dashboard?.walletBalance ?? 0)}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center">
+                <Info className="w-4 h-4 text-slate-600" />
               </div>
             </div>
           </CardBody>
