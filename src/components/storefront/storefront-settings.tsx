@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -66,6 +66,8 @@ import {
 interface StorefrontSettingsProps {
   storefront: StorefrontData;
   onUpdate: (updatedStorefront: StorefrontData) => void;
+  initialTab?: string;
+  earningsDefaultTab?: 'payouts' | 'earnings';
 }
 
 interface PaymentMethodForm {
@@ -224,10 +226,15 @@ function SubaccountTooltip() {
 export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   storefront,
   onUpdate,
+  initialTab,
+  earningsDefaultTab,
 }) => {
   const { addToast } = useToast();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("general");
+  const [activeTab, setActiveTab] = useState(initialTab || "general");
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
@@ -1335,7 +1342,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
         {/* ===== Earnings / Payouts ===== */}
         <TabsContent value="earnings" className="space-y-6">
-          <EarningsManager />
+          <EarningsManager defaultTab={earningsDefaultTab} />
         </TabsContent>
 
         {/* ===== Payment Methods ===== */}

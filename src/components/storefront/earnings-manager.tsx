@@ -19,18 +19,22 @@ import {
   Input,
   FormField,
   Select,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
 } from '../../design-system';
 import { useToast } from '../../design-system';
 import { walletService } from '../../services/wallet-service';
+import { storefrontService, type EarningsTransactionRecord } from '../../services/storefront.service';
 import type { EarningsDashboard, PayoutRequestItem, PayoutDestination } from '../../types/wallet';
+import { Pagination } from '../../design-system/components/pagination';
 import {
   Wallet,
   TrendingUp,
   ArrowDownToLine,
   RefreshCw,
   Info,
-  Smartphone,
-  Building2,
   Zap,
   Clock,
   CheckCircle2,
@@ -104,12 +108,26 @@ const ModeBanner: React.FC<ModeBannerProps> = ({ autoPayoutEnabled, canRequestPa
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export const EarningsManager: React.FC = () => {
+interface EarningsManagerProps {
+  defaultTab?: 'payouts' | 'earnings';
+}
+
+export const EarningsManager: React.FC<EarningsManagerProps> = ({
+  defaultTab = 'payouts',
+}) => {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [dashboard, setDashboard] = useState<EarningsDashboard | null>(null);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'payouts' | 'earnings'>(defaultTab);
+
+  const [history, setHistory] = useState<EarningsTransactionRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyLimit, setHistoryLimit] = useState(20);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
 
   // Form state
   const [amount, setAmount] = useState<number | ''>('');
@@ -135,6 +153,36 @@ export const EarningsManager: React.FC = () => {
   }, [addToast]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
+
+  const loadHistory = useCallback(async (page = historyPage, limit = historyLimit) => {
+    try {
+      setHistoryLoading(true);
+      const data = await storefrontService.getEarningsHistory(page, limit);
+      setHistory(data.transactions || []);
+      const pagination = data.pagination || {
+        page,
+        limit,
+        total: data.transactions?.length || 0,
+        totalPages: 1,
+      };
+      setHistoryPage(pagination.page);
+      setHistoryLimit(pagination.limit);
+      setHistoryTotal(pagination.total);
+      setHistoryTotalPages(pagination.totalPages);
+    } catch {
+      addToast('Failed to load earnings history', 'error');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [addToast, historyLimit, historyPage]);
+
+  useEffect(() => {
+    void loadHistory(historyPage, historyLimit);
+  }, [historyPage, historyLimit, loadHistory]);
 
   // ── Fee calculation ────────────────────────────────────────────────────────
   const feeEstimate = useMemo(() => {
@@ -221,133 +269,347 @@ export const EarningsManager: React.FC = () => {
     const shouldUseSaved = useSavedAccount && !editingAccount && dashboard?.savedPayoutAccount;
 
     if (!shouldUseSaved) {
-      const dest: PayoutDestination = { type: destType } as PayoutDestination;
+      const dest: PayoutDestination = { type: destType };
+
       if (destType === 'mobile_money') {
-        if (!isValidGhanaPhone(phone)) { addToast('Enter a valid Ghana mobile number', 'error'); return; }
-        if (!accountName.trim()) { addToast('Enter mobile money account name', 'error'); return; }
+        if (!momoProvider) {
+          addToast('Select a mobile network', 'error');
+          return;
+        }
+        if (!phone) {
+          addToast('Enter your mobile money number', 'error');
+          return;
+        }
+        if (!isValidGhanaPhone(phone)) {
+          addToast('Enter a valid Ghana phone number', 'error');
+          return;
+        }
         dest.mobileProvider = momoProvider;
-        dest.phoneNumber = phone.replace(/\s+/g, '');
-        dest.accountName = accountName.trim();
+        dest.phoneNumber = phone;
+        if (accountName.trim()) dest.accountName = accountName.trim();
       } else {
-        if (!bankCode || !accountNumber) { addToast('Provide bank code and account number', 'error'); return; }
+        if (!bankCode.trim() || !accountNumber.trim()) {
+          addToast('Enter your bank code and account number', 'error');
+          return;
+        }
         dest.bankCode = bankCode.trim();
         dest.accountNumber = accountNumber.trim();
-        if (accountName) dest.accountName = accountName.trim();
+        if (accountName.trim()) dest.accountName = accountName.trim();
       }
+
       destinationToSend = dest;
+    } else {
+      destinationToSend = dashboard?.savedPayoutAccount ?? undefined;
     }
 
     try {
       setSubmitting(true);
       const result = await walletService.requestPayout(numericAmount, destinationToSend);
-      const auto = result.autoPayoutEnabled;
-
-      if (auto) {
-        addToast('Transfer initiated — you will be notified when it completes', 'success');
-      } else {
-        addToast('Payout requested — an admin will review it shortly', 'success');
-      }
       setShowRequestDialog(false);
-      void load();
-    } catch (err: unknown) {
-      const message =
-        typeof err === 'object' && err !== null && 'response' in err
-          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-          : err instanceof Error
-            ? err.message
-            : undefined;
-      addToast(message || 'Request failed', 'error');
+      addToast(result.autoPayoutEnabled ? 'Withdrawal sent successfully' : 'Payout request submitted', 'success');
+      await load();
+    } catch {
+      addToast('Failed to submit payout request', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-  const savedAccount = dashboard?.savedPayoutAccount;
+  const savedAccount = dashboard?.savedPayoutAccount ?? null;
+  const canRequestPayout = dashboard?.canRequestPayout ?? false;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Earnings</h2>
+          <p className="text-sm text-gray-500">Track earnings and withdrawals from your storefront.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={load}
+            disabled={loading}
+            leftIcon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+          >
+            Refresh
+          </Button>
+          <Button
+            onClick={openRequest}
+            disabled={!canRequestPayout}
+            leftIcon={isAutoMode ? <Zap className="w-4 h-4" /> : <ArrowDownToLine className="w-4 h-4" />}
+          >
+            {isAutoMode ? 'Withdraw Now' : 'Request Payout'}
+          </Button>
+        </div>
+      </div>
 
-      {/* ── Balance hero ──────────────────────────────────────────────────── */}
-      <Card variant="elevated">
-        <CardBody className="p-0 overflow-hidden">
-          <div className="px-5 pt-5 pb-6 text-white bg-gradient-to-r from-slate-700 to-slate-800 rounded-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <Wallet className="w-5 h-5 text-white" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Card>
+          <CardBody className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Available balance</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatCurrency(dashboard?.availableBalance ?? 0)}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-green-600" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Total earned</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatCurrency(dashboard?.totalEarned ?? 0)}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Total withdrawn</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatCurrency(dashboard?.totalWithdrawn ?? 0)}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
+                <ArrowDownToLine className="w-4 h-4 text-amber-600" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      <ModeBanner autoPayoutEnabled={Boolean(dashboard?.autoPayoutEnabled)} canRequestPayout={canRequestPayout} />
+
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'payouts' | 'earnings')} className="space-y-3">
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="payouts">Payout History</TabsTrigger>
+          <TabsTrigger value="earnings">Earnings History</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="payouts">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ArrowDownToLine className="w-4 h-4 text-gray-500" />
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Payout History</h3>
                 </div>
-                <span className="text-sm font-semibold text-white/90 tracking-wide uppercase">
-                  Available Earnings
-                </span>
+                {dashboard && (
+                  <Badge colorScheme="gray" variant="subtle" size="sm">
+                    {dashboard.recentPayouts.length} records
+                  </Badge>
+                )}
               </div>
-              <button
-                onClick={load}
-                disabled={loading}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
-                title="Refresh"
-              >
-                <RefreshCw className={`w-4 h-4 text-white ${loading ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
+            </CardHeader>
 
-            <div className="text-4xl font-black tracking-tight mb-1">
-              GH₵ {dashboard ? dashboard.availableBalance.toFixed(2) : '0.00'}
-            </div>
-            <p className="text-white/70 text-sm">Balance available for withdrawal</p>
-          </div>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-2 divide-x divide-gray-100 border-t border-gray-100 bg-white">
-            <div className="flex flex-col items-center py-3 px-4">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <TrendingUp className="w-3.5 h-3.5 text-green-500" />
-                <span className="text-xs text-gray-500">Total Earned</span>
+            <CardBody className="p-0">
+              {/* Mobile card list */}
+              <div className="sm:hidden">
+                {!dashboard || dashboard.recentPayouts.length === 0 ? (
+                  <div className="text-center py-10 text-sm text-gray-500">
+                    No payouts yet. Start earning from your storefront sales!
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {dashboard.recentPayouts.map((p: PayoutRequestItem) => {
+                      const cfg = STATUS_CONFIG[p.status] ?? { color: 'info' as StatusColor, label: p.status, icon: null };
+                      return (
+                        <div key={p._id} className="flex items-start justify-between gap-3 px-4 py-3">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 mt-0.5">
+                              {p.status === 'completed' ? (
+                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              ) : p.status === 'failed' ? (
+                                <XCircle className="w-4 h-4 text-red-500" />
+                              ) : (
+                                <Clock className="w-4 h-4 text-blue-500" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-800">
+                                GH₵ {p.amount.toFixed(2)}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(p.requestedAt).toLocaleDateString()}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {p.destination?.type === 'mobile_money' ? 'Mobile Money' : 'Bank'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <Badge colorScheme={cfg.color} variant="subtle" size="sm">
+                              {cfg.label}
+                            </Badge>
+                            {p.netAmount != null && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Net: GH₵ {p.netAmount.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              <span className="text-base font-bold text-gray-900">
-                GH₵ {dashboard ? dashboard.totalEarned.toFixed(2) : '0.00'}
-              </span>
-            </div>
-            <div className="flex flex-col items-center py-3 px-4">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <ArrowDownToLine className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-xs text-gray-500">Withdrawn</span>
+
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <Table size="sm">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHeaderCell>Date</TableHeaderCell>
+                      <TableHeaderCell>Amount</TableHeaderCell>
+                      <TableHeaderCell>Fee</TableHeaderCell>
+                      <TableHeaderCell>You Receive</TableHeaderCell>
+                      <TableHeaderCell>Destination</TableHeaderCell>
+                      <TableHeaderCell>Status</TableHeaderCell>
+                      <TableHeaderCell>Reference</TableHeaderCell>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(dashboard?.recentPayouts || []).map((p: PayoutRequestItem) => {
+                      const cfg = STATUS_CONFIG[p.status] ?? { color: 'info' as StatusColor, label: p.status, icon: null };
+                      return (
+                        <TableRow key={p._id}>
+                          <TableCell className="whitespace-nowrap text-xs">
+                            {new Date(p.requestedAt).toLocaleDateString()}
+                            <div className="text-[10px] text-gray-400">
+                              {new Date(p.requestedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">GH₵ {p.amount.toFixed(2)}</TableCell>
+                          <TableCell className="text-xs text-gray-500">
+                            {p.transferFee ? `GH₵ ${p.transferFee.toFixed(2)}` : '—'}
+                          </TableCell>
+                          <TableCell className="text-xs text-gray-700">
+                            {p.netAmount ? `GH₵ ${p.netAmount.toFixed(2)}` : '—'}
+                          </TableCell>
+                          <TableCell className="text-xs text-gray-600">
+                            {p.destination?.type === 'mobile_money' ? 'Mobile Money' : 'Bank'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge colorScheme={cfg.color} variant="subtle" size="sm">
+                              {cfg.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-[10px] text-gray-400 font-mono">
+                            {p.paystackTransfer?.transferReference || p.paystackTransfer?.transferCode || '—'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {(!dashboard || dashboard.recentPayouts.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-sm text-gray-500 py-8">
+                          No payouts yet. Start earning from your storefront sales!
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-              <span className="text-base font-bold text-gray-900">
-                GH₵ {dashboard ? dashboard.totalWithdrawn.toFixed(2) : '0.00'}
-              </span>
-            </div>
-          </div>
+            </CardBody>
+          </Card>
+        </TabsContent>
 
-          {/* Mode banner + CTA */}
-          <div className="px-5 pb-5 pt-3 bg-white space-y-3">
-            {dashboard && (
-              <ModeBanner
-                autoPayoutEnabled={isAutoMode}
-                canRequestPayout={dashboard.canRequestPayout}
-              />
-            )}
+        <TabsContent value="earnings">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-green-600" />
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Earnings History</h3>
+                </div>
+                <Badge colorScheme="gray" variant="subtle" size="sm">
+                  {historyTotal} records
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardBody className="p-0">
+              {historyLoading ? (
+                <div className="text-center py-10 text-sm text-gray-500">Loading earnings history…</div>
+              ) : history.length === 0 ? (
+                <div className="text-center py-10 text-sm text-gray-500">
+                  No earnings history yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table size="sm">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHeaderCell>Date</TableHeaderCell>
+                        <TableHeaderCell>Type</TableHeaderCell>
+                        <TableHeaderCell>Amount</TableHeaderCell>
+                        <TableHeaderCell>Balance</TableHeaderCell>
+                        <TableHeaderCell>Reference</TableHeaderCell>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {history.map((txn) => (
+                        <TableRow key={txn._id}>
+                          <TableCell className="whitespace-nowrap text-xs">
+                            {new Date(txn.createdAt).toLocaleDateString()}
+                            <div className="text-[10px] text-gray-400">
+                              {new Date(txn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-gray-600 capitalize">
+                            {txn.type}
+                          </TableCell>
+                          <TableCell className={`text-xs font-semibold ${txn.type === 'credit' ? 'text-green-700' : 'text-red-600'}`}>
+                            {txn.type === 'credit' ? '+' : '−'}{formatCurrency(txn.amount)}
+                          </TableCell>
+                          <TableCell className="text-xs text-gray-600">
+                            {formatCurrency(txn.balanceAfter)}
+                          </TableCell>
+                          <TableCell className="text-[10px] text-gray-400 font-mono">
+                            {txn.reference || '—'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
 
-            <Button
-              className="w-full"
-              onClick={openRequest}
-              disabled={!(dashboard && dashboard.availableBalance > 0)}
-              leftIcon={isAutoMode
-                ? <Zap className="w-4 h-4" />
-                : <ArrowDownToLine className="w-4 h-4" />
-              }
-            >
-              {isAutoMode ? 'Withdraw Instantly' : 'Request Payout'}
-            </Button>
-
-            {dashboard && dashboard.availableBalance <= 0 && (
-              <p className="text-xs text-center text-gray-400">
-                Complete storefront sales to earn and withdraw
-              </p>
-            )}
-          </div>
-        </CardBody>
-      </Card>
+              {historyTotalPages > 1 && (
+                <div className="p-3">
+                  <Pagination
+                    currentPage={historyPage}
+                    totalPages={historyTotalPages}
+                    totalItems={historyTotal}
+                    itemsPerPage={historyLimit}
+                    onPageChange={(page) => setHistoryPage(page)}
+                    onItemsPerPageChange={(limit) => {
+                      setHistoryLimit(limit);
+                      setHistoryPage(1);
+                    }}
+                    showInfo
+                    showPerPageSelector
+                    variant="compact"
+                  />
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
 
 
@@ -365,165 +627,6 @@ export const EarningsManager: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* ── Payout history ─────────────────────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Payout History</h3>
-            </div>
-            {dashboard && (
-              <Badge colorScheme="gray" variant="subtle" size="sm">
-                {dashboard.recentPayouts.length} records
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-
-        <CardBody className="p-0">
-          {/* Mobile card list */}
-          <div className="sm:hidden">
-            {!dashboard || dashboard.recentPayouts.length === 0 ? (
-              <div className="text-center py-10 text-sm text-gray-500">
-                No payouts yet. Start earning from your storefront sales!
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {dashboard.recentPayouts.map((p: PayoutRequestItem) => {
-                  const cfg = STATUS_CONFIG[p.status] ?? { color: 'info' as StatusColor, label: p.status, icon: null };
-                  return (
-                    <div key={p._id} className="flex items-start justify-between gap-3 px-4 py-3">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 mt-0.5">
-                          {p.destination.type === 'mobile_money'
-                            ? <Smartphone className="w-4 h-4 text-gray-500" />
-                            : <Building2 className="w-4 h-4 text-gray-500" />}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">GH₵ {p.amount.toFixed(2)}</p>
-                          <p className="text-xs text-gray-500">
-                            {p.destination.type === 'mobile_money'
-                              ? `${p.destination.mobileProvider} · ${p.destination.phoneNumber}`
-                              : `Bank · ${p.destination.accountNumber}`}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                          </p>
-                          {p.status === 'rejected' && p.rejectionReason && (
-                            <p className="text-xs text-red-500 mt-1 max-w-[200px]" title={p.rejectionReason}>
-                              {p.rejectionReason}
-                            </p>
-                          )}
-                          {p.status === 'failed' && p.paystackTransfer?.failureReason && (
-                            <p className="text-xs text-red-500 mt-1">
-                              {p.paystackTransfer.failureReason}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <Badge colorScheme={cfg.color} variant="subtle" size="sm">
-                          <span className="flex items-center gap-1">{cfg.icon}{cfg.label}</span>
-                        </Badge>
-                        {p.netAmount != null && (
-                          <p className="text-xs text-green-600 font-medium mt-1">
-                            Receive: GH₵ {p.netAmount.toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Desktop table */}
-          <div className="hidden sm:block overflow-x-auto">
-            <Table size="sm">
-              <TableHeader>
-                <TableRow>
-                  <TableHeaderCell>Date</TableHeaderCell>
-                  <TableHeaderCell>Amount</TableHeaderCell>
-                  <TableHeaderCell>Fee</TableHeaderCell>
-                  <TableHeaderCell>You Receive</TableHeaderCell>
-                  <TableHeaderCell>Destination</TableHeaderCell>
-                  <TableHeaderCell>Status</TableHeaderCell>
-                  <TableHeaderCell>Reference</TableHeaderCell>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(dashboard?.recentPayouts || []).map((p: PayoutRequestItem) => {
-                  const cfg = STATUS_CONFIG[p.status] ?? { color: 'info' as StatusColor, label: p.status, icon: null };
-                  return (
-                    <TableRow key={p._id}>
-                      <TableCell className="whitespace-nowrap text-xs">
-                        {new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        <div className="text-gray-400">
-                          {new Date(p.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">GH₵ {p.amount.toFixed(2)}</TableCell>
-                      <TableCell className="text-xs text-gray-500">
-                        {p.transferFee != null ? `GH₵ ${p.transferFee.toFixed(2)}` : '—'}
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600">
-                        {p.netAmount != null ? `GH₵ ${p.netAmount.toFixed(2)}` : `GH₵ ${p.amount.toFixed(2)}`}
-                      </TableCell>
-                      <TableCell className="text-xs max-w-[180px]">
-                        {p.destination.type === 'mobile_money' ? (
-                          <div className="flex items-center gap-1.5">
-                            <Smartphone className="w-3 h-3 text-gray-400 shrink-0" />
-                            <div>
-                              <span className="font-medium">{p.destination.mobileProvider}</span>
-                              <br />{p.destination.phoneNumber}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="w-3 h-3 text-gray-400 shrink-0" />
-                            <div>
-                              <span className="font-medium">Bank</span>
-                              <br />{p.destination.accountNumber}
-                            </div>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge colorScheme={cfg.color} variant="subtle" size="sm">
-                          <span className="flex items-center gap-1">{cfg.icon}{cfg.label}</span>
-                        </Badge>
-                        {p.status === 'rejected' && p.rejectionReason && (
-                          <div className="text-xs text-red-500 mt-1 max-w-[150px] truncate" title={p.rejectionReason}>
-                            {p.rejectionReason}
-                          </div>
-                        )}
-                        {p.status === 'failed' && p.paystackTransfer?.failureReason && (
-                          <div className="text-xs text-orange-500 mt-1 max-w-[150px] truncate" title={p.paystackTransfer.failureReason}>
-                            {p.paystackTransfer.failureReason}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-500 font-mono">
-                        {p.paystackTransfer?.transferReference || '—'}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {(!dashboard || dashboard.recentPayouts.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-sm text-gray-500 py-8">
-                      No payouts yet. Start earning from your storefront sales!
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardBody>
-      </Card>
 
       {/* ── Request payout dialog ─────────────────────────────────────────── */}
       <Dialog isOpen={showRequestDialog} onClose={() => setShowRequestDialog(false)} size="sm">

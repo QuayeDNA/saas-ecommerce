@@ -82,6 +82,8 @@ export const StorefrontDashboardPage: React.FC = () => {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [settingsInitialTab, setSettingsInitialTab] = useState<string | undefined>(undefined);
+  const [earningsDefaultTab, setEarningsDefaultTab] = useState<'payouts' | 'earnings' | undefined>(undefined);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   const [showBreakdownInfoModal, setShowBreakdownInfoModal] = useState(false);
@@ -771,6 +773,17 @@ export const StorefrontDashboardPage: React.FC = () => {
                       <h3 className="text-base font-semibold">Earnings History</h3>
                     </div>
                     <div className="flex items-center gap-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSettingsInitialTab("earnings");
+                          setEarningsDefaultTab("earnings");
+                          setActiveTab("settings");
+                        }}
+                      >
+                        Show all
+                      </Button>
                       <span className="text-xs text-gray-500">
                         Balance:{" "}
                         <span className="font-semibold text-green-700">
@@ -1230,6 +1243,8 @@ export const StorefrontDashboardPage: React.FC = () => {
             <StorefrontSettings
               storefront={storefront}
               onUpdate={handleStorefrontUpdated}
+              initialTab={settingsInitialTab}
+              earningsDefaultTab={earningsDefaultTab}
             />
           </div>
         </TabsContent>

@@ -207,6 +207,13 @@ export interface EarningsTransactionRecord {
   createdAt: string;
 }
 
+export interface EarningsPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface StorefrontEarnings {
   /** Current spendable earnings balance */
   availableBalance: number;
@@ -215,6 +222,8 @@ export interface StorefrontEarnings {
   /** Cumulative amount sent out via payouts (all time) */
   totalWithdrawn: number;
   recentTransactions: EarningsTransactionRecord[];
+  transactions?: EarningsTransactionRecord[];
+  pagination?: EarningsPagination;
 }
 
 // Public storefront types (customer-facing)
@@ -581,6 +590,16 @@ class StorefrontService {
   /** Authoritative earnings ledger for the agent — sourced from EarningsTransaction records */
   async getEarnings(): Promise<StorefrontEarnings> {
     const response = await apiClient.get(`${this.basePath}/agent/storefront/earnings`);
+    return response.data.data;
+  }
+
+  async getEarningsHistory(page = 1, limit = 20): Promise<StorefrontEarnings> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    const response = await apiClient.get(
+      `${this.basePath}/agent/storefront/earnings?${params.toString()}`,
+    );
     return response.data.data;
   }
 
