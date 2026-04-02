@@ -459,7 +459,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                                 GH₵ {p.amount.toFixed(2)}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {new Date(p.requestedAt).toLocaleDateString()}
+                                {new Date(p.requestedAt ?? p.createdAt).toLocaleDateString()}
                               </p>
                               <p className="text-xs text-gray-400 mt-0.5">
                                 {p.destination?.type === 'mobile_money' ? 'Mobile Money' : 'Bank'}
@@ -503,9 +503,9 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                       return (
                         <TableRow key={p._id}>
                           <TableCell className="whitespace-nowrap text-xs">
-                            {new Date(p.requestedAt).toLocaleDateString()}
+                            {new Date(p.requestedAt ?? p.createdAt).toLocaleDateString()}
                             <div className="text-[10px] text-gray-400">
-                              {new Date(p.requestedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(p.requestedAt ?? p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </TableCell>
                           <TableCell className="font-medium">GH₵ {p.amount.toFixed(2)}</TableCell>
