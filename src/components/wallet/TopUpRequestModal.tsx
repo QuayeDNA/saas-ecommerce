@@ -109,8 +109,6 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   const [isPaystackLoading, setIsPaystackLoading] = useState(false);
   const [feeSettings, setFeeSettings] = useState<FeeSettings | null>(null);
 
-  const TOTAL_STEPS = 2;
-
   // ── Effects ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
