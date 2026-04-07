@@ -34,13 +34,13 @@ import {
   TrendingUp,
   ArrowDownToLine,
   RefreshCw,
-  Info,
   Zap,
   Clock,
   CheckCircle2,
   XCircle,
   AlertCircle,
   Loader2,
+  Info,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -72,14 +72,14 @@ const STATUS_CONFIG: Record<string, { color: StatusColor; label: string; icon: R
 // ─── Payout mode banner ───────────────────────────────────────────────────────
 
 interface ModeBannerProps {
-  autoPayoutEnabled: boolean;
+  autoMode: boolean;
   canRequestPayout: boolean;
 }
 
-const ModeBanner: React.FC<ModeBannerProps> = ({ autoPayoutEnabled, canRequestPayout }) => {
+const ModeBanner: React.FC<ModeBannerProps> = ({ autoMode, canRequestPayout }) => {
   if (!canRequestPayout) return null;
 
-  if (autoPayoutEnabled) {
+  if (autoMode) {
     return (
       <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm">
         <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shrink-0">
@@ -367,12 +367,6 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
       color: "blue",
     },
     {
-      title: "Wallet balance",
-      value: dashboard?.walletBalance ?? 0,
-      icon: Info,
-      color: "slate",
-    },
-    {
       title: "Total withdrawn",
       value: dashboard?.totalWithdrawn ?? 0,
       icon: ArrowDownToLine,
@@ -413,7 +407,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric, index) => (
           <Card key={index}>
             <CardBody>
@@ -433,7 +427,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
         ))}
       </div>
 
-      <ModeBanner autoPayoutEnabled={Boolean(dashboard?.autoPayoutEnabled)} canRequestPayout={canRequestPayout} />
+      <ModeBanner autoMode={isAutoMode} canRequestPayout={canRequestPayout} />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'payouts' | 'earnings')} className="space-y-3">
         <TabsList className="w-full justify-start">

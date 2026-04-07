@@ -29,7 +29,6 @@ import {
 } from "../../design-system";
 import { useToast } from "../../design-system";
 import { walletService } from '../../services/wallet-service';
-import type { EarningsReconciliation, EarningsBackfillPreview } from '../../types/wallet';
 import {
   storefrontService,
   type AdminStorefrontData,
@@ -108,14 +107,6 @@ function StoreDetailDialog({
   onDelete,
   isProcessing,
   onViewPayouts,
-  reconciliation,
-  reconciliationLoading,
-  onReconcile,
-  reconcileApplying,
-  backfillPreview,
-  backfillLoading,
-  onBackfill,
-  backfillApplying,
 }: {
   store: AdminStorefrontData | null;
   detail: AdminStorefrontDetail | null;
@@ -127,14 +118,6 @@ function StoreDetailDialog({
   onDelete: (store: AdminStorefrontData) => void;
   isProcessing: boolean;
   onViewPayouts?: (agentId: string, store?: AdminStorefrontData) => void;
-  reconciliation?: EarningsReconciliation | null;
-  reconciliationLoading?: boolean;
-  onReconcile?: (agentId: string) => void;
-  reconcileApplying?: boolean;
-  backfillPreview?: EarningsBackfillPreview | null;
-  backfillLoading?: boolean;
-  onBackfill?: (agentId: string) => void;
-  backfillApplying?: boolean;
 }) {
   if (!store) return null;
 
@@ -263,44 +246,6 @@ function StoreDetailDialog({
                   {typeof agent.earningsBalance === 'number' ? fmtCurrency(agent.earningsBalance) : '—'}
                 </span>
               </div>
-              {reconciliationLoading && (
-                <div className="flex items-center gap-2 text-xs text-gray-400 pt-1">
-                  <Spinner size="sm" /> Reconciling earnings...
-                </div>
-              )}
-              {reconciliation && !reconciliationLoading && (
-                <div className="pt-2 mt-1 border-t border-gray-100 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Total Earned</span>
-                    <span className="text-xs font-semibold text-gray-900">
-                      {fmtCurrency(reconciliation.totalEarned)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Total Withdrawn</span>
-                    <span className="text-xs font-semibold text-gray-900">
-                      {fmtCurrency(reconciliation.totalWithdrawn)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Expected Available</span>
-                    <span className="text-xs font-semibold text-gray-900">
-                      {fmtCurrency(reconciliation.expectedAvailable)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Delta</span>
-                    <span className={`text-xs font-semibold ${reconciliation.isBalanced ? 'text-emerald-600' : 'text-amber-600'}`}>
-                      {reconciliation.delta < 0 ? '-' : ''}{fmtCurrency(Math.abs(reconciliation.delta))}
-                    </span>
-                  </div>
-                  {!reconciliation.isBalanced && (
-                    <Alert status="warning" variant="left-accent">
-                      Available earnings are {reconciliation.delta < 0 ? 'short by' : 'over by'} {fmtCurrency(Math.abs(reconciliation.delta))}.
-                    </Alert>
-                  )}
-                </div>
-              )}
               <div className="pt-1.5">
                 <Button
                   size="xs"
@@ -313,45 +258,6 @@ function StoreDetailDialog({
                   View Payouts
                 </Button>
               </div>
-              {reconciliation && !reconciliation.isBalanced && (
-                <div className="pt-2">
-                  <Button
-                    size="xs"
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => agentId && onReconcile?.(agentId)}
-                    disabled={!agentId || reconciliationLoading || reconcileApplying}
-                    isLoading={reconcileApplying}
-                  >
-                    Apply Reconciliation
-                  </Button>
-                </div>
-              )}
-              {backfillLoading && (
-                <div className="flex items-center gap-2 text-xs text-gray-400 pt-2">
-                  <Spinner size="sm" /> Checking missing credits...
-                </div>
-              )}
-              {backfillPreview && backfillPreview.missingCount > 0 && (
-                <Alert status="warning" variant="left-accent">
-                  Missing {backfillPreview.missingCount} profit credit(s) from completed orders
-                  (GH₵ {backfillPreview.totalMissingAmount.toFixed(2)}).
-                </Alert>
-              )}
-              {backfillPreview && backfillPreview.missingCount > 0 && (
-                <div className="pt-2">
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => agentId && onBackfill?.(agentId)}
-                    disabled={!agentId || backfillLoading || backfillApplying}
-                    isLoading={backfillApplying}
-                  >
-                    Backfill Missing Credits
-                  </Button>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -578,12 +484,6 @@ export default function StoresPage() {
   const [autoApproveLoading, setAutoApproveLoading] = useState(false);
   const [storefrontsOpen, setStorefrontsOpen] = useState(true);
   const [storefrontsOpenLoading, setStorefrontsOpenLoading] = useState(false);
-  const [reconciliation, setReconciliation] = useState<EarningsReconciliation | null>(null);
-  const [reconciliationLoading, setReconciliationLoading] = useState(false);
-  const [reconcileApplying, setReconcileApplying] = useState(false);
-  const [backfillPreview, setBackfillPreview] = useState<EarningsBackfillPreview | null>(null);
-  const [backfillLoading, setBackfillLoading] = useState(false);
-  const [backfillApplying, setBackfillApplying] = useState(false);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -624,47 +524,6 @@ export default function StoresPage() {
     }
   }, []);
 
-  useEffect(() => {
-    const agentId = typeof selectedStore?.agentId === "object"
-      ? (selectedStore?.agentId as any)?._id
-      : selectedStore?.agentId;
-
-    if (!agentId) {
-      setReconciliation(null);
-      setBackfillPreview(null);
-      return;
-    }
-
-    let active = true;
-    setReconciliationLoading(true);
-    walletService.getEarningsReconciliation(agentId)
-      .then((data) => {
-        if (active) setReconciliation(data);
-      })
-      .catch(() => {
-        if (active) setReconciliation(null);
-      })
-      .finally(() => {
-        if (active) setReconciliationLoading(false);
-      });
-
-    setBackfillLoading(true);
-    walletService.getEarningsBackfillPreview(agentId)
-      .then((data) => {
-        if (active) setBackfillPreview(data);
-      })
-      .catch(() => {
-        if (active) setBackfillPreview(null);
-      })
-      .finally(() => {
-        if (active) setBackfillLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [selectedStore]);
-
   const openConfirm = (opts: Omit<ConfirmOpts, 'isOpen'>) => {
     setConfirmInput('');
     setConfirmOpts({ ...opts, isOpen: true });
@@ -680,83 +539,6 @@ export default function StoresPage() {
     } finally {
       setConfirmLoading(false);
     }
-  };
-
-  const updateAgentEarningsBalance = (nextBalance: number) => {
-    setSelectedStore(prev => {
-      if (!prev || typeof prev.agentId !== "object") return prev;
-      return { ...prev, agentId: { ...(prev.agentId as any), earningsBalance: nextBalance } };
-    });
-    setSelectedStoreDetail(prev => {
-      if (!prev || typeof prev.agentId !== "object") return prev;
-      return { ...prev, agentId: { ...(prev.agentId as any), earningsBalance: nextBalance } };
-    });
-  };
-
-  const handleReconcileEarnings = (agentId: string) => {
-    const delta = reconciliation?.delta ?? 0;
-    const amount = Math.abs(delta);
-    const action = delta < 0 ? "credit" : "debit";
-
-    openConfirm({
-      title: "Reconcile Earnings",
-      message: amount > 0
-        ? `This will apply a ${action} adjustment of GH₵ ${amount.toFixed(2)} to sync the balance with earned minus withdrawn.`
-        : "This will reconcile the earnings balance using the ledger calculation.",
-      confirmLabel: "Apply Adjustment",
-      variant: "primary",
-      hasInput: true,
-      inputLabel: "Reason (optional)",
-      inputPlaceholder: "Enter reason for adjustment…",
-      onConfirm: async (reason) => {
-        setReconcileApplying(true);
-        try {
-          const data = await walletService.applyEarningsReconciliation(agentId, reason);
-          setReconciliation(data);
-          updateAgentEarningsBalance(data.availableBalance);
-          addToast("Earnings reconciled", "success");
-        } catch {
-          addToast("Failed to reconcile earnings", "error");
-          throw new Error("failed");
-        } finally {
-          setReconcileApplying(false);
-        }
-      },
-    });
-  };
-
-  const handleBackfillEarnings = (agentId: string) => {
-    const count = backfillPreview?.missingCount || 0;
-    const total = backfillPreview?.totalMissingAmount || 0;
-
-    openConfirm({
-      title: "Backfill Missing Credits",
-      message: count > 0
-        ? `This will credit ${count} missing order(s) totaling GH₵ ${total.toFixed(2)}.`
-        : "No missing credits were detected for this agent.",
-      confirmLabel: "Apply Backfill",
-      variant: "primary",
-      hasInput: true,
-      inputLabel: "Reason (optional)",
-      inputPlaceholder: "Enter reason for backfill…",
-      onConfirm: async (reason) => {
-        setBackfillApplying(true);
-        try {
-          const data = await walletService.applyEarningsBackfill(agentId, reason);
-          updateAgentEarningsBalance(data.availableBalance);
-          const refreshed = await walletService.getEarningsBackfillPreview(agentId);
-          setBackfillPreview(refreshed);
-          const updatedReconciliation = await walletService.getEarningsReconciliation(agentId);
-          setReconciliation(updatedReconciliation);
-          addToast("Backfill applied", "success");
-        } catch {
-          addToast("Failed to apply backfill", "error");
-          throw new Error("failed");
-        } finally {
-          setBackfillApplying(false);
-        }
-      },
-    });
   };
 
   // Debounce search input to avoid lots of rapid requests
@@ -1471,14 +1253,6 @@ export default function StoresPage() {
         onDelete={handleDelete}
         isProcessing={!!actionLoading}
         onViewPayouts={openPayoutsForAgent}
-        reconciliation={reconciliation}
-        reconciliationLoading={reconciliationLoading}
-        onReconcile={handleReconcileEarnings}
-        reconcileApplying={reconcileApplying}
-        backfillPreview={backfillPreview}
-        backfillLoading={backfillLoading}
-        onBackfill={handleBackfillEarnings}
-        backfillApplying={backfillApplying}
       />
 
       {/* Confirm / Input Dialog */}
