@@ -173,7 +173,7 @@ export interface StorefrontAnalytics {
   /** Gross revenue — sum of customer-paid totals for paid orders */
   totalRevenue: number;
   /** Total tier cost for completed orders (what left the wallet) */
-  totalCost: number;
+  totalFulfilmentCost: number;
   /** Net profit (markup) — only from completed orders */
   totalProfit: number;
   /** Net profit from orders completed today */
@@ -578,20 +578,7 @@ class StorefrontService {
   // Analytics
   // =========================================================================
 
-  async getAnalytics(dateRange?: { startDate?: string; endDate?: string }): Promise<StorefrontAnalytics> {
-    const params = new URLSearchParams();
-    if (dateRange?.startDate) params.append('startDate', dateRange.startDate);
-    if (dateRange?.endDate) params.append('endDate', dateRange.endDate);
-    
-    const response = await apiClient.get(`${this.basePath}/agent/storefront/analytics?${params}`);
-    return response.data.data;
-  }
-
   /** Authoritative earnings ledger for the agent — sourced from EarningsTransaction records */
-  async getEarnings(): Promise<StorefrontEarnings> {
-    const response = await apiClient.get(`${this.basePath}/agent/storefront/earnings`);
-    return response.data.data;
-  }
 
   async getEarningsHistory(page = 1, limit = 20): Promise<StorefrontEarnings> {
     const params = new URLSearchParams();
@@ -600,6 +587,18 @@ class StorefrontService {
     const response = await apiClient.get(
       `${this.basePath}/agent/storefront/earnings?${params.toString()}`,
     );
+    return response.data.data;
+  }
+
+  /** Centralized dashboard data — combines analytics, earnings, orders, bundles, and payouts */
+  async getDashboardData(): Promise<{
+    analytics: StorefrontAnalytics;
+    earnings: StorefrontEarnings;
+    orders: StorefrontOrder[];
+    bundles: AgentBundle[];
+    recentPayouts: any[];
+  }> {
+    const response = await apiClient.get(`${this.basePath}/agent/storefront/dashboard`);
     return response.data.data;
   }
 

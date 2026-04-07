@@ -353,6 +353,40 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
   const savedAccount = dashboard?.savedPayoutAccount ?? null;
   const canRequestPayout = dashboard?.canRequestPayout ?? false;
 
+  const metrics = [
+    {
+      title: "Available balance",
+      value: dashboard?.availableBalance ?? 0,
+      icon: Wallet,
+      color: "green",
+    },
+    {
+      title: "Total earned",
+      value: dashboard?.totalEarned ?? 0,
+      icon: TrendingUp,
+      color: "blue",
+    },
+    {
+      title: "Wallet balance",
+      value: dashboard?.walletBalance ?? 0,
+      icon: Info,
+      color: "slate",
+    },
+    {
+      title: "Total withdrawn",
+      value: dashboard?.totalWithdrawn ?? 0,
+      icon: ArrowDownToLine,
+      color: "amber",
+    },
+    {
+      title: "Failed / rejected",
+      value: failedPayoutCount,
+      icon: XCircle,
+      color: "red",
+      isCount: true,
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -380,81 +414,23 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Available balance</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {formatCurrency(dashboard?.availableBalance ?? 0)}
-                </p>
+        {metrics.map((metric, index) => (
+          <Card key={index}>
+            <CardBody>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500">{metric.title}</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {metric.isCount ? metric.value : formatCurrency(metric.value)}
+                  </p>
+                </div>
+                <div className={`w-9 h-9 rounded-lg bg-${metric.color}-50 flex items-center justify-center`}>
+                  <metric.icon className={`w-4 h-4 text-${metric.color}-600`} />
+                </div>
               </div>
-              <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
-                <Wallet className="w-4 h-4 text-green-600" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Total earned</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {formatCurrency(dashboard?.totalEarned ?? 0)}
-                </p>
-              </div>
-              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-blue-600" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Wallet balance</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {formatCurrency(dashboard?.walletBalance ?? 0)}
-                </p>
-              </div>
-              <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center">
-                <Info className="w-4 h-4 text-slate-600" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Total withdrawn</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {formatCurrency(dashboard?.totalWithdrawn ?? 0)}
-                </p>
-              </div>
-              <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
-                <ArrowDownToLine className="w-4 h-4 text-amber-600" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Failed / rejected</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {failedPayoutCount}
-                </p>
-              </div>
-              <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center">
-                <XCircle className="w-4 h-4 text-red-600" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+            </CardBody>
+          </Card>
+        ))}
       </div>
 
       <ModeBanner autoPayoutEnabled={Boolean(dashboard?.autoPayoutEnabled)} canRequestPayout={canRequestPayout} />

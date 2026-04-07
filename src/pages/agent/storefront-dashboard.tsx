@@ -128,31 +128,26 @@ export const StorefrontDashboardPage: React.FC = () => {
     loadStorefront();
   }, [loadStorefront]);
 
-  // Load analytics, orders and bundle availability when storefront is available
-  const loadAnalyticsAndOrders = useCallback(async () => {
+  // Load dashboard data when storefront is available
+  const loadDashboardData = useCallback(async () => {
     if (!storefront) return;
     setAnalyticsLoading(true);
     try {
-      const [analyticsData, ordersData, bundlesData, earningsData] = await Promise.all([
-        storefrontService.getAnalytics(),
-        storefrontService.getMyOrders({ limit: 5, offset: 0 }),
-        storefrontService.getAvailableBundles(),
-        storefrontService.getEarnings().catch(() => null),
-      ]);
-      setAnalytics(analyticsData);
-      setRecentOrders(ordersData.orders || []);
-      setAvailableBundles(bundlesData);
-      if (earningsData) setEarnings(earningsData);
+      const dashboardData = await storefrontService.getDashboardData();
+      setAnalytics(dashboardData.analytics);
+      setRecentOrders(dashboardData.orders || []);
+      setAvailableBundles(dashboardData.bundles);
+      if (dashboardData.earnings) setEarnings(dashboardData.earnings);
     } catch (error) {
-      console.error("Failed to load analytics:", error);
+      console.error("Failed to load dashboard data:", error);
     } finally {
       setAnalyticsLoading(false);
     }
   }, [storefront]);
 
   useEffect(() => {
-    loadAnalyticsAndOrders();
-  }, [loadAnalyticsAndOrders]);
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   const handleStorefrontCreated = (newStorefront: StorefrontData) => {
     setStorefront(newStorefront);
@@ -478,7 +473,7 @@ export const StorefrontDashboardPage: React.FC = () => {
               />
               <StatCard
                 title="Net Profit (All Time)"
-                value={analyticsLoading ? "—" : formatCurrency(analytics?.totalProfit ?? 0)}
+                value={analyticsLoading ? "—" : formatCurrency(earnings?.totalEarned ?? 0)}
                 subtitle="Secured (completed orders)"
                 icon={<TrendingUp className="w-4 h-4" />}
                 size="md"
@@ -619,7 +614,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                           <span className="text-sm text-gray-600">Fulfilment Cost</span>
                         </div>
                         <span className="text-sm font-semibold text-gray-900">
-                          − {formatCurrency(analytics.totalCost)}
+                          − {formatCurrency(analytics.totalFulfilmentCost)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between py-2.5">
@@ -908,7 +903,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                       {urlCopied ? "Copied!" : "Copy Link"}
                     </Button>
                     <Button
-                      onClick={loadAnalyticsAndOrders}
+                      onClick={loadDashboardData}
                       className="w-full justify-start"
                       variant="outline"
                       size="sm"
