@@ -96,21 +96,40 @@ function userEmail(user: unknown) {
 
 function destLabel(dest?: PayoutRequestItem['destination']) {
   if (!dest) return '—';
-  if (dest.type === 'mobile_money') return `${dest.mobileProvider ?? ''} ${dest.phoneNumber ?? ''}`.trim();
-  return `Bank · ${dest.accountNumber ?? ''}`;
+
+  const name = dest.accountName || dest.recipientName;
+  if (dest.type === 'mobile_money') {
+    const provider = dest.mobileProvider ? `${dest.mobileProvider} ` : '';
+    const number = dest.phoneNumber || '—';
+    return (
+      <div className="space-y-0.5">
+        <div>{`${provider}${number}`.trim()}</div>
+        {name ? <div className="text-xs text-gray-500">{name}</div> : null}
+      </div>
+    );
+  }
+
+  const account = dest.accountNumber || '—';
+  const bank = dest.bankCode ? ` (${dest.bankCode})` : '';
+  return (
+    <div className="space-y-0.5">
+      <div>{`${account}${bank}`.trim()}</div>
+      {name ? <div className="text-xs text-gray-500">{name}</div> : null}
+    </div>
+  );
 }
 
 type BadgeColor = 'success' | 'warning' | 'error' | 'info' | 'gray';
 
 function statusColor(s: string): BadgeColor {
   switch (s) {
-    case 'pending':    return 'warning';
-    case 'approved':   return 'info';
+    case 'pending': return 'warning';
+    case 'approved': return 'info';
     case 'processing': return 'info';
-    case 'completed':  return 'success';
+    case 'completed': return 'success';
     case 'rejected':
-    case 'failed':     return 'error';
-    default:           return 'gray';
+    case 'failed': return 'error';
+    default: return 'gray';
   }
 }
 
@@ -128,24 +147,24 @@ function statusLabel(s: string) {
 
 function statusIcon(s: string) {
   switch (s) {
-    case 'pending':    return <Clock className="w-3 h-3" />;
-    case 'approved':   return <CheckCircle2 className="w-3 h-3" />;
+    case 'pending': return <Clock className="w-3 h-3" />;
+    case 'approved': return <CheckCircle2 className="w-3 h-3" />;
     case 'processing': return <Loader2 className="w-3 h-3 animate-spin" />;
-    case 'completed':  return <CheckCircle2 className="w-3 h-3" />;
+    case 'completed': return <CheckCircle2 className="w-3 h-3" />;
     case 'rejected':
-    case 'failed':     return <XCircle className="w-3 h-3" />;
-    default:           return null;
+    case 'failed': return <XCircle className="w-3 h-3" />;
+    default: return null;
   }
 }
 
 const STATUS_OPTIONS = [
-  { value: 'all',        label: 'All statuses' },
-  { value: 'pending',    label: 'Pending' },
-  { value: 'approved',   label: 'Approved' },
+  { value: 'all', label: 'All statuses' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
   { value: 'processing', label: 'Processing' },
-  { value: 'completed',  label: 'Completed' },
-  { value: 'rejected',   label: 'Rejected' },
-  { value: 'failed',     label: 'Failed' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'failed', label: 'Failed' },
 ];
 
 // ─── Mode banner ──────────────────────────────────────────────────────────────
@@ -229,8 +248,8 @@ const ActionCell: React.FC<ActionCellProps> = ({
   // Auto mode: no manual actions (transfers happen automatically)
   if (autoMode) {
     if (status === 'processing') return <span className="text-xs text-blue-600 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Processing…</span>;
-    if (status === 'completed')  return <span className="text-xs text-green-600">Completed</span>;
-    if (status === 'failed')     return <span className="text-xs text-red-600">Failed — earnings refunded</span>;
+    if (status === 'completed') return <span className="text-xs text-green-600">Completed</span>;
+    if (status === 'failed') return <span className="text-xs text-red-600">Failed — earnings refunded</span>;
     return null;
   }
 
@@ -299,18 +318,18 @@ const ActionCell: React.FC<ActionCellProps> = ({
 export default function PayoutManagementPage() {
   const { addToast } = useToast();
 
-  const [payouts, setPayouts]         = useState<PayoutRequestItem[]>([]);
-  const [loading, setLoading]         = useState(false);
+  const [payouts, setPayouts] = useState<PayoutRequestItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [pagination, setPagination]   = useState({ page: 1, limit: 25, total: 0, pages: 0 });
-  const [modeStatus, setModeStatus]   = useState<AutoPayoutStatus | null>(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 25, total: 0, pages: 0 });
+  const [modeStatus, setModeStatus] = useState<AutoPayoutStatus | null>(null);
   const [modeLoading, setModeLoading] = useState(true);
 
   const [statusFilter, setStatusFilter] = useState('all');
-  const [searchTerm, setSearchTerm]     = useState('');
-  const [dateRange, setDateRange]       = useState({ startDate: '', endDate: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
 
-  const [confirm, setConfirm]    = useState<ConfirmState>({ open: false, type: null });
+  const [confirm, setConfirm] = useState<ConfirmState>({ open: false, type: null });
   const [confirmInput, setConfirmInput] = useState('');
 
   // ── Load mode status ────────────────────────────────────────────────────────
@@ -379,8 +398,8 @@ export default function PayoutManagementPage() {
       void refresh();
       type ErrShape = { response?: { data?: { code?: string; message?: string } } };
       const apiErr = (err as ErrShape).response?.data;
-      const code   = apiErr?.code;
-      const msg    = apiErr?.message ?? (err instanceof Error ? err.message : 'Transfer failed');
+      const code = apiErr?.code;
+      const msg = apiErr?.message ?? (err instanceof Error ? err.message : 'Transfer failed');
 
       if (code === 'NOT_APPROVED') {
         addToast('Approve this payout first before sending the transfer.', 'warning');
@@ -428,13 +447,14 @@ export default function PayoutManagementPage() {
   };
 
   // ── Derived ─────────────────────────────────────────────────────────────────
-  const isAutoMode        = modeStatus?.autoPayoutEnabled && modeStatus?.canAutoPayout;
-  const psConfigured      = modeStatus?.paystackConfigured ?? false;
-  const hasFilters        = statusFilter !== 'all' || !!searchTerm.trim() || !!dateRange.startDate || !!dateRange.endDate;
-  const pendingCount      = payouts.filter(p => p.status === 'pending').length;
-  const approvedCount     = payouts.filter(p => p.status === 'approved').length;
-  const processingCount   = payouts.filter(p => p.status === 'processing').length;
-  const completedCount    = payouts.filter(p => p.status === 'completed').length;
+  const isAutoMode = modeStatus?.autoPayoutEnabled && modeStatus?.canAutoPayout;
+  const psConfigured = modeStatus?.paystackConfigured ?? false;
+  const hasFilters = statusFilter !== 'all' || !!searchTerm.trim() || !!dateRange.startDate || !!dateRange.endDate;
+  const pendingCount = payouts.filter(p => p.status === 'pending').length;
+  const approvedCount = payouts.filter(p => p.status === 'approved').length;
+  const processingCount = payouts.filter(p => p.status === 'processing').length;
+  const completedCount = payouts.filter(p => p.status === 'completed').length;
+  const failedCount = payouts.filter(p => p.status === 'failed').length;
 
   // ── Confirm dialog body text ────────────────────────────────────────────────
   const confirmContent = useMemo(() => {
@@ -547,10 +567,10 @@ export default function PayoutManagementPage() {
                 {modeLoading
                   ? 'Loading mode…'
                   : isAutoMode
-                  ? 'Auto mode — transfers process automatically'
-                  : psConfigured
-                  ? 'Semi-auto mode — approve then send via Paystack'
-                  : 'Manual mode — approve then send outside platform'}
+                    ? 'Auto mode — transfers process automatically'
+                    : psConfigured
+                      ? 'Semi-auto mode — approve then send via Paystack'
+                      : 'Manual mode — approve then send outside platform'}
               </p>
             </div>
           </div>
@@ -568,10 +588,11 @@ export default function PayoutManagementPage() {
         {/* Stats strip */}
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
-            { label: 'Total',      value: pagination.total,  icon: <DollarSign className="w-4 h-4" />, bg: 'bg-white/15' },
-            { label: 'Pending',    value: pendingCount,       icon: <Clock className="w-4 h-4" />,       bg: 'bg-amber-500/30 border border-amber-400/30' },
-            { label: 'Processing', value: processingCount,   icon: <Loader2 className="w-4 h-4" />,     bg: 'bg-blue-500/30 border border-blue-400/30' },
-            { label: 'Completed',  value: completedCount,    icon: <CheckCircle2 className="w-4 h-4" />, bg: 'bg-green-500/30 border border-green-400/30' },
+            { label: 'Total', value: pagination.total, icon: <DollarSign className="w-4 h-4" />, bg: 'bg-white/15' },
+            { label: 'Pending', value: pendingCount, icon: <Clock className="w-4 h-4" />, bg: 'bg-amber-500/30 border border-amber-400/30' },
+            { label: 'Processing', value: processingCount, icon: <Loader2 className="w-4 h-4" />, bg: 'bg-blue-500/30 border border-blue-400/30' },
+            { label: 'Completed', value: completedCount, icon: <CheckCircle2 className="w-4 h-4" />, bg: 'bg-green-500/30 border border-green-400/30' },
+            { label: 'Failed', value: failedCount, icon: <XCircle className="w-4 h-4" />, bg: 'bg-red-500/30 border border-red-400/30' },
           ].map(({ label, value, icon, bg }) => (
             <div key={label} className={`${bg} rounded-lg px-3 py-2.5 flex items-center gap-2`}>
               <span className="text-white/70 shrink-0">{icon}</span>
@@ -751,10 +772,10 @@ export default function PayoutManagementPage() {
                 const p = confirm.payout;
                 if (!p) return;
                 switch (confirm.type) {
-                  case 'approve':  await handleApprove(p); break;
-                  case 'process':  await handleProcess(p); break;
+                  case 'approve': await handleApprove(p); break;
+                  case 'process': await handleProcess(p); break;
                   case 'markPaid': await handleMarkPaid(p, confirmInput || undefined); break;
-                  case 'reject':   await handleReject(p, confirmInput || undefined); break;
+                  case 'reject': await handleReject(p, confirmInput || undefined); break;
                 }
               }}
             >

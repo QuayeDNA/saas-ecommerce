@@ -29,6 +29,32 @@ const STATUS_OPTIONS = [
   { value: 'rejected', label: 'Rejected' },
 ];
 
+function renderPayoutDestination(destination: PayoutRequestItem['destination']) {
+  if (!destination) return <span className="text-xs text-gray-500">—</span>;
+
+  if (destination.type === 'mobile_money') {
+    const provider = destination.mobileProvider ? `${destination.mobileProvider} · ` : '';
+    const number = destination.phoneNumber || '—';
+    const name = destination.accountName || destination.recipientName;
+    return (
+      <div className="text-xs text-gray-600">
+        <div>{provider}{number}</div>
+        {name ? <div className="text-gray-500">{name}</div> : null}
+      </div>
+    );
+  }
+
+  const account = destination.accountNumber || '—';
+  const bank = destination.bankCode ? ` (${destination.bankCode})` : '';
+  const name = destination.accountName || destination.recipientName;
+  return (
+    <div className="text-xs text-gray-600">
+      <div>{account}{bank}</div>
+      {name ? <div className="text-gray-500">{name}</div> : null}
+    </div>
+  );
+}
+
 export default function SuperAdminPayoutsPage() {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -159,6 +185,7 @@ export default function SuperAdminPayoutsPage() {
                     <TableHeaderCell>Fee</TableHeaderCell>
                     <TableHeaderCell>Net</TableHeaderCell>
                     <TableHeaderCell>Destination</TableHeaderCell>
+                    <TableHeaderCell>Account</TableHeaderCell>
                     <TableHeaderCell>Status</TableHeaderCell>
                     <TableHeaderCell>Actions</TableHeaderCell>
                   </TableRow>
@@ -185,8 +212,11 @@ export default function SuperAdminPayoutsPage() {
                       <TableCell className="font-medium text-green-600">
                         {p.netAmount != null ? `GH₵ ${p.netAmount.toFixed(2)}` : '—'}
                       </TableCell>
+                      <TableCell className="text-xs truncate max-w-[240px]">
+                        {renderPayoutDestination(p.destination)}
+                      </TableCell>
                       <TableCell className="text-xs truncate max-w-[200px]">
-                        {p.destination.type === 'mobile_money' ? `${p.destination.mobileProvider} • ${p.destination.phoneNumber}` : `Bank • ${p.destination.accountNumber || ''}`}
+                        {p.destination.accountName || p.destination.recipientName || '—'}
                       </TableCell>
                       <TableCell><Badge colorScheme={badgeColor(p.status)}>{p.status}</Badge></TableCell>
                       <TableCell>

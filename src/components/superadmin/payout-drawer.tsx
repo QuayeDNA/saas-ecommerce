@@ -42,8 +42,13 @@ function fmt(n: number) {
 
 function destLabel(dest?: PayoutRequestItem['destination']) {
     if (!dest) return '—';
-    if (dest.type === 'mobile_money') return `${dest.mobileProvider ?? ''} · ${dest.phoneNumber ?? ''}`.trim();
-    return `Bank · ${dest.accountNumber ?? ''}`;
+    const name = dest.accountName || dest.recipientName;
+    if (dest.type === 'mobile_money') {
+        const base = `${dest.mobileProvider ?? ''} · ${dest.phoneNumber ?? ''}`.trim();
+        return name ? `${base} • ${name}` : base;
+    }
+    const base = `Bank · ${dest.accountNumber ?? ''}`.trim();
+    return name ? `${base} • ${name}` : base;
 }
 
 type BadgeColor = 'success' | 'warning' | 'error' | 'info' | 'gray';
@@ -376,6 +381,14 @@ export const PayoutDrawer: React.FC<PayoutDrawerProps> = ({
                                                 {destLabel(p.destination)}
                                             </div>
                                         </div>
+                                        {(p.destination?.accountName || p.destination?.recipientName) && (
+                                            <div>
+                                                <div className="text-gray-400 mb-0.5">Account name</div>
+                                                <div className="font-medium text-gray-800">
+                                                    {p.destination?.accountName || p.destination?.recipientName}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div>
                                             <div className="text-gray-400 mb-0.5">Transfer fee</div>
                                             <div className="font-medium text-orange-600">

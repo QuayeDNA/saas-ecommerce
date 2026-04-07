@@ -212,6 +212,41 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
   const formatCurrency = (value: number) =>
     `GH₵ ${value.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+  const failedPayoutCount = useMemo(() => {
+    return (dashboard?.recentPayouts ?? []).filter((p) =>
+      p.status === 'failed' || p.status === 'rejected',
+    ).length;
+  }, [dashboard?.recentPayouts]);
+
+  const payoutAccountName = (destination?: PayoutDestination) =>
+    destination?.accountName || destination?.recipientName || undefined;
+
+  const renderPayoutDestination = (destination?: PayoutDestination) => {
+    if (!destination) return '—';
+
+    if (destination.type === 'mobile_money') {
+      const provider = destination.mobileProvider ? `${destination.mobileProvider} · ` : '';
+      const number = destination.phoneNumber || '—';
+      const name = payoutAccountName(destination);
+      return (
+        <div className="text-xs text-gray-600">
+          <div>{provider}{number}</div>
+          {name ? <div className="text-gray-500">{name}</div> : null}
+        </div>
+      );
+    }
+
+    const account = destination.accountNumber || '—';
+    const bank = destination.bankCode ? ` (${destination.bankCode})` : '';
+    const name = payoutAccountName(destination);
+    return (
+      <div className="text-xs text-gray-600">
+        <div>{account}{bank}</div>
+        {name ? <div className="text-gray-500">{name}</div> : null}
+      </div>
+    );
+  };
+
   // canAutoPayout = setting enabled AND Paystack configured — the definitive mode flag.
   const isAutoMode = dashboard?.canAutoPayout ?? false;
 
@@ -344,7 +379,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardBody>
             <div className="flex items-center justify-between">
@@ -405,6 +440,21 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
             </div>
           </CardBody>
         </Card>
+        <Card>
+          <CardBody className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Failed / rejected</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {failedPayoutCount}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center">
+                <XCircle className="w-4 h-4 text-red-600" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
       </div>
 
       <ModeBanner autoPayoutEnabled={Boolean(dashboard?.autoPayoutEnabled)} canRequestPayout={canRequestPayout} />
@@ -461,9 +511,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                               <p className="text-xs text-gray-500">
                                 {new Date(p.requestedAt ?? p.createdAt).toLocaleDateString()}
                               </p>
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                {p.destination?.type === 'mobile_money' ? 'Mobile Money' : 'Bank'}
-                              </p>
+                              {renderPayoutDestination(p.destination)}
                             </div>
                           </div>
                           <div className="text-right shrink-0">
@@ -493,6 +541,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                       <TableHeaderCell>Fee</TableHeaderCell>
                       <TableHeaderCell>You Receive</TableHeaderCell>
                       <TableHeaderCell>Destination</TableHeaderCell>
+                      <TableHeaderCell>Account</TableHeaderCell>
                       <TableHeaderCell>Status</TableHeaderCell>
                       <TableHeaderCell>Reference</TableHeaderCell>
                     </TableRow>
@@ -516,7 +565,10 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                             {p.netAmount ? `GH₵ ${p.netAmount.toFixed(2)}` : '—'}
                           </TableCell>
                           <TableCell className="text-xs text-gray-600">
-                            {p.destination?.type === 'mobile_money' ? 'Mobile Money' : 'Bank'}
+                            {renderPayoutDestination(p.destination)}
+                          </TableCell>
+                          <TableCell className="text-xs text-gray-600 truncate max-w-[180px]">
+                            {payoutAccountName(p.destination) || '—'}
                           </TableCell>
                           <TableCell>
                             <Badge colorScheme={cfg.color} variant="subtle" size="sm">
@@ -531,7 +583,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                     })}
                     {(!dashboard || dashboard.recentPayouts.length === 0) && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-sm text-gray-500 py-8">
+                        <TableCell colSpan={8} className="text-center text-sm text-gray-500 py-8">
                           No payouts yet. Start earning from your storefront sales!
                         </TableCell>
                       </TableRow>
