@@ -23,6 +23,7 @@ import {
 import { Home, Plus, LogOut, ChevronRight, Check } from "lucide-react";
 import { useState } from "react";
 import { BryteLinksSvgIcon } from "./common/BryteLinksSvgLogo";
+import { FaChartLine } from "react-icons/fa6";
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -141,11 +142,11 @@ const getSuperAdminNavItems = (): NavItem[] => [
     path: "/superadmin",
     icon: <FaTachometerAlt />,
   },
-  // {
-  //   label: "Analytics",
-  //   path: "/superadmin/analytics",
-  //   icon: <FaChartLine />,
-  // },
+  {
+    label: "Analytics",
+    path: "/superadmin/analytics",
+    icon: <FaChartLine />,
+  },
   {
     label: "Users",
     path: "/superadmin/users",
