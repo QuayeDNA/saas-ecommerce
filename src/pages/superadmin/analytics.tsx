@@ -311,6 +311,11 @@ export default function SuperAdminAnalyticsPage() {
                 <>
                     <AnalyticsKpiGrid cards={overviewCards} />
 
+                    <AnalyticsInsightsStage
+                        loading={sectionLoading}
+                        insights={data.insights || []}
+                    />
+
                     <AnalyticsTrendStage
                         loading={sectionLoading}
                         labels={data.charts.labels || []}
@@ -333,11 +338,6 @@ export default function SuperAdminAnalyticsPage() {
                         pendingCommissionAmount={data.commissions.pendingAmount || 0}
                         payoutQueueCount={data.payouts?.queuedCount || 0}
                         netFlow={data.earnings?.period.netFlow || 0}
-                    />
-
-                    <AnalyticsInsightsStage
-                        loading={sectionLoading}
-                        insights={data.insights || []}
                     />
                 </>
             ) : (
