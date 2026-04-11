@@ -586,7 +586,7 @@ export default function PayoutManagementPage() {
         </div>
 
         {/* Stats strip */}
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
           {[
             { label: 'Total', value: pagination.total, icon: <DollarSign className="w-4 h-4" />, bg: 'bg-white/15' },
             { label: 'Pending', value: pendingCount, icon: <Clock className="w-4 h-4" />, bg: 'bg-amber-500/30 border border-amber-400/30' },

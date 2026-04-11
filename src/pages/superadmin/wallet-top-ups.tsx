@@ -392,6 +392,7 @@ export default function WalletTopUpsPage() {
                 value: analytics.users.total,
                 sub: `${analytics.users.withBalance} with balance`,
                 icon: <FaUsers />,
+                colorClass: "bg-slate-700/20 border border-slate-600/20",
                 raw: true,
               },
               {
@@ -399,6 +400,7 @@ export default function WalletTopUpsPage() {
                 value: fmt(analytics.balance.total),
                 sub: `Avg ${fmt(analytics.balance.average)}`,
                 icon: <FaChartBar />,
+                colorClass: "bg-blue-500/20 border border-blue-400/30",
                 raw: false,
               },
               {
@@ -406,6 +408,7 @@ export default function WalletTopUpsPage() {
                 value: analytics.transactions.credits.count,
                 sub: fmt(analytics.transactions.credits.total),
                 icon: <FaArrowUp />,
+                colorClass: "bg-green-500/30 border border-green-400/30",
                 raw: true,
               },
               {
@@ -413,14 +416,13 @@ export default function WalletTopUpsPage() {
                 value: pendingRequests.length,
                 sub: pendingRequests.length > 0 ? "Needs attention" : "All clear",
                 icon: <FaClock />,
+                colorClass: pendingRequests.length > 0 ? "bg-yellow-500/30 border border-yellow-400/30" : "bg-white/15 border border-slate-200",
                 raw: true,
-                highlight: pendingRequests.length > 0,
               },
             ].map((stat) => (
               <div
                 key={stat.label}
-                className={`rounded-lg px-3 py-2.5 flex items-center gap-2 ${stat.highlight ? "bg-yellow-500/30 border border-yellow-400/40" : "bg-white/15"
-                  }`}
+                className={`rounded-lg px-3 py-2.5 flex items-center gap-2 ${stat.colorClass}`}
               >
                 <span className="text-white/70 text-sm flex-shrink-0">{stat.icon}</span>
                 <div className="min-w-0">
