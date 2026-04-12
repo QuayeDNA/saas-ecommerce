@@ -17,7 +17,7 @@ export const colors = {
     textLight: '#64748b', // Light text for secondary content
     white: '#ffffff',
   },
-  
+
   // Primary color palette based on #142850
   primary: {
     50: '#f0f4f8', // Very light blue-gray
@@ -32,7 +32,7 @@ export const colors = {
     900: '#030a0c', // Darkest
     950: '#020608', // Almost black
   },
-  
+
   // Secondary colors - complementary to primary
   secondary: {
     50: '#f0f9ff', // Very light blue
@@ -47,7 +47,7 @@ export const colors = {
     900: '#0c4a6e', // Darkest
     950: '#082f49', // Almost black
   },
-  
+
   // Accent colors - teal/green for success states
   accent: {
     50: '#f0fdfa', // Very light teal
@@ -62,7 +62,7 @@ export const colors = {
     900: '#134e4a', // Darkest
     950: '#042f2e', // Almost black
   },
-  
+
   // Network-specific colors (fixed for brand recognition)
   network: {
     mtn: {
@@ -84,7 +84,7 @@ export const colors = {
       icon: '#3B82F6', // Blue icon
     },
   },
-  
+
   // Neutrals - updated for better contrast with primary
   gray: {
     50: '#f8fafc', // Very light gray
@@ -99,7 +99,7 @@ export const colors = {
     900: '#0f172a', // Darkest
     950: '#020617', // Almost black
   },
-  
+
   // System colors (fixed)
   system: {
     success: '#10b981', // Green 500
