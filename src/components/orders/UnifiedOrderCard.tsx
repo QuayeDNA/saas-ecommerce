@@ -182,7 +182,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      onUpdateStatus(order._id!, newStatus);
+      await onUpdateStatus(order._id!, newStatus);
       setStatusDropdownOpen(false);
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -464,8 +464,8 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                         key={option.value}
                         onClick={() => handleStatusChange(option.value)}
                         className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center gap-2 ${option.value === order.status
-                            ? "bg-blue-50 text-blue-700 font-medium"
-                            : "text-gray-700"
+                          ? "bg-blue-50 text-blue-700 font-medium"
+                          : "text-gray-700"
                           }`}
                       >
                         <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${option.color}`} />
