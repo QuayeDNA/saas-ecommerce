@@ -353,7 +353,7 @@ export default function WalletTopUpsPage() {
     <div className="space-y-4 pb-6">
       {/* ── Page header ─────────────────────────────────────────────────────── */}
       <div
-        className="rounded-xl p-4 sm:p-6 text-white"
+        className="rounded-2xl p-4 sm:p-6 text-white shadow-xl"
         style={{ background: 'linear-gradient(to right, var(--color-primary-500), var(--color-primary-700))' }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -448,11 +448,11 @@ export default function WalletTopUpsPage() {
 
       {/* ── Pending top-up requests banner ──────────────────────────────────── */}
       {pendingRequests.length > 0 && (
-        <Card variant="outlined" className="border-yellow-300 bg-yellow-50">
-          <CardHeader>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-2 flex-1">
-                <div className="p-1.5 bg-yellow-100 rounded-lg">
+        <Card variant="outlined" className="border-yellow-300 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="p-2 bg-yellow-100 rounded-xl border border-yellow-200">
                   <FaClock className="text-yellow-600 text-sm" />
                 </div>
                 <div>
@@ -462,7 +462,9 @@ export default function WalletTopUpsPage() {
                   </p>
                 </div>
               </div>
-              <Badge colorScheme="warning">{pendingRequests.length} pending</Badge>
+              <Badge colorScheme="warning" className="bg-yellow-100 text-yellow-800 border-yellow-300 rounded-lg px-2 py-1">
+                {pendingRequests.length} pending
+              </Badge>
             </div>
           </CardHeader>
           <CardBody className="pt-0">
@@ -471,22 +473,25 @@ export default function WalletTopUpsPage() {
               {pendingRequests.map((req) => {
                 const u = typeof req.user === "object" ? req.user : null;
                 return (
-                  <div key={req._id} className="bg-white rounded-lg border border-yellow-200 p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
+                  <div key={req._id} className="bg-white rounded-xl border border-yellow-200 p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
                         <p className="font-semibold text-sm text-gray-900">{u?.fullName ?? "Unknown"}</p>
-                        {u?.agentCode && <p className="text-xs text-blue-600 font-mono">{u.agentCode}</p>}
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        {u?.agentCode && <p className="text-xs text-blue-600 font-mono mt-0.5">{u.agentCode}</p>}
+                        <p className="text-xs text-gray-500 mt-1">
                           {new Date(req.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                         </p>
-                        {req.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{req.description}</p>}
+                        {req.description && <p className="text-xs text-gray-600 mt-1 line-clamp-2 bg-gray-50 rounded-lg p-2 border">{req.description}</p>}
                       </div>
-                      <p className="text-base font-bold text-green-600 whitespace-nowrap flex-shrink-0">{fmt(req.amount)}</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-base font-bold text-green-600 whitespace-nowrap">{fmt(req.amount)}</p>
+                        <p className="text-xs text-green-500 font-medium">Top-up</p>
+                      </div>
                     </div>
                     <div className="flex gap-2 mt-3">
                       <Button
                         size="xs"
-                        className="flex-1"
+                        className="flex-1 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-sm"
                         onClick={() => handleProcessRequest(req._id, true)}
                         isLoading={processingId === req._id}
                         disabled={!!processingId}
@@ -496,7 +501,7 @@ export default function WalletTopUpsPage() {
                       <Button
                         size="xs"
                         variant="danger"
-                        className="flex-1"
+                        className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm"
                         onClick={() => handleProcessRequest(req._id, false)}
                         isLoading={processingId === req._id}
                         disabled={!!processingId}
@@ -609,11 +614,11 @@ export default function WalletTopUpsPage() {
       )}
 
       {/* ── Users list ──────────────────────────────────────────────────────── */}
-      <Card noPadding>
+      <Card noPadding className="bg-gradient-to-r from-primary-500 to-primary-700 text-white overflow-hidden rounded-xl shadow-lg">
         {loading ? (
           <div className="p-4 space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 border border-gray-100 rounded-lg">
+              <div key={i} className="flex items-center gap-3 p-3 border border-white/20 rounded-lg">
                 <Skeleton variant="circular" width={40} height={40} />
                 <div className="flex-1 space-y-1.5">
                   <Skeleton height="0.875rem" width="45%" />
@@ -628,12 +633,12 @@ export default function WalletTopUpsPage() {
             ))}
           </div>
         ) : users.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
-            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
-              <FaUsers className="text-2xl text-gray-400" />
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-white/60">
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+              <FaUsers className="text-2xl text-white/60" />
             </div>
             <div className="text-center">
-              <p className="font-medium text-gray-600">No users found</p>
+              <p className="font-medium text-white/80">No users found</p>
               <p className="text-sm mt-0.5">
                 {hasFilters ? "Try adjusting your filters." : "No users in the system yet."}
               </p>
@@ -647,36 +652,39 @@ export default function WalletTopUpsPage() {
         ) : (
           <>
             {/* Mobile card view */}
-            <div className="sm:hidden divide-y divide-gray-100">
+            <div className="sm:hidden divide-y divide-white/20">
               {users.map((user) => (
-                <div key={user._id} className="p-4">
+                <div key={user._id} className="p-4 hover:bg-white/5 transition-colors rounded-lg mx-2 first:mt-2 last:mb-2">
                   <div className="flex items-start gap-3">
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg"
                       style={{ background: 'linear-gradient(to bottom right, var(--color-primary-400), var(--color-primary-700))' }}
                     >
                       {user.fullName.charAt(0)}{user.fullName.split(" ")[1]?.charAt(0) ?? ""}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-sm text-gray-900">{user.fullName}</p>
-                        <Badge colorScheme={userTypeBadgeColor(user.userType)} size="xs">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <p className="font-semibold text-sm text-white">{user.fullName}</p>
+                        <Badge colorScheme={userTypeBadgeColor(user.userType)} size="xs" className="bg-white/20 text-white border-white/30">
                           {user.userType.replace(/_/g, " ")}
                         </Badge>
-                        <Badge colorScheme={statusBadgeColor(user.status)} size="xs">{user.status}</Badge>
+                        <Badge colorScheme={statusBadgeColor(user.status)} size="xs" className="bg-white/20 text-white border-white/30">
+                          {user.status}
+                        </Badge>
                       </div>
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      <p className="text-xs text-white/70 truncate">{user.email}</p>
                       {user.agentCode && (
-                        <p className="text-xs text-blue-600 font-mono mt-0.5">{user.agentCode}</p>
+                        <p className="text-xs text-blue-200 font-mono mt-0.5">{user.agentCode}</p>
                       )}
-                      <div className="mt-2 flex items-center justify-between gap-2">
-                        <div className="bg-gray-50 rounded-lg px-2.5 py-1.5">
-                          <p className="text-[10px] text-gray-500 uppercase tracking-wide">Balance</p>
-                          <p className="font-bold text-sm text-gray-900">{fmt(user.walletBalance || 0)}</p>
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <div className="bg-white/15 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+                          <p className="text-[10px] text-white/80 uppercase tracking-wide">Balance</p>
+                          <p className="font-bold text-sm text-white">{fmt(user.walletBalance || 0)}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button
                             size="xs"
+                            className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg"
                             onClick={() => {
                               setSelectedUser(user);
                               setTransactionModal({ isOpen: true, mode: "credit" });
@@ -687,6 +695,7 @@ export default function WalletTopUpsPage() {
                           <Button
                             size="xs"
                             variant="danger"
+                            className="bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-lg"
                             onClick={() => {
                               setSelectedUser(user);
                               setTransactionModal({ isOpen: true, mode: "debit" });
@@ -716,7 +725,7 @@ export default function WalletTopUpsPage() {
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
-                    <TableRow key={user._id} className="hover:bg-gray-50/70 transition-colors">
+                    <TableRow key={user._id} className="hover:bg-white/10 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div
@@ -726,34 +735,37 @@ export default function WalletTopUpsPage() {
                             {user.fullName.charAt(0)}{user.fullName.split(" ")[1]?.charAt(0) ?? ""}
                           </div>
                           <div className="min-w-0">
-                            <div className="font-semibold text-sm text-gray-900 truncate">{user.fullName}</div>
-                            <div className="text-xs text-gray-400 truncate">{user.email}</div>
+                            <div className="font-semibold text-sm text-white truncate">{user.fullName}</div>
+                            <div className="text-xs text-white/70 truncate">{user.email}</div>
                             {user.agentCode && (
-                              <div className="text-xs text-blue-600 font-mono">{user.agentCode}</div>
+                              <div className="text-xs text-blue-300 font-mono">{user.agentCode}</div>
                             )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge colorScheme={userTypeBadgeColor(user.userType)}>
+                        <Badge colorScheme={userTypeBadgeColor(user.userType)} className="bg-white/20 text-white border-white/30 hover:bg-white/30">
                           {user.userType.replace(/_/g, " ")}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <Badge colorScheme={statusBadgeColor(user.status)}>{user.status}</Badge>
+                        <Badge colorScheme={statusBadgeColor(user.status)} className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                          {user.status}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-bold text-sm text-gray-900 whitespace-nowrap">{fmt(user.walletBalance || 0)}</p>
+                          <p className="font-bold text-sm text-white whitespace-nowrap">{fmt(user.walletBalance || 0)}</p>
                           {(user.walletBalance ?? 0) === 0 && (
-                            <p className="text-[10px] text-red-500">Zero balance</p>
+                            <p className="text-[10px] text-red-200">Zero balance</p>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1.5">
+                        <div className="flex gap-2">
                           <Button
                             size="xs"
+                            className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg rounded-lg"
                             onClick={() => {
                               setSelectedUser(user);
                               setTransactionModal({ isOpen: true, mode: "credit" });
@@ -765,6 +777,7 @@ export default function WalletTopUpsPage() {
                           <Button
                             size="xs"
                             variant="danger"
+                            className="bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-lg rounded-lg"
                             onClick={() => {
                               setSelectedUser(user);
                               setTransactionModal({ isOpen: true, mode: "debit" });
@@ -784,7 +797,7 @@ export default function WalletTopUpsPage() {
         )}
 
         {pagination.pages > 1 && !loading && (
-          <div className="border-t px-4 py-3">
+          <div className="border-t border-white/20 px-4 py-3">
             <Pagination
               currentPage={pagination.page}
               totalPages={pagination.pages}

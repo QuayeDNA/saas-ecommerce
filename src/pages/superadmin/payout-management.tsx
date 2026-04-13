@@ -255,11 +255,11 @@ const ActionCell: React.FC<ActionCellProps> = ({
 
   if (status === 'pending') {
     return (
-      <div className="flex flex-wrap gap-1.5">
-        <Button size="xs" variant="success" onClick={() => onApprove(payout)} disabled={loading}>
+      <div className="flex flex-wrap gap-2">
+        <Button size="xs" className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg rounded-lg" onClick={() => onApprove(payout)} disabled={loading}>
           Approve
         </Button>
-        <Button size="xs" variant="danger" onClick={() => onReject(payout)} disabled={loading}>
+        <Button size="xs" variant="danger" className="bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-lg rounded-lg" onClick={() => onReject(payout)} disabled={loading}>
           Reject
         </Button>
       </div>
@@ -268,16 +268,16 @@ const ActionCell: React.FC<ActionCellProps> = ({
 
   if (status === 'approved') {
     return (
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2">
         {paystackConfigured && (
-          <Button size="xs" onClick={() => onProcess(payout)} disabled={loading}>
+          <Button size="xs" className="bg-blue-500 hover:bg-blue-600 text-white border-blue-400 shadow-lg rounded-lg" onClick={() => onProcess(payout)} disabled={loading}>
             <Send className="w-3 h-3 mr-1" />Send via Paystack
           </Button>
         )}
-        <Button size="xs" variant="success" onClick={() => onMarkPaid(payout)} disabled={loading}>
+        <Button size="xs" className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg rounded-lg" onClick={() => onMarkPaid(payout)} disabled={loading}>
           Mark Paid
         </Button>
-        <Button size="xs" variant="danger" onClick={() => onReject(payout)} disabled={loading}>
+        <Button size="xs" variant="danger" className="bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-lg rounded-lg" onClick={() => onReject(payout)} disabled={loading}>
           Reject
         </Button>
       </div>
@@ -286,11 +286,11 @@ const ActionCell: React.FC<ActionCellProps> = ({
 
   if (status === 'processing') {
     return (
-      <div className="flex flex-wrap gap-1.5">
-        <span className="text-xs text-blue-600 flex items-center gap-1 mr-1">
+      <div className="flex flex-wrap gap-2">
+        <span className="text-xs text-blue-200 flex items-center gap-1 mr-1">
           <Loader2 className="w-3 h-3 animate-spin" /> Awaiting Paystack…
         </span>
-        <Button size="xs" variant="success" onClick={() => onMarkPaid(payout)} disabled={loading}>
+        <Button size="xs" className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg rounded-lg" onClick={() => onMarkPaid(payout)} disabled={loading}>
           Mark Paid
         </Button>
       </div>
@@ -299,12 +299,12 @@ const ActionCell: React.FC<ActionCellProps> = ({
 
   if (status === 'failed') {
     return (
-      <div className="flex flex-wrap gap-1.5">
-        <Button size="xs" variant="success" onClick={() => onMarkPaid(payout)} disabled={loading}>
-          Mark Paid
+      <div className="flex flex-wrap gap-2">
+        <Button size="xs" className="bg-blue-500 hover:bg-blue-600 text-white border-blue-400 shadow-lg rounded-lg" onClick={() => onProcess(payout)} disabled={loading}>
+          Retry Send
         </Button>
-        <Button size="xs" variant="danger" onClick={() => onReject(payout)} disabled={loading}>
-          Decline
+        <Button size="xs" className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg rounded-lg" onClick={() => onMarkPaid(payout)} disabled={loading}>
+          Mark Paid
         </Button>
       </div>
     );
@@ -555,7 +555,7 @@ export default function PayoutManagementPage() {
     <div className="space-y-4 pb-6">
 
       {/* ── Page header ──────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-slate-700 to-slate-800 rounded-xl p-4 sm:p-6 text-white">
+      <div className="bg-gradient-to-r from-slate-700 to-slate-800 rounded-2xl p-4 sm:p-6 text-white shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-white/20 rounded-xl">
@@ -575,12 +575,12 @@ export default function PayoutManagementPage() {
             </div>
           </div>
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="self-start sm:self-auto border-white/40 text-white hover:bg-white/10"
             onClick={refresh}
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
           >
-            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
             Refresh
           </Button>
         </div>
@@ -638,123 +638,215 @@ export default function PayoutManagementPage() {
       />
 
       {/* ── Table ────────────────────────────────────────────────────────────── */}
-      <Card noPadding>
-        <div className="overflow-x-auto">
-          <Table className="min-w-[760px]" variant="simple" size="md">
-            <TableHeader>
-              <TableRow>
-                <TableHeaderCell>Requested</TableHeaderCell>
-                <TableHeaderCell>Agent</TableHeaderCell>
-                <TableHeaderCell>Amount</TableHeaderCell>
-                <TableHeaderCell>Destination</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell className="text-right">Actions</TableHeaderCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6}>
-                    <div className="py-10 flex items-center justify-center gap-2 text-gray-500 text-sm">
-                      <Spinner size="sm" />Loading payouts…
+      <Card noPadding className="bg-gradient-to-r from-primary-500 to-primary-700 text-white overflow-hidden rounded-xl shadow-lg">
+        {loading ? (
+          <div className="p-8 flex items-center justify-center gap-3 text-white/70">
+            <Spinner size="sm" />
+            <span>Loading payouts…</span>
+          </div>
+        ) : payouts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-white/60">
+            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+              <ArrowDownToLine className="text-2xl text-white/60" />
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-white/80">No payouts found</p>
+              <p className="text-sm mt-0.5">
+                {hasFilters ? 'Try adjusting your filters.' : 'No payout requests in the system yet.'}
+              </p>
+            </div>
+            {hasFilters && (
+              <Button variant="outline" size="sm" onClick={() => { setSearchTerm(''); setStatusFilter('all'); setDateRange({ startDate: '', endDate: '' }); setPagination(p => ({ ...p, page: 1 })); }}>
+                Clear filters
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Mobile card view */}
+            <div className="sm:hidden space-y-3">
+              {payouts.map((payout) => (
+                <div
+                  key={payout._id}
+                  className="rounded-xl border border-white/10 bg-slate-950/90 p-2 shadow-xl backdrop-blur-xl transition-shadow hover:shadow-2xl"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg"
+                        style={{ background: 'linear-gradient(to bottom right, var(--color-primary-400), var(--color-primary-700))' }}
+                      >
+                        {userName(payout.user).charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-white truncate">{userName(payout.user)}</p>
+                        <p className="text-xs text-white/60 truncate">{userEmail(payout.user)}</p>
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ) : payouts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6}>
-                    <div className="py-12 text-center text-sm text-gray-500">
-                      {hasFilters ? 'No payouts match your filters.' : 'No payout requests found.'}
+                    <Badge
+                      colorScheme={statusColor(payout.status)}
+                      size="xs"
+                      className="bg-white/10 text-white border-white/20"
+                    >
+                      {statusLabel(payout.status)}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <div className="min-w-[45%] flex-1 rounded-3xl border border-white/10 bg-white/5 p-3">
+                      <p className="text-[11px] text-white/60 uppercase tracking-[0.18em] mb-2">Requested</p>
+                      <p className="text-sm font-semibold text-white">{fmtDate(payout.requestedAt)}</p>
+                      <p className="text-[11px] text-white/50 mt-1">{fmtDate(payout.createdAt)}</p>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                payouts.map((payout) => (
-                  <TableRow key={payout._id}>
-                    <TableCell>
-                      <div className="text-sm font-medium text-gray-900">{fmtDate(payout.requestedAt)}</div>
-                      <div className="text-xs text-gray-400">{fmtDate(payout.createdAt)}</div>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="text-sm font-medium text-gray-900">{userName(payout.user)}</div>
-                      <div className="text-xs text-gray-400">{userEmail(payout.user)}</div>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="text-sm font-semibold text-gray-900">{fmt(payout.amount)}</div>
+                    <div className="min-w-[45%] flex-1 rounded-3xl border border-white/10 bg-white/5 p-3">
+                      <p className="text-[11px] text-white/60 uppercase tracking-[0.18em] mb-2">Amount</p>
+                      <p className="text-sm font-semibold text-white">{fmt(payout.amount)}</p>
                       {payout.transferFee != null && (
-                        <div className="text-xs text-orange-600">Fee: {fmt(payout.transferFee)}</div>
+                        <p className="text-[11px] text-orange-200 mt-2">Fee: {fmt(payout.transferFee)}</p>
                       )}
                       {payout.netAmount != null && (
-                        <div className="text-xs text-green-600 font-medium">Net: {fmt(payout.netAmount)}</div>
+                        <p className="text-[11px] text-emerald-200 mt-1">Net: {fmt(payout.netAmount)}</p>
                       )}
-                    </TableCell>
+                    </div>
+                  </div>
 
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-sm text-gray-900">
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <div className="min-w-[45%] flex-1 rounded-3xl border border-white/10 bg-white/5 p-3">
+                      <p className="text-[11px] text-white/60 uppercase tracking-[0.18em] mb-2">Destination</p>
+                      <div className="flex items-center gap-2 text-xs text-white/70">
                         {payout.destination?.type === 'mobile_money'
-                          ? <Smartphone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                          : <Building2 className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          ? <Smartphone className="w-3 h-3" />
+                          : <Building2 className="w-3 h-3" />
                         }
-                        {destLabel(payout.destination)}
+                        <span className="truncate">{destLabel(payout.destination)}</span>
                       </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <Badge colorScheme={statusColor(payout.status)} size="sm">
-                        <span className="flex items-center gap-1">
-                          {statusIcon(payout.status)}
-                          {statusLabel(payout.status)}
-                        </span>
-                      </Badge>
-                      {payout.paystackTransfer?.failureReason && (
-                        <div className="text-xs text-red-600 mt-1 max-w-[180px]" title={payout.paystackTransfer.failureReason}>
-                          {payout.paystackTransfer.failureReason}
-                        </div>
-                      )}
+                    </div>
+                    <div className="min-w-[45%] flex-1 rounded-3xl border border-white/10 bg-white/5 p-3">
+                      <p className="text-[11px] text-white/60 uppercase tracking-[0.18em] mb-2">Status</p>
+                      <p className="text-sm font-semibold text-white">{statusLabel(payout.status)}</p>
                       {payout.rejectionReason && payout.status === 'rejected' && (
-                        <div className="text-xs text-gray-500 mt-1 max-w-[180px]" title={payout.rejectionReason}>
-                          {payout.rejectionReason}
-                        </div>
+                        <p className="text-[11px] text-white/60 mt-2">{payout.rejectionReason}</p>
                       )}
-                    </TableCell>
+                    </div>
+                  </div>
 
-                    <TableCell className="text-right">
-                      <ActionCell
-                        payout={payout}
-                        autoMode={!!isAutoMode}
-                        paystackConfigured={psConfigured}
-                        loading={actionLoading === payout._id}
-                        onApprove={(p) => openConfirm('approve', p)}
-                        onProcess={(p) => openConfirm('process', p)}
-                        onMarkPaid={(p) => openConfirm('markPaid', p)}
-                        onReject={(p) => openConfirm('reject', p)}
-                      />
-                    </TableCell>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <ActionCell
+                      payout={payout}
+                      autoMode={!!isAutoMode}
+                      paystackConfigured={psConfigured}
+                      loading={actionLoading === payout._id}
+                      onApprove={(p) => openConfirm('approve', p)}
+                      onProcess={(p) => openConfirm('process', p)}
+                      onMarkPaid={(p) => openConfirm('markPaid', p)}
+                      onReject={(p) => openConfirm('reject', p)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table view */}
+            <div className="hidden sm:block overflow-x-auto">
+              <Table className="min-w-[760px]" variant="simple" size="md">
+                <TableHeader>
+                  <TableRow>
+                    <TableHeaderCell className="text-white/80">Requested</TableHeaderCell>
+                    <TableHeaderCell className="text-white/80">Agent</TableHeaderCell>
+                    <TableHeaderCell className="text-white/80">Amount</TableHeaderCell>
+                    <TableHeaderCell className="text-white/80">Destination</TableHeaderCell>
+                    <TableHeaderCell className="text-white/80">Status</TableHeaderCell>
+                    <TableHeaderCell className="text-white/80 text-right">Actions</TableHeaderCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {payouts.map((payout) => (
+                    <TableRow key={payout._id} className="hover:bg-white/10 transition-colors border-white/10">
+                      <TableCell>
+                        <div className="text-sm font-medium text-white">{fmtDate(payout.requestedAt)}</div>
+                        <div className="text-xs text-white/70">{fmtDate(payout.createdAt)}</div>
+                      </TableCell>
 
-      {/* ── Pagination ────────────────────────────────────────────────────────── */}
-      {pagination.pages > 1 && (
-        <div className="flex justify-end">
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.pages}
-            totalItems={pagination.total}
-            itemsPerPage={pagination.limit}
-            onPageChange={(page) => {
-              setPagination(p => ({ ...p, page }));
-              void fetchPayouts(page);
-            }}
-          />
-        </div>
-      )}
+                      <TableCell>
+                        <div className="text-sm font-medium text-white">{userName(payout.user)}</div>
+                        <div className="text-xs text-white/70">{userEmail(payout.user)}</div>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="text-sm font-semibold text-white">{fmt(payout.amount)}</div>
+                        {payout.transferFee != null && (
+                          <div className="text-xs text-orange-200">Fee: {fmt(payout.transferFee)}</div>
+                        )}
+                        {payout.netAmount != null && (
+                          <div className="text-xs text-green-200 font-medium">Net: {fmt(payout.netAmount)}</div>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-sm text-white">
+                          {payout.destination?.type === 'mobile_money'
+                            ? <Smartphone className="w-3.5 h-3.5 text-white/60 shrink-0" />
+                            : <Building2 className="w-3.5 h-3.5 text-white/60 shrink-0" />
+                          }
+                          {destLabel(payout.destination)}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <Badge colorScheme={statusColor(payout.status)} size="sm" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                          <span className="flex items-center gap-1">
+                            {statusIcon(payout.status)}
+                            {statusLabel(payout.status)}
+                          </span>
+                        </Badge>
+                        {payout.paystackTransfer?.failureReason && (
+                          <div className="text-xs text-red-200 mt-1 max-w-[180px]" title={payout.paystackTransfer.failureReason}>
+                            {payout.paystackTransfer.failureReason}
+                          </div>
+                        )}
+                        {payout.rejectionReason && payout.status === 'rejected' && (
+                          <div className="text-xs text-white/60 mt-1 max-w-[180px]" title={payout.rejectionReason}>
+                            {payout.rejectionReason}
+                          </div>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <ActionCell
+                          payout={payout}
+                          autoMode={!!isAutoMode}
+                          paystackConfigured={psConfigured}
+                          loading={actionLoading === payout._id}
+                          onApprove={(p) => openConfirm('approve', p)}
+                          onProcess={(p) => openConfirm('process', p)}
+                          onMarkPaid={(p) => openConfirm('markPaid', p)}
+                          onReject={(p) => openConfirm('reject', p)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+
+        {/* ── Pagination ────────────────────────────────────────────────────────── */}
+        {pagination.pages > 1 && !loading && (
+          <div className="border-t border-white/20 px-4 py-3">
+            <Pagination
+              currentPage={pagination.page}
+              totalPages={pagination.pages}
+              totalItems={pagination.total}
+              itemsPerPage={pagination.limit}
+              onPageChange={(page) => {
+                setPagination(p => ({ ...p, page }));
+                void fetchPayouts(page);
+              }}
+            />
+          </div>
+        )}
+      </Card>
 
       {/* ── Confirm dialog ────────────────────────────────────────────────────── */}
       <Dialog isOpen={confirm.open} onClose={closeConfirm} size="sm">
