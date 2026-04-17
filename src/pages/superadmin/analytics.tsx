@@ -36,6 +36,13 @@ const timeOptions = [
     { value: "365d", label: "Last year" },
 ];
 
+const performanceTimeOptions = [
+    { value: "0d", label: "Today" },
+    { value: "7d", label: "Week" },
+    { value: "30d", label: "Month" },
+    { value: "all", label: "All time" },
+];
+
 type SnapshotTone =
     | "default"
     | "success"
@@ -52,10 +59,13 @@ type CommandSnapshotItem = {
 
 export default function SuperAdminAnalyticsPage() {
     const [timeframe, setTimeframe] = useState("30d");
+    const [performanceTimeframe, setPerformanceTimeframe] = useState("7d");
     const [selectedMetric, setSelectedMetric] = useState<TrendMetric>("revenue");
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [performanceLoading, setPerformanceLoading] = useState(false);
     const [data, setData] = useState<AnalyticsData | null>(null);
+    const [performanceData, setPerformanceData] = useState<AnalyticsData["topPerformers"] | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const loadAnalytics = useCallback(
@@ -85,6 +95,24 @@ export default function SuperAdminAnalyticsPage() {
     useEffect(() => {
         void loadAnalytics(true);
     }, [loadAnalytics]);
+
+    const loadPerformanceData = useCallback(async () => {
+        try {
+            setPerformanceLoading(true);
+            const analytics = await analyticsService.getSuperAdminAnalytics(
+                performanceTimeframe
+            );
+            setPerformanceData(analytics.topPerformers || null);
+        } catch {
+            setPerformanceData(null);
+        } finally {
+            setPerformanceLoading(false);
+        }
+    }, [performanceTimeframe]);
+
+    useEffect(() => {
+        void loadPerformanceData();
+    }, [loadPerformanceData]);
 
     const handleExport = () => {
         if (!data) return;
@@ -291,7 +319,10 @@ export default function SuperAdminAnalyticsPage() {
                 timeframe={timeframe}
                 timeOptions={timeOptions}
                 onTimeframeChange={setTimeframe}
-                onRefresh={() => void loadAnalytics(false)}
+                onRefresh={() => {
+                    void loadAnalytics(false);
+                    void loadPerformanceData();
+                }}
                 onExport={handleExport}
                 loading={loading || refreshing}
                 generatedAt={data?.generatedAt}
@@ -333,8 +364,17 @@ export default function SuperAdminAnalyticsPage() {
 
                     <AnalyticsActivityStage
                         loading={sectionLoading}
+                        performanceLoading={performanceLoading}
                         activityFeed={data.activityFeed || []}
-                        topAgents={data.topPerformers?.agents || []}
+                        topAgents={performanceData?.agents || data.topPerformers?.agents || []}
+                        topStorefronts={
+                            performanceData?.storefronts ||
+                            data.topPerformers?.storefronts ||
+                            []
+                        }
+                        performanceTimeframe={performanceTimeframe}
+                        performanceTimeOptions={performanceTimeOptions}
+                        onPerformanceTimeframeChange={setPerformanceTimeframe}
                         pendingCommissionAmount={data.commissions.pendingAmount || 0}
                         payoutQueueCount={data.payouts?.queuedCount || 0}
                         netFlow={data.earnings?.period.netFlow || 0}
