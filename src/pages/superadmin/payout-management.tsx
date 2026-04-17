@@ -157,6 +157,18 @@ function statusIcon(s: string) {
   }
 }
 
+function statusSectionClasses(s: string) {
+  switch (s) {
+    case 'pending': return 'bg-amber-600/90 border-amber-500/90 text-white';
+    case 'approved': return 'bg-sky-600/90 border-sky-500/90 text-white';
+    case 'processing': return 'bg-sky-600/90 border-sky-500/90 text-white';
+    case 'completed': return 'bg-emerald-600/90 border-emerald-500/90 text-white';
+    case 'rejected':
+    case 'failed': return 'bg-red-600/90 border-red-500/90 text-white';
+    default: return 'bg-slate-600/90 border-slate-500/90 text-white';
+  }
+}
+
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All statuses' },
   { value: 'pending', label: 'Pending' },
@@ -555,7 +567,10 @@ export default function PayoutManagementPage() {
     <div className="space-y-4 pb-6">
 
       {/* ── Page header ──────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-slate-700 to-slate-800 rounded-2xl p-4 sm:p-6 text-white shadow-xl">
+      <div
+        className="rounded-xl p-4 sm:p-6 text-white"
+        style={{ background: 'linear-gradient(to right, var(--color-primary-500), var(--color-primary-700))' }}
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-white/20 rounded-xl">
@@ -638,7 +653,7 @@ export default function PayoutManagementPage() {
       />
 
       {/* ── Table ────────────────────────────────────────────────────────────── */}
-      <Card noPadding className="bg-gradient-to-r from-primary-500 to-primary-700 text-white overflow-hidden rounded-xl shadow-lg">
+      <Card className="bg-gradient-to-r from-primary-500 to-primary-700 text-white overflow-hidden rounded-xl shadow-lg">
         {loading ? (
           <div className="p-8 flex items-center justify-center gap-3 text-white/70">
             <Spinner size="sm" />
@@ -686,7 +701,6 @@ export default function PayoutManagementPage() {
                     <Badge
                       colorScheme={statusColor(payout.status)}
                       size="xs"
-                      className="bg-white/10 text-white border-white/20"
                     >
                       {statusLabel(payout.status)}
                     </Badge>
@@ -701,12 +715,14 @@ export default function PayoutManagementPage() {
                     <div className="min-w-[45%] flex-1 rounded-3xl border border-white/10 bg-white/5 p-3">
                       <p className="text-[11px] text-white/60 uppercase tracking-[0.18em] mb-2">Amount</p>
                       <p className="text-sm font-semibold text-white">{fmt(payout.amount)}</p>
-                      {payout.transferFee != null && (
-                        <p className="text-[11px] text-orange-200 mt-2">Fee: {fmt(payout.transferFee)}</p>
-                      )}
-                      {payout.netAmount != null && (
-                        <p className="text-[11px] text-emerald-200 mt-1">Net: {fmt(payout.netAmount)}</p>
-                      )}
+                      <div className="flex items-center gap-2 mt-2">
+                        {payout.transferFee != null && (
+                          <p className="text-[11px] text-orange-200">Fee: {fmt(payout.transferFee)}</p>
+                        )}
+                        {payout.netAmount != null && (
+                          <p className="text-[11px] text-emerald-200">Net: {fmt(payout.netAmount)}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -721,11 +737,11 @@ export default function PayoutManagementPage() {
                         <span className="truncate">{destLabel(payout.destination)}</span>
                       </div>
                     </div>
-                    <div className="min-w-[45%] flex-1 rounded-3xl border border-white/10 bg-white/5 p-3">
-                      <p className="text-[11px] text-white/60 uppercase tracking-[0.18em] mb-2">Status</p>
-                      <p className="text-sm font-semibold text-white">{statusLabel(payout.status)}</p>
+                    <div className={`min-w-[45%] flex-1 rounded-3xl border p-3 ${statusSectionClasses(payout.status)}`}>
+                      <p className="text-[11px] text-white/80 uppercase tracking-[0.18em] mb-2">Status</p>
+                      <p className="text-sm font-semibold">{statusLabel(payout.status)}</p>
                       {payout.rejectionReason && payout.status === 'rejected' && (
-                        <p className="text-[11px] text-white/60 mt-2">{payout.rejectionReason}</p>
+                        <p className="text-[11px] text-white/80 mt-2">{payout.rejectionReason}</p>
                       )}
                     </div>
                   </div>
@@ -793,7 +809,7 @@ export default function PayoutManagementPage() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge colorScheme={statusColor(payout.status)} size="sm" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                        <Badge colorScheme={statusColor(payout.status)} size="sm">
                           <span className="flex items-center gap-1">
                             {statusIcon(payout.status)}
                             {statusLabel(payout.status)}

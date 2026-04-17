@@ -656,19 +656,21 @@ export default function WalletTopUpsPage() {
               {users.map((user) => (
                 <div key={user._id} className="p-4 hover:bg-white/5 transition-colors rounded-lg mx-2 first:mt-2 last:mb-2">
                   <div className="flex items-start gap-3">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg"
-                      style={{ background: 'linear-gradient(to bottom right, var(--color-primary-400), var(--color-primary-700))' }}
-                    >
-                      {user.fullName.charAt(0)}{user.fullName.split(" ")[1]?.charAt(0) ?? ""}
-                    </div>
+
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="font-semibold text-sm text-white">{user.fullName}</p>
-                        <Badge colorScheme={userTypeBadgeColor(user.userType)} size="xs" className="bg-white/20 text-white border-white/30">
-                          {user.userType.replace(/_/g, " ")}
-                        </Badge>
-                        <Badge colorScheme={statusBadgeColor(user.status)} size="xs" className="bg-white/20 text-white border-white/30">
+                      <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg bg-primary-900"
+                          >
+                            {user.fullName.charAt(0)}{user.fullName.split(" ")[1]?.charAt(0) ?? ""}
+                          </div>
+                          <p className="font-semibold text-sm text-white">{user.fullName}</p>
+                          <Badge colorScheme={userTypeBadgeColor(user.userType)} size="xs">
+                            {user.userType.replace(/_/g, " ")}
+                          </Badge>
+                        </div>
+                        <Badge colorScheme={statusBadgeColor(user.status)} size="xs">
                           {user.status}
                         </Badge>
                       </div>
@@ -684,6 +686,7 @@ export default function WalletTopUpsPage() {
                         <div className="flex gap-2">
                           <Button
                             size="xs"
+                            variant="success"
                             className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg"
                             onClick={() => {
                               setSelectedUser(user);
@@ -744,12 +747,12 @@ export default function WalletTopUpsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge colorScheme={userTypeBadgeColor(user.userType)} className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                        <Badge colorScheme={userTypeBadgeColor(user.userType)}>
                           {user.userType.replace(/_/g, " ")}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <Badge colorScheme={statusBadgeColor(user.status)} className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                        <Badge colorScheme={statusBadgeColor(user.status)}>
                           {user.status}
                         </Badge>
                       </TableCell>
@@ -765,6 +768,7 @@ export default function WalletTopUpsPage() {
                         <div className="flex gap-2">
                           <Button
                             size="xs"
+                            variant="success"
                             className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg rounded-lg"
                             onClick={() => {
                               setSelectedUser(user);
