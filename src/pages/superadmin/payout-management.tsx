@@ -66,6 +66,13 @@ interface ConfirmState {
   payout?: PayoutRequestItem;
 }
 
+interface AdminPayoutSummary {
+  totalProfit: number;
+  availableEarnings: number;
+  totalWithdrawn: number;
+  processingAmount: number;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
@@ -341,6 +348,14 @@ export default function PayoutManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
 
+  const [summary, setSummary] = useState<AdminPayoutSummary>({
+    totalProfit: 0,
+    availableEarnings: 0,
+    totalWithdrawn: 0,
+    processingAmount: 0,
+  });
+  const [summaryLoading, setSummaryLoading] = useState(true);
+
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, type: null });
   const [confirmInput, setConfirmInput] = useState('');
 
@@ -376,7 +391,26 @@ export default function PayoutManagementPage() {
 
   useEffect(() => { void fetchPayouts(1); }, [fetchPayouts]);
 
-  const refresh = () => fetchPayouts(pagination.page);
+  const fetchSummary = useCallback(async () => {
+    setSummaryLoading(true);
+    try {
+      const data = await walletService.getAdminPayoutSummary();
+      setSummary(data);
+    } catch {
+      addToast('Failed to load payout summary', 'error');
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => { void fetchSummary(); }, [fetchSummary]);
+
+  const refresh = () => {
+    void Promise.all([
+      fetchPayouts(pagination.page),
+      fetchSummary(),
+    ]);
+  };
 
   // ── Confirm modal helpers ───────────────────────────────────────────────────
   const openConfirm = (type: ConfirmType, payout: PayoutRequestItem) => {
@@ -598,6 +632,46 @@ export default function PayoutManagementPage() {
           >
             Refresh
           </Button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {[
+            {
+              label: 'Total Profit',
+              value: summary.totalProfit,
+              icon: <DollarSign className="w-4 h-4" />,
+              bg: 'bg-white/15',
+              note: 'Available + withdrawn',
+            },
+            {
+              label: 'Available Earnings',
+              value: summary.availableEarnings,
+              icon: <CheckCircle2 className="w-4 h-4" />,
+              bg: 'bg-emerald-500/30 border border-emerald-400/30',
+            },
+            {
+              label: 'Total Withdrawn',
+              value: summary.totalWithdrawn,
+              icon: <ArrowDownToLine className="w-4 h-4" />,
+              bg: 'bg-slate-500/30 border border-slate-400/30',
+              note: summary.processingAmount
+                ? `Processing: ${fmt(summary.processingAmount)}`
+                : undefined,
+            },
+          ].map(({ label, value, icon, bg, note }) => (
+            <div key={label} className={`${bg} rounded-lg px-3 py-2.5 flex flex-col gap-2`}>
+              <div className="flex items-center gap-2">
+                <span className="text-white/70 shrink-0">{icon}</span>
+                <div className="min-w-0">
+                  <p className="text-white/70 text-[10px] font-medium uppercase tracking-wide">{label}</p>
+                  <p className="text-white font-bold text-sm sm:text-base">
+                    {summaryLoading ? 'Loading…' : fmt(value)}
+                  </p>
+                </div>
+              </div>
+              {note ? <p className="text-xs text-white/70">{note}</p> : null}
+            </div>
+          ))}
         </div>
 
         {/* Stats strip */}

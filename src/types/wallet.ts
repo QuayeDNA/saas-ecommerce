@@ -67,6 +67,13 @@ export interface WalletAnalytics {
   };
 }
 
+export interface AdminPayoutSummary {
+  totalProfit: number;
+  availableEarnings: number;
+  totalWithdrawn: number;
+  processingAmount: number;
+}
+
 // Earnings & Payout types (storefront payouts)
 export type PayoutDestinationType = 'mobile_money' | 'bank_account';
 

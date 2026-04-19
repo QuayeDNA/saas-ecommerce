@@ -8,6 +8,7 @@ import type {
   EarningsDashboard,
   PayoutRequestItem,
   PayoutDestination,
+  AdminPayoutSummary,
 } from "../types/wallet";
 import { canHaveWallet } from "../utils/userTypeHelpers";
 
@@ -392,6 +393,13 @@ export const walletService = {
       };
     }>(`/api/wallet/admin/payouts/history?${params.toString()}`);
 
+    return response.data.data;
+  },
+
+  getAdminPayoutSummary: async (): Promise<AdminPayoutSummary> => {
+    const response = await apiClient.get<{ success: boolean; data: AdminPayoutSummary }>(
+      "/api/wallet/admin/payouts/summary"
+    );
     return response.data.data;
   },
 
