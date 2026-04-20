@@ -7,16 +7,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import "./index.css";
 import App from "./App.tsx";
+import StoreOnlyApp from "./StoreOnlyApp.tsx";
+
+const isStoreOnlyMode = import.meta.env.VITE_STORE_ONLY === "true";
 
 // Create a client for React Query
 const queryClient = new QueryClient();
 
 // SECURITY: silence verbose console output in PRODUCTION builds to avoid leaking tokens or user data
 if (import.meta.env.PROD) {
-  console.log = (..._args: any[]) => {};
-  console.info = (..._args: any[]) => {};
-  console.debug = (..._args: any[]) => {};
-  console.table = (..._args: any[]) => {};
+  console.log = (..._args: any[]) => { };
+  console.info = (..._args: any[]) => { };
+  console.debug = (..._args: any[]) => { };
+  console.table = (..._args: any[]) => { };
 }
 
 // Version check and cache busting for iPhone users
@@ -47,7 +50,7 @@ if (checkVersion()) {
     <StrictMode>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <App />
+          {isStoreOnlyMode ? <StoreOnlyApp /> : <App />}
           <Analytics />
         </QueryClientProvider>
       </BrowserRouter>

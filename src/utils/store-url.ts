@@ -9,10 +9,12 @@
  */
 export function getStoreUrl(businessName: string): string {
   const isStoreOnly = import.meta.env.VITE_STORE_ONLY === 'true';
+  const storeBaseUrl = import.meta.env.VITE_STORE_BASE_URL?.replace(/\/$/, "");
 
   if (isStoreOnly) {
-    // Standalone storefront domain: customdomain.com/:businessName
-    return `${window.location.origin}/${businessName}`;
+    // Dedicated storefront domain: customdomain.com/:businessName
+    const baseUrl = storeBaseUrl || window.location.origin;
+    return `${baseUrl}/${businessName}`;
   }
 
   // Consolidated domain: brytelinks.com/store/:businessName
