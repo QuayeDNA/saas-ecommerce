@@ -9,6 +9,8 @@ import type {
   PayoutRequestItem,
   PayoutDestination,
   AdminPayoutSummary,
+  MomoInitiateResponse,
+  MomoVerifyResponse,
 } from "../types/wallet";
 import { canHaveWallet } from "../utils/userTypeHelpers";
 
@@ -155,6 +157,30 @@ export const walletService = {
       walletTopUpEnabled: Boolean(response.data?.walletTopUpEnabled),
       paystackEnabled: Boolean(response.data?.paystackEnabled),
     };
+  },
+
+  /**
+   * Initiate MTN Mobile Money wallet top-up
+   */
+  initiateMomoTopUp: async (
+    amount: number,
+    phoneNumber: string
+  ): Promise<MomoInitiateResponse> => {
+    const response = await apiClient.post<{ success: boolean; message?: string; referenceId?: string }>(
+      "/api/wallet/momo/initiate",
+      { amount, phoneNumber },
+    );
+    return response.data;
+  },
+
+  /**
+   * Verify a MTN Mobile Money top-up by reference
+   */
+  verifyMomoTopUp: async (referenceId: string): Promise<MomoVerifyResponse> => {
+    const response = await apiClient.get<{ success: boolean; message?: string; transaction?: WalletTransaction | null }>(
+      `/api/wallet/momo/verify/${encodeURIComponent(referenceId)}`,
+    );
+    return response.data;
   },
 
   /**

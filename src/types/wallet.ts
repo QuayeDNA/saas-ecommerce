@@ -42,6 +42,20 @@ export interface TopUpRequest {
   description: string;
 }
 
+// MTN/MoMo initiation response
+export interface MomoInitiateResponse {
+  success: boolean;
+  message?: string;
+  referenceId?: string;
+}
+
+// MTN/MoMo verify response (backend may include transaction object)
+export interface MomoVerifyResponse {
+  success: boolean;
+  message?: string;
+  transaction?: WalletTransaction | null;
+}
+
 // Analytics interfaces
 export interface WalletAnalytics {
   users: {

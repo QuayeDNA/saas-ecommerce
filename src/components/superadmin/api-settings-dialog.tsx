@@ -278,6 +278,16 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
 
                   <div className="flex items-center gap-3">
                     <Switch
+                      checked={formData.mtnWalletTopUpEnabled || false}
+                      onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, mtnWalletTopUpEnabled: checked }))}
+                    />
+                    <span className="text-sm text-gray-700">
+                      Allow MTN MoMo wallet top-ups
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Switch
                       checked={formData.paystackStorefrontEnabled || false}
                       onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackStorefrontEnabled: checked }))}
                       isDisabled={!formData.paystackEnabled}

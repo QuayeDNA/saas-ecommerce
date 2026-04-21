@@ -280,6 +280,69 @@ export const WalletPage = () => {
     }
   };
 
+  // Determine styles based on transaction details (status, provider reason)
+  const getTransactionStyles = (transaction: WalletTransaction) => {
+    const meta = (transaction.metadata || {}) as any;
+
+    // Pending top-up (MoMo or Paystack) -> warning
+    if (transaction.type === 'credit' && transaction.status === 'pending' && meta?.momoReferenceId) {
+      return {
+        icon: <FaClock className="text-yellow-600" />,
+        bgColor: 'bg-yellow-50',
+        borderColor: 'border-yellow-200',
+        textColor: 'text-yellow-800',
+        amountColor: 'text-yellow-600',
+        badgeBg: 'bg-yellow-100',
+        badgeText: 'text-yellow-800',
+      };
+    }
+
+    // Rejected / failed top-up -> color by reason
+    if (transaction.type === 'credit' && transaction.status === 'rejected') {
+      const momoStatus = String(meta?.momoStatus?.status || '').toUpperCase();
+
+      // Timeout/expired -> amber/orange
+      if (momoStatus === 'TIMEOUT' || momoStatus === 'EXPIRED' || momoStatus === 'STALE') {
+        return {
+          icon: <FaTimesCircle className="text-orange-600" />,
+          bgColor: 'bg-orange-50',
+          borderColor: 'border-orange-200',
+          textColor: 'text-orange-800',
+          amountColor: 'text-orange-600',
+          badgeBg: 'bg-orange-100',
+          badgeText: 'text-orange-800',
+        };
+      }
+
+      // Hard failure / rejected -> red
+      if (momoStatus === 'FAILED' || momoStatus === 'REJECTED' || momoStatus === 'ERROR' || momoStatus === 'CANCELLED') {
+        return {
+          icon: <FaTimesCircle className="text-red-600" />,
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          textColor: 'text-red-800',
+          amountColor: 'text-red-600',
+          badgeBg: 'bg-red-100',
+          badgeText: 'text-red-800',
+        };
+      }
+
+      // Fallback for other rejections
+      return {
+        icon: <FaTimesCircle className="text-red-600" />,
+        bgColor: 'bg-red-50',
+        borderColor: 'border-red-200',
+        textColor: 'text-red-800',
+        amountColor: 'text-red-600',
+        badgeBg: 'bg-red-100',
+        badgeText: 'text-red-800',
+      };
+    }
+
+    // Default: use type-based styling
+    return getTransactionTypeStyles(transaction.type);
+  };
+
   // Get connection status indicator
 
 
@@ -557,10 +620,17 @@ export const WalletPage = () => {
             ) : (
               <div className="space-y-2 sm:space-y-3">
                 {filteredTransactions.map((transaction) => {
-                  const styles = getTransactionTypeStyles(transaction.type);
+                  // Detect if this transaction is a wallet top-up (paystack/MoMo) and whether it's pending
+                  const meta = (transaction.metadata || {}) as any;
+                  const desc = String(transaction.description || '');
+                  const isTopUp = transaction.type === 'credit' && (
+                    Boolean(meta && (meta.type === 'wallet_topup' || meta.isTopUp)) || /top-?up/i.test(desc)
+                  );
+                  const styles = getTransactionStyles(transaction);
                   const orderRef = typeof transaction.relatedOrder === 'object' && transaction.relatedOrder !== null
                     ? (transaction.relatedOrder as { orderNumber?: string }).orderNumber
                     : null;
+
                   return (
                     <div
                       key={transaction._id}
@@ -577,7 +647,7 @@ export const WalletPage = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${styles.badgeBg} ${styles.badgeText}`}>
-                              {transaction.type === "credit" ? "Credit" : "Debit"}
+                              {isTopUp ? 'Top-up' : (transaction.type === "credit" ? "Credit" : "Debit")}
                             </span>
                             {transaction.status && transaction.status !== 'completed' && (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
@@ -608,8 +678,12 @@ export const WalletPage = () => {
                         </div>
                       </div>
 
-                      {/* Balance mini-timeline — always visible */}
-                      {(() => {
+                      {/* Balance mini-timeline — hide for pending top-ups since wallet hasn't been updated yet */}
+                      {(isTopUp && transaction.status === 'pending') ? (
+                        <div className="mt-2.5 ml-12 text-xs text-yellow-800">
+                          Pending top-up — wallet will be updated once payment confirmation is received.
+                        </div>
+                      ) : (() => {
                         const balanceBefore = transaction.type === 'credit'
                           ? transaction.balanceAfter - transaction.amount
                           : transaction.balanceAfter + transaction.amount;

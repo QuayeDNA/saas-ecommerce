@@ -28,6 +28,7 @@ export interface ApiSettings {
   // Paystack
   paystackEnabled?: boolean;
   paystackWalletTopUpEnabled?: boolean;
+  mtnWalletTopUpEnabled?: boolean;
   paystackStorefrontEnabled?: boolean;
   paystackTestPublicKey?: string;
   paystackTestSecretKey?: string; // returned only in non-production builds
