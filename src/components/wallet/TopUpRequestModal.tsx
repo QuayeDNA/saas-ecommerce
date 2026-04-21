@@ -107,7 +107,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   const [paystackPublicKey, setPaystackPublicKey] = useState<string | null>(null);
   const [mtnEnabled, setMtnEnabled] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paystack' | 'mtn'>('paystack');
-  const [phoneNumber, setPhoneNumber] = useState<string>(user?.phone || user?.phoneNumber || '');
+  const [phoneNumber, setPhoneNumber] = useState<string>(user?.phone || '');
   const [isMtnLoading, setIsMtnLoading] = useState(false);
 
   const [checkingPending, setCheckingPending] = useState(false);
@@ -266,7 +266,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
     setIsPaystackLoading(false);
     setIsMtnLoading(false);
     setSelectedPaymentMethod(paystackMethodVisible ? 'paystack' : mtnMethodVisible ? 'mtn' : 'paystack');
-    setPhoneNumber(user?.phone || user?.phoneNumber || '');
+    setPhoneNumber(user?.phone || '');
   };
 
   const handleClose = () => {
@@ -528,7 +528,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                   className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 ${mode === 'instant' && selectedPaymentMethod === 'paystack'
                     ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
                     : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   {mode === 'instant' && selectedPaymentMethod === 'paystack' && (
                     <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
@@ -555,7 +555,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                   className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 ${mode === 'instant' && selectedPaymentMethod === 'mtn'
                     ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
                     : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   {mode === 'instant' && selectedPaymentMethod === 'mtn' && (
                     <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
@@ -606,7 +606,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                 <Input
                   id="mtnPhone"
                   label="MTN Mobile Money number"
-                  placeholder={user?.phone || user?.phoneNumber || 'e.g. 024xxxxxxx'}
+                  placeholder={user?.phone || 'e.g. 024xxxxxxx'}
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                 />
