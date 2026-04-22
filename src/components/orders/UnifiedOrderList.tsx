@@ -405,22 +405,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     fetchReportedOrders,
   ]);
   // Auto-switch to cards view on mobile/tablet screens
-  useEffect(() => {
-    const handleResize = () => {
-      const isDesktop = window.innerWidth >= 1024; // lg breakpoint
-      if (!isDesktop && viewMode === "table") {
-        setViewMode("cards");
-      }
-    };
-
-    // Check on initial load
-    handleResize();
-
-    // Listen for resize events
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [viewMode]);
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Instant search is handled by useEffect, this just prevents form submission
@@ -1112,7 +1096,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           ))}
         </div>
       ) : viewMode === "table" ? (
-        <div className="hidden lg:block">
+        <div>
           <UnifiedOrderTable
             orders={currentOrders}
             isAdmin={isAdmin}
