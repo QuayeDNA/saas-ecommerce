@@ -1107,6 +1107,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             onSelect={handleSelectOrder}
             selectedOrders={selectedOrders}
             onSelectAll={handleSelectAll}
+            onRefresh={() =>
+              activeTab === "reported"
+                ? fetchReportedOrders()
+                : fetchOrders(filters)
+            }
             loading={currentLoading}
           />
         </div>

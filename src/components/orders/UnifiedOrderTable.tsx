@@ -8,9 +8,12 @@ import {
   FaChevronRight,
   FaChevronDown,
   FaChevronUp,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import type { Order } from "../../types/order";
 import { isOrderLocked } from "../../utils/order-lock";
+import { ReportModal } from "./ReportModal";
+import { apiClient } from "../../utils/api-client";
 
 interface ReceptionStatusDropdownProps {
   orderId: string;
@@ -100,6 +103,7 @@ interface UnifiedOrderTableProps {
   onSelect?: (orderId: string) => void;
   selectedOrders: string[];
   onSelectAll: () => void;
+  onRefresh?: () => void;
   loading?: boolean;
 }
 
@@ -113,12 +117,16 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   onSelect,
   selectedOrders,
   onSelectAll,
+  onRefresh,
   loading = false,
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [statusDropdowns, setStatusDropdowns] = useState<Set<string>>(
     new Set()
   );
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedReportOrder, setSelectedReportOrder] = useState<Order | null>(null);
+  const [isReporting, setIsReporting] = useState(false);
 
   // Click outside handler to close dropdowns
   React.useEffect(() => {
@@ -210,6 +218,34 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     setStatusDropdowns(newDropdowns);
   };
 
+  const handleReportClick = (order: Order) => {
+    if (order.reported) {
+      alert("This order has already been reported for data delivery issues.");
+      return;
+    }
+    setSelectedReportOrder(order);
+    setReportModalOpen(true);
+  };
+
+  const handleReportSubmit = async () => {
+    if (!selectedReportOrder?._id) return;
+
+    setIsReporting(true);
+    try {
+      await apiClient.post(`/api/orders/${selectedReportOrder._id}/report`, {});
+      setReportModalOpen(false);
+      setSelectedReportOrder(null);
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      throw error;
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   const getOrderProvider = (order: Order) => {
     if (order.items && order.items.length > 0) {
       return order.items[0].packageDetails?.provider || "Unknown";
@@ -298,6 +334,27 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     return false;
   };
 
+  const canUserReportOrder = (order: Order) => {
+    if (order.status !== "completed") return false;
+    if (order.reported) return false;
+
+    const orderDate = new Date(order.createdAt);
+    const twoHoursAgo = new Date();
+    twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
+
+    if (orderDate < twoHoursAgo) return false;
+
+    if (currentUserId) {
+      const createdById =
+        typeof order.createdBy === "string"
+          ? order.createdBy
+          : (order.createdBy as { _id: string })?._id;
+      return createdById === currentUserId;
+    }
+
+    return false;
+  };
+
   // Check if the admin can change status (not locked)
   const canAdminChangeStatus = (order: Order) => {
     return isAdmin && !isOrderLocked(order);
@@ -317,7 +374,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
       {/* Desktop-optimized table - minimum lg screen required */}
       <div className="overflow-x-auto min-w-full">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-500">
             <tr>
               {isAdmin && onSelect && (
                 <th className="px-6 py-3 text-left w-12">
@@ -332,30 +389,30 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                   />
                 </th>
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[200px]">
                 Order
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[150px]">
                 Customer
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[120px]">
                 Network
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[100px]">
                 Total
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[120px]">
                 Status
               </th>
               {isAdmin && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[120px]">
                   Reception
                 </th>
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[150px]">
                 Created
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[120px]">
                 Actions
               </th>
             </tr>
@@ -525,6 +582,25 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                           </Button>
                         )}
 
+                        {canUserReportOrder(order) && (
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() => handleReportClick(order)}
+                            title="Report delivery issue"
+                            className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
+                          >
+                            <FaExclamationTriangle className="w-3 h-3" />
+                          </Button>
+                        )}
+
+                        {order.reported && !isAdmin && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-yellow-700 text-xs border border-yellow-200 bg-yellow-50">
+                            <FaExclamationTriangle className="w-3 h-3" />
+                            Reported
+                          </span>
+                        )}
+
                         {/* Expand/Collapse button */}
                         {order.items && order.items.length > 0 && (
                           <Button
@@ -598,6 +674,42 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => {
+          setReportModalOpen(false);
+          setSelectedReportOrder(null);
+        }}
+        onSubmit={handleReportSubmit}
+        isSubmitting={isReporting}
+        orderNumber={selectedReportOrder?.orderNumber || ""}
+        phoneNumber={
+          selectedReportOrder?.items?.[0]?.customerPhone ||
+          selectedReportOrder?.customerInfo?.phone ||
+          "N/A"
+        }
+        packageVolume={
+          selectedReportOrder?.items?.[0]?.bundleSize
+            ? `${selectedReportOrder.items[0].bundleSize.value} ${selectedReportOrder.items[0].bundleSize.unit}`
+            : selectedReportOrder?.items?.[0]?.packageDetails?.dataVolume
+            ? `${selectedReportOrder.items[0].packageDetails.dataVolume} GB`
+            : undefined
+        }
+        provider={selectedReportOrder?.items?.[0]?.packageDetails?.provider || undefined}
+        orderDate={
+          selectedReportOrder?.createdAt
+            ? new Date(selectedReportOrder.createdAt).toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })
+            : undefined
+        }
+      />
     </div>
   );
 };
