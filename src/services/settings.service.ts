@@ -7,6 +7,9 @@ import { apiClient, publicApiClient } from "../utils/api-client";
 export interface SiteSettings {
   isSiteOpen: boolean;
   customMessage: string;
+  greetingText?: string;
+  welcomeMessage?: string;
+  showGreetingIcon?: boolean;
   storefrontsOpen?: boolean;
   storefrontsClosedMessage?: string;
 }

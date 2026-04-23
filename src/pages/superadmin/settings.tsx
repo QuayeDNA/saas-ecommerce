@@ -272,6 +272,17 @@ export default function SuperAdminSettingsPage() {
                     <div className="text-xs text-gray-500 mt-1">{data.siteSettings.customMessage || 'No custom message set'}</div>
                   </div>
 
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-900">Dashboard greeting</div>
+                    <div className="text-xs text-gray-500 mt-1">{data.siteSettings.greetingText || 'Default time-based greeting'}</div>
+                  </div>
+
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-900">Welcome message</div>
+                    <div className="text-xs text-gray-500 mt-1">{data.siteSettings.welcomeMessage || 'Welcome back!'}</div>
+                    <div className="text-xs text-gray-500 mt-1">Icon enabled: {data.siteSettings.showGreetingIcon ? 'Yes' : 'No'}</div>
+                  </div>
+
                   <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
                     <div>
                       <div className="text-sm font-medium text-gray-900">Storefront availability</div>

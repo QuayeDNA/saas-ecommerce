@@ -12,6 +12,9 @@ import { useAuth } from "../hooks/use-auth";
 interface SiteStatus {
   isSiteOpen: boolean;
   customMessage: string;
+  greetingText?: string;
+  welcomeMessage?: string;
+  showGreetingIcon?: boolean;
   storefrontsOpen?: boolean;
   storefrontsClosedMessage?: string;
 }

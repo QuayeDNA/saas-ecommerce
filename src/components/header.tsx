@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect, useCallback } from "react";
 import { useAuth, useWallet, useDailySpending } from "../hooks";
 import { useSiteStatus } from "../contexts/site-status-context";
 import { settingsService } from "../services/settings.service";
@@ -37,6 +37,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   // Check if user can have a wallet (all business users)
   const canShowWallet = canHaveWallet(authState.user?.userType || "");
   const isAdmin = isAdminUser(authState.user?.userType || "");
+  const firstName = authState.user?.fullName.split(" ")[0] ?? "";
 
   // Get connection status indicator
   const getConnectionStatusIndicator = () => {
@@ -66,13 +67,49 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     }
   };
 
-  // Get greeting based on time of day with emoji
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return { text: "Good morning", emoji: "☀️" };
-    if (hour < 18) return { text: "Good afternoon", emoji: "☀️" };
-    return { text: "Good evening", emoji: "🌙" };
+  // Compute default greeting text based on the current time of day
+  const getDefaultGreetingText = () => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 18) return "Good afternoon";
+    return "Good evening";
   };
+
+  const greetingText = siteStatus?.greetingText?.trim() || getDefaultGreetingText();
+  const welcomeMessage = siteStatus?.welcomeMessage?.trim() || "Welcome back!";
+  const showGreetingIcon = siteStatus?.showGreetingIcon ?? true;
+
+  const greetingContainerRef = useRef<HTMLDivElement>(null);
+  const greetingTextRef = useRef<HTMLDivElement>(null);
+  const welcomeContainerRef = useRef<HTMLDivElement>(null);
+  const welcomeTextRef = useRef<HTMLDivElement>(null);
+
+  const [greetingMarquee, setGreetingMarquee] = useState(false);
+  const [welcomeMarquee, setWelcomeMarquee] = useState(false);
+
+  const updateMarqueeState = useCallback(() => {
+    if (greetingContainerRef.current && greetingTextRef.current) {
+      setGreetingMarquee(
+        greetingTextRef.current.scrollWidth > greetingContainerRef.current.clientWidth + 2,
+      );
+    } else {
+      setGreetingMarquee(false);
+    }
+
+    if (welcomeContainerRef.current && welcomeTextRef.current) {
+      setWelcomeMarquee(
+        welcomeTextRef.current.scrollWidth > welcomeContainerRef.current.clientWidth + 2,
+      );
+    } else {
+      setWelcomeMarquee(false);
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    updateMarqueeState();
+    window.addEventListener("resize", updateMarqueeState);
+    return () => window.removeEventListener("resize", updateMarqueeState);
+  }, [updateMarqueeState, greetingText, welcomeMessage, firstName]);
 
   // Format amount
   const formatAmount = (amount: number) => {
@@ -187,15 +224,31 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             <div className="min-w-0 flex-1">
               <div className="relative overflow-hidden">
                 <div className="transform transition-all duration-500 ease-in-out animate-slide-in-from-bottom">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      <span className="text-lg sm:text-xl">{getGreeting().emoji}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm sm:text-base lg:text-lg font-semibold text-white truncate">
-                        {getGreeting().text},{" "}{authState.user?.fullName.split(" ")[0]}
+                  <div className="min-w-0">
+                    <div
+                      ref={greetingContainerRef}
+                      className="overflow-hidden whitespace-nowrap"
+                      aria-label="Greeting text"
+                    >
+                      <div
+                        ref={greetingTextRef}
+                        className={`inline-block whitespace-nowrap font-semibold text-sm sm:text-base lg:text-lg text-white ${greetingMarquee ? "animate-marquee min-w-max" : ""}`}
+                      >
+                        {greetingText}, {firstName}
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-200 truncate">Welcome back! 👋</div>
+                    </div>
+                    <div
+                      ref={welcomeContainerRef}
+                      className="overflow-hidden whitespace-nowrap mt-1 text-xs sm:text-sm text-gray-200"
+                      aria-label="Welcome message"
+                    >
+                      <div
+                        ref={welcomeTextRef}
+                        className={`inline-block whitespace-nowrap ${welcomeMarquee ? "animate-marquee min-w-max" : ""}`}
+                      >
+                        {welcomeMessage}
+                        {showGreetingIcon && <span className="ml-1">👋</span>}
+                      </div>
                     </div>
                   </div>
                 </div>

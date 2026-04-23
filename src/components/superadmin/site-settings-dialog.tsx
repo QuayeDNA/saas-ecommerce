@@ -8,6 +8,7 @@ import {
   Button,
   Textarea,
 } from "../../design-system";
+import { Input } from "../../design-system/components/input";
 import {
   settingsService,
   type SiteSettings,
@@ -79,9 +80,8 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
                 </div>
                 <div className="flex items-center gap-3">
                   <span
-                    className={`text-sm font-medium ${
-                      formData.isSiteOpen ? "text-green-600" : "text-red-600"
-                    }`}
+                    className={`text-sm font-medium ${formData.isSiteOpen ? "text-green-600" : "text-red-600"
+                      }`}
                   >
                     {formData.isSiteOpen ? "Open" : "Closed"}
                   </span>
@@ -93,17 +93,68 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
                         isSiteOpen: !prev.isSiteOpen,
                       }))
                     }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      formData.isSiteOpen ? "bg-green-600" : "bg-gray-200"
-                    }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.isSiteOpen ? "bg-green-600" : "bg-gray-200"
+                      }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        formData.isSiteOpen ? "translate-x-6" : "translate-x-1"
-                      }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isSiteOpen ? "translate-x-6" : "translate-x-1"
+                        }`}
                     />
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              <Input
+                label="Greeting Text"
+                value={formData.greetingText ?? ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    greetingText: e.target.value,
+                  }))
+                }
+                placeholder="Good morning"
+                className="w-full"
+              />
+
+              <Input
+                label="Welcome Message"
+                value={formData.welcomeMessage ?? ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    welcomeMessage: e.target.value,
+                  }))
+                }
+                placeholder="Welcome back!"
+                className="w-full"
+              />
+
+              <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                <div>
+                  <div className="text-sm font-medium text-gray-900">
+                    Show welcome icon
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Toggle whether the welcome message includes an icon.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={formData.showGreetingIcon ?? true}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        showGreetingIcon: e.target.checked,
+                      }))
+                    }
+                  />
+                  <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                </label>
               </div>
             </div>
 
