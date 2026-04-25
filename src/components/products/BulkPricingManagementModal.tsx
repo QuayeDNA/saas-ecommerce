@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import {
   Dialog, DialogHeader, DialogBody, DialogFooter,
-  Button, Spinner, Badge,
+  Button, Spinner, Badge, Card,
 } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
 import {
@@ -187,7 +187,7 @@ export const BulkPricingManagementModal: React.FC<BulkPricingManagementModalProp
             </div>
 
             {/* Pricing table */}
-            <div className="border rounded-lg overflow-hidden">
+            <Card noPadding>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                   <thead className="bg-gray-50 sticky top-0 z-10">
@@ -280,7 +280,7 @@ export const BulkPricingManagementModal: React.FC<BulkPricingManagementModalProp
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Card>
 
             {/* Summary strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
