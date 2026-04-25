@@ -16,11 +16,11 @@ import { useBulkPricing } from "../../hooks/useBulkPricing";
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const USER_TYPES = [
-  { key: "customer",     label: "Customer",     color: "bg-blue-100 text-blue-800"   },
-  { key: "agent",        label: "Agent",        color: "bg-green-100 text-green-800" },
-  { key: "super_agent",  label: "Super Agent",  color: "bg-purple-100 text-purple-800" },
-  { key: "dealer",       label: "Dealer",       color: "bg-orange-100 text-orange-800" },
-  { key: "super_dealer", label: "Super Dealer", color: "bg-red-100 text-red-800"     },
+  { key: "customer", label: "Customer", color: "bg-blue-100 text-blue-800" },
+  { key: "agent", label: "Agent", color: "bg-green-100 text-green-800" },
+  { key: "super_agent", label: "Super Agent", color: "bg-purple-100 text-purple-800" },
+  { key: "dealer", label: "Dealer", color: "bg-orange-100 text-orange-800" },
+  { key: "super_dealer", label: "Super Dealer", color: "bg-red-100 text-red-800" },
 ] as const;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -51,8 +51,8 @@ const PriceCell: React.FC<PriceCellProps> = ({
       isEditing
         ? "border-blue-500 ring-2 ring-blue-500"
         : isDirty
-        ? "border-yellow-400 bg-yellow-50"
-        : "border-gray-300 hover:border-gray-400",
+          ? "border-yellow-400 bg-yellow-50"
+          : "border-gray-300 hover:border-gray-400",
     ].join(" ")}
   />
 );
@@ -102,26 +102,26 @@ export const BulkPricingManagementModal: React.FC<BulkPricingManagementModalProp
     }
   }, [isOpen, bundles, load, addToast]);
 
- const handleSave = async () => {
-  if (changedCount === 0) {
-    return addToast("No changes to save", "info");
-  }
-
-  try {
-    const { successful, failed } = await saveAll();
-
-    if (failed > 0) {
-      addToast(`Updated ${successful} bundles, ${failed} failed`, "warning");
-    } else {
-      addToast(`Successfully updated ${successful} bundles`, "success");
+  const handleSave = async () => {
+    if (changedCount === 0) {
+      return addToast("No changes to save", "info");
     }
 
-    onPricingUpdated();
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed to save pricing changes";
-    addToast(msg, "error");
-  }
-};
+    try {
+      const { successful, failed } = await saveAll();
+
+      if (failed > 0) {
+        addToast(`Updated ${successful} bundles, ${failed} failed`, "warning");
+      } else {
+        addToast(`Successfully updated ${successful} bundles`, "success");
+      }
+
+      onPricingUpdated();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save pricing changes";
+      addToast(msg, "error");
+    }
+  };
 
   const handleReset = () => {
     resetChanges().catch(() => addToast("Failed to reset changes", "error"));
@@ -193,7 +193,7 @@ export const BulkPricingManagementModal: React.FC<BulkPricingManagementModalProp
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
                       {/* Bundle column — sticky on mobile too */}
-                      <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wide sticky left-0 bg-gray-50 z-20 min-w-[160px] sm:min-w-[220px]">
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wide sticky left-0 bg-gray-50 z-20 min-w-[140px] sm:min-w-[220px]">
                         Bundle
                       </th>
                       <th className="px-3 py-2.5 text-center font-semibold text-gray-600 uppercase tracking-wide min-w-[90px]">
@@ -224,13 +224,13 @@ export const BulkPricingManagementModal: React.FC<BulkPricingManagementModalProp
                       return (
                         <tr key={bundle._id} className={`transition-colors ${rowClass}`}>
                           {/* Bundle info — sticky */}
-                          <td className="px-3 py-2.5 sticky left-0 bg-inherit z-10">
+                          <td className="px-3 py-2.5 sticky left-0 z-10 bg-white shadow-[0_0_0_1px_rgba(229,231,235,0.75)]">
                             <div className="flex items-center gap-2">
                               <FaCube className="text-blue-500 shrink-0" />
                               <div className="min-w-0">
                                 <p className="font-medium text-gray-900 truncate">{bundle.name}</p>
                                 <p className="text-[10px] text-gray-400 truncate">
-                                  {bundle.dataVolume}{bundle.dataUnit} · {bundle.validity}{bundle.validityUnit}
+                                  {bundle.dataVolume}{bundle.dataUnit} · {bundle.validity}
                                 </p>
                               </div>
                             </div>
@@ -285,10 +285,10 @@ export const BulkPricingManagementModal: React.FC<BulkPricingManagementModalProp
             {/* Summary strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
               {[
-                { label: "Total Bundles",    value: bundles.length,                      cls: "text-gray-900"   },
-                { label: "Modified",         value: changedCount,                         cls: "text-yellow-600" },
-                { label: "User Types",       value: USER_TYPES.length,                    cls: "text-blue-600"   },
-                { label: "Total Prices",     value: bundles.length * (USER_TYPES.length + 1), cls: "text-purple-600" },
+                { label: "Total Bundles", value: bundles.length, cls: "text-gray-900" },
+                { label: "Modified", value: changedCount, cls: "text-yellow-600" },
+                { label: "User Types", value: USER_TYPES.length, cls: "text-blue-600" },
+                { label: "Total Prices", value: bundles.length * (USER_TYPES.length + 1), cls: "text-purple-600" },
               ].map(({ label, value, cls }) => (
                 <div key={label}>
                   <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5">{label}</p>
