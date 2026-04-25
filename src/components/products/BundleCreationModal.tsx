@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { 
-  FaCube, 
-  FaPlus, 
+import { useState, useEffect } from "react";
+import {
+  FaCube,
+  FaPlus,
   FaArrowLeft,
   FaLayerGroup
 } from "react-icons/fa";
-import { 
+import {
   Dialog,
   DialogHeader,
   DialogBody,
@@ -41,6 +41,22 @@ export const BundleCreationModal: React.FC<BundleCreationModalProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState<CreationStep>('select');
   const [showSingleForm, setShowSingleForm] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCurrentStep('select');
+      setShowSingleForm(false);
+      return;
+    }
+
+    if (initialData) {
+      setCurrentStep('single');
+      setShowSingleForm(true);
+    } else {
+      setCurrentStep('select');
+      setShowSingleForm(false);
+    }
+  }, [isOpen, initialData]);
 
   const handleClose = () => {
     setCurrentStep('select');
@@ -85,7 +101,7 @@ export const BundleCreationModal: React.FC<BundleCreationModalProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Single Bundle Card */}
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 border-transparent hover:border-blue-200"
           onClick={handleSelectSingle}
         >
@@ -110,7 +126,7 @@ export const BundleCreationModal: React.FC<BundleCreationModalProps> = ({
         </Card>
 
         {/* Bulk Bundle Card */}
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 border-transparent hover:border-purple-200"
           onClick={handleSelectBulk}
         >

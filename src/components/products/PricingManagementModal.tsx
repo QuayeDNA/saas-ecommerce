@@ -21,12 +21,12 @@ interface PricingManagementModalProps {
   onPricingUpdated?: () => void;
 }
 
-type PricingTiers = Record<string, number> & {
-  agent: number;
-  super_agent: number;
-  dealer: number;
-  super_dealer: number;
-  default: number;
+type PricingTiers = Record<string, number | string> & {
+  agent: number | string;
+  super_agent: number | string;
+  dealer: number | string;
+  super_dealer: number | string;
+  default: number | string;
 };
 
 const userTypeLabels = {
@@ -110,26 +110,39 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
   }, [isOpen, bundleId, fetchPricingData]);
 
   const handlePriceChange = (userType: keyof PricingTiers, value: string) => {
-    const numValue = parseFloat(value) || 0;
+    if (userType === "default") return;
     setPricingTiers((prev) => ({
       ...prev,
-      [userType]: numValue,
+      [userType]: value,
     }));
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Validate pricing values
-      const invalidPrices = Object.entries(pricingTiers).filter(
-        ([, price]) => price < 0
-      );
-      if (invalidPrices.length > 0) {
-        addToast("All prices must be positive numbers", "error");
-        return;
+      const validatedTiers: Record<string, number> = {};
+      for (const [userType, price] of Object.entries(pricingTiers)) {
+        if (userType === "default") continue;
+
+        const numericPrice =
+          typeof price === "number"
+            ? price
+            : price.trim() === ""
+              ? NaN
+              : parseFloat(price);
+
+        if (Number.isNaN(numericPrice) || numericPrice < 0) {
+          addToast("All prices must be positive numbers", "error");
+          return;
+        }
+
+        validatedTiers[userType] = numericPrice;
       }
 
-      await bundleService.updateBundlePricing(bundleId, pricingTiers);
+      await bundleService.updateBundlePricing(bundleId, {
+        ...validatedTiers,
+        default: basePrice,
+      });
       addToast("Pricing updated successfully", "success");
 
       if (onPricingUpdated) {
@@ -154,21 +167,35 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
 
   const hasChanges = () => {
     return Object.keys(pricingTiers).some(
-      (key) => pricingTiers[key] !== originalPricing[key]
+      (key) => String(pricingTiers[key]) !== String(originalPricing[key])
     );
   };
 
-  const calculateDiscount = (userPrice: number) => {
-    if (basePrice === 0 || userPrice >= basePrice) return 0;
-    return Math.round(((basePrice - userPrice) / basePrice) * 100);
+  const calculateDiscount = (userPrice: number | string) => {
+    const numericPrice =
+      typeof userPrice === "number"
+        ? userPrice
+        : userPrice.trim() === ""
+          ? 0
+          : parseFloat(userPrice);
+
+    if (basePrice === 0 || numericPrice >= basePrice) return 0;
+    return Math.round(((basePrice - numericPrice) / basePrice) * 100);
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
+    const numericAmount =
+      typeof amount === "number"
+        ? amount
+        : amount.trim() === ""
+          ? 0
+          : parseFloat(amount);
+
     return new Intl.NumberFormat("en-GH", {
       style: "currency",
       currency: "GHS",
       minimumFractionDigits: 2,
-    }).format(amount);
+    }).format(numericAmount);
   };
 
   return (
@@ -222,96 +249,121 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
               </div>
 
               <div className="grid gap-4">
-                {Object.entries(userTypeLabels).map(([userType, label]) => {
-                  const price = pricingTiers[userType];
-                  const discount = calculateDiscount(price);
+                {Object.entries(userTypeLabels)
+                  .filter(([userType]) => userType !== "default")
+                  .map(([userType, label]) => {
+                    const price = pricingTiers[userType];
+                    const discount = calculateDiscount(price);
 
-                  return (
-                    <div
-                      key={userType}
-                      className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <Badge
-                              className={
-                                userTypeColors[
+                    return (
+                      <div
+                        key={userType}
+                        className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Badge
+                                className={
+                                  userTypeColors[
                                   userType as keyof typeof userTypeColors
+                                  ]
+                                }
+                              >
+                                {label}
+                              </Badge>
+                              {discount > 0 && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-green-600 border-green-200"
+                                >
+                                  -{discount}% discount
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {
+                                userTypeDescriptions[
+                                userType as keyof typeof userTypeDescriptions
                                 ]
                               }
-                            >
-                              {label}
-                            </Badge>
-                            {discount > 0 && (
-                              <Badge
-                                variant="outline"
-                                className="text-green-600 border-green-200"
-                              >
-                                -{discount}% discount
-                              </Badge>
-                            )}
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-600">
-                            {
-                              userTypeDescriptions[
-                                userType as keyof typeof userTypeDescriptions
-                              ]
-                            }
-                          </p>
-                        </div>
 
-                        <div className="w-32">
-                          <label
-                            htmlFor={`price-${userType}`}
-                            className="sr-only"
-                          >
-                            Price for {label}
-                          </label>
-                          <div className="relative">
-                            <Input
-                              id={`price-${userType}`}
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={price}
-                              onChange={(e) =>
-                                handlePriceChange(
-                                  userType as keyof PricingTiers,
-                                  e.target.value
-                                )
-                              }
-                              className="pl-8"
-                              placeholder="0.00"
-                            />
-                            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                              <span className="text-sm text-gray-500">₵</span>
+                          <div className="w-32">
+                            <label
+                              htmlFor={`price-${userType}`}
+                              className="sr-only"
+                            >
+                              Price for {label}
+                            </label>
+                            <div className="relative">
+                              <Input
+                                id={`price-${userType}`}
+                                type="text"
+                                inputMode="decimal"
+                                pattern="^\d*\.?\d*$"
+                                value={price}
+                                onChange={(e) =>
+                                  handlePriceChange(
+                                    userType as keyof PricingTiers,
+                                    e.target.value
+                                  )
+                                }
+                                className="pl-8"
+                                placeholder="0.00"
+                              />
+                              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                                <span className="text-sm text-gray-500">₵</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
-            </div>
 
-            {/* Pricing Summary */}
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-3">
-                Pricing Summary
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                {Object.entries(pricingTiers).map(([userType, price]) => (
-                  <div key={userType} className="flex justify-between">
-                    <span className="text-blue-700">
-                      {userTypeLabels[userType as keyof typeof userTypeLabels]}:
-                    </span>
-                    <span className="font-medium text-blue-900">
-                      {formatCurrency(price)}
-                    </span>
+              {/* Default Price Row */}
+              <div
+                className="p-4 border border-dashed rounded-xl"
+                style={{ background: "var(--color-control-bg)", borderColor: "var(--color-border)" }}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900">Default Price</h4>
+                    <p className="text-xs text-gray-600">
+                      Base fallback price that is always synced to the bundle base price.
+                    </p>
                   </div>
-                ))}
+                  <div className="w-32">
+                    <Input
+                      type="text"
+                      disabled
+                      value={formatCurrency(basePrice)}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Summary */}
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-3">
+                  Pricing Summary
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                  {Object.entries(pricingTiers).map(([userType, price]) => (
+                    <div key={userType} className="flex justify-between">
+                      <span className="text-blue-700">
+                        {userTypeLabels[userType as keyof typeof userTypeLabels]}:
+                      </span>
+                      <span className="font-medium text-blue-900">
+                        {formatCurrency(price)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

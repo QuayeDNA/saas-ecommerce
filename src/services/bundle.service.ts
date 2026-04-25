@@ -173,7 +173,11 @@ class BundleService {
 
   // Bulk update pricing for multiple bundles
   async bulkUpdatePricing(
-    updates: Array<{ bundleId: string; pricingTiers: Record<string, number> }>
+    updates: Array<{
+      bundleId: string;
+      basePrice?: number;
+      pricingTiers: Record<string, number>;
+    }>
   ): Promise<{
     successful: Array<{
       bundleId: string;

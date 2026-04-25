@@ -35,8 +35,8 @@ interface BulkPricingManagementModalProps {
 
 interface PricingData {
   [bundleId: string]: {
-    basePrice: number;
-    pricingTiers: Record<string, number>;
+    basePrice: number | string;
+    pricingTiers: Record<string, number | string>;
     hasChanges: boolean;
   };
 }
@@ -108,6 +108,21 @@ export const BulkPricingManagementModal: React.FC<
     userType: string,
     value: string
   ) => {
+    if (value === "") {
+      setPricingData((prev) => ({
+        ...prev,
+        [bundleId]: {
+          ...prev[bundleId],
+          pricingTiers: {
+            ...prev[bundleId].pricingTiers,
+            [userType]: "",
+          },
+          hasChanges: true,
+        },
+      }));
+      return;
+    }
+
     const numValue = parseFloat(value);
     if (isNaN(numValue) || numValue < 0) return;
 
@@ -125,6 +140,18 @@ export const BulkPricingManagementModal: React.FC<
   };
 
   const handleBasePriceChange = (bundleId: string, value: string) => {
+    if (value === "") {
+      setPricingData((prev) => ({
+        ...prev,
+        [bundleId]: {
+          ...prev[bundleId],
+          basePrice: "",
+          hasChanges: true,
+        },
+      }));
+      return;
+    }
+
     const numValue = parseFloat(value);
     if (isNaN(numValue) || numValue < 0) return;
 
@@ -153,7 +180,7 @@ export const BulkPricingManagementModal: React.FC<
   const handleSaveAll = async () => {
     const changedBundles = Object.entries(pricingData).filter(
       ([, data]) => data.hasChanges
-    );
+    ) as Array<[string, PricingData[string]]>;
 
     if (changedBundles.length === 0) {
       addToast("No changes to save", "info");
@@ -162,13 +189,44 @@ export const BulkPricingManagementModal: React.FC<
 
     setSaving(true);
     try {
-      const updates = changedBundles.map(([bundleId, data]) => ({
-        bundleId,
-        pricingTiers: data.pricingTiers,
-      }));
+      const updates = changedBundles.map(([bundleId, data]) => {
+        const basePriceValue =
+          typeof data.basePrice === "number"
+            ? data.basePrice
+            : data.basePrice.trim() === ""
+              ? NaN
+              : parseFloat(data.basePrice);
 
+        if (Number.isNaN(basePriceValue) || basePriceValue < 0) {
+          throw new Error("Bundle base price must be a valid positive number");
+        }
+
+        const pricingTiers: Record<string, number> = {};
+        for (const [key, value] of Object.entries(data.pricingTiers)) {
+          const tierValue =
+            typeof value === "number"
+              ? value
+              : value.trim() === ""
+                ? NaN
+                : parseFloat(value);
+
+          if (Number.isNaN(tierValue) || tierValue < 0) {
+            throw new Error("Pricing values must be valid positive numbers");
+          }
+
+          pricingTiers[key] = tierValue;
+        }
+
+        return {
+          bundleId,
+          basePrice: basePriceValue,
+          pricingTiers: {
+            ...pricingTiers,
+            default: basePriceValue,
+          },
+        };
+      });
       const result = await bundleService.bulkUpdatePricing(updates);
-
       if (result.failed.length > 0) {
         addToast(
           `Updated ${result.successful.length} bundles, ${result.failed.length} failed`,
@@ -311,9 +369,8 @@ export const BulkPricingManagementModal: React.FC<
                       return (
                         <tr
                           key={bundle._id}
-                          className={`hover:bg-gray-50 ${
-                            bundlePricing.hasChanges ? "bg-yellow-50" : ""
-                          }`}
+                          className={`hover:bg-gray-50 ${bundlePricing.hasChanges ? "bg-yellow-50" : ""
+                            }`}
                         >
                           {/* Bundle Name (Sticky) */}
                           <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 sticky left-0 bg-white z-10">
@@ -335,9 +392,9 @@ export const BulkPricingManagementModal: React.FC<
                           <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3">
                             <div className="flex items-center justify-center">
                               <input
-                                type="number"
-                                step="0.01"
-                                min="0"
+                                type="text"
+                                inputMode="decimal"
+                                pattern="^\d*\.?\d*$"
                                 value={bundlePricing.basePrice}
                                 onChange={(e) =>
                                   handleBasePriceChange(
@@ -345,11 +402,10 @@ export const BulkPricingManagementModal: React.FC<
                                     e.target.value
                                   )
                                 }
-                                className={`w-full px-1.5 sm:px-2 py-1 text-[11px] sm:text-xs md:text-sm text-center border rounded focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 ${
-                                  bundlePricing.hasChanges
-                                    ? "border-yellow-400 bg-yellow-50"
-                                    : "border-gray-300"
-                                }`}
+                                className={`w-full px-1.5 sm:px-2 py-1 text-[11px] sm:text-xs md:text-sm text-center border rounded focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500 ${bundlePricing.hasChanges
+                                  ? "border-yellow-400 bg-yellow-50"
+                                  : "border-gray-300"
+                                  }`}
                               />
                             </div>
                           </td>
@@ -370,9 +426,9 @@ export const BulkPricingManagementModal: React.FC<
                               >
                                 <div className="flex items-center justify-center">
                                   <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
+                                    type="text"
+                                    inputMode="decimal"
+                                    pattern="^\d*\.?\d*$"
                                     value={price}
                                     onChange={(e) =>
                                       handlePriceChange(
@@ -385,13 +441,12 @@ export const BulkPricingManagementModal: React.FC<
                                       handleCellClick(bundle._id!, userType.key)
                                     }
                                     onBlur={handleCellBlur}
-                                    className={`w-full px-1.5 sm:px-2 py-1 text-[11px] sm:text-xs md:text-sm text-center border rounded transition-all ${
-                                      isEditing
-                                        ? "ring-1 sm:ring-2 ring-blue-500 border-blue-500"
-                                        : bundlePricing.hasChanges
+                                    className={`w-full px-1.5 sm:px-2 py-1 text-[11px] sm:text-xs md:text-sm text-center border rounded transition-all ${isEditing
+                                      ? "ring-1 sm:ring-2 ring-blue-500 border-blue-500"
+                                      : bundlePricing.hasChanges
                                         ? "border-yellow-400 bg-yellow-50"
                                         : "border-gray-300"
-                                    } focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500`}
+                                      } focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-blue-500`}
                                   />
                                 </div>
                               </td>
