@@ -1192,7 +1192,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                   <div className="mt-4 border border-gray-200 rounded-lg bg-gray-50 p-4">
                     <div className="flex items-start gap-3">
                       <img
-                        src={storefront.branding?.logoUrl || '/logo-192.svg'}
+                        src={storefront.branding?.logoUrl || '/android-chrome-192x192.png'}
                         alt="Store logo"
                         className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
                       />

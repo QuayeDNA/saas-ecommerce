@@ -1,29 +1,4 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Dark blue background with border -->
-  <rect width="512" height="512" rx="80" fill="#142850" stroke="#0f1f3a" stroke-width="8"/>
-  
-  <!-- Gold coin circle -->
-  <circle cx="256" cy="256" r="180" fill="#FFD700" stroke="#DAA520" stroke-width="8"/>
-  
-  <!-- Inner coin circle for depth -->
-  <circle cx="256" cy="256" r="160" fill="#FFD700" stroke="#DAA520" stroke-width="3"/>
-  
-  <!-- Cedi sign (₵) - simplified for better visibility -->
-  <g fill="#142850">
-    <!-- Vertical line of the cedi sign -->
-    <rect x="240" y="180" width="32" height="152" rx="6"/>
-    
-    <!-- Top horizontal line -->
-    <rect x="200" y="180" width="112" height="20" rx="10"/>
-    
-    <!-- Bottom horizontal line -->
-    <rect x="200" y="312" width="112" height="20" rx="10"/>
-    
-    <!-- Decorative dots on the coin -->
-    <circle cx="200" cy="256" r="10" fill="#DAA520"/>
-    <circle cx="312" cy="256" r="10" fill="#DAA520"/>
-  </g>
-  
-  <!-- Coin shine effect -->
-  <ellipse cx="220" cy="220" rx="50" ry="25" fill="rgba(255,255,255,0.4)" transform="rotate(-30 220 220)"/>
-</svg> 
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <image href="data:image/png;base64,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" width="32" height="32" />
+</svg>

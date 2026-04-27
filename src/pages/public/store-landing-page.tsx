@@ -40,13 +40,13 @@ export default function StoreLandingPage() {
     document.title = title;
     setMetaTag('og:title', title);
     setMetaTag('og:description', OG_DESCRIPTION);
-    setMetaTag('og:image', '/android-chrome-512x512.png');
+    setMetaTag('og:image', '/og-image.png');
     setMetaTag('og:url', window.location.href);
     setMetaTag('og:type', 'website');
     setMetaTag('twitter:card', 'summary_large_image');
     setMetaTag('twitter:title', title);
     setMetaTag('twitter:description', OG_DESCRIPTION);
-    setMetaTag('twitter:image', '/android-chrome-512x512.png');
+    setMetaTag('twitter:image', '/og-image.png');
   }, []);
 
   const loadStores = useCallback(async () => {
@@ -75,10 +75,10 @@ export default function StoreLandingPage() {
   const btnLabel = redirecting
     ? 'Finding a store…'
     : loading
-    ? 'Loading…'
-    : noStores
-    ? 'No stores available yet'
-    : 'Shop now';
+      ? 'Loading…'
+      : noStores
+        ? 'No stores available yet'
+        : 'Shop now';
 
   return (
     <>

@@ -2,7 +2,7 @@ const BRYTELINKS_META = {
   title: "BryteLinks - Telecom Solutions Platform",
   description:
     "BryteLinks provides modern telecom solutions for agents and dealers in Ghana. Manage your telecom business with our comprehensive platform.",
-  image: "/logo-192.svg",
+  image: "/og-image.png",
   siteName: "BryteLinks",
   type: "website",
 };
@@ -25,7 +25,7 @@ function escapeHtml(value = "") {
 }
 
 function toAbsoluteUrl(value, origin) {
-  if (!value) return `${origin}/android-chrome-512x512.png`;
+  if (!value) return `${origin}/og-image.png`;
   if (/^https?:\/\//i.test(value)) return value;
   return `${origin}${value.startsWith("/") ? value : `/${value}`}`;
 }
@@ -34,7 +34,7 @@ function upsertMetaTag(html, attr, key, content) {
   const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(
     `<meta\\s+[^>]*${attr}=["']${escapedKey}["'][^>]*>`,
-    "i"
+    "i",
   );
   const tag = `<meta ${attr}="${key}" content="${escapeHtml(content)}" />`;
   if (pattern.test(html)) return html.replace(pattern, tag);
@@ -69,7 +69,7 @@ async function resolveStoreMeta(apiBase, businessName, origin, fullUrl) {
 
   try {
     const endpoint = `${apiBase.replace(/\/$/, "")}/api/storefront/${encodeURIComponent(
-      businessName
+      businessName,
     )}`;
     const response = await fetch(endpoint, {
       headers: { Accept: "application/json" },
@@ -89,7 +89,9 @@ async function resolveStoreMeta(apiBase, businessName, origin, fullUrl) {
       ...new Set(
         bundles
           .map((bundle) => bundle?.provider)
-          .filter((provider) => typeof provider === "string" && provider.trim())
+          .filter(
+            (provider) => typeof provider === "string" && provider.trim(),
+          ),
       ),
     ];
     const summarySuffix = networks.length
@@ -101,7 +103,7 @@ async function resolveStoreMeta(apiBase, businessName, origin, fullUrl) {
       description: `${storeDesc}${summarySuffix}`.trim(),
       image: toAbsoluteUrl(
         store?.branding?.logoUrl || DIRECTDATA_DEFAULT_META.image,
-        origin
+        origin,
       ),
       siteName: "DirectData",
       type: "website",
@@ -113,13 +115,16 @@ async function resolveStoreMeta(apiBase, businessName, origin, fullUrl) {
 }
 
 function getRequestContext(req) {
-  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "");
+  const host = String(
+    req.headers["x-forwarded-host"] || req.headers.host || "",
+  );
   const protocol = String(req.headers["x-forwarded-proto"] || "https");
   const origin = `${protocol}://${host}`;
   const rawPath = String(req.query.path || "").replace(/^\/+/, "");
   const pathname = rawPath ? `/${rawPath}` : "/";
   const isStorefrontHost = /(^|\.)directdata\.shop$/i.test(host);
-  const businessName = isStorefrontHost && rawPath && !rawPath.includes("/") ? rawPath : null;
+  const businessName =
+    isStorefrontHost && rawPath && !rawPath.includes("/") ? rawPath : null;
 
   return {
     host,
@@ -161,7 +166,7 @@ export default async function handler(req, res) {
         apiBase,
         context.businessName,
         context.origin,
-        context.fullUrl
+        context.fullUrl,
       );
     }
 
@@ -189,18 +194,31 @@ export default async function handler(req, res) {
     html = upsertMetaTag(html, "property", "og:site_name", meta.siteName);
 
     html = upsertMetaTag(html, "name", "twitter:card", "summary_large_image");
-    html = upsertMetaTag(html, "property", "twitter:card", "summary_large_image");
+    html = upsertMetaTag(
+      html,
+      "property",
+      "twitter:card",
+      "summary_large_image",
+    );
     html = upsertMetaTag(html, "name", "twitter:url", meta.url);
     html = upsertMetaTag(html, "property", "twitter:url", meta.url);
     html = upsertMetaTag(html, "name", "twitter:title", meta.title);
     html = upsertMetaTag(html, "property", "twitter:title", meta.title);
     html = upsertMetaTag(html, "name", "twitter:description", meta.description);
-    html = upsertMetaTag(html, "property", "twitter:description", meta.description);
+    html = upsertMetaTag(
+      html,
+      "property",
+      "twitter:description",
+      meta.description,
+    );
     html = upsertMetaTag(html, "name", "twitter:image", meta.image);
     html = upsertMetaTag(html, "property", "twitter:image", meta.image);
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Cache-Control", "public, s-maxage=120, stale-while-revalidate=300");
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=120, stale-while-revalidate=300",
+    );
     res.setHeader("x-og-context", ogContext);
     res.status(200).send(html);
   } catch {

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "generate-assets": "node scripts/generate-brand-assets.js",
+    "build": "npm run generate-assets && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -46,6 +47,8 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "png-to-ico": "^1.0.7",
+    "sharp": "^0.32.6",
     "terser": "^5.43.1",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",

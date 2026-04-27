@@ -116,7 +116,7 @@ export const LoginPage = () => {
 
             {/* Logo */}
             <div className="flex items-center space-x-2">
-              <BryteLinksSvgLogoCompact width={140} height={40} />
+              <BryteLinksSvgLogoCompact width={40} height={40} />
             </div>
           </div>
         </Container>
@@ -126,9 +126,9 @@ export const LoginPage = () => {
       <div className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-lg">
           <Card className="shadow-xl border-0" variant="elevated" noPadding>
-            <CardHeader className="text-center mb-6 pb-4 bg-slate-900 w-full">
+            <CardHeader className="text-center mb-6 p-4 bg-slate-900 w-full">
               <div className="flex justify-center items-center">
-                <BryteLinksSvgLogo width={120} height={140} />
+                <BryteLinksSvgLogo width={80} height={80} />
               </div>
               <h1 className="text-3xl font-bold text-gray-100 mb-2">
                 Welcome back
