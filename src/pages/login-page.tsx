@@ -22,6 +22,8 @@ import {
   FaArrowLeft,
   FaExclamationTriangle,
   FaSpinner,
+  FaWhatsapp,
+  FaUsers,
 } from "react-icons/fa";
 import {
   Button,
@@ -286,25 +288,27 @@ export const LoginPage = () => {
 
                 {/* Additional Help */}
                 <div className="text-center pt-4 border-t border-gray-100">
-                  <p className="text-sm text-gray-500 mb-2">
-                    Need help? Contact our support team
+                  <p className="text-sm text-gray-500 mb-4 font-medium">
+                    Need help? Reach out to support or join our community.
                   </p>
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <a
-                      href="https://wa.me/+233548983019"
+                      href="https://wa.me/233548983019?text=Hello%20support%2C%20I%20need%20help%20with%20my%20account"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-green-600 hover:text-green-500 transition-colors"
+                      className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white"
                     >
-                      📞 +233 54 898 3019
+                      <FaWhatsapp className="text-green-600" />
+                      Contact support
                     </a>
                     <a
                       href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-green-600 hover:text-green-500 transition-colors"
+                      className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white"
                     >
-                      📱 Join our WhatsApp Community
+                      <FaUsers className="text-sky-500" />
+                      Join WhatsApp community
                     </a>
                   </div>
                 </div>
