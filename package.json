@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "generate-assets": "node scripts/generate-brand-assets.js",
-    "build": "npm run generate-assets && tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
