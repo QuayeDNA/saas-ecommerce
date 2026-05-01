@@ -1391,7 +1391,7 @@ const PublicStore: React.FC = () => {
         });
     }, []);
 
-    const openPaystackInline = useCallback(async (reference: string, amountPesewas: number) => {
+    const openPaystackInline = useCallback(async (reference: string, amountGhs: number) => {
         try {
             setPaystackStatus('idle');
             await loadPaystackScript();
@@ -1400,24 +1400,11 @@ const PublicStore: React.FC = () => {
             if (!publicKey) throw new Error('Paystack public key not available');
             const PaystackPop = (window as any).PaystackPop;
             if (!PaystackPop) throw new Error('Paystack script failed to load');
-
-            // Use the store's contact email as the merchant-side identifier.
-            // Fall back to a deterministic store-specific email so Paystack always
-            // gets a real-looking address tied to this specific store — never a
-            // generic unknown placeholder.
-            const storeEmail = storeData?.storefront.contactInfo?.email
-                || `${businessName}@storefront.brytelink.com`;
-
-            // Customer's phone — passed so Paystack pre-fills the MoMo number field
-            const customerPhone = activeOrder?.customerPhone || normalizePhone(orderPhone);
-
             const handler = PaystackPop.setup({
                 key: publicKey,
-                email: storeEmail,
-                phone: customerPhone,
-                first_name: customerName.trim().split(' ')[0] || undefined,
-                last_name: customerName.trim().split(' ').slice(1).join(' ') || undefined,
-                amount: amountPesewas,  // exact pesewas from backend — no recalculation
+                email: storeData?.storefront.contactInfo?.email || `store-${businessName || 'unknown'}@brytelink.com`,
+                // customer email not required — agent's registered email receives Paystack receipts
+                amount: Math.round((amountGhs || 0) * 100),
                 currency: 'GHS',
                 ref: reference,
                 onClose: () => {
@@ -1438,6 +1425,8 @@ const PublicStore: React.FC = () => {
             });
             handler.openIframe();
         } catch (err) {
+            // If the Paystack inline widget can't be opened (e.g. script blocked),
+            // we fail gracefully and let the user retry.
             console.error('[PublicStore] Paystack inline checkout failed', err);
             addToast(
                 'Unable to open Paystack checkout. Please try again or use a different browser.',
@@ -1445,7 +1434,7 @@ const PublicStore: React.FC = () => {
                 8000
             );
         }
-    }, [addToast, businessName, storeData, activeOrder, orderPhone, customerName]);
+    }, [addToast, businessName, storeData]);
 
     const submitOrder = useCallback(async () => {
         if (!businessName || !storeData || !canSubmitOrder || !activeOrder) return;
@@ -1474,12 +1463,8 @@ const PublicStore: React.FC = () => {
             };
 
             const result = await storefrontService.createPublicOrder(businessName, orderData);
-            const paystackData = result?.paystack as ({
-                authorizationUrl?: string;
-                authorization_url?: string;
-                reference?: string;
-                amountPesewas?: number;
-            } | undefined);
+            const paystackData = result?.paystack as ({ authorizationUrl?: string; authorization_url?: string; reference?: string; } | undefined);
+            const paystackUrl = paystackData?.authorizationUrl || paystackData?.authorization_url;
             const reference = paystackData?.reference;
 
             setOrderResult(result);
@@ -1500,10 +1485,8 @@ const PublicStore: React.FC = () => {
             }
             setOrderStep('confirmation');
 
-            const paystackRef = paystackData?.reference;
-            const paystackPesewas = paystackData?.amountPesewas;
-            if (paystackRef && paystackPesewas) {
-                await openPaystackInline(paystackRef, paystackPesewas);
+            if (paystackUrl && reference) {
+                await openPaystackInline(reference, result.total ?? activeOrder.bundle.price);
             }
         } catch (err) {
             const errorData = (err as any)?.response?.data;
