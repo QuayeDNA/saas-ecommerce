@@ -1,5 +1,5 @@
 // src/services/package.service.ts
-import { apiClient } from '../utils/api-client';
+import { apiClient } from "../utils/api-client";
 import type {
   Package,
   Bundle,
@@ -19,16 +19,16 @@ import type {
 class PackageService {
   // Package operations
   async createPackage(packageData: CreatePackageData): Promise<Package> {
-    const response = await apiClient.post('/api/packages', packageData);
+    const response = await apiClient.post("/api/packages", packageData);
     return response.data.data;
   }
 
   async getPackages(
     filters: PackageFilters = {},
-    pagination: Partial<Pagination> = {}
+    pagination: Partial<Pagination> = {},
   ): Promise<PackageResponse> {
     const params = { ...filters, ...pagination };
-    const response = await apiClient.get('/api/packages', { params });
+    const response = await apiClient.get("/api/packages", { params });
     return response.data;
   }
 
@@ -37,9 +37,14 @@ class PackageService {
     return response.data.data;
   }
 
+  async getPackageBySlug(slug: string): Promise<Package> {
+    const response = await apiClient.get(`/api/packages/slug/${slug}`);
+    return response.data.data;
+  }
+
   async updatePackage(
     id: string,
-    updateData: UpdatePackageData
+    updateData: UpdatePackageData,
   ): Promise<Package> {
     const response = await apiClient.put(`/api/packages/${id}`, updateData);
     return response.data.data;
@@ -65,22 +70,22 @@ class PackageService {
   }
 
   async getPackageStats(): Promise<PackageAnalytics> {
-    const response = await apiClient.get('/api/packages/stats/summary');
+    const response = await apiClient.get("/api/packages/stats/summary");
     return response.data.analytics;
   }
 
   // Bundle operations
   async createBundle(bundleData: CreateBundleData): Promise<Bundle> {
-    const response = await apiClient.post('/api/bundles', bundleData);
+    const response = await apiClient.post("/api/bundles", bundleData);
     return response.data.data;
   }
 
   async getBundles(
     filters: BundleFilters = {},
-    pagination: Partial<Pagination> = {}
+    pagination: Partial<Pagination> = {},
   ): Promise<BundleResponse> {
     const params = { ...filters, ...pagination };
-    const response = await apiClient.get('/api/bundles', { params });
+    const response = await apiClient.get("/api/bundles", { params });
     return response.data;
   }
 
@@ -91,7 +96,7 @@ class PackageService {
 
   async updateBundle(
     id: string,
-    updateData: UpdateBundleData
+    updateData: UpdateBundleData,
   ): Promise<Bundle> {
     const response = await apiClient.put(`/api/bundles/${id}`, updateData);
     return response.data.data;
@@ -101,29 +106,46 @@ class PackageService {
     await apiClient.delete(`/api/bundles/${id}`);
   }
 
-  async getBundlesByProvider(providerId: string, pagination?: Partial<Pagination>): Promise<BundleResponse> {
+  async getBundlesByProvider(
+    providerId: string,
+    pagination?: Partial<Pagination>,
+  ): Promise<BundleResponse> {
     const params = pagination || {};
-    const response = await apiClient.get(`/api/bundles/provider/${providerId}`, { params });
+    const response = await apiClient.get(
+      `/api/bundles/provider/${providerId}`,
+      { params },
+    );
     return response.data;
   }
 
-  async getBundlesByPackage(packageId: string, pagination?: Partial<Pagination>): Promise<BundleResponse> {
+  async getBundlesByPackage(
+    packageId: string,
+    pagination?: Partial<Pagination>,
+  ): Promise<BundleResponse> {
     const params = pagination || {};
-    const response = await apiClient.get(`/api/bundles/package/${packageId}`, { params });
+    const response = await apiClient.get(`/api/bundles/package/${packageId}`, {
+      params,
+    });
     return response.data;
   }
 
-  async getBundleAnalytics(period = '30d'): Promise<BundleAnalytics> {
-    const response = await apiClient.get('/api/bundles/analytics/overview', {
-      params: { period }
+  async getBundleAnalytics(period = "30d"): Promise<BundleAnalytics> {
+    const response = await apiClient.get("/api/bundles/analytics/overview", {
+      params: { period },
     });
     return response.data.data;
   }
 
-  async getProviderBundleAnalytics(providerId: string, period = '30d'): Promise<BundleAnalytics> {
-    const response = await apiClient.get(`/api/bundles/analytics/provider/${providerId}`, {
-      params: { period }
-    });
+  async getProviderBundleAnalytics(
+    providerId: string,
+    period = "30d",
+  ): Promise<BundleAnalytics> {
+    const response = await apiClient.get(
+      `/api/bundles/analytics/provider/${providerId}`,
+      {
+        params: { period },
+      },
+    );
     return response.data.data;
   }
 
@@ -133,16 +155,20 @@ class PackageService {
     failed: number;
     errors: Array<{ bundle: string; error: string }>;
   }> {
-    const response = await apiClient.post('/api/bundles/bulk', { bundles });
+    const response = await apiClient.post("/api/bundles/bulk", { bundles });
     return response.data.data;
   }
 
-  async updateBulkBundles(bundles: Array<{ id: string } & UpdateBundleData>): Promise<{
+  async updateBulkBundles(
+    bundles: Array<{ id: string } & UpdateBundleData>,
+  ): Promise<{
     updated: number;
     failed: number;
     errors: Array<{ bundleId: string; error: string }>;
   }> {
-    const response = await apiClient.put('/api/bundles/bulk/update', { bundles });
+    const response = await apiClient.put("/api/bundles/bulk/update", {
+      bundles,
+    });
     return response.data.data;
   }
 
@@ -151,14 +177,19 @@ class PackageService {
     failed: number;
     errors: Array<{ bundleId: string; error: string }>;
   }> {
-    const response = await apiClient.delete('/api/bundles/bulk/delete', { data: { bundleIds } });
+    const response = await apiClient.delete("/api/bundles/bulk/delete", {
+      data: { bundleIds },
+    });
     return response.data.data;
   }
 
   // Public package access
-  async getPublicBundles(filters?: BundleFilters, pagination?: Partial<Pagination>): Promise<BundleResponse> {
+  async getPublicBundles(
+    filters?: BundleFilters,
+    pagination?: Partial<Pagination>,
+  ): Promise<BundleResponse> {
     const params = { ...filters, ...pagination };
-    const response = await apiClient.get('/api/bundles', { params });
+    const response = await apiClient.get("/api/bundles", { params });
     return response.data;
   }
 
@@ -166,7 +197,9 @@ class PackageService {
   async getAllPackageItems(provider?: string) {
     const params: Record<string, string> = {};
     if (provider) params.provider = provider;
-    const response = await apiClient.get('/api/packages/public/bundles', { params });
+    const response = await apiClient.get("/api/packages/public/bundles", {
+      params,
+    });
     return response.data.bundles;
   }
 
@@ -175,8 +208,8 @@ class PackageService {
     return [];
   }
 
-  async getAnalytics(timeframe = '30d'): Promise<PackageAnalytics> {
-    const response = await apiClient.get('/api/packages/analytics', {
+  async getAnalytics(timeframe = "30d"): Promise<PackageAnalytics> {
+    const response = await apiClient.get("/api/packages/analytics", {
       params: { timeframe },
     });
     return response.data.analytics;

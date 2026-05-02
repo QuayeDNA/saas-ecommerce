@@ -28,6 +28,7 @@ import type { Package, Bundle, Provider } from "../../types/package";
 export interface ProviderPackageDisplayProps {
   provider: string; // provider code (e.g., 'MTN')
   category?: string; // optional category/tag
+  packageSlug?: string; // optional stable package slug for route-specific pages
   packageId?: string; // optional specific package id
   filters?: Record<string, unknown>; // additional filters for packages
 }
@@ -35,6 +36,7 @@ export interface ProviderPackageDisplayProps {
 export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
   provider,
   category,
+  packageSlug,
   packageId,
   filters = {},
 }) => {
@@ -90,6 +92,10 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
           // Fetch a single package by id
           const pkg = await packageService.getPackage(packageId);
           if (pkg) pkgList = [pkg];
+        } else if (packageSlug) {
+          // Fetch a single package by stable slug
+          const pkg = await packageService.getPackageBySlug(packageSlug);
+          if (pkg) pkgList = [pkg];
         } else {
           // Build filters - ensure we get all active packages
           const pkgFilters: Record<string, unknown> = {
@@ -125,7 +131,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     };
     fetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider, category, packageId, JSON.stringify(filters)]);
+  }, [provider, category, packageId, packageSlug, JSON.stringify(filters)]);
 
   // Filtered packages by category (if using dropdown)
   const filteredPackages = useMemo(() => {
