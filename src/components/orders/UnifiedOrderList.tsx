@@ -84,7 +84,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"cards" | "table" | "excel">(
-    "cards"
+    "cards",
   );
   const [showBulkConfirmDialog, setShowBulkConfirmDialog] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<
@@ -146,89 +146,99 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   }, []);
 
   // Fetch analytics data
-  const fetchAnalytics = useCallback(async () => {
-    if (!isAdmin && !isAgent) return;
+  const fetchAnalytics = useCallback(
+    async (forceRefresh = false) => {
+      if (!isAdmin && !isAgent) return;
 
-    setAnalyticsLoading(true);
-    setAnalyticsError(null);
+      setAnalyticsLoading(true);
+      setAnalyticsError(null);
 
-    try {
-      if (isAdmin) {
-        // For super admin, use the dedicated analytics service
-        const analytics = await analyticsService.getSuperAdminAnalytics("30d");
+      try {
+        if (isAdmin) {
+          // For super admin, use the dedicated analytics service
+          const analytics = await analyticsService.getSuperAdminAnalytics(
+            "30d",
+            forceRefresh,
+          );
 
-        const transformedData = {
-          totalOrders: analytics.orders.total || 0,
-          todayOrders: analytics.orders.today?.total || 0,
-          thisMonthOrders: analytics.orders.thisMonth?.total || 0,
-          totalRevenue: analytics.revenue.total || 0,
-          todayRevenue: analytics.revenue.today || 0,
-          monthlyRevenue: analytics.revenue.thisMonth || 0,
-          todayCompletedOrders: analytics.orders.today?.completed || 0,
-          todayProcessingOrders: analytics.orders.today?.processing || 0,
-          todayPendingOrders: analytics.orders.today?.pending || 0,
-          todayCancelledOrders: analytics.orders.today?.cancelled || 0,
-          commission: {
-            totalEarned: analytics.commissions?.totalEarned || 0,
-            totalPaid: analytics.commissions?.totalPaid || 0,
-            pendingAmount: analytics.commissions?.pendingAmount || 0,
-            pendingCount: analytics.commissions?.pendingCount || 0,
-          },
-          statusCounts: {
-            processing: analytics.orders.processing || 0,
-            pending: analytics.orders.pending || 0,
-            confirmed: analytics.orders.confirmed || 0,
-            cancelled: analytics.orders.cancelled || 0,
-            partiallyCompleted: analytics.orders.partiallyCompleted || 0,
-          },
-          receptionCounts: {
-            received: analytics.orders.completed || 0,
-            not_received: analytics.orders.failed || 0,
-            checking: analytics.orders.processing || 0,
-            resolved: analytics.orders.completed || 0,
-          },
-        };
-
-        setAnalyticsData(transformedData);
-      } else if (isAgent) {
-        // For agents, use the agent analytics service
-        const analytics = await analyticsService.getAgentAnalytics("30d");
-
-        // Transform to match our component's expected structure
-        const transformedData = {
-          orders: {
-            total: analytics.orders.total || 0,
-            completed: analytics.orders.completed || 0,
-            processing: analytics.orders.processing || 0,
-            pending: analytics.orders.pending || 0,
-            confirmed: analytics.orders.confirmed || 0,
-            cancelled: analytics.orders.cancelled || 0,
-            partiallyCompleted: analytics.orders.partiallyCompleted || 0,
-            today: {
-              completed: analytics.orders.todayCounts?.completed || 0,
-              processing: analytics.orders.todayCounts?.processing || 0,
-              pending: analytics.orders.todayCounts?.pending || 0,
-              confirmed: analytics.orders.todayCounts?.confirmed || 0,
-              cancelled: analytics.orders.todayCounts?.cancelled || 0,
-              partiallyCompleted: analytics.orders.todayCounts?.partiallyCompleted || 0,
+          const transformedData = {
+            totalOrders: analytics.orders.total || 0,
+            todayOrders: analytics.orders.today?.total || 0,
+            thisMonthOrders: analytics.orders.thisMonth?.total || 0,
+            totalRevenue: analytics.revenue.total || 0,
+            todayRevenue: analytics.revenue.today || 0,
+            monthlyRevenue: analytics.revenue.thisMonth || 0,
+            todayCompletedOrders: analytics.orders.today?.completed || 0,
+            todayProcessingOrders: analytics.orders.today?.processing || 0,
+            todayPendingOrders: analytics.orders.today?.pending || 0,
+            todayCancelledOrders: analytics.orders.today?.cancelled || 0,
+            commission: {
+              totalEarned: analytics.commissions?.totalEarned || 0,
+              totalPaid: analytics.commissions?.totalPaid || 0,
+              pendingAmount: analytics.commissions?.pendingAmount || 0,
+              pendingCount: analytics.commissions?.pendingCount || 0,
             },
-          },
-          revenue: {
-            total: analytics.revenue.total || 0,
-            thisMonth: analytics.revenue.thisMonth || 0,
-            today: analytics.revenue.today || 0,
-          },
-        };
+            statusCounts: {
+              processing: analytics.orders.processing || 0,
+              pending: analytics.orders.pending || 0,
+              confirmed: analytics.orders.confirmed || 0,
+              cancelled: analytics.orders.cancelled || 0,
+              partiallyCompleted: analytics.orders.partiallyCompleted || 0,
+            },
+            receptionCounts: {
+              received: analytics.orders.completed || 0,
+              not_received: analytics.orders.failed || 0,
+              checking: analytics.orders.processing || 0,
+              resolved: analytics.orders.completed || 0,
+            },
+          };
 
-        setAnalyticsData(transformedData);
+          setAnalyticsData(transformedData);
+        } else if (isAgent) {
+          // For agents, use the agent analytics service
+          const analytics = await analyticsService.getAgentAnalytics(
+            "30d",
+            forceRefresh,
+          );
+
+          // Transform to match our component's expected structure
+          const transformedData = {
+            orders: {
+              total: analytics.orders.total || 0,
+              completed: analytics.orders.completed || 0,
+              processing: analytics.orders.processing || 0,
+              pending: analytics.orders.pending || 0,
+              confirmed: analytics.orders.confirmed || 0,
+              cancelled: analytics.orders.cancelled || 0,
+              partiallyCompleted: analytics.orders.partiallyCompleted || 0,
+              today: {
+                completed: analytics.orders.todayCounts?.completed || 0,
+                processing: analytics.orders.todayCounts?.processing || 0,
+                pending: analytics.orders.todayCounts?.pending || 0,
+                confirmed: analytics.orders.todayCounts?.confirmed || 0,
+                cancelled: analytics.orders.todayCounts?.cancelled || 0,
+                partiallyCompleted:
+                  analytics.orders.todayCounts?.partiallyCompleted || 0,
+              },
+            },
+            revenue: {
+              total: analytics.revenue.total || 0,
+              thisMonth: analytics.revenue.thisMonth || 0,
+              today: analytics.revenue.today || 0,
+            },
+          };
+
+          setAnalyticsData(transformedData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch analytics:", error);
+        setAnalyticsError("Failed to load analytics data");
+      } finally {
+        setAnalyticsLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch analytics:", error);
-      setAnalyticsError("Failed to load analytics data");
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  }, [isAdmin, isAgent]);
+    },
+    [isAdmin, isAgent],
+  );
 
   useEffect(() => {
     fetchOrders();
@@ -317,7 +327,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
         orderStatusUpdatedCount += eventData.count;
 
-        const base = eventData.count === 1 ? "1 order" : `${eventData.count} orders`;
+        const base =
+          eventData.count === 1 ? "1 order" : `${eventData.count} orders`;
         const state = eventData.status ? ` to ${eventData.status}` : "";
         addToast(`${base} updated${state}.`, "info");
       } else {
@@ -432,7 +443,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   const handleReceptionStatusUpdate = async (
     orderId: string,
-    receptionStatus: string
+    receptionStatus: string,
   ) => {
     try {
       await updateReceptionStatus(orderId, receptionStatus);
@@ -474,14 +485,14 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       await bulkUpdateReceptionStatus(
         selectedOrders,
         pendingReceptionStatus as
-        | "not_received"
-        | "received"
-        | "checking"
-        | "resolved"
+          | "not_received"
+          | "received"
+          | "checking"
+          | "resolved",
       );
       addToast(
         `Successfully updated reception status for ${selectedOrders.length} order(s)`,
-        "success"
+        "success",
       );
       setSelectedOrders([]);
     } catch {
@@ -507,7 +518,10 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     });
 
     if (actionableOrderIds.length === 0) {
-      addToast("All selected orders are locked (24h+ in terminal status)", "warning");
+      addToast(
+        "All selected orders are locked (24h+ in terminal status)",
+        "warning",
+      );
       setShowBulkConfirmDialog(false);
       setPendingBulkAction(null);
       return;
@@ -525,7 +539,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         }
         addToast(
           `Successfully cancelled ${actionableOrderIds.length} orders`,
-          "success"
+          "success",
         );
       } else {
         const bulkAction =
@@ -533,7 +547,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         await bulkProcessOrders(actionableOrderIds, bulkAction);
         addToast(
           `Successfully ${bulkAction} ${actionableOrderIds.length} orders`,
-          "success"
+          "success",
         );
       }
       setSelectedOrders([]);
@@ -558,11 +572,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const handleSelectByStatus = useCallback(
     (statuses: string[]) => {
       const ordersToSelect = currentOrders.filter((order: Order) =>
-        statuses.includes(order.status)
+        statuses.includes(order.status),
       );
       setSelectedOrders(ordersToSelect.map((o: Order) => o._id || ""));
     },
-    [currentOrders]
+    [currentOrders],
   );
 
   const handleSelectByReceptionStatus = useCallback(
@@ -571,11 +585,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         (order: Order) =>
           order.reported &&
           order.receptionStatus &&
-          receptionStatuses.includes(order.receptionStatus)
+          receptionStatuses.includes(order.receptionStatus),
       );
       setSelectedOrders(ordersToSelect.map((o: Order) => o._id || ""));
     },
-    [currentOrders]
+    [currentOrders],
   );
 
   const handleDeselectAll = useCallback(() => {
@@ -586,7 +600,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     setSelectedOrders((prev) =>
       prev.includes(orderId)
         ? prev.filter((id) => id !== orderId)
-        : [...prev, orderId]
+        : [...prev, orderId],
     );
   }, []);
 
@@ -640,36 +654,36 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       },
       ...(activeTab === "reported"
         ? {
-          receptionStatus: {
-            value: receptionStatusFilter,
-            options: [
-              { value: "not_received", label: "Not Received" },
-              { value: "received", label: "Received" },
-              { value: "checking", label: "Checking" },
-              { value: "resolved", label: "Resolved" },
-            ],
-            label: "Reception Status",
-            placeholder: "All Reception Status",
-          },
-        }
+            receptionStatus: {
+              value: receptionStatusFilter,
+              options: [
+                { value: "not_received", label: "Not Received" },
+                { value: "received", label: "Received" },
+                { value: "checking", label: "Checking" },
+                { value: "resolved", label: "Resolved" },
+              ],
+              label: "Reception Status",
+              placeholder: "All Reception Status",
+            },
+          }
         : {}),
       ...(isAdmin
         ? {
-          provider: {
-            value: providerFilter,
-            options: [
-              // Include AFA as a static option since it appears in orders but isn't a traditional provider
-              { value: "AFA", label: "AFA" },
-              // Include all network providers from the provider service
-              ...providers.map((provider) => ({
-                value: provider.code,
-                label: provider.name,
-              })),
-            ],
-            label: "Network Provider",
-            placeholder: "All Providers",
-          },
-        }
+            provider: {
+              value: providerFilter,
+              options: [
+                // Include AFA as a static option since it appears in orders but isn't a traditional provider
+                { value: "AFA", label: "AFA" },
+                // Include all network providers from the provider service
+                ...providers.map((provider) => ({
+                  value: provider.code,
+                  label: provider.name,
+                })),
+              ],
+              label: "Network Provider",
+              placeholder: "All Providers",
+            },
+          }
         : {}),
     },
     onFilterChange: (filterKey: string, value: string) => {
@@ -809,29 +823,32 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               <div className="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
                 <button
                   onClick={() => setViewMode("cards")}
-                  className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${viewMode === "cards"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                    }`}
+                  className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${
+                    viewMode === "cards"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
                 >
                   Cards
                 </button>
                 <button
                   onClick={() => setViewMode("table")}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${viewMode === "table"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                    }`}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    viewMode === "table"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
                 >
                   Table
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => setViewMode("excel")}
-                    className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${viewMode === "excel"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                      }`}
+                    className={`flex-1 sm:flex-none px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-colors ${
+                      viewMode === "excel"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
                   >
                     Excel
                   </button>
@@ -846,7 +863,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    leftIcon={<FaCheckSquare style={{ color: "var(--color-primary-600)" }} />}
+                    leftIcon={
+                      <FaCheckSquare
+                        style={{ color: "var(--color-primary-600)" }}
+                      />
+                    }
                     onClick={handleSelectAll}
                     className="flex items-centerLook flex-1 sm:flex-none justify-center"
                   >
@@ -976,8 +997,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                       color: "var(--color-primary-700)",
                     }}
                     onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor =
-                      "var(--color-primary-50)")
+                      (e.currentTarget.style.backgroundColor =
+                        "var(--color-primary-50)")
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.backgroundColor = "transparent")
@@ -1000,16 +1021,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             <div className="flex border-b border-gray-200">
               <button
                 onClick={() => setActiveTab("all")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "all"
-                  ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "all"
+                    ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
                 style={
                   activeTab === "all"
                     ? {
-                      borderColor: "var(--color-primary-500)",
-                      color: "var(--color-primary-600)",
-                    }
+                        borderColor: "var(--color-primary-500)",
+                        color: "var(--color-primary-600)",
+                      }
                     : {}
                 }
               >
@@ -1017,16 +1039,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab("reported")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "reported"
-                  ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "reported"
+                    ? "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
                 style={
                   activeTab === "reported"
                     ? {
-                      borderColor: "var(--color-primary-500)",
-                      color: "var(--color-primary-600)",
-                    }
+                        borderColor: "var(--color-primary-500)",
+                        color: "var(--color-primary-600)",
+                      }
                     : {}
                 }
               >
@@ -1203,7 +1226,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               <div className="space-y-1">
                 {currentOrders
                   .filter((order: Order) =>
-                    selectedOrders.includes(order._id || "")
+                    selectedOrders.includes(order._id || ""),
                   )
                   .slice(0, 3)
                   .map((order: Order) => (
@@ -1279,7 +1302,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
                   Update Reception Status to{" "}
                   {pendingReceptionStatus &&
                     pendingReceptionStatus.charAt(0).toUpperCase() +
-                    pendingReceptionStatus.slice(1).replace("_", " ")}
+                      pendingReceptionStatus.slice(1).replace("_", " ")}
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
                   Are you sure you want to update the reception status for{" "}
@@ -1297,7 +1320,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               <div className="space-y-1">
                 {currentOrders
                   .filter((order: Order) =>
-                    selectedOrders.includes(order._id || "")
+                    selectedOrders.includes(order._id || ""),
                   )
                   .slice(0, 3)
                   .map((order: Order) => (

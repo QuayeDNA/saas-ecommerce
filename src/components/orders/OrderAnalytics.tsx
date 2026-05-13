@@ -155,7 +155,7 @@ const ReceptionCarouselCard: React.FC<{
                     setCarouselIndex(
                       (prev) =>
                         (prev - 1 + receptionItems.length) %
-                        receptionItems.length
+                        receptionItems.length,
                     )
                   }
                   className="p-1 hover:bg-white/10 rounded-full transition-colors"
@@ -186,7 +186,7 @@ const ReceptionCarouselCard: React.FC<{
                 <button
                   onClick={() =>
                     setCarouselIndex(
-                      (prev) => (prev + 1) % receptionItems.length
+                      (prev) => (prev + 1) % receptionItems.length,
                     )
                   }
                   className="p-1 hover:bg-white/10 rounded-full transition-colors"
@@ -298,7 +298,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
           title: "Todays Orders",
           value: formatNumber(analyticsData.todayOrders || 0),
           subtitle: `Orders this month: ${formatNumber(
-            analyticsData.thisMonthOrders || 0
+            analyticsData.thisMonthOrders || 0,
           )}`,
           icon: <FaChartBar />,
           size: "md",
@@ -307,7 +307,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
           title: "Today's Sales",
           value: formatCurrency(analyticsData.todayRevenue || 0),
           subtitle: `Total Sales: ${formatCurrency(
-            analyticsData.totalRevenue || 0
+            analyticsData.totalRevenue || 0,
           )}`,
           icon: <FaMoneyBillWave />,
           size: "md",
@@ -316,7 +316,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
           title: "Monthly Sales",
           value: formatCurrency(analyticsData.monthlyRevenue || 0),
           subtitle: `Commission: ${formatCurrency(
-            analyticsData.commission?.pendingAmount || 0
+            analyticsData.commission?.pendingAmount || 0,
           )}`,
           icon: <FaMoneyBillWave />,
           size: "md",
@@ -325,34 +325,40 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
           title: "Completed orders today",
           value: formatNumber(analyticsData.todayCompletedOrders || 0),
           subtitle: `Total completed: ${formatNumber(
-            analyticsData.totalOrders || 0
+            analyticsData.totalOrders || 0,
           )}`,
           icon: <FaCheckCircle />,
           size: "md",
         },
         {
           title: "Processing",
-          value: formatNumber(analyticsData.statusCounts?.processing || 0),
+          value: formatNumber(analyticsData.orders?.today?.processing || 0),
           subtitle: `Total processing: ${formatNumber(
-            analyticsData.statusCounts?.processing || 0
+            analyticsData.statusCounts?.processing ||
+              analyticsData.orders?.processing ||
+              0,
           )}`,
           icon: <FaClock />,
           size: "md",
         },
         {
           title: "Pending",
-          value: formatNumber(analyticsData.statusCounts?.pending || 0),
+          value: formatNumber(analyticsData.orders?.today?.pending || 0),
           subtitle: `Total pending: ${formatNumber(
-            analyticsData.statusCounts?.pending || 0
+            analyticsData.statusCounts?.pending ||
+              analyticsData.orders?.pending ||
+              0,
           )}`,
           icon: <FaPauseCircle />,
           size: "md",
         },
         {
           title: "Cancelled",
-          value: formatNumber(analyticsData.statusCounts?.cancelled || 0),
+          value: formatNumber(analyticsData.orders?.today?.cancelled || 0),
           subtitle: `Total cancelled: ${formatNumber(
-            analyticsData.statusCounts?.cancelled || 0
+            analyticsData.statusCounts?.cancelled ||
+              analyticsData.orders?.cancelled ||
+              0,
           )}`,
           icon: <FaTimesCircle />,
           size: "md",
@@ -371,7 +377,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
           title: "Monthly sales",
           value: formatCurrency(analyticsData.revenue?.thisMonth || 0),
           subtitle: `Sales today: ${formatCurrency(
-            analyticsData.revenue?.today || 0
+            analyticsData.revenue?.today || 0,
           )}`,
           icon: <FaMoneyBillWave />,
           size: "md",
@@ -380,7 +386,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
           title: "Completed today",
           value: formatNumber(analyticsData.orders?.today?.completed || 0),
           subtitle: `Total completed: ${formatNumber(
-            analyticsData.orders?.completed || 0
+            analyticsData.orders?.completed || 0,
           )}`,
           icon: <FaCheckCircle />,
           size: "md",
@@ -389,7 +395,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
           title: "Processing",
           value: formatNumber(analyticsData.orders?.today?.processing || 0),
           subtitle: `Total processing: ${formatNumber(
-            analyticsData.orders?.processing || 0
+            analyticsData.orders?.processing || 0,
           )}`,
           icon: <FaClock />,
           size: "md",
@@ -398,7 +404,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
           title: "Pending",
           value: formatNumber(analyticsData.orders?.today?.pending || 0),
           subtitle: `Total pending: ${formatNumber(
-            analyticsData.orders?.pending || 0
+            analyticsData.orders?.pending || 0,
           )}`,
           icon: <FaPauseCircle />,
           size: "md",
@@ -407,7 +413,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
           title: "Cancelled",
           value: formatNumber(analyticsData.orders?.today?.cancelled || 0),
           subtitle: `Total cancelled: ${formatNumber(
-            analyticsData.orders?.cancelled || 0
+            analyticsData.orders?.cancelled || 0,
           )}`,
           icon: <FaTimesCircle />,
           size: "md",
