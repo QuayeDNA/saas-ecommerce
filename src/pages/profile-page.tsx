@@ -12,6 +12,7 @@ import {
 } from "../design-system";
 import { EditProfileDialog } from "../components/common/edit-profile-dialog";
 import { ChangePasswordDialog } from "../components/common/change-password-dialog";
+import { UpdatePinDialog } from "../components/common/update-pin-dialog";
 import {
   FaUser,
   FaEnvelope,
@@ -40,6 +41,7 @@ export const ProfilePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isUpdatePinOpen, setIsUpdatePinOpen] = useState(false);
   const [pushPreferences, setPushPreferences] = useState({
     enabled: true,
     orderUpdates: true,
@@ -48,11 +50,12 @@ export const ProfilePage: React.FC = () => {
     announcements: true,
   });
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
-  const [browserPermission, setBrowserPermission] = useState<NotificationPermission>(
-    typeof window !== "undefined" && "Notification" in window
-      ? Notification.permission
-      : "denied"
-  );
+  const [browserPermission, setBrowserPermission] =
+    useState<NotificationPermission>(
+      typeof window !== "undefined" && "Notification" in window
+        ? Notification.permission
+        : "denied",
+    );
   const { addToast } = useToast();
 
   const refreshProfile = async () => {
@@ -112,7 +115,7 @@ export const ProfilePage: React.FC = () => {
   }, []);
 
   const getUserTypeColor = (
-    userType: string
+    userType: string,
   ): "blue" | "green" | "yellow" | "red" | "gray" => {
     switch (userType) {
       case "agent":
@@ -179,7 +182,10 @@ export const ProfilePage: React.FC = () => {
 
   const handleEnableBrowserNotifications = async () => {
     if (!pushNotificationService.isPushSupported()) {
-      addToast("Push notifications are not supported in this browser.", "error");
+      addToast(
+        "Push notifications are not supported in this browser.",
+        "error",
+      );
       return;
     }
 
@@ -189,7 +195,7 @@ export const ProfilePage: React.FC = () => {
     if (permission !== "granted") {
       addToast(
         "Push permission denied. Please allow notifications in your browser settings.",
-        "error"
+        "error",
       );
       return;
     }
@@ -200,7 +206,7 @@ export const ProfilePage: React.FC = () => {
     } else {
       addToast(
         "Failed to register push subscription. Check console for details.",
-        "error"
+        "error",
       );
     }
   };
@@ -658,6 +664,15 @@ export const ProfilePage: React.FC = () => {
               >
                 Change Password
               </Button>
+              <Button
+                variant="outline"
+                fullWidth
+                leftIcon={<Key className="w-4 h-4" />}
+                className="justify-start h-11 sm:h-10"
+                onClick={() => setIsUpdatePinOpen(true)}
+              >
+                Update Security PIN
+              </Button>
               <div className="border-t border-gray-200 pt-3 mt-3">
                 <Button
                   color="red"
@@ -719,7 +734,7 @@ export const ProfilePage: React.FC = () => {
                         onChange={(e) =>
                           handlePushPreferenceChange(
                             "enabled",
-                            e.target.checked
+                            e.target.checked,
                           )
                         }
                       />
@@ -768,7 +783,7 @@ export const ProfilePage: React.FC = () => {
                             onChange={(e) =>
                               handlePushPreferenceChange(
                                 "orderUpdates",
-                                e.target.checked
+                                e.target.checked,
                               )
                             }
                           />
@@ -784,7 +799,7 @@ export const ProfilePage: React.FC = () => {
                             onChange={(e) =>
                               handlePushPreferenceChange(
                                 "walletUpdates",
-                                e.target.checked
+                                e.target.checked,
                               )
                             }
                           />
@@ -800,7 +815,7 @@ export const ProfilePage: React.FC = () => {
                             onChange={(e) =>
                               handlePushPreferenceChange(
                                 "commissionUpdates",
-                                e.target.checked
+                                e.target.checked,
                               )
                             }
                           />
@@ -816,7 +831,7 @@ export const ProfilePage: React.FC = () => {
                             onChange={(e) =>
                               handlePushPreferenceChange(
                                 "announcements",
-                                e.target.checked
+                                e.target.checked,
                               )
                             }
                           />
@@ -1089,7 +1104,7 @@ export const ProfilePage: React.FC = () => {
                           onChange={(e) =>
                             handlePushPreferenceChange(
                               "enabled",
-                              e.target.checked
+                              e.target.checked,
                             )
                           }
                         />
@@ -1145,6 +1160,15 @@ export const ProfilePage: React.FC = () => {
                   onClick={() => setIsChangePasswordOpen(true)}
                 >
                   Change Password
+                </Button>
+                <Button
+                  variant="outline"
+                  fullWidth
+                  leftIcon={<Key className="w-4 h-4" />}
+                  className="justify-start h-10"
+                  onClick={() => setIsUpdatePinOpen(true)}
+                >
+                  Update Security PIN
                 </Button>
                 <div className="border-t border-gray-200">
                   <Button
@@ -1223,6 +1247,10 @@ export const ProfilePage: React.FC = () => {
         <ChangePasswordDialog
           isOpen={isChangePasswordOpen}
           onClose={() => setIsChangePasswordOpen(false)}
+        />
+        <UpdatePinDialog
+          isOpen={isUpdatePinOpen}
+          onClose={() => setIsUpdatePinOpen(false)}
         />
       </div>
     </div>

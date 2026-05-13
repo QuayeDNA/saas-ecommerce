@@ -4,16 +4,15 @@
  * Forgot Password Page
  *
  * Features:
- * - Email input with validation
+ * - Identifier and PIN input with validation
  * - Clear success/error states
  * - Animated transitions
  * - Mobile-first responsive design
  * - Consistent with auth design system
  */
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks";
-import { useState } from "react";
 import {
   Button,
   Input,
@@ -23,25 +22,29 @@ import {
   CardBody,
 } from "../design-system";
 import {
-  FaEnvelope,
+  FaUser,
   FaArrowLeft,
   FaExclamationTriangle,
   FaLock,
-  FaCheck,
+  FaKey,
 } from "react-icons/fa";
 
 export const ForgotPasswordPage = () => {
   const { authState, forgotPassword } = useAuth();
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const identifier = formData.get("identifier") as string;
+    const pin = formData.get("pin") as string;
 
     try {
-      await forgotPassword(email);
-      setIsSubmitted(true);
+      const response = await forgotPassword(identifier, pin);
+      // Immediately navigate to the reset password page with the token
+      if (response && response.resetToken) {
+        navigate(`/reset-password/${response.resetToken}`);
+      }
     } catch (error) {
       console.error("Password reset request failed:", error);
     }
@@ -82,94 +85,88 @@ export const ForgotPasswordPage = () => {
               Reset your password
             </h2>
             <p className="mt-2 text-gray-600 text-sm">
-              Enter your email and we'll send you a reset link
+              Enter your account identifier and security PIN to reset your
+              password
             </p>
           </CardHeader>
 
           <CardBody>
-            {isSubmitted ? (
-              <div className="text-center">
-                <div className="mx-auto bg-green-100 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-                  <FaCheck className="text-green-600 text-2xl" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900">
-                  Check your email
-                </h3>
-                <p className="mt-2 text-gray-500 text-sm">
-                  We've sent a password reset link to your email address.
-                </p>
-                <div className="mt-6">
-                  <Link to="/login">
-                    <Button
-                      variant="primary"
-                      colorScheme="default"
-                      size="md"
-                      fullWidth
-                    >
-                      Back to login
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                {authState.error && (
-                  <Alert
-                    status="error"
-                    variant="left-accent"
-                    className="flex items-start"
-                  >
-                    <FaExclamationTriangle className="mt-0.5 mr-2 flex-shrink-0" />
-                    <span>{authState.error}</span>
-                  </Alert>
-                )}
-
-                <div>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    label="Email address"
-                    autoComplete="email"
-                    required
-                    placeholder="your@email.com"
-                    size="md"
-                    variant="outline"
-                    colorScheme="default"
-                    fullWidth
-                    leftIcon={<FaEnvelope className="text-gray-400" />}
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={authState.isLoading}
-                  isLoading={authState.isLoading}
-                  variant="primary"
-                  colorScheme="default"
-                  size="lg"
-                  fullWidth
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              {authState.error && (
+                <Alert
+                  status="error"
+                  variant="left-accent"
+                  className="flex items-start"
                 >
-                  {authState.isLoading ? "Sending..." : "Send reset link"}
-                </Button>
+                  <FaExclamationTriangle className="mt-0.5 mr-2 flex-shrink-0" />
+                  <span>{authState.error}</span>
+                </Alert>
+              )}
 
-                <div className="mt-4 text-center text-sm text-gray-600">
-                  <Link
-                    to="/"
-                    className="font-medium transition"
-                    style={{ color: "var(--color-primary-600)" }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.color = "var(--color-primary-700)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.color = "var(--color-primary-600)")
-                    }
-                  >
-                    ← Back to home
-                  </Link>
-                </div>
-              </form>
-            )}
+              <div>
+                <Input
+                  id="identifier"
+                  name="identifier"
+                  type="text"
+                  label="Account Identifier"
+                  autoComplete="username"
+                  required
+                  placeholder="Phone, Email, or Agent Code"
+                  size="md"
+                  variant="outline"
+                  colorScheme="default"
+                  fullWidth
+                  leftIcon={<FaUser className="text-gray-400" />}
+                />
+              </div>
+
+              <div>
+                <Input
+                  id="pin"
+                  name="pin"
+                  type="password"
+                  label="4-Digit Security PIN"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  required
+                  placeholder="Enter your 4-digit PIN"
+                  size="md"
+                  variant="outline"
+                  colorScheme="default"
+                  fullWidth
+                  leftIcon={<FaKey className="text-gray-400" />}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={authState.isLoading}
+                isLoading={authState.isLoading}
+                variant="primary"
+                colorScheme="default"
+                size="lg"
+                fullWidth
+              >
+                {authState.isLoading ? "Verifying..." : "Verify PIN"}
+              </Button>
+
+              <div className="mt-4 text-center text-sm text-gray-600">
+                <Link
+                  to="/"
+                  className="font-medium transition"
+                  style={{ color: "var(--color-primary-600)" }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = "var(--color-primary-700)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "var(--color-primary-600)")
+                  }
+                >
+                  ← Back to home
+                </Link>
+              </div>
+            </form>
           </CardBody>
         </Card>
       </div>

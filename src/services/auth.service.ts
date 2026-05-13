@@ -2,7 +2,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 import type { User } from "../types";
-import { apiClient, refreshClient } from "../utils/api-client";
+import { apiClient, publicApiClient, refreshClient } from "../utils/api-client";
 
 // Cookie configuration
 const COOKIE_OPTIONS = {
@@ -34,7 +34,12 @@ export interface RegisterAgentData {
 }
 
 export interface ForgotPasswordData {
-  email: string;
+  identifier: string;
+  pin: string;
+}
+
+export interface SetupPinData {
+  pin: string;
 }
 
 export interface ResetPasswordData {
@@ -137,9 +142,11 @@ class AuthService {
    */
   private isNetworkError(error: unknown): boolean {
     if (axios.isAxiosError(error)) {
-      return error.code === 'ERR_NETWORK' ||
-             error.response?.status === 404 ||
-             (error.response?.status ?? 0) >= 500;
+      return (
+        error.code === "ERR_NETWORK" ||
+        error.response?.status === 404 ||
+        (error.response?.status ?? 0) >= 500
+      );
     }
     return false;
   }
@@ -149,9 +156,10 @@ class AuthService {
    */
   private extractErrorMessage(
     err: unknown,
-    fallback: string
-  ): { message: string; errors?: { message: string }[] } {
+    fallback: string,
+  ): { message: string; code?: string; errors?: { message: string }[] } {
     let message = fallback;
+    let code: string | undefined;
     let errors: { message: string }[] | undefined;
 
     if (axios.isAxiosError(err)) {
@@ -169,12 +177,22 @@ class AuthService {
           message;
       }
 
+      code = response?.data?.code;
       errors = response?.data?.errors;
     } else if (err instanceof Error) {
       message = err.message;
+      code = (err as Error & { code?: string }).code;
     }
 
-    return { message, errors };
+    return { message, code, errors };
+  }
+
+  private throwServiceError(message: string, code?: string): never {
+    const normalizedError = new Error(message) as Error & { code?: string };
+    if (code) {
+      normalizedError.code = code;
+    }
+    throw normalizedError;
   }
 
   // =============================================================================
@@ -219,7 +237,9 @@ class AuthService {
       }
 
       // Use refreshClient to avoid interceptor recursion and centralize baseURL
-      const response = await refreshClient.post(`/api/auth/refresh`, { refreshToken });
+      const response = await refreshClient.post(`/api/auth/refresh`, {
+        refreshToken,
+      });
 
       const {
         accessToken,
@@ -309,8 +329,8 @@ class AuthService {
 
       return { success: true, user, token, refreshToken, dashboardUrl };
     } catch (err: unknown) {
-      const { message } = this.extractErrorMessage(err, "Login failed");
-      throw new Error(message);
+      const { message, code } = this.extractErrorMessage(err, "Login failed");
+      this.throwServiceError(message, code);
     }
   }
 
@@ -324,14 +344,14 @@ class AuthService {
         agentCode: response.data.agentCode,
       };
     } catch (err: unknown) {
-      const { message, errors } = this.extractErrorMessage(
+      const { message, code, errors } = this.extractErrorMessage(
         err,
-        "Agent registration failed"
+        "Agent registration failed",
       );
       if (errors && errors.length > 0) {
-        throw new Error(errors.map((e) => e.message).join(", "));
+        this.throwServiceError(errors.map((e) => e.message).join(", "), code);
       }
-      throw new Error(message);
+      this.throwServiceError(message, code);
     }
   }
 
@@ -343,30 +363,85 @@ class AuthService {
   async verifyAccount(data: VerifyAccountData): Promise<{ userType: string }> {
     try {
       const response = await api.post("/api/auth/verify-account", data);
+
+      // If server returned updated user, refresh cookie so AuthContext picks it up
+      const returnedUser = response?.data?.user;
+      if (returnedUser) {
+        const rememberMe = !!Cookies.get("rememberMe");
+        const cookieExpires = rememberMe ? 30 : 7;
+        Cookies.set("user", JSON.stringify(returnedUser), {
+          ...COOKIE_OPTIONS,
+          expires: cookieExpires,
+        });
+
+        try {
+          window.dispatchEvent(new Event("auth:refresh"));
+        } catch {
+          /** */
+        }
+      }
+
       return {
         userType: response.data.userType,
       };
     } catch (err: unknown) {
-      const { message } = this.extractErrorMessage(
+      const { message, code } = this.extractErrorMessage(
         err,
-        "Account verification failed"
+        "Account verification failed",
       );
-      throw new Error(message);
+      this.throwServiceError(message, code);
     }
   }
 
   /**
    * Request password reset
    */
-  async forgotPassword(data: ForgotPasswordData): Promise<void> {
+  async forgotPassword(
+    data: ForgotPasswordData,
+  ): Promise<{ resetToken: string }> {
     try {
-      await api.post("/api/auth/forgot-password", data);
-    } catch (err: unknown) {
-      const { message } = this.extractErrorMessage(
-        err,
-        "Failed to send reset email"
+      const response = await publicApiClient.post(
+        "/api/auth/forgot-password",
+        data,
       );
-      throw new Error(message);
+      return response.data;
+    } catch (err: unknown) {
+      const { message, code } = this.extractErrorMessage(
+        err,
+        "Failed to verify PIN and send reset token",
+      );
+      this.throwServiceError(message, code);
+    }
+  }
+
+  /**
+   * Set up security PIN
+   */
+  async setupPin(data: SetupPinData): Promise<void> {
+    try {
+      const response = await api.post("/api/auth/setup-pin", data);
+
+      const returnedUser = response?.data?.user;
+      if (returnedUser) {
+        const rememberMe = !!Cookies.get("rememberMe");
+        const cookieExpires = rememberMe ? 30 : 7;
+        Cookies.set("user", JSON.stringify(returnedUser), {
+          ...COOKIE_OPTIONS,
+          expires: cookieExpires,
+        });
+
+        try {
+          window.dispatchEvent(new Event("auth:refresh"));
+        } catch {
+          /** */
+        }
+      }
+    } catch (err: unknown) {
+      const { message, code } = this.extractErrorMessage(
+        err,
+        "Failed to set up PIN",
+      );
+      this.throwServiceError(message, code);
     }
   }
 
@@ -375,13 +450,13 @@ class AuthService {
    */
   async resetPassword(data: ResetPasswordData): Promise<void> {
     try {
-      await api.post("/api/auth/reset-password", data);
+      await publicApiClient.post("/api/auth/reset-password", data);
     } catch (err: unknown) {
-      const { message } = this.extractErrorMessage(
+      const { message, code } = this.extractErrorMessage(
         err,
-        "Password reset failed"
+        "Password reset failed",
       );
-      throw new Error(message);
+      this.throwServiceError(message, code);
     }
   }
 
@@ -397,6 +472,19 @@ class AuthService {
     } finally {
       this.clearAuthData();
     }
+  }
+
+  /**
+   * Update the user object stored in cookies
+   */
+  updateStoredUser(user: User): void {
+    const rememberMe = this.isRememberMeEnabled();
+    const cookieExpires = rememberMe ? 30 : 7;
+
+    Cookies.set("user", JSON.stringify(user), {
+      ...COOKIE_OPTIONS,
+      expires: cookieExpires,
+    });
   }
 
   /**
@@ -465,7 +553,22 @@ class AuthService {
    */
   async updateFirstTimeFlag(): Promise<void> {
     try {
-      await api.post("/api/auth/update-first-time");
+      const response = await api.post("/api/auth/update-first-time");
+
+      // If server returned updated user, refresh cookie so AuthContext picks it up
+      const returnedUser = response?.data?.user;
+      if (returnedUser) {
+        const rememberMe = !!Cookies.get("rememberMe");
+        const cookieExpires = rememberMe ? 30 : 7;
+        Cookies.set("user", JSON.stringify(returnedUser), {
+          ...COOKIE_OPTIONS,
+          expires: cookieExpires,
+        });
+
+        try {
+          window.dispatchEvent(new Event("auth:refresh"));
+        } catch {/** */}
+      }
     } catch {
       // Silently fail as this is not critical
     }

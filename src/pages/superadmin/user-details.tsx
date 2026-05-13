@@ -77,7 +77,7 @@ export default function SuperAdminUserDetailsPage() {
   };
 
   const handleEditChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setEditData({ ...editData, [e.target.name]: e.target.value });
   };
@@ -204,7 +204,10 @@ export default function SuperAdminUserDetailsPage() {
       await userService.resetUserPassword(user._id, resetPassword);
       setShowResetModal(false);
       setResetPassword("");
-      addToast("Password reset successfully", "success");
+      addToast(
+        "Password reset successfully. User will be forced to setup a new PIN on next login.",
+        "success",
+      );
     } catch (e) {
       if (e instanceof Error) {
         setResetError(e.message || "Failed to reset password");
@@ -250,8 +253,11 @@ export default function SuperAdminUserDetailsPage() {
       }
 
       // Call the impersonation API (now returns refreshToken too)
-      const { token, refreshToken, user: impersonatedUser } =
-        await userService.impersonateUser(user._id);
+      const {
+        token,
+        refreshToken,
+        user: impersonatedUser,
+      } = await userService.impersonateUser(user._id);
 
       // Use the impersonation service to start impersonation
       const ImpersonationService = (await import("../../utils/impersonation"))
@@ -261,7 +267,7 @@ export default function SuperAdminUserDetailsPage() {
         adminUser,
         impersonatedUser,
         token,
-        refreshToken
+        refreshToken,
       );
 
       // Show success message
@@ -272,7 +278,7 @@ export default function SuperAdminUserDetailsPage() {
         window.location.href = "/agent/dashboard";
       } else if (
         ["dealer", "super_dealer", "super_agent"].includes(
-          impersonatedUser.userType
+          impersonatedUser.userType,
         )
       ) {
         window.location.href = "/agent/dashboard";
@@ -300,7 +306,7 @@ export default function SuperAdminUserDetailsPage() {
       if (order && order.orderNumber) {
         // Navigate to orders page with order number as search parameter
         navigate(
-          `/superadmin/orders?search=${encodeURIComponent(order.orderNumber)}`
+          `/superadmin/orders?search=${encodeURIComponent(order.orderNumber)}`,
         );
         addToast("Navigating to order", "info");
       } else {
@@ -443,7 +449,7 @@ export default function SuperAdminUserDetailsPage() {
                     </div>
                     <span
                       className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                        user.status
+                        user.status,
                       )}`}
                     >
                       {user.status}
@@ -709,67 +715,67 @@ export default function SuperAdminUserDetailsPage() {
                   </select>
                 </div>
                 {["agent", "super_agent", "dealer", "super_dealer"].includes(
-                  editData.userType || user.userType
+                  editData.userType || user.userType,
                 ) && (
-                    <>
-                      <Input
-                        label="Business Name"
-                        name="businessName"
-                        value={editData.businessName || ""}
+                  <>
+                    <Input
+                      label="Business Name"
+                      name="businessName"
+                      value={editData.businessName || ""}
+                      onChange={handleEditChange}
+                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Business Category
+                      </label>
+                      <select
+                        name="businessCategory"
+                        value={editData.businessCategory || ""}
                         onChange={handleEditChange}
-                      />
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Business Category
-                        </label>
-                        <select
-                          name="businessCategory"
-                          value={editData.businessCategory || ""}
-                          onChange={handleEditChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">Select Category</option>
-                          <option value="electronics">Electronics</option>
-                          <option value="fashion">Fashion</option>
-                          <option value="food">Food</option>
-                          <option value="services">Services</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Subscription Plan
-                        </label>
-                        <select
-                          name="subscriptionPlan"
-                          value={editData.subscriptionPlan || ""}
-                          onChange={handleEditChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">Select Plan</option>
-                          <option value="basic">Basic</option>
-                          <option value="premium">Premium</option>
-                          <option value="enterprise">Enterprise</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Subscription Status
-                        </label>
-                        <select
-                          name="subscriptionStatus"
-                          value={editData.subscriptionStatus || ""}
-                          onChange={handleEditChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">Select Status</option>
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                          <option value="suspended">Suspended</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select Category</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="fashion">Fashion</option>
+                        <option value="food">Food</option>
+                        <option value="services">Services</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Subscription Plan
+                      </label>
+                      <select
+                        name="subscriptionPlan"
+                        value={editData.subscriptionPlan || ""}
+                        onChange={handleEditChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select Plan</option>
+                        <option value="basic">Basic</option>
+                        <option value="premium">Premium</option>
+                        <option value="enterprise">Enterprise</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Subscription Status
+                      </label>
+                      <select
+                        name="subscriptionStatus"
+                        value={editData.subscriptionStatus || ""}
+                        onChange={handleEditChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="suspended">Suspended</option>
+                      </select>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex flex-col sm:flex-row gap-3 mt-6">
                 <Button
@@ -861,7 +867,7 @@ export default function SuperAdminUserDetailsPage() {
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                              order.status
+                              order.status,
                             )}`}
                           >
                             {order.status}
