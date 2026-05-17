@@ -71,7 +71,7 @@ export default function SuperAdminAnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const loadAnalytics = useCallback(
-    async (showLoader = true, forceRefresh = false) => {
+    async (showLoader = true) => {
       try {
         if (showLoader) {
           setLoading(true);
@@ -80,10 +80,8 @@ export default function SuperAdminAnalyticsPage() {
         }
 
         setError(null);
-        const analytics = await analyticsService.getSuperAdminAnalytics(
-          timeframe,
-          forceRefresh,
-        );
+        const analytics =
+          await analyticsService.getSuperAdminAnalytics(timeframe);
         setData(analytics);
       } catch {
         setError("Failed to load analytics data.");
@@ -98,29 +96,24 @@ export default function SuperAdminAnalyticsPage() {
   );
 
   useEffect(() => {
-    void loadAnalytics(true, false);
+    void loadAnalytics(true);
   }, [loadAnalytics]);
 
-  const loadPerformanceData = useCallback(
-    async (forceRefresh = false) => {
-      try {
-        setPerformanceLoading(true);
-        const analytics = await analyticsService.getSuperAdminAnalytics(
-          performanceTimeframe,
-          forceRefresh,
-        );
-        setPerformanceData(analytics.topPerformers || null);
-      } catch {
-        setPerformanceData(null);
-      } finally {
-        setPerformanceLoading(false);
-      }
-    },
-    [performanceTimeframe],
-  );
+  const loadPerformanceData = useCallback(async () => {
+    try {
+      setPerformanceLoading(true);
+      const analytics =
+        await analyticsService.getSuperAdminAnalytics(performanceTimeframe);
+      setPerformanceData(analytics.topPerformers || null);
+    } catch {
+      setPerformanceData(null);
+    } finally {
+      setPerformanceLoading(false);
+    }
+  }, [performanceTimeframe]);
 
   useEffect(() => {
-    void loadPerformanceData(false);
+    void loadPerformanceData();
   }, [loadPerformanceData]);
 
   const handleExport = () => {
@@ -341,8 +334,8 @@ export default function SuperAdminAnalyticsPage() {
         timeOptions={timeOptions}
         onTimeframeChange={setTimeframe}
         onRefresh={() => {
-          void loadAnalytics(false, true);
-          void loadPerformanceData(true);
+          void loadAnalytics(false);
+          void loadPerformanceData();
         }}
         onExport={handleExport}
         loading={loading || refreshing}

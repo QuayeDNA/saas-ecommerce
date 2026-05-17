@@ -146,99 +146,90 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   }, []);
 
   // Fetch analytics data
-  const fetchAnalytics = useCallback(
-    async (forceRefresh = false) => {
-      if (!isAdmin && !isAgent) return;
+  const fetchAnalytics = useCallback(async () => {
+    if (!isAdmin && !isAgent) return;
 
-      setAnalyticsLoading(true);
-      setAnalyticsError(null);
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
 
-      try {
-        if (isAdmin) {
-          // For super admin, use the dedicated analytics service
-          const analytics = await analyticsService.getSuperAdminAnalytics(
-            "30d",
-            forceRefresh,
-          );
+    try {
+      if (isAdmin) {
+        // For super admin, use the dedicated analytics service
+        const analytics = await analyticsService.getSuperAdminAnalytics("30d");
 
-          const transformedData = {
-            totalOrders: analytics.orders.total || 0,
-            todayOrders: analytics.orders.today?.total || 0,
-            thisMonthOrders: analytics.orders.thisMonth?.total || 0,
-            totalRevenue: analytics.revenue.total || 0,
-            todayRevenue: analytics.revenue.today || 0,
-            monthlyRevenue: analytics.revenue.thisMonth || 0,
-            todayCompletedOrders: analytics.orders.today?.completed || 0,
-            todayProcessingOrders: analytics.orders.today?.processing || 0,
-            todayPendingOrders: analytics.orders.today?.pending || 0,
-            todayCancelledOrders: analytics.orders.today?.cancelled || 0,
-            commission: {
-              totalEarned: analytics.commissions?.totalEarned || 0,
-              totalPaid: analytics.commissions?.totalPaid || 0,
-              pendingAmount: analytics.commissions?.pendingAmount || 0,
-              pendingCount: analytics.commissions?.pendingCount || 0,
+        const transformedData = {
+          totalOrders: analytics.orders.total || 0,
+          todayOrders: analytics.orders.today?.total || 0,
+          thisMonthOrders: analytics.orders.thisMonth?.total || 0,
+          totalRevenue: analytics.revenue.total || 0,
+          todayRevenue: analytics.revenue.today || 0,
+          monthlyRevenue: analytics.revenue.thisMonth || 0,
+          todayCompletedOrders: analytics.orders.today?.completed || 0,
+          todayProcessingOrders: analytics.orders.today?.processing || 0,
+          todayPendingOrders: analytics.orders.today?.pending || 0,
+          todayCancelledOrders: analytics.orders.today?.cancelled || 0,
+          commission: {
+            totalEarned: analytics.commissions?.totalEarned || 0,
+            totalPaid: analytics.commissions?.totalPaid || 0,
+            pendingAmount: analytics.commissions?.pendingAmount || 0,
+            pendingCount: analytics.commissions?.pendingCount || 0,
+          },
+          statusCounts: {
+            processing: analytics.orders.processing || 0,
+            pending: analytics.orders.pending || 0,
+            confirmed: analytics.orders.confirmed || 0,
+            cancelled: analytics.orders.cancelled || 0,
+            partiallyCompleted: analytics.orders.partiallyCompleted || 0,
+          },
+          receptionCounts: {
+            received: analytics.orders.completed || 0,
+            not_received: analytics.orders.failed || 0,
+            checking: analytics.orders.processing || 0,
+            resolved: analytics.orders.completed || 0,
+          },
+        };
+
+        setAnalyticsData(transformedData);
+      } else if (isAgent) {
+        // For agents, use the agent analytics service
+        const analytics = await analyticsService.getAgentAnalytics("30d");
+
+        // Transform to match our component's expected structure
+        const transformedData = {
+          orders: {
+            total: analytics.orders.total || 0,
+            completed: analytics.orders.completed || 0,
+            processing: analytics.orders.processing || 0,
+            pending: analytics.orders.pending || 0,
+            confirmed: analytics.orders.confirmed || 0,
+            cancelled: analytics.orders.cancelled || 0,
+            partiallyCompleted: analytics.orders.partiallyCompleted || 0,
+            today: {
+              completed: analytics.orders.todayCounts?.completed || 0,
+              processing: analytics.orders.todayCounts?.processing || 0,
+              pending: analytics.orders.todayCounts?.pending || 0,
+              confirmed: analytics.orders.todayCounts?.confirmed || 0,
+              cancelled: analytics.orders.todayCounts?.cancelled || 0,
+              partiallyCompleted:
+                analytics.orders.todayCounts?.partiallyCompleted || 0,
             },
-            statusCounts: {
-              processing: analytics.orders.processing || 0,
-              pending: analytics.orders.pending || 0,
-              confirmed: analytics.orders.confirmed || 0,
-              cancelled: analytics.orders.cancelled || 0,
-              partiallyCompleted: analytics.orders.partiallyCompleted || 0,
-            },
-            receptionCounts: {
-              received: analytics.orders.completed || 0,
-              not_received: analytics.orders.failed || 0,
-              checking: analytics.orders.processing || 0,
-              resolved: analytics.orders.completed || 0,
-            },
-          };
+          },
+          revenue: {
+            total: analytics.revenue.total || 0,
+            thisMonth: analytics.revenue.thisMonth || 0,
+            today: analytics.revenue.today || 0,
+          },
+        };
 
-          setAnalyticsData(transformedData);
-        } else if (isAgent) {
-          // For agents, use the agent analytics service
-          const analytics = await analyticsService.getAgentAnalytics(
-            "30d",
-            forceRefresh,
-          );
-
-          // Transform to match our component's expected structure
-          const transformedData = {
-            orders: {
-              total: analytics.orders.total || 0,
-              completed: analytics.orders.completed || 0,
-              processing: analytics.orders.processing || 0,
-              pending: analytics.orders.pending || 0,
-              confirmed: analytics.orders.confirmed || 0,
-              cancelled: analytics.orders.cancelled || 0,
-              partiallyCompleted: analytics.orders.partiallyCompleted || 0,
-              today: {
-                completed: analytics.orders.todayCounts?.completed || 0,
-                processing: analytics.orders.todayCounts?.processing || 0,
-                pending: analytics.orders.todayCounts?.pending || 0,
-                confirmed: analytics.orders.todayCounts?.confirmed || 0,
-                cancelled: analytics.orders.todayCounts?.cancelled || 0,
-                partiallyCompleted:
-                  analytics.orders.todayCounts?.partiallyCompleted || 0,
-              },
-            },
-            revenue: {
-              total: analytics.revenue.total || 0,
-              thisMonth: analytics.revenue.thisMonth || 0,
-              today: analytics.revenue.today || 0,
-            },
-          };
-
-          setAnalyticsData(transformedData);
-        }
-      } catch (error) {
-        console.error("Failed to fetch analytics:", error);
-        setAnalyticsError("Failed to load analytics data");
-      } finally {
-        setAnalyticsLoading(false);
+        setAnalyticsData(transformedData);
       }
-    },
-    [isAdmin, isAgent],
-  );
+    } catch (error) {
+      console.error("Failed to fetch analytics:", error);
+      setAnalyticsError("Failed to load analytics data");
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [isAdmin, isAgent]);
 
   useEffect(() => {
     fetchOrders();

@@ -30,7 +30,7 @@ import {
   Filler,
   BarElement,
 } from "chart.js";
-import { Bar, Line } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 
 // Add CSS keyframes for fade-in animation
 const fadeInKeyframes = `
@@ -523,27 +523,84 @@ export const DashboardPage = () => {
         return "Last 30 Days";
       case "365d":
         return "Last 12 Months";
+      case "1d":
+        return "Today";
       default:
         return "Last 30 Days";
     }
   };
 
-  // Prepare sales chart data - Timeline of revenue
+  // Generate dynamic labels based on timeframe
+  const generateDynamicLabels = () => {
+    switch (analyticsTimeframe) {
+      case "1d": {
+        // Hours: 0, 1, 2, ..., 23
+        return Array.from({ length: 24 }, (_, i) => `${i}:00`);
+      }
+      case "7d": {
+        // Days of week: Mon, Tue, Wed, Thu, Fri, Sat, Sun
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Monday
+
+        return days.map((day, idx) => {
+          const date = new Date(startOfWeek);
+          date.setDate(startOfWeek.getDate() + idx);
+          const dayNum = date.getDate();
+          return `${day} ${dayNum}`;
+        });
+      }
+      case "30d": {
+        // Every 2nd day: 1, 3, 5, 7, ..., 29
+        return Array.from({ length: 15 }, (_, i) => `Day ${i * 2 + 1}`);
+      }
+      case "365d": {
+        // Months of year
+        return [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+      }
+      default:
+        return [];
+    }
+  };
+
+  // Prepare sales chart data - Bar chart with dynamic labels
   const prepareSalesChartData = () => {
-    const labels = analyticsData.charts.labels || [];
+    const dynamicLabels = generateDynamicLabels();
     const revenueData = analyticsData.charts.revenue || [];
 
+    // Ensure data matches label count, pad with 0s if needed
+    const paddedRevenueData = Array(dynamicLabels.length).fill(0);
+    revenueData.forEach((value, idx) => {
+      if (idx < paddedRevenueData.length) {
+        paddedRevenueData[idx] = value;
+      }
+    });
+
     return {
-      labels: labels,
+      labels: dynamicLabels,
       datasets: [
         {
-          label: "Revenue",
-          data: revenueData,
-          backgroundColor: "rgba(16, 185, 129, 0.2)", // Emerald light
-          borderColor: "rgba(16, 185, 129, 1)", // Emerald
-          borderWidth: 2,
-          fill: true,
-          tension: 0.4, // smooth curve
+          label: "Revenue (GHS)",
+          data: paddedRevenueData,
+          backgroundColor: "rgba(16, 185, 129, 0.7)", // Emerald
+          borderColor: "rgba(16, 185, 129, 1)", // Emerald darker
+          borderWidth: 1.5,
+          borderRadius: 4,
+          hoverBackgroundColor: "rgba(16, 185, 129, 0.9)",
         },
       ],
     };
@@ -562,7 +619,7 @@ export const DashboardPage = () => {
         callbacks: {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           label: function (context: any) {
-            return `Revenue: GHS ${context.parsed.y}`;
+            return `Revenue: GHS ${context.parsed.y.toFixed(2)}`;
           },
         },
       },
@@ -570,6 +627,12 @@ export const DashboardPage = () => {
     scales: {
       y: {
         beginAtZero: true,
+        ticks: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          callback: function (value: any) {
+            return `₵${value}`;
+          },
+        },
       },
       x: {
         grid: {
@@ -729,8 +792,9 @@ export const DashboardPage = () => {
                             </span>
                             <span className="text-xs text-gray-500">
                               {order.items?.length || 0} item
-                              {(order.items?.length || 0) !== 1 ? "s" : ""} ·{" "}
-                              {getTimeAgo(order.createdAt)}
+                              {(order.items?.length || 0) !== 1
+                                ? "s"
+                                : ""} · {getTimeAgo(order.createdAt)}
                             </span>
                           </div>
                         </div>
@@ -951,7 +1015,7 @@ export const DashboardPage = () => {
             </div>
           ) : (
             <div className="h-40 sm:h-48">
-              <Line data={salesChartData} options={salesChartOptions} />
+              <Bar data={salesChartData} options={salesChartOptions} />
             </div>
           )}
         </CardBody>
