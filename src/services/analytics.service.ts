@@ -362,123 +362,40 @@ export interface RealtimeMetrics {
 }
 
 class AnalyticsService {
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
-
-  private getCachedData<T>(key: string): T | null {
-    try {
-      const cached = sessionStorage.getItem(key);
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        // Return cached data if it hasn't expired
-        if (Date.now() - timestamp < this.CACHE_TTL) {
-          return data;
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to read from cache", e);
-    }
-    return null;
-  }
-
-  private setCachedData(key: string, data: unknown): void {
-    try {
-      sessionStorage.setItem(
-        key,
-        JSON.stringify({ data, timestamp: Date.now() }),
-      );
-    } catch (e) {
-      console.warn("Failed to write to cache", e);
-    }
-  }
-
-  public clearCache(): void {
-    try {
-      Object.keys(sessionStorage).forEach((key) => {
-        if (key.startsWith("analytics_")) {
-          sessionStorage.removeItem(key);
-        }
-      });
-    } catch (e) {
-      console.warn("Failed to clear cache", e);
-    }
-  }
-
   async getSuperAdminAnalytics(
     timeframe: string = "30d",
-    forceRefresh = false,
   ): Promise<AnalyticsData> {
-    const cacheKey = `analytics_superadmin_${timeframe}`;
-
-    if (!forceRefresh) {
-      const cached = this.getCachedData<AnalyticsData>(cacheKey);
-      if (cached) return cached;
-    }
-
     const response = await apiClient.get("/api/analytics/superadmin", {
       params: { timeframe },
     });
-    this.setCachedData(cacheKey, response.data.data);
     return response.data.data;
   }
 
   async getAgentAnalytics(
     timeframe: string = "30d",
-    forceRefresh = false,
   ): Promise<AgentAnalyticsData> {
-    const cacheKey = `analytics_agent_${timeframe}`;
-
-    if (!forceRefresh) {
-      const cached = this.getCachedData<AgentAnalyticsData>(cacheKey);
-      if (cached) return cached;
-    }
-
     const response = await apiClient.get("/api/analytics/agent", {
       params: { timeframe },
     });
-    this.setCachedData(cacheKey, response.data.data);
     return response.data.data;
   }
 
   async getAnalyticsSummary(
     timeframe: string = "30d",
-    forceRefresh = false,
   ): Promise<AnalyticsData | AgentAnalyticsData> {
-    const cacheKey = `analytics_summary_${timeframe}`;
-
-    if (!forceRefresh) {
-      const cached = this.getCachedData<AnalyticsData | AgentAnalyticsData>(
-        cacheKey,
-      );
-      if (cached) return cached;
-    }
-
     const response = await apiClient.get("/api/analytics/summary", {
       params: { timeframe },
     });
-    this.setCachedData(cacheKey, response.data.data);
     return response.data.data;
   }
 
-  async getChartData(
-    timeframe: string = "30d",
-    forceRefresh = false,
-  ): Promise<ChartData> {
-    const cacheKey = `analytics_charts_${timeframe}`;
-
-    if (!forceRefresh) {
-      const cached = this.getCachedData<ChartData>(cacheKey);
-      if (cached) return cached;
-    }
-
+  async getChartData(timeframe: string = "30d"): Promise<ChartData> {
     const response = await apiClient.get("/api/analytics/charts", {
       params: { timeframe },
     });
-    this.setCachedData(cacheKey, response.data.data);
     return response.data.data;
   }
 
-  // Realtime metrics should not be cached completely, but we could throttle requests
-  // For now, we leave it uncached as it implies "realtime"
   async getRealtimeMetrics(): Promise<RealtimeMetrics> {
     const response = await apiClient.get("/api/analytics/realtime");
     return response.data.data;
@@ -487,19 +404,10 @@ class AnalyticsService {
   async getCentralizedAnalytics(
     timeframe: string = "30d",
     scope: string = "all",
-    forceRefresh = false,
   ): Promise<CentralizedAnalyticsResponse> {
-    const cacheKey = `analytics_centralized_${scope}_${timeframe}`;
-
-    if (!forceRefresh) {
-      const cached = this.getCachedData<CentralizedAnalyticsResponse>(cacheKey);
-      if (cached) return cached;
-    }
-
     const response = await apiClient.get("/api/analytics/centralized", {
       params: { timeframe, scope },
     });
-    this.setCachedData(cacheKey, response.data.data);
     return response.data.data;
   }
 }
