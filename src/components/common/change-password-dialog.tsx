@@ -244,8 +244,8 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
           </Button>
           <Button
             type="submit"
-            variant="solid"
-            colorScheme="primary"
+            variant="primary"
+            colorScheme="success"
             disabled={isLoading}
             isLoading={isLoading}
           >

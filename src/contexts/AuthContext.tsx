@@ -482,6 +482,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setState((prev) => ({ ...prev, error: null }));
   }, []);
 
+  // Setup security PIN
+  const setupPin = useCallback(async (pin: string) => {
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      await authService.setupPin({ pin });
+      setState((prev) => ({ ...prev, isLoading: false }));
+      addToast("Security PIN configured successfully.", "success");
+    } catch (error) {
+      const errorMessage = parseApiError(error, "set up PIN");
+
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage,
+      }));
+
+      throw error;
+    }
+  }, []);
+
   // Memoize context value
   const contextValue = useMemo(
     () => ({
@@ -491,6 +512,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       logout,
       forgotPassword,
       resetPassword,
+      setupPin,
       verifyAccount,
       clearErrors,
       refreshAuth,
@@ -503,6 +525,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       logout,
       forgotPassword,
       resetPassword,
+      setupPin,
       verifyAccount,
       clearErrors,
       refreshAuth,
