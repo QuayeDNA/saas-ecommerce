@@ -67,7 +67,27 @@ function App() {
         <ThemeProvider initialTheme="default">
           <ToastProvider>
             <AppProvider>
-              <CommissionProvider>
+              {/* Commission system disabled in production — enabled only in development */}
+              {import.meta.env.DEV ? (
+                <CommissionProvider>
+                  <NotificationProvider>
+                    <AnnouncementProvider>
+                      <PushNotificationInitializer />
+                      <div
+                        className={`min-h-screen flex flex-col ${
+                          isImpersonating && isAuthenticatedRoute ? "pt-0" : ""
+                        }`}
+                      >
+                        <MaintenanceBanner />
+                        <div className="flex-1">{routeElement}</div>
+                        <NetworkStatusIndicator />
+                        <InstallPrompt />
+                        <AnnouncementPopupHandler />
+                      </div>
+                    </AnnouncementProvider>
+                  </NotificationProvider>
+                </CommissionProvider>
+              ) : (
                 <NotificationProvider>
                   <AnnouncementProvider>
                     <PushNotificationInitializer />
@@ -84,7 +104,7 @@ function App() {
                     </div>
                   </AnnouncementProvider>
                 </NotificationProvider>
-              </CommissionProvider>
+              )}
             </AppProvider>
           </ToastProvider>
         </ThemeProvider>
