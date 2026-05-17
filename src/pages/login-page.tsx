@@ -20,7 +20,6 @@ import {
   FaEye,
   FaEyeSlash,
   FaArrowLeft,
-  FaExclamationTriangle,
   FaSpinner,
   FaWhatsapp,
   FaUsers,
@@ -162,7 +161,6 @@ export const LoginPage = () => {
                     variant="left-accent"
                     className="flex items-start"
                   >
-                    <FaExclamationTriangle className="mt-0.5 mr-3 flex-shrink-0 text-red-500" />
                     <div>
                       <div className="font-medium text-red-800">
                         {(localError ?? authState.error)?.includes("Too many")

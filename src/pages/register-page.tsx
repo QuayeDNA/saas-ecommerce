@@ -316,21 +316,22 @@ export const RegisterPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Header */}
-      <header className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
+       {/* Header with back to home */}
+      <header className="p-4 sm:p-6">
         <Container>
           <div className="flex items-center justify-between">
             <Link
               to="/home"
-              className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-all group"
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
             >
-              <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
-              <span className="hidden sm:inline font-medium">Back to Home</span>
-              <span className="sm:hidden font-medium">Back</span>
+              <FaArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden sm:inline">Back to Home</span>
+              <span className="sm:hidden">Back</span>
             </Link>
 
+            {/* Logo */}
             <div className="flex items-center space-x-2">
-              <BryteLinksSvgLogoCompact width={140} height={40} />
+              <BryteLinksSvgLogoCompact width={40} height={40} />
             </div>
           </div>
         </Container>
