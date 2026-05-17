@@ -14,6 +14,7 @@ import {
   FaTimes,
   FaClock,
   FaArrowRight,
+  FaChartLine,
 } from "react-icons/fa";
 import type { WalletTransaction } from "../types/wallet";
 import type { Order } from "../types/order";
@@ -29,7 +30,7 @@ import {
   Filler,
   BarElement,
 } from "chart.js";
-import { Bar } from "react-chartjs-2";
+import { Bar, Line } from "react-chartjs-2";
 
 // Add CSS keyframes for fade-in animation
 const fadeInKeyframes = `
@@ -62,7 +63,7 @@ ChartJS.register(
   Tooltip,
   Legend,
   Filler,
-  BarElement
+  BarElement,
 );
 
 // Define the 4 specific packages that should be displayed
@@ -152,6 +153,7 @@ export const DashboardPage = () => {
     },
   });
   const [loading, setLoading] = useState(true);
+  const [analyticsTimeframe, setAnalyticsTimeframe] = useState("7d"); // default to Weekly
   const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
   const [showSiteMessage, setShowSiteMessage] = useState(true);
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
@@ -243,7 +245,7 @@ export const DashboardPage = () => {
 
         // Load agent analytics
         try {
-          const analytics = await getAgentAnalytics("30d");
+          const analytics = await getAgentAnalytics(analyticsTimeframe);
           if (analytics) {
             // Use the AgentAnalyticsData shape directly from the backend
             const data = analytics as {
@@ -311,7 +313,8 @@ export const DashboardPage = () => {
                   confirmed: data.orders?.todayCounts?.confirmed || 0,
                   failed: data.orders?.todayCounts?.failed || 0,
                   cancelled: data.orders?.todayCounts?.cancelled || 0,
-                  partiallyCompleted: data.orders?.todayCounts?.partiallyCompleted || 0,
+                  partiallyCompleted:
+                    data.orders?.todayCounts?.partiallyCompleted || 0,
                 },
               },
               revenue: {
@@ -436,7 +439,7 @@ export const DashboardPage = () => {
     };
 
     loadDashboardData();
-  }, [getTransactionHistory, getAgentAnalytics]);
+  }, [getTransactionHistory, getAgentAnalytics, analyticsTimeframe]);
 
   // Fetch active (pending/processing/confirmed) orders
   useEffect(() => {
@@ -445,9 +448,18 @@ export const DashboardPage = () => {
         setActiveOrdersLoading(true);
         // Fetch pending orders first, then processing, then confirmed
         const [pendingRes, processingRes, confirmedRes] = await Promise.all([
-          orderService.getOrders({ status: "pending" }, { limit: 5, page: 1, sortBy: "createdAt", sortOrder: "desc" }),
-          orderService.getOrders({ status: "processing" }, { limit: 5, page: 1, sortBy: "createdAt", sortOrder: "desc" }),
-          orderService.getOrders({ status: "confirmed" }, { limit: 5, page: 1, sortBy: "createdAt", sortOrder: "desc" }),
+          orderService.getOrders(
+            { status: "pending" },
+            { limit: 5, page: 1, sortBy: "createdAt", sortOrder: "desc" },
+          ),
+          orderService.getOrders(
+            { status: "processing" },
+            { limit: 5, page: 1, sortBy: "createdAt", sortOrder: "desc" },
+          ),
+          orderService.getOrders(
+            { status: "confirmed" },
+            { limit: 5, page: 1, sortBy: "createdAt", sortOrder: "desc" },
+          ),
         ]);
 
         // Combine, sort by createdAt desc, take first 5
@@ -456,7 +468,10 @@ export const DashboardPage = () => {
           ...processingRes.orders,
           ...confirmedRes.orders,
         ]
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
           .slice(0, 5);
 
         setActiveOrders(combined);
@@ -488,11 +503,80 @@ export const DashboardPage = () => {
   // Get status badge color
   const getOrderStatusColor = (status: string) => {
     switch (status) {
-      case "pending": return "warning";
-      case "processing": return "info";
-      case "confirmed": return "success";
-      default: return "default";
+      case "pending":
+        return "warning";
+      case "processing":
+        return "info";
+      case "confirmed":
+        return "success";
+      default:
+        return "default";
     }
+  };
+
+  // Get timeframe display label
+  const getTimeframeLabel = () => {
+    switch (analyticsTimeframe) {
+      case "7d":
+        return "Last 7 Days";
+      case "30d":
+        return "Last 30 Days";
+      case "365d":
+        return "Last 12 Months";
+      default:
+        return "Last 30 Days";
+    }
+  };
+
+  // Prepare sales chart data - Timeline of revenue
+  const prepareSalesChartData = () => {
+    const labels = analyticsData.charts.labels || [];
+    const revenueData = analyticsData.charts.revenue || [];
+
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: "Revenue",
+          data: revenueData,
+          backgroundColor: "rgba(16, 185, 129, 0.2)", // Emerald light
+          borderColor: "rgba(16, 185, 129, 1)", // Emerald
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4, // smooth curve
+        },
+      ],
+    };
+  };
+
+  const salesChartData = prepareSalesChartData();
+
+  const salesChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          label: function (context: any) {
+            return `Revenue: GHS ${context.parsed.y}`;
+          },
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+      },
+    },
   };
 
   // Prepare order analytics chart data - Order completion trends
@@ -621,19 +705,21 @@ export const DashboardPage = () => {
             <CardBody className="text-center py-6">
               <FaShoppingCart className="mx-auto h-8 w-8 text-gray-300 mb-2" />
               <p className="text-sm text-gray-500">No active orders</p>
-              <p className="text-xs text-gray-400 mt-1">All your orders are completed or you haven't placed any yet</p>
+              <p className="text-xs text-gray-400 mt-1">
+                All your orders are completed or you haven't placed any yet
+              </p>
             </CardBody>
           </Card>
         ) : (
           <div className="max-h-[136px] overflow-y-auto pr-1 scrollbar-thin">
             <div className="space-y-2">
               {activeOrders.map((order) => (
-                <Link
-                  key={order._id}
-                  to={`./orders`}
-                  className="block"
-                >
-                  <Card variant="interactive" size="sm" className="hover:shadow-md transition-shadow">
+                <Link key={order._id} to={`./orders`} className="block">
+                  <Card
+                    variant="interactive"
+                    size="sm"
+                    className="hover:shadow-md transition-shadow"
+                  >
                     <CardBody>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -642,14 +728,22 @@ export const DashboardPage = () => {
                               {order.orderNumber}
                             </span>
                             <span className="text-xs text-gray-500">
-                              {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? "s" : ""} · {getTimeAgo(order.createdAt)}
+                              {order.items?.length || 0} item
+                              {(order.items?.length || 0) !== 1 ? "s" : ""} ·{" "}
+                              {getTimeAgo(order.createdAt)}
                             </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <Badge
                             variant="subtle"
-                            colorScheme={getOrderStatusColor(order.status) as "warning" | "info" | "success" | "default"}
+                            colorScheme={
+                              getOrderStatusColor(order.status) as
+                                | "warning"
+                                | "info"
+                                | "success"
+                                | "default"
+                            }
                             size="xs"
                           >
                             {order.status}
@@ -665,7 +759,9 @@ export const DashboardPage = () => {
               ))}
             </div>
             {activeOrders.length > 2 && (
-              <p className="text-[10px] text-gray-400 text-center mt-1">Scroll for more ({activeOrders.length} orders)</p>
+              <p className="text-[10px] text-gray-400 text-center mt-1">
+                Scroll for more ({activeOrders.length} orders)
+              </p>
             )}
           </div>
         )}
@@ -712,14 +808,14 @@ export const DashboardPage = () => {
                     className={`${packageItem.color} text-white rounded-full mx-auto mb-2 w-12 h-12 flex items-center justify-center overflow-hidden`}
                   >
                     {packageItem.logo?.url &&
-                      !failedLogos.has(packageItem.code) ? (
+                    !failedLogos.has(packageItem.code) ? (
                       <img
                         src={packageItem.logo.url}
                         alt={packageItem.logo.alt || packageItem.name}
                         className="w-12 h-12 object-cover rounded-full"
                         onError={() => {
                           setFailedLogos((prev) =>
-                            new Set(prev).add(packageItem.code)
+                            new Set(prev).add(packageItem.code),
                           );
                         }}
                       />
@@ -810,19 +906,63 @@ export const DashboardPage = () => {
                 ₵{(analyticsData.commissions.totalCommission || 0).toFixed(2)}
               </div>
               <div className="text-xs text-gray-300 mt-2">
-                Paid: ₵{(analyticsData.commissions.paidCommission || 0).toFixed(2)}
+                Paid: ₵
+                {(analyticsData.commissions.paidCommission || 0).toFixed(2)}
               </div>
             </CardBody>
           </Card>
         </div>
       </div>
 
+      {/* Sales Analytics Chart */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-800">
+              Sales Analytics
+            </h3>
+            <div className="flex gap-2">
+              <select
+                value={analyticsTimeframe}
+                onChange={(e) => setAnalyticsTimeframe(e.target.value)}
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2"
+              >
+                <option value="7d">Weekly (Last 7 Days)</option>
+                <option value="30d">Monthly (Last 30 Days)</option>
+                <option value="365d">Yearly (Last 12 Months)</option>
+              </select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {loading ? (
+            <div className="flex justify-center items-center h-40 sm:h-48">
+              <Spinner />
+            </div>
+          ) : !analyticsData.charts.labels ||
+            analyticsData.charts.labels.length === 0 ? (
+            <div className="bg-gray-50 h-40 sm:h-48 flex items-center justify-center rounded">
+              <div className="text-center">
+                <FaChartLine className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                <p className="text-gray-400 text-sm">
+                  No sales data available for selected period
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-40 sm:h-48">
+              <Line data={salesChartData} options={salesChartOptions} />
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
       {/* Order Analytics Chart */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-800">
-              Order Analytics (Last 30 Days)
+              Order Analytics ({getTimeframeLabel()})
             </h3>
             <Link
               to="./orders"
@@ -901,7 +1041,7 @@ export const DashboardPage = () => {
                         <Badge
                           variant="subtle"
                           colorScheme={getTransactionStatusColor(
-                            transaction.type
+                            transaction.type,
                           )}
                           size="xs"
                         >

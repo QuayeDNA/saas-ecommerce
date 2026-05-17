@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import {
   Dialog,
   DialogHeader,
@@ -89,7 +90,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
   const handleInputChange = (
     field: keyof ChangePasswordData,
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -105,7 +106,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   };
 
   const handleCurrentPasswordChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     handleInputChange("currentPassword", e.target.value);
   };
@@ -115,7 +116,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   };
 
   const handleConfirmPasswordInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     handleConfirmPasswordChange(e.target.value);
   };
@@ -148,9 +149,16 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    aria-label={
+                      showCurrentPassword ? "Hide password" : "Show password"
+                    }
                   >
-                    {showCurrentPassword ? "🙈" : "👁️"}
+                    {showCurrentPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 }
               />
@@ -170,9 +178,16 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    aria-label={
+                      showNewPassword ? "Hide password" : "Show password"
+                    }
                   >
-                    {showNewPassword ? "🙈" : "👁️"}
+                    {showNewPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 }
               />
@@ -192,9 +207,16 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    aria-label={
+                      showConfirmPassword ? "Hide password" : "Show password"
+                    }
                   >
-                    {showConfirmPassword ? "🙈" : "👁️"}
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 }
               />
@@ -222,11 +244,12 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
           </Button>
           <Button
             type="submit"
-            color="blue"
+            variant="primary"
+            colorScheme="success"
             disabled={isLoading}
             isLoading={isLoading}
           >
-            {isLoading ? "Changing..." : "Change Password"}
+            Change Password
           </Button>
         </DialogFooter>
       </Form>

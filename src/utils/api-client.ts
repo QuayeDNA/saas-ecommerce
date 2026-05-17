@@ -3,7 +3,9 @@ import Cookies from "js-cookie";
 import { getToken, removeToken } from "./auth-storage";
 
 // Create a public axios instance for unauthenticated requests
-const DEFAULT_API = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "" : "https://localhost:5050");
+const DEFAULT_API =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.DEV ? "" : "https://localhost:5050");
 
 export const publicApiClient = axios.create({
   // In dev prefer a relative URL so Vite's dev server proxy handles /api requests.
@@ -54,7 +56,7 @@ apiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Add a response interceptor to handle errors
@@ -64,16 +66,31 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = String(originalRequest?.url || "");
+    const isPublicAuthEndpoint = [
+      "/api/auth/login",
+      "/api/auth/register/agent",
+      "/api/auth/forgot-password",
+      "/api/auth/reset-password",
+      "/api/auth/verify-account",
+    ].some((endpoint) => requestUrl.includes(endpoint));
 
     // If we get a 401 and haven't already tried to refresh
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isPublicAuthEndpoint
+    ) {
       originalRequest._retry = true;
 
       try {
         // Attempt token refresh
         const refreshToken = Cookies.get("refreshToken");
         if (refreshToken) {
-          const refreshResponse = await refreshClient.post(`/api/auth/refresh`, { refreshToken });
+          const refreshResponse = await refreshClient.post(
+            `/api/auth/refresh`,
+            { refreshToken },
+          );
 
           const { accessToken } = refreshResponse.data;
 
@@ -99,7 +116,7 @@ apiClient.interceptors.response.use(
     }
 
     // If refresh failed or another error occurred
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !isPublicAuthEndpoint) {
       // Don't redirect here, just clean up tokens and dispatch event
       removeToken();
       Cookies.remove("authToken");
@@ -109,5 +126,5 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );

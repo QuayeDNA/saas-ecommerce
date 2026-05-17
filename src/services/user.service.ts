@@ -261,7 +261,7 @@ export const userService = {
   },
   async updateAgentStatus(
     id: string,
-    status: "active" | "rejected"
+    status: "active" | "rejected",
   ): Promise<void> {
     await apiClient.patch(`/api/auth/users/${id}/status`, { status });
   },
@@ -271,7 +271,7 @@ export const userService = {
   },
   async updateUser(
     id: string,
-    updates: Partial<User & { isActive?: boolean }>
+    updates: Partial<User & { isActive?: boolean }>,
   ): Promise<User> {
     const resp = await apiClient.patch(`/api/auth/users/${id}`, updates);
     return resp.data.user;
@@ -284,7 +284,9 @@ export const userService = {
   async deleteUser(id: string): Promise<void> {
     await apiClient.delete(`/api/auth/users/${id}`);
   },
-  async impersonateUser(id: string): Promise<{ token: string; refreshToken: string; user: User }> {
+  async impersonateUser(
+    id: string,
+  ): Promise<{ token: string; refreshToken: string; user: User }> {
     const resp = await apiClient.post(`/api/auth/users/${id}/impersonate`);
     return resp.data;
   },
@@ -293,7 +295,9 @@ export const userService = {
     return resp.data.data;
   },
   async fetchChartData(timeframe: string = "30d"): Promise<ChartData> {
-    const resp = await apiClient.get(`/api/analytics/charts?timeframe=${timeframe}`);
+    const resp = await apiClient.get(
+      `/api/analytics/charts?timeframe=${timeframe}`,
+    );
     return resp.data.data;
   },
   // Additional methods for UserContext
@@ -302,10 +306,10 @@ export const userService = {
     return resp.data.user;
   },
   async changePassword(data: ChangePasswordData): Promise<void> {
-    await apiClient.patch("/api/users/change-password", data);
+    await apiClient.post("/api/users/change-password", data);
   },
   async submitAfaRegistration(
-    data: AfaRegistrationData
+    data: AfaRegistrationData,
   ): Promise<AfaRegistration> {
     const resp = await apiClient.post("/api/users/afa-registration", data);
     return resp.data.order;
@@ -323,12 +327,24 @@ export const userService = {
     return resp.data;
   },
 
-  async getUsersWithWallet(params: FetchUsersParams & { includeWallet?: boolean; userTypes?: string } = {}): Promise<UsersResponse> {
-    const { includeWallet = true, userTypes, ...rest } = params as unknown as Record<string, unknown>;
+  async getUsersWithWallet(
+    params: FetchUsersParams & {
+      includeWallet?: boolean;
+      userTypes?: string;
+    } = {},
+  ): Promise<UsersResponse> {
+    const {
+      includeWallet = true,
+      userTypes,
+      ...rest
+    } = params as unknown as Record<string, unknown>;
     const query: Record<string, unknown> = { ...rest };
-    if (typeof includeWallet !== "undefined") query.includeWallet = includeWallet ? "true" : "false";
+    if (typeof includeWallet !== "undefined")
+      query.includeWallet = includeWallet ? "true" : "false";
     if (userTypes) query.userTypes = userTypes;
-    const resp = await apiClient.get("/api/users/with-wallet", { params: query });
+    const resp = await apiClient.get("/api/users/with-wallet", {
+      params: query,
+    });
     return resp.data;
   },
   async getUserById(id: string): Promise<User> {

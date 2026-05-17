@@ -11,24 +11,26 @@ const UserDetailsPage = lazy(() => import("../pages/superadmin/user-details"));
 const ProvidersPage = lazy(() => import("../pages/superadmin/providers"));
 const OrdersPage = lazy(() => import("../pages/superadmin/orders"));
 const WalletTopUpsPage = lazy(
-  () => import("../pages/superadmin/wallet-top-ups")
+  () => import("../pages/superadmin/wallet-top-ups"),
 );
 const WalletHistoryPage = lazy(
-  () => import("../pages/superadmin/wallet-history")
+  () => import("../pages/superadmin/wallet-history"),
 );
 const SettingsPage = lazy(() => import("../pages/superadmin/settings"));
 const PackagesPage = lazy(() => import("../pages/superadmin/packages"));
 const BundleManagementPage = lazy(() =>
   import("../pages/admin/bundle-management-page").then((m) => ({
     default: m.BundleManagementPage,
-  }))
+  })),
 );
 const CommissionsPage = lazy(() => import("../pages/superadmin/commissions"));
 const AnnouncementsPage = lazy(
-  () => import("../pages/superadmin/announcements")
+  () => import("../pages/superadmin/announcements"),
 );
 const StoresPage = lazy(() => import("../pages/superadmin/stores"));
-const PayoutManagement = lazy(() => import("../pages/superadmin/payout-management"))
+const PayoutManagement = lazy(
+  () => import("../pages/superadmin/payout-management"),
+);
 const AnalyticsPage = lazy(() => import("../pages/superadmin/analytics"));
 
 const superadminRoutes: RouteObject = {
@@ -140,14 +142,18 @@ const superadminRoutes: RouteObject = {
             </Suspense>
           ),
         },
-        {
-          path: "commissions",
-          element: (
-            <Suspense fallback={<PageLoader />}>
-              <CommissionsPage />
-            </Suspense>
-          ),
-        },
+        ...(import.meta.env.DEV
+          ? ([
+              {
+                path: "commissions",
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <CommissionsPage />
+                  </Suspense>
+                ),
+              },
+            ] as RouteObject[])
+          : []),
         {
           path: "announcements",
           element: (

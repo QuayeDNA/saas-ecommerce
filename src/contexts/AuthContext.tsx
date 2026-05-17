@@ -33,6 +33,7 @@ import {
 } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { User } from "../types";
+import { parseApiError } from "../utils/error-handler";
 import { authService, type RegisterAgentData } from "../services/auth.service";
 import { tokenRefreshService } from "../utils/token-refresh";
 import { useToast } from "../design-system/components/toast";
@@ -68,8 +69,12 @@ export interface AuthContextValue {
   ) => Promise<void>; // User login
   registerAgent: (data: RegisterAgentData) => Promise<{ agentCode: string }>; // Agent registration
   logout: () => Promise<void>; // User logout
-  forgotPassword: (email: string) => Promise<void>; // Request password reset
+  forgotPassword: (
+    identifier: string,
+    pin: string,
+  ) => Promise<{ resetToken?: string } | void>; // Request password reset
   resetPassword: (token: string, password: string) => Promise<void>; // Complete password reset
+  setupPin: (pin: string) => Promise<void>; // Configure security PIN
   verifyAccount: (token: string) => Promise<{ userType: string }>; // Verify user account (kept for backward compatibility)
   clearErrors: () => void; // Clear error state
   refreshAuth: () => Promise<void>; // Refresh authentication
@@ -179,8 +184,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Token is invalid, attempt refresh
       await handleTokenRefresh();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Authentication failed";
+      const errorMessage = parseApiError(error, "authenticate");
       setUnauthenticatedState(errorMessage);
     }
   }, [setAuthenticatedState, setUnauthenticatedState, handleTokenRefresh]);
@@ -260,8 +264,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           ...defaultAuthState,
           isInitialized: true,
           isLoading: false,
-          error:
-            error instanceof Error ? error.message : "Authentication failed",
+          error: parseApiError(error, "authenticate"),
         });
       }
     };
@@ -308,8 +311,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         navigate(from, { replace: true });
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to login";
+        const errorMessage = parseApiError(error, "login");
 
         setState((prev) => ({
           ...prev,
@@ -340,8 +342,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setState((prev) => ({ ...prev, isLoading: false }));
         return result;
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to register agent";
+        const errorMessage = parseApiError(error, "register agent");
 
         setState((prev) => ({
           ...prev,
@@ -357,16 +358,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Forgot password method
   const forgotPassword = useCallback(
-    async (email: string) => {
+    async (identifier: string, pin: string) => {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        await authService.forgotPassword({ email });
+        const response = await authService.forgotPassword({ identifier, pin });
         setState((prev) => ({ ...prev, isLoading: false }));
-        addToast("Password reset email sent successfully!", "success");
+        addToast(
+          "PIN verified successfully. You can now reset your password.",
+          "success",
+        );
+        return response;
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to send reset email";
+        const errorMessage = parseApiError(error);
 
         setState((prev) => ({
           ...prev,
@@ -390,8 +394,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setState((prev) => ({ ...prev, isLoading: false }));
         addToast("Password reset successfully!", "success");
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to reset password";
+        const errorMessage = parseApiError(error, "reset password");
 
         setState((prev) => ({
           ...prev,
@@ -419,8 +422,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         );
         return result;
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to verify account";
+        const errorMessage = parseApiError(error, "verify account");
 
         setState((prev) => ({
           ...prev,
@@ -480,6 +482,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setState((prev) => ({ ...prev, error: null }));
   }, []);
 
+  // Setup security PIN
+  const setupPin = useCallback(async (pin: string) => {
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      await authService.setupPin({ pin });
+      setState((prev) => ({ ...prev, isLoading: false }));
+      addToast("Security PIN configured successfully.", "success");
+    } catch (error) {
+      const errorMessage = parseApiError(error, "set up PIN");
+
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage,
+      }));
+
+      throw error;
+    }
+  }, []);
+
   // Memoize context value
   const contextValue = useMemo(
     () => ({
@@ -489,6 +512,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       logout,
       forgotPassword,
       resetPassword,
+      setupPin,
       verifyAccount,
       clearErrors,
       refreshAuth,
@@ -501,6 +525,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       logout,
       forgotPassword,
       resetPassword,
+      setupPin,
       verifyAccount,
       clearErrors,
       refreshAuth,

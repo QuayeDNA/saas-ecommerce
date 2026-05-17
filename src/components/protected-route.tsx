@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks";
 import { PageLoader } from "./page-loader";
 import { useEffect, useState } from "react";
+import { SetupPinGate } from "./setup-pin-gate";
 
 interface ProtectedRouteProps {
   allowedUserTypes?: string[];
@@ -53,7 +54,7 @@ export const ProtectedRoute = ({
       {
         from: location.pathname,
         to: redirectTo,
-      }
+      },
     );
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
@@ -72,6 +73,11 @@ export const ProtectedRoute = ({
 
       return <Navigate to={dashboardUrl} replace />;
     }
+  }
+
+  // Force PIN setup if required by user
+  if (authState.isAuthenticated && authState.user?.requiresPinSetup) {
+    return <SetupPinGate />;
   }
 
   return <Outlet />;
@@ -138,6 +144,11 @@ export const RoleBasedRoute = ({
       : "/";
 
     return <Navigate to={dashboardUrl} replace />;
+  }
+
+  // Force PIN setup if required by user
+  if (authState.user?.requiresPinSetup) {
+    return <SetupPinGate />;
   }
 
   return <>{children}</>;
