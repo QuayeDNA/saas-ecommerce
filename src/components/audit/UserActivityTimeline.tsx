@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FaChevronDown, FaChevronRight } from "react-icons/fa";
-import { Badge, Button, Card } from "../../design-system";
+import { Badge, Button } from "../../design-system";
 import { useInfiniteAuditLogs } from "../../hooks/useAuditLogs";
 import { useAuditLogRealtime } from "../../hooks/useAuditLogRealtime";
 import type { AuditLog } from "../../types/auditLog";
-import { formatAction, formatCategory, formatMetadataEntries, formatChanges, formatTimestamp } from "./auditHelpers";
+import {
+  formatAction,
+  formatCategory,
+  formatMetadataEntries,
+  formatChanges,
+  formatTimestamp,
+} from "./auditHelpers";
 
 interface UserActivityTimelineProps {
   userId: string;
+  limit?: number;
 }
 
 const severityColor = (severity: AuditLog["severity"]) => {
@@ -40,7 +47,11 @@ export const UserActivityTimeline = ({ userId }: UserActivityTimelineProps) => {
     const observer = new IntersectionObserver(
       (entries) => {
         const first = entries[0];
-        if (first.isIntersecting && query.hasNextPage && !query.isFetchingNextPage) {
+        if (
+          first.isIntersecting &&
+          query.hasNextPage &&
+          !query.isFetchingNextPage
+        ) {
           query.fetchNextPage();
         }
       },
@@ -66,16 +77,17 @@ export const UserActivityTimeline = ({ userId }: UserActivityTimelineProps) => {
   }, [query.data?.pages]);
 
   return (
-    <Card variant="outlined" className="p-4">
-      <h3 className="mb-4 text-lg font-semibold text-gray-900">
-        User Activity Timeline
-      </h3>
-
+    <div>
       <div className="space-y-5">
         {groupedLogs.map(([day, logs]) => (
           <div key={day}>
             <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
-              {new Date(day).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
+              {new Date(day).toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
             </div>
 
             <div className="relative ml-3 space-y-3 border-l border-gray-200 pl-4">
@@ -100,11 +112,16 @@ export const UserActivityTimeline = ({ userId }: UserActivityTimelineProps) => {
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-900">{actionLabel}</span>
-                            <Badge variant="outline" size="sm">{categoryLabel}</Badge>
+                            <span className="font-medium text-gray-900">
+                              {actionLabel}
+                            </span>
+                            <Badge variant="outline" size="sm">
+                              {categoryLabel}
+                            </Badge>
                           </div>
                           <div className="text-xs text-gray-500">
-                            {log.user?.fullName || "System"} • {formatTimestamp(log.timestamp)}
+                            {log.user?.fullName || "System"} •{" "}
+                            {formatTimestamp(log.timestamp)}
                           </div>
                         </div>
                       </div>
@@ -116,7 +133,9 @@ export const UserActivityTimeline = ({ userId }: UserActivityTimelineProps) => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setExpandedId(expanded ? null : log._id)}
+                          onClick={() =>
+                            setExpandedId(expanded ? null : log._id)
+                          }
                         >
                           {expanded ? <FaChevronDown /> : <FaChevronRight />}
                         </Button>
@@ -127,14 +146,25 @@ export const UserActivityTimeline = ({ userId }: UserActivityTimelineProps) => {
                       <div className="mt-3 space-y-3">
                         {changes.length > 0 && (
                           <div className="rounded bg-gray-50 p-3">
-                            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Changes</h4>
+                            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Changes
+                            </h4>
                             <div className="space-y-1.5">
                               {changes.map((c) => (
-                                <div key={c.field} className="flex items-center gap-2 text-xs">
-                                  <span className="min-w-[80px] font-medium text-gray-600">{c.field}:</span>
-                                  <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-700 line-through">{c.from}</span>
+                                <div
+                                  key={c.field}
+                                  className="flex items-center gap-2 text-xs"
+                                >
+                                  <span className="min-w-[80px] font-medium text-gray-600">
+                                    {c.field}:
+                                  </span>
+                                  <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-700 line-through">
+                                    {c.from}
+                                  </span>
                                   <span className="text-gray-400">&rarr;</span>
-                                  <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-700">{c.to}</span>
+                                  <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-700">
+                                    {c.to}
+                                  </span>
                                 </div>
                               ))}
                             </div>
@@ -142,12 +172,18 @@ export const UserActivityTimeline = ({ userId }: UserActivityTimelineProps) => {
                         )}
                         {metadata.length > 0 && (
                           <div className="rounded bg-gray-50 p-3">
-                            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Metadata</h4>
+                            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Metadata
+                            </h4>
                             <div className="space-y-1">
                               {metadata.map(({ label, value }) => (
                                 <div key={label} className="flex gap-2 text-xs">
-                                  <span className="min-w-[80px] font-medium text-gray-500">{label}:</span>
-                                  <span className="break-all text-gray-700">{value}</span>
+                                  <span className="min-w-[80px] font-medium text-gray-500">
+                                    {label}:
+                                  </span>
+                                  <span className="break-all text-gray-700">
+                                    {value}
+                                  </span>
                                 </div>
                               ))}
                             </div>
@@ -177,7 +213,7 @@ export const UserActivityTimeline = ({ userId }: UserActivityTimelineProps) => {
           </Button>
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 

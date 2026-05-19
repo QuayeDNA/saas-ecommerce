@@ -19,7 +19,13 @@ import { useAuditLogs } from "../../hooks/useAuditLogs";
 import { useAuditLogRealtime } from "../../hooks/useAuditLogRealtime";
 import { auditLogService } from "../../services/auditLogService";
 import type { AuditLog } from "../../types/auditLog";
-import { formatAction, formatCategory, formatMetadataEntries, formatChanges, formatTimestamp } from "./auditHelpers";
+import {
+  formatAction,
+  formatCategory,
+  formatMetadataEntries,
+  formatChanges,
+  formatTimestamp,
+} from "./auditHelpers";
 
 type SortField = "timestamp" | "user" | "action" | "category";
 type SortDirection = "asc" | "desc";
@@ -48,7 +54,7 @@ const severityFilterOptions: FilterOption[] = [
   { value: "critical", label: "Critical" },
 ];
 
-export const AuditLogTable = () => {
+export const AuditLogTable = (_props?: { filters?: any }) => {
   const { addToast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("");
@@ -80,16 +86,23 @@ export const AuditLogTable = () => {
       const direction = sortDirection === "asc" ? 1 : -1;
 
       if (sortField === "timestamp") {
-        return (new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) * direction;
+        return (
+          (new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) *
+          direction
+        );
       }
 
       if (sortField === "user") {
-        const left = `${a.user?.fullName ?? ""} ${a.user?.email ?? ""}`.toLowerCase();
-        const right = `${b.user?.fullName ?? ""} ${b.user?.email ?? ""}`.toLowerCase();
+        const left =
+          `${a.user?.fullName ?? ""} ${a.user?.email ?? ""}`.toLowerCase();
+        const right =
+          `${b.user?.fullName ?? ""} ${b.user?.email ?? ""}`.toLowerCase();
         return left.localeCompare(right) * direction;
       }
 
-      return String(a[sortField]).localeCompare(String(b[sortField])) * direction;
+      return (
+        String(a[sortField]).localeCompare(String(b[sortField])) * direction
+      );
     });
 
     return source;
@@ -106,7 +119,13 @@ export const AuditLogTable = () => {
 
   const onExport = async () => {
     try {
-      const blob = await auditLogService.exportLogs({ search: searchTerm || undefined, category: category || undefined, severity: severity || undefined, startDate: startDate || undefined, endDate: endDate || undefined });
+      const blob = await auditLogService.exportLogs({
+        search: searchTerm || undefined,
+        category: category || undefined,
+        severity: severity || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -143,14 +162,31 @@ export const AuditLogTable = () => {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search by user or action..."
         filters={{
-          category: { value: category, options: categoryFilterOptions, label: "Category", placeholder: "All categories" },
-          severity: { value: severity, options: severityFilterOptions, label: "Severity", placeholder: "All severities" },
+          category: {
+            value: category,
+            options: categoryFilterOptions,
+            label: "Category",
+            placeholder: "All categories",
+          },
+          severity: {
+            value: severity,
+            options: severityFilterOptions,
+            label: "Severity",
+            placeholder: "All severities",
+          },
         }}
         onFilterChange={handleFilterChange}
         showDateRange
         dateRange={{ startDate, endDate }}
-        onDateRangeChange={(s, e) => { setStartDate(s); setEndDate(e); setPage(1); }}
-        onSearch={(e) => { e.preventDefault(); setPage(1); }}
+        onDateRangeChange={(s, e) => {
+          setStartDate(s);
+          setEndDate(e);
+          setPage(1);
+        }}
+        onSearch={(e) => {
+          e.preventDefault();
+          setPage(1);
+        }}
         onClearFilters={handleClearFilters}
         customActions={
           <Button variant="outline" size="sm" onClick={onExport}>
@@ -215,21 +251,34 @@ export const AuditLogTable = () => {
                 <>
                   <TableRow key={log._id}>
                     <TableCell className="whitespace-nowrap">
-                      <div className="text-sm">{formatTimestamp(log.timestamp)}</div>
-                      <div className="text-xs text-gray-400">{new Date(log.timestamp).toLocaleString()}</div>
+                      <div className="text-sm">
+                        {formatTimestamp(log.timestamp)}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{log.user?.fullName || "System"}</div>
-                      <div className="text-xs text-gray-500">{log.user?.email || log.userId}</div>
+                      <div className="font-medium">
+                        {log.user?.fullName || "System"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {log.user?.email || log.userId}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">{actionLabel}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" size="sm">{categoryLabel}</Badge>
+                      <Badge variant="outline" size="sm">
+                        {categoryLabel}
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="subtle" colorScheme={severityColor(log.severity)}>
+                      <Badge
+                        variant="subtle"
+                        colorScheme={severityColor(log.severity)}
+                      >
                         {log.severity}
                       </Badge>
                     </TableCell>
@@ -237,7 +286,9 @@ export const AuditLogTable = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setExpandedId(isExpanded ? null : log._id)}
+                        onClick={() =>
+                          setExpandedId(isExpanded ? null : log._id)
+                        }
                       >
                         {isExpanded ? <FaChevronDown /> : <FaChevronRight />}
                       </Button>
@@ -249,15 +300,28 @@ export const AuditLogTable = () => {
                         <div className="grid gap-6 md:grid-cols-2">
                           {changes.length > 0 && (
                             <div>
-                              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Changes</h4>
+                              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Changes
+                              </h4>
                               <div className="space-y-2">
                                 {changes.map((c) => (
-                                  <div key={c.field} className="rounded border border-gray-200 bg-white p-2 text-sm">
-                                    <div className="mb-1 font-medium text-gray-700">{c.field}</div>
+                                  <div
+                                    key={c.field}
+                                    className="rounded border border-gray-200 bg-white p-2 text-sm"
+                                  >
+                                    <div className="mb-1 font-medium text-gray-700">
+                                      {c.field}
+                                    </div>
                                     <div className="flex items-center gap-2 text-xs">
-                                      <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-700 line-through">{c.from}</span>
-                                      <span className="text-gray-400">&rarr;</span>
-                                      <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-700">{c.to}</span>
+                                      <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-700 line-through">
+                                        {c.from}
+                                      </span>
+                                      <span className="text-gray-400">
+                                        &rarr;
+                                      </span>
+                                      <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-700">
+                                        {c.to}
+                                      </span>
                                     </div>
                                   </div>
                                 ))}
@@ -267,12 +331,21 @@ export const AuditLogTable = () => {
 
                           {metadata.length > 0 && (
                             <div>
-                              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Metadata</h4>
+                              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Metadata
+                              </h4>
                               <div className="space-y-1">
                                 {metadata.map(({ label, value }) => (
-                                  <div key={label} className="flex gap-2 text-sm">
-                                    <span className="min-w-[100px] font-medium text-gray-600">{label}:</span>
-                                    <span className="text-gray-800 break-all">{value}</span>
+                                  <div
+                                    key={label}
+                                    className="flex gap-2 text-sm"
+                                  >
+                                    <span className="min-w-[100px] font-medium text-gray-600">
+                                      {label}:
+                                    </span>
+                                    <span className="text-gray-800 break-all">
+                                      {value}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -280,12 +353,17 @@ export const AuditLogTable = () => {
                           )}
 
                           {changes.length === 0 && metadata.length === 0 && (
-                            <div className="text-sm text-gray-400 col-span-2">No additional details available.</div>
+                            <div className="text-sm text-gray-400 col-span-2">
+                              No additional details available.
+                            </div>
                           )}
 
                           {log.ipAddress && (
                             <div className="text-xs text-gray-400 col-span-2">
-                              IP: {log.ipAddress}{log.userAgent ? ` · Agent: ${log.userAgent.slice(0, 80)}${log.userAgent.length > 80 ? "..." : ""}` : ""}
+                              IP: {log.ipAddress}
+                              {log.userAgent
+                                ? ` · Agent: ${log.userAgent.slice(0, 80)}${log.userAgent.length > 80 ? "..." : ""}`
+                                : ""}
                             </div>
                           )}
                         </div>
@@ -298,7 +376,10 @@ export const AuditLogTable = () => {
 
             {!isLoading && sortedLogs.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-sm text-gray-500">
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-sm text-gray-500"
+                >
                   No audit logs found for current filters.
                 </TableCell>
               </TableRow>
@@ -313,7 +394,10 @@ export const AuditLogTable = () => {
             totalItems={pagination.total}
             itemsPerPage={pagination.limit}
             onPageChange={setPage}
-            onItemsPerPageChange={(next) => { setLimit(next); setPage(1); }}
+            onItemsPerPageChange={(next) => {
+              setLimit(next);
+              setPage(1);
+            }}
           />
         </div>
       </Card>

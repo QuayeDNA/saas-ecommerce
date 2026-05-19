@@ -42,7 +42,10 @@ export const ACTION_LABELS: Record<string, string> = {
 };
 
 export function formatAction(action: string): string {
-  return ACTION_LABELS[action] || action.replace(/\./g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return (
+    ACTION_LABELS[action] ||
+    action.replace(/\./g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -79,15 +82,28 @@ const METADATA_FIELD_LABELS: Record<string, string> = {
   phone: "Phone",
 };
 
-const SKIP_METADATA_FIELDS = new Set(["_id", "__v", "createdAt", "updatedAt", "password"]);
+const SKIP_METADATA_FIELDS = new Set([
+  "_id",
+  "__v",
+  "createdAt",
+  "updatedAt",
+  "password",
+]);
 
-export function formatMetadataEntries(metadata: Record<string, any> | null | undefined): Array<{ label: string; value: string }> {
+export function formatMetadataEntries(
+  metadata: Record<string, unknown> | null | undefined,
+): Array<{ label: string; value: string }> {
   if (!metadata) return [];
   return Object.entries(metadata)
     .filter(([key]) => !SKIP_METADATA_FIELDS.has(key))
     .map(([key, value]) => {
-      const label = METADATA_FIELD_LABELS[key] || key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-      const displayValue = typeof value === "object" && value !== null ? JSON.stringify(value) : String(value);
+      const label =
+        METADATA_FIELD_LABELS[key] ||
+        key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const displayValue =
+        typeof value === "object" && value !== null
+          ? JSON.stringify(value)
+          : String(value);
       return { label, value: displayValue };
     });
 }
@@ -118,17 +134,43 @@ export interface ChangeEntry {
   to: string;
 }
 
-export function formatChanges(changes: { before?: Record<string, any>; after?: Record<string, any> } | null | undefined): ChangeEntry[] {
-  if (!changes?.before || !changes?.after) return [];
+export function formatChanges(
+  changes:
+    | { before?: Record<string, unknown>; after?: Record<string, unknown> }
+    | null
+    | undefined,
+): ChangeEntry[] {
+  if (!changes || !changes.before || !changes.after) return [];
 
-  const allFields = new Set([...Object.keys(changes.before), ...Object.keys(changes.after)]);
+  const before: Record<string, unknown> = changes.before as Record<
+    string,
+    unknown
+  >;
+  const after: Record<string, unknown> = changes.after as Record<
+    string,
+    unknown
+  >;
+
+  const allFields = new Set([...Object.keys(before), ...Object.keys(after)]);
 
   return Array.from(allFields)
-    .filter((field) => changes.before[field] !== changes.after[field])
+    .filter((field) => before[field] !== after[field])
     .map((field) => ({
-      field: CHANGE_FIELD_LABELS[field] || field.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      from: changes.before[field] === null || changes.before[field] === undefined ? "(none)" : typeof changes.before[field] === "object" ? JSON.stringify(changes.before[field]) : String(changes.before[field]),
-      to: changes.after[field] === null || changes.after[field] === undefined ? "(none)" : typeof changes.after[field] === "object" ? JSON.stringify(changes.after[field]) : String(changes.after[field]),
+      field:
+        CHANGE_FIELD_LABELS[field] ||
+        field.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      from:
+        before[field] === null || before[field] === undefined
+          ? "(none)"
+          : typeof before[field] === "object"
+            ? JSON.stringify(before[field])
+            : String(before[field]),
+      to:
+        after[field] === null || after[field] === undefined
+          ? "(none)"
+          : typeof after[field] === "object"
+            ? JSON.stringify(after[field])
+            : String(after[field]),
     }));
 }
 
@@ -145,5 +187,11 @@ export function formatTimestamp(timestamp: string): string {
   if (hours < 24) return `${hours}h ago`;
   if (days < 7) return `${days}d ago`;
 
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
