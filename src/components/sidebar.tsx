@@ -18,6 +18,7 @@ import {
   FaHistory,
   FaBullhorn,
   FaStore,
+  // FaFileAlt,
   // FaChartLine,
 } from "react-icons/fa";
 import { Home, Plus, LogOut, ChevronRight, Check } from "lucide-react";
@@ -200,21 +201,13 @@ const getSuperAdminNavItems = (): NavItem[] => {
         },
       ],
     },
-    {
-      label: "Settings",
-      path: "/superadmin/settings",
-      icon: <FaCog />,
-    },
+    // {
+    //   label: "Audit Logs",
+    //   path: "/superadmin/audit-logs",
+    //   icon: <FaFileAlt />, // Replaced FileText since react-icons/fa uses FaFileAlt
+    // },
+    { label: "Settings", path: "/superadmin/settings", icon: <FaCog /> },
   ];
-
-  // Only show commissions navigation in development mode
-  if (import.meta.env.DEV) {
-    items.splice(6, 0, {
-      label: "Commissions",
-      path: "/superadmin/commissions",
-      icon: <FaMoneyBillWave />,
-    });
-  }
 
   return items;
 };

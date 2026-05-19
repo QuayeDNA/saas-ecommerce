@@ -61,8 +61,6 @@ class WebSocketService {
     }
   }
 
-
-
   private handleReconnect(userId: string) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
@@ -138,6 +136,9 @@ class WebSocketService {
       case "site_status_update":
         this.emit("site_status_update", data.data);
         break;
+      case "audit_log":
+        this.emit("audit_log", data.data);
+        break;
       default:
         // Unknown WebSocket message type
         break;
@@ -186,7 +187,6 @@ class WebSocketService {
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
   }
-
 
   getCurrentUserId(): string | null {
     return this.currentUserId;

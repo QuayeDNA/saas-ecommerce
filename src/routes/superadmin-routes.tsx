@@ -23,7 +23,6 @@ const BundleManagementPage = lazy(() =>
     default: m.BundleManagementPage,
   })),
 );
-const CommissionsPage = lazy(() => import("../pages/superadmin/commissions"));
 const AnnouncementsPage = lazy(
   () => import("../pages/superadmin/announcements"),
 );
@@ -32,6 +31,7 @@ const PayoutManagement = lazy(
   () => import("../pages/superadmin/payout-management"),
 );
 const AnalyticsPage = lazy(() => import("../pages/superadmin/analytics"));
+const AuditLogsPage = lazy(() => import("../pages/superadmin/AuditLogs"));
 
 const superadminRoutes: RouteObject = {
   path: "/superadmin",
@@ -142,18 +142,6 @@ const superadminRoutes: RouteObject = {
             </Suspense>
           ),
         },
-        ...(import.meta.env.DEV
-          ? ([
-              {
-                path: "commissions",
-                element: (
-                  <Suspense fallback={<PageLoader />}>
-                    <CommissionsPage />
-                  </Suspense>
-                ),
-              },
-            ] as RouteObject[])
-          : []),
         {
           path: "announcements",
           element: (
@@ -167,6 +155,14 @@ const superadminRoutes: RouteObject = {
           element: (
             <Suspense fallback={<PageLoader />}>
               <StoresPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: "audit-logs",
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <AuditLogsPage />
             </Suspense>
           ),
         },

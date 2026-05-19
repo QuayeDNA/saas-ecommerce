@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { userService, type User } from "../../services/user.service";
+import { UserActivityTimeline } from "../../components/audit";
 import { Button } from "../../design-system/components/button";
 import {
   FaArrowLeft,
@@ -896,6 +897,19 @@ export default function SuperAdminUserDetailsPage() {
                 </table>
               </div>
             )}
+          </CardBody>
+        </Card>
+
+        {/* User Activity Timeline */}
+        <Card>
+          <CardHeader>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
+              <FaClock className="mr-2 text-blue-600" />
+              Activity Timeline
+            </h3>
+          </CardHeader>
+          <CardBody>
+            <UserActivityTimeline userId={user._id} />
           </CardBody>
         </Card>
 
