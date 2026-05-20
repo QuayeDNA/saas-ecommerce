@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { type ImgHTMLAttributes } from "react";
 
-interface BryteLinksSvgLogoProps {
-  width?: number;
-  height?: number;
+export interface BryteLinksSvgLogoProps extends Omit<
+  ImgHTMLAttributes<HTMLImageElement>,
+  "src" | "alt"
+> {
+  width?: number | string;
+  height?: number | string;
   className?: string;
 }
 
@@ -12,7 +15,8 @@ const LOGO_COMPACT_SRC = "/logo-192.png";
 export const BryteLinksSvgLogo: React.FC<BryteLinksSvgLogoProps> = ({
   width = 200,
   height = 180,
-  className = '',
+  className = "",
+  ...props
 }) => {
   return (
     <img
@@ -20,8 +24,9 @@ export const BryteLinksSvgLogo: React.FC<BryteLinksSvgLogoProps> = ({
       alt="BryteLinks Logo"
       width={width}
       height={height}
-      className={className}
+      className={`object-contain ${className}`}
       loading="eager"
+      {...props}
     />
   );
 };
@@ -30,7 +35,8 @@ export const BryteLinksSvgLogo: React.FC<BryteLinksSvgLogoProps> = ({
 export const BryteLinksSvgLogoCompact: React.FC<BryteLinksSvgLogoProps> = ({
   width = 220,
   height = 60,
-  className = '',
+  className = "",
+  ...props
 }) => {
   return (
     <img
@@ -38,8 +44,9 @@ export const BryteLinksSvgLogoCompact: React.FC<BryteLinksSvgLogoProps> = ({
       alt="BryteLinks Logo"
       width={width}
       height={height}
-      className={className}
+      className={`object-contain ${className}`}
       loading="lazy"
+      {...props}
     />
   );
 };
@@ -48,7 +55,8 @@ export const BryteLinksSvgLogoCompact: React.FC<BryteLinksSvgLogoProps> = ({
 export const BryteLinksSvgIcon: React.FC<BryteLinksSvgLogoProps> = ({
   width = 48,
   height = 48,
-  className = '',
+  className = "",
+  ...props
 }) => {
   return (
     <img
@@ -56,8 +64,9 @@ export const BryteLinksSvgIcon: React.FC<BryteLinksSvgLogoProps> = ({
       alt="BryteLinks Icon"
       width={width}
       height={height}
-      className={className}
+      className={`object-contain ${className}`}
       loading="lazy"
+      {...props}
     />
   );
 };
@@ -66,7 +75,8 @@ export const BryteLinksSvgIcon: React.FC<BryteLinksSvgLogoProps> = ({
 export const BryteLinksBadge: React.FC<BryteLinksSvgLogoProps> = ({
   width = 32,
   height = 32,
-  className = '',
+  className = "",
+  ...props
 }) => {
   return (
     <img
@@ -74,8 +84,9 @@ export const BryteLinksBadge: React.FC<BryteLinksSvgLogoProps> = ({
       alt="BryteLinks Badge"
       width={width}
       height={height}
-      className={className}
+      className={`object-contain ${className}`}
       loading="lazy"
+      {...props}
     />
   );
 };

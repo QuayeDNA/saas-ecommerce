@@ -14,61 +14,61 @@ import superadminRoutes from "./superadmin-routes";
 const LandingPage = lazy(() =>
   import("../pages/landing-page").then((module) => ({
     default: module.LandingPage,
-  }))
+  })),
 );
 
 const LogoPage = lazy(() =>
   import("../components/common/BryteLinksLogoShowcase").then((module) => ({
     default: module.BryteLinksLogoShowcase,
-  }))
+  })),
 );
 const LoginPage = lazy(() =>
-  import("../pages/login-page").then((module) => ({
+  import("../pages/auth/login-page").then((module) => ({
     default: module.LoginPage,
-  }))
+  })),
 );
 const RegisterPage = lazy(() =>
-  import("../pages/register-page").then((module) => ({
+  import("../pages/auth/register-page").then((module) => ({
     default: module.RegisterPage,
-  }))
+  })),
 );
 const ForgotPasswordPage = lazy(() =>
-  import("../pages/forgot-password-page").then((module) => ({
+  import("../pages/auth/forgot-password-page").then((module) => ({
     default: module.ForgotPasswordPage,
-  }))
+  })),
 );
 const ResetPasswordPage = lazy(() =>
-  import("../pages/reset-password-page").then((module) => ({
+  import("../pages/auth/reset-password-page").then((module) => ({
     default: module.ResetPasswordPage,
-  }))
+  })),
 );
 const VerifyAccountPage = lazy(() =>
-  import("../pages/verify-account-page").then((module) => ({
+  import("../pages/auth/verify-account-page").then((module) => ({
     default: module.VerifyAccountPage,
-  }))
+  })),
 );
 const NotFoundPage = lazy(() =>
   import("../pages/not-found-page").then((module) => ({
     default: module.NotFoundPage,
-  }))
+  })),
 );
 const ForbiddenPage = lazy(() =>
   import("../pages/forbidden-page").then((module) => ({
     default: module.ForbiddenPage,
-  }))
+  })),
 );
 const PrivacyPolicyPage = lazy(() =>
   import("../pages/privacy-policy-page").then((module) => ({
     default: module.PrivacyPolicyPage,
-  }))
+  })),
 );
 const PublicStorePage = lazy(() =>
   import("../pages/public/public-store").then((module) => ({
     default: module.PublicStorePage,
-  }))
+  })),
 );
 const StoreLandingPage = lazy(
-  () => import("../pages/public/store-landing-page")
+  () => import("../pages/public/store-landing-page"),
 );
 
 // =============================================================================
@@ -77,12 +77,12 @@ const StoreLandingPage = lazy(
 const DashboardPage = lazy(() =>
   import("../pages/dashboard-page").then((module) => ({
     default: module.DashboardPage,
-  }))
+  })),
 );
 const ProfilePage = lazy(() =>
   import("../pages/profile-page").then((module) => ({
     default: module.ProfilePage,
-  }))
+  })),
 );
 
 // =============================================================================
@@ -91,37 +91,37 @@ const ProfilePage = lazy(() =>
 const PackageManagementPage = lazy(() =>
   import("../pages/packages-page").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const OrderManagementPage = lazy(() =>
   import("../pages/orders-page").then((module) => ({
     default: module.OrderManagementPage,
-  }))
+  })),
 );
 const AfaRegistrationPage = lazy(() =>
   import("../pages/afa-registration-page").then((module) => ({
     default: module.AfaRegistrationPage,
-  }))
+  })),
 );
 const WalletPage = lazy(() =>
   import("../pages/wallet-page").then((module) => ({
     default: module.WalletPage,
-  }))
+  })),
 );
 const WalletTopupCallbackPage = lazy(() =>
   import("../pages/wallet-topup-callback").then((module) => ({
     default: module.WalletTopupCallbackPage,
-  }))
+  })),
 );
 const StorefrontCallbackPage = lazy(() =>
   import("../pages/storefront-callback").then((m) => ({
     default: m.StorefrontCallbackPage,
-  }))
+  })),
 );
 const StorefrontDashboardPage = lazy(() =>
   import("../pages/agent/storefront-dashboard").then((module) => ({
     default: module.StorefrontDashboardPage,
-  }))
+  })),
 );
 
 // =============================================================================
@@ -130,22 +130,22 @@ const StorefrontDashboardPage = lazy(() =>
 const MtnPackagesPage = lazy(() =>
   import("../pages/mtn-packages-page").then((module) => ({
     default: module.MtnPackagesPage,
-  }))
+  })),
 );
 const TelecelPackagesPage = lazy(() =>
   import("../pages/telecel-packages-page").then((module) => ({
     default: module.TelecelPackagesPage,
-  }))
+  })),
 );
 const AtBigTimePackagesPage = lazy(() =>
   import("../pages/at-bigtime-packages").then((module) => ({
     default: module.AtBigTimePackagesPage,
-  }))
+  })),
 );
 const AtISharePremiumPackagesPage = lazy(() =>
   import("../pages/at-ishare-packages").then((module) => ({
     default: module.AtISharePremiumPackagesPage,
-  }))
+  })),
 );
 
 // =============================================================================
