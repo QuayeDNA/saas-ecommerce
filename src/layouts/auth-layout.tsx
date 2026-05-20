@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Smartphone, Zap, Check } from "lucide-react";
+import { ChevronLeft, Smartphone, Check } from "lucide-react";
 import { Card, CardBody, CardHeader, Container } from "../design-system";
 import { BryteLinksSvgLogoCompact } from "../components/common/BryteLinksSvgLogo";
 import { FaUsers, FaWhatsapp } from "react-icons/fa";
@@ -16,6 +17,179 @@ interface AuthLayoutProps {
   footer?: ReactNode;
 }
 
+const NETWORKS = [
+  {
+    name: "MTN",
+    src: "https://www.mtn.co.ug/wp-content/uploads/sites/7/2023/12/MTN_2022_Logo_SolidBG_Yellow_RGB.jpg?resize=1024,1024",
+    position: "top-left",
+  },
+  {
+    name: "Telecel",
+    src: "https://tse2.mm.bing.net/th/id/OIP._V9CkKDi23oI4p9VRjvu9wHaHa?cb=thfvnextfalcon&rs=1&pid=ImgDetMain&o=7&rm=3",
+    position: "top-right",
+  },
+  {
+    name: "AT",
+    src: "https://recharge-prd.asset.akeneo.cloud/product_assets/media/recharge_com_airteltigo_product_card.png",
+    position: "bottom-center",
+  },
+];
+
+const SLIDES = [
+  {
+    heading: "Cheap Mobile Data",
+    sub: "Bundles at prices your customers will love, across every major network.",
+  },
+  {
+    heading: "Your Own Storefront",
+    sub: "A branded shop that's yours — share it, sell from it, grow with it.",
+  },
+  {
+    heading: "Instant Topups",
+    sub: "Airtime delivered in seconds. No delays, no excuses.",
+  },
+  {
+    heading: "Real Commissions",
+    sub: "Earn on every transaction. More sales, more in your pocket.",
+  },
+  {
+    heading: "Grow Your Business",
+    sub: "Tools built for agents ready to scale beyond their first sale.",
+  },
+];
+
+const floatKeyframes = `
+@keyframes floatA {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes floatC {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-16px); }
+}
+`;
+
+function NetworkLogo({
+  name,
+  src,
+  position,
+}: {
+  name: string;
+  src: string;
+  position: string;
+}) {
+  const positionClasses: Record<string, string> = {
+    "top-left": "absolute -top-12 -left-6 lg:-top-14 lg:-left-8",
+    "top-right": "absolute -top-14 -right-6 lg:-top-16 lg:-right-8",
+    "bottom-center":
+      "absolute -bottom-12 left-1/2 -translate-x-1/2 lg:-bottom-14",
+  };
+
+  const animationStyle: Record<string, React.CSSProperties> = {
+    "top-left": {
+      animation: "floatA 3.8s ease-in-out infinite",
+    },
+    "top-right": {
+      animation: "floatB 4.4s ease-in-out infinite 0.6s",
+    },
+    "bottom-center": {
+      animation: "floatC 3.2s ease-in-out infinite 1.1s",
+    },
+  };
+
+  return (
+    <div
+      className={`${positionClasses[position]} z-10 flex flex-col items-center`}
+      style={animationStyle[position]}
+    >
+      <div className="h-14 w-14 lg:h-16 lg:w-16 rounded-xl overflow-hidden border-2 border-white/10 shadow-xl shadow-black/40">
+        <img
+          src={src}
+          alt={name}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+      </div>
+      <p className="mt-1.5 text-[10px] font-medium tracking-widest text-white/40 uppercase">
+        {name}
+      </p>
+    </div>
+  );
+}
+
+function PitchCarousel() {
+  const [current, setCurrent] = useState(0);
+  const [animState, setAnimState] = useState<"idle" | "out" | "in">("idle");
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    timeoutRef.current = setTimeout(advance, 3400);
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [current]);
+
+  function advance() {
+    setAnimState("out");
+    setTimeout(() => {
+      setCurrent((c) => (c + 1) % SLIDES.length);
+      setAnimState("in");
+      setTimeout(() => setAnimState("idle"), 450);
+    }, 350);
+  }
+
+  const slideStyle: React.CSSProperties = {
+    transition: "opacity 0.35s ease-in-out, transform 0.35s ease-in-out",
+    opacity: animState === "out" ? 0 : 1,
+    transform:
+      animState === "out"
+        ? "translateY(-24px)"
+        : animState === "in"
+        ? "translateY(6px)"
+        : "translateY(0)",
+  };
+
+  return (
+    <div className="text-center">
+      <div className="h-full flex flex-col items-center justify-center overflow-hidden">
+        <div style={slideStyle}>
+          <h2 className="text-xl lg:text-2xl font-semibold text-white leading-tight mb-1.5">
+            {SLIDES[current].heading}
+          </h2>
+          <p className="text-sm text-white/50 leading-relaxed max-w-[240px] mx-auto">
+            {SLIDES[current].sub}
+          </p>
+        </div>
+      </div>
+
+      {/* Dots */}
+      <div className="flex items-center justify-center gap-1.5 mt-5">
+        {SLIDES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => {
+              if (timeoutRef.current) clearTimeout(timeoutRef.current);
+              setCurrent(i);
+            }}
+            className="rounded-full transition-all duration-300"
+            style={{
+              height: "4px",
+              width: i === current ? "20px" : "6px",
+              background:
+                i === current ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.2)",
+            }}
+            aria-label={`Go to slide ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export const AuthLayout = ({
   title,
   subtitle,
@@ -28,6 +202,9 @@ export const AuthLayout = ({
 }: AuthLayoutProps) => {
   return (
     <div className="min-h-screen bg-slate-950/5 flex flex-col">
+      {/* Inject float keyframes */}
+      <style>{floatKeyframes}</style>
+
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-slate-100">
         <Container className="py-4 sm:py-6">
           <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-6">
@@ -65,25 +242,77 @@ export const AuthLayout = ({
             noPadding
           >
             <div className="grid gap-0 lg:gap-6 lg:grid-cols-[1.1fr_0.9fr] bg-white">
-              <div className="hidden lg:flex items-center justify-center bg-slate-900 px-8 py-10">
-                <div className="max-w-xs text-center">
-                  <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 text-slate-100">
-                    <Smartphone size={34} />
-                  </div>
-                  <h2 className="text-3xl font-semibold text-white mb-3">
-                    Sell Data & Airtime
-                  </h2>
-                  <p className="text-sm leading-6 text-slate-300">
-                    Start vending cheap data bundles and airtime across all
-                    networks. Fast, reliable, and instant.
-                  </p>
-                  <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200">
-                    <Zap size={16} />
-                    Instant Topups
+
+              {/* ── LEFT COLUMN ── */}
+              <div className="hidden lg:flex items-center justify-center bg-slate-900 px-8 py-14 relative overflow-hidden">
+                {/* Subtle radial glow behind the card */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 70%)",
+                    pointerEvents: "none",
+                  }}
+                />
+
+                <div className="relative flex flex-col items-center max-w-xs w-full">
+                  {/* Floating network logos */}
+                  {NETWORKS.map((n) => (
+                    <NetworkLogo key={n.name} {...n} />
+                  ))}
+
+                  {/* Central glass card */}
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.09)",
+                      borderRadius: "20px",
+                      padding: "2.5rem 2rem",
+                      margin: "68px 0 84px",
+                      width: "100%",
+                      backdropFilter: "blur(8px)",
+                    }}
+                  >
+                    {/* Icon */}
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        background: "rgba(255,255,255,0.08)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto 1.25rem",
+                      }}
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#facc15"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                      </svg>
+                    </div>
+
+                    <p className="text-center text-[10px] uppercase tracking-[0.2em] text-white/40 font-medium mb-4">
+                      All networks. One platform.
+                    </p>
+
+                    <PitchCarousel />
                   </div>
                 </div>
               </div>
 
+              {/* ── RIGHT COLUMN ── */}
               <div className="px-4 py-6 sm:px-10 sm:py-10">
                 <CardHeader className="px-0 pb-4 border-b border-slate-200/70">
                   <div className="flex flex-col gap-2 sm:gap-3">
