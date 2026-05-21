@@ -14,15 +14,6 @@ export interface SiteSettings {
   storefrontsClosedMessage?: string;
 }
 
-export interface CommissionRates {
-  agentCommission: number;
-  superAgentCommission: number;
-  dealerCommission: number;
-  superDealerCommission: number;
-  defaultCommissionRate: number;
-  customerCommission: number;
-}
-
 export interface ApiSettings {
   mtnApiKey: string;
   telecelApiKey: string;
@@ -169,19 +160,6 @@ class SettingsService {
   }> {
     const response = await publicApiClient.get("/api/settings/site/status");
     return response.data;
-  }
-
-  // Commission Rates
-  async getCommissionRates(): Promise<CommissionRates> {
-    const response = await apiClient.get("/api/commissions/settings");
-    return response.data.data;
-  }
-
-  async updateCommissionRates(
-    rates: CommissionRates
-  ): Promise<CommissionRates> {
-    const response = await apiClient.put("/api/commissions/settings", rates);
-    return response.data.data;
   }
 
   // API Settings

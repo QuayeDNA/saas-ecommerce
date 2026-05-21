@@ -91,12 +91,6 @@ const SERVICES = [
       "Manage your funds with a secure digital wallet. Top up, transfer, and track every transaction in real time.",
   },
   {
-    icon: BarChart3,
-    title: "Commission Tracking",
-    description:
-      "Hierarchical commission engine calculates earnings automatically across agents, super-agents, dealers, and more.",
-  },
-  {
     icon: ShoppingCart,
     title: "Agent Storefronts",
     description:
@@ -128,12 +122,6 @@ const HOW_IT_WORKS = [
     title: "Start Selling",
     description:
       "Process airtime and data orders through the dashboard or share your storefront link with customers.",
-  },
-  {
-    step: "04",
-    title: "Earn Commissions",
-    description:
-      "Watch your earnings grow. Commissions are calculated in real time and credited to your wallet automatically.",
   },
 ] as const;
 
@@ -208,19 +196,19 @@ const TIERS = [
     icon: UserCheck,
     title: "Agents",
     description:
-      "Sell airtime & data, manage your own storefront, and earn commissions on every sale.",
+      "Sell airtime & data, manage your own storefront, and grow your business.",
   },
   {
     icon: Users,
     title: "Super Agents & Dealers",
     description:
-      "Recruit and manage agents, earn from your network's transactions, and access advanced reporting.",
+      "Recruit and manage agents, track network performance, and access advanced reporting.",
   },
   {
     icon: Building2,
     title: "Enterprises",
     description:
-      "Full platform control with user management, commission configuration, and organisation-wide analytics.",
+      "Full platform control with user management, role configuration, and organisation-wide analytics.",
   },
 ] as const;
 
@@ -236,7 +224,7 @@ const TESTIMONIALS = [
     name: "Abena Mensah",
     role: "Super Agent — Accra",
     content:
-      "Managing 30+ agents used to be chaos. Now I see real-time commissions and performance from one dashboard.",
+      "Managing 30+ agents used to be chaos. Now I see real-time performance from one dashboard.",
     rating: 5,
   },
   {
@@ -387,8 +375,8 @@ export const LandingPage: FC = () => {
 
             <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto mb-10">
               BryteLinks is the all-in-one platform that lets agents, dealers,
-              and enterprises sell mobile airtime &amp; data bundles across every
-              Ghanaian network — while earning commissions on every transaction.
+and enterprises sell mobile airtime &amp; data bundles across every
+Ghanaian network.
             </p>
 
             {/* CTA row */}
@@ -446,7 +434,7 @@ export const LandingPage: FC = () => {
               Everything You Need to Run a Telecom Business
             </h2>
             <p className="text-gray-600 text-lg">
-              From selling airtime to tracking commissions — BryteLinks handles
+              From airtime top-ups to data bundles — BryteLinks handles
               it all so you can focus on growing.
             </p>
           </div>
@@ -531,7 +519,7 @@ export const LandingPage: FC = () => {
               </h2>
               <p className="text-gray-600 text-lg mb-10 leading-relaxed">
                 Every feature in BryteLinks is purpose-built for Ghana&rsquo;s
-                telecom market — from the security layer to the commission
+                telecom market — from the security layer to the analytics
                 engine.
               </p>
 
@@ -841,7 +829,7 @@ export const LandingPage: FC = () => {
               </div>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
                 Ghana&rsquo;s smart telecom platform for agents, dealers, and
-                enterprises. Sell airtime &amp; data, earn commissions, and grow
+                enterprises. Sell airtime &amp; data, and grow
                 your business.
               </p>
             </div>
@@ -878,7 +866,6 @@ export const LandingPage: FC = () => {
                 <li>Airtime Top-Up</li>
                 <li>Data Bundles</li>
                 <li>Agent Storefronts</li>
-                <li>Commission Tracking</li>
               </ul>
             </div>
 

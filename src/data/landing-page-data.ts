@@ -80,7 +80,7 @@ export const landingPageData: LandingPageData = {
     title: "Transform Your Telecom Business with Real-Time Intelligence",
     subtitle: "Scale • Automate • Dominate",
     description:
-      "Empower your telecom operations with our comprehensive SaaS platform. Manage airtime, data bundles, and commissions across all major Ghanaian networks with real-time wallet updates and advanced analytics.",
+      "Empower your telecom operations with our comprehensive SaaS platform. Manage airtime and data bundles across all major Ghanaian networks with real-time wallet updates and advanced analytics.",
     cta: {
       primary: "Start Free Trial",
       secondary: "Watch Demo",
@@ -206,15 +206,6 @@ export const landingPageData: LandingPageData = {
       icon: "Package",
       category: "advanced",
       metrics: { value: "10K+", label: "Per Minute" },
-    },
-    {
-      id: "commission-engine",
-      title: "Dynamic Commission System",
-      description:
-        "Automated commission calculations with multi-tier structures, real-time payouts, and comprehensive performance analytics.",
-      icon: "TrendingUp",
-      category: "business",
-      metrics: { value: "15%", label: "Avg Commission" },
     },
     {
       id: "analytics-dashboard",

@@ -431,7 +431,7 @@ export const RegisterPage = () => {
                   Agent Registration
                 </h1>
                 <p className="text-sm sm:text-base text-gray-600">
-                  Join our platform and start earning commissions
+                  Join our platform and start your business journey
                 </p>
               </div>
             </CardHeader>

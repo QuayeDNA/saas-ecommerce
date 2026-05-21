@@ -57,7 +57,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   payout: "Payouts",
   settings: "Settings",
   bundle: "Bundles",
-  commission: "Commission",
 };
 
 export function formatCategory(category: string): string {
@@ -120,7 +119,6 @@ const CHANGE_FIELD_LABELS: Record<string, string> = {
   amount: "Amount",
   balance: "Balance",
   price: "Price",
-  commission: "Commission",
   tier: "Tier",
   plan: "Plan",
   isActive: "Active",

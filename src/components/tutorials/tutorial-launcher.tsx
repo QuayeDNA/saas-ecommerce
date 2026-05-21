@@ -28,7 +28,6 @@ const CATEGORY_ICONS: Record<TutorialCategory, React.ReactNode> = {
     ordering: <Play className="w-4 h-4" />,
     storefront: <BookOpen className="w-4 h-4" />,
     wallet: <BookOpen className="w-4 h-4" />,
-    commissions: <BookOpen className="w-4 h-4" />,
     admin: <BookOpen className="w-4 h-4" />,
 };
 

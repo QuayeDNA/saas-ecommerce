@@ -21,7 +21,6 @@ import {
   type AnalyticsData,
 } from "../../services/analytics.service";
 import {
-  FaChartLine,
   FaMoneyBillWave,
   FaShoppingCart,
   FaStore,
@@ -126,7 +125,6 @@ export default function SuperAdminAnalyticsPage() {
       completedOrders: data.charts.completedOrders?.[index] || 0,
       revenue: data.charts.revenue?.[index] || 0,
       users: data.charts.userRegistrations?.[index] || 0,
-      commissions: data.charts.commissions?.[index] || 0,
     }));
 
     const header = [
@@ -135,7 +133,6 @@ export default function SuperAdminAnalyticsPage() {
       "Completed Orders",
       "Revenue",
       "Users",
-      "Commissions",
     ];
 
     const csv = [
@@ -147,7 +144,6 @@ export default function SuperAdminAnalyticsPage() {
           row.completedOrders,
           row.revenue.toFixed(2),
           row.users,
-          row.commissions.toFixed(2),
         ].join(","),
       ),
     ].join("\n");
@@ -192,16 +188,6 @@ export default function SuperAdminAnalyticsPage() {
         subtitle: growthText(data.growth?.revenue),
         icon: <FaMoneyBillWave />,
         trend: growthDirection(data.growth?.revenue),
-      },
-      {
-        id: "commissions",
-        title: "Total Commissions",
-        value: formatCurrency(
-          overview?.totalCommissions ?? data.commissions.totalEarned,
-        ),
-        subtitle: growthText(data.growth?.commissions),
-        icon: <FaChartLine />,
-        trend: growthDirection(data.growth?.commissions),
       },
       {
         id: "wallet",
@@ -266,8 +252,6 @@ export default function SuperAdminAnalyticsPage() {
         return data.charts.userRegistrations || [];
       case "orders":
         return data.charts.orders || [];
-      case "commissions":
-        return data.charts.commissions || [];
       default:
         return data.charts.revenue || [];
     }
@@ -395,7 +379,6 @@ export default function SuperAdminAnalyticsPage() {
             performanceTimeframe={performanceTimeframe}
             performanceTimeOptions={performanceTimeOptions}
             onPerformanceTimeframeChange={setPerformanceTimeframe}
-            pendingCommissionAmount={data.commissions.pendingAmount || 0}
             payoutQueueCount={data.payouts?.queuedCount || 0}
             netFlow={data.earnings?.period.netFlow || 0}
           />

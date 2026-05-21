@@ -136,12 +136,6 @@ export const DashboardPage = () => {
       orderCount: 0,
       averageOrderValue: 0,
     },
-    commissions: {
-      totalCommission: 0,
-      paidCommission: 0,
-      pendingCommission: 0,
-      commissionCount: 0,
-    },
     wallet: {
       balance: 0,
     },
@@ -277,12 +271,6 @@ export const DashboardPage = () => {
                 orderCount: number;
                 averageOrderValue: number;
               };
-              commissions: {
-                totalCommission: number;
-                paidCommission: number;
-                pendingCommission: number;
-                commissionCount: number;
-              };
               wallet: {
                 balance: number;
               };
@@ -322,12 +310,6 @@ export const DashboardPage = () => {
                 today: data.revenue?.today || 0,
                 orderCount: data.revenue?.orderCount || 0,
                 averageOrderValue: data.revenue?.averageOrderValue || 0,
-              },
-              commissions: {
-                totalCommission: data.commissions?.totalCommission || 0,
-                paidCommission: data.commissions?.paidCommission || 0,
-                pendingCommission: data.commissions?.pendingCommission || 0,
-                commissionCount: data.commissions?.commissionCount || 0,
               },
               wallet: {
                 balance: data.wallet?.balance || 0,
@@ -369,11 +351,43 @@ export const DashboardPage = () => {
                 orderCount: 0,
                 averageOrderValue: 0,
               },
-              commissions: {
-                totalCommission: 0,
-                paidCommission: 0,
-                pendingCommission: 0,
-                commissionCount: 0,
+              wallet: { balance: 0 },
+              charts: {
+                labels: [],
+                orders: [],
+                revenue: [],
+                completedOrders: [],
+              },
+            });
+          } else {
+            // Set default values if analytics fails
+            setAnalyticsData({
+              orders: {
+                total: 0,
+                completed: 0,
+                pending: 0,
+                processing: 0,
+                confirmed: 0,
+                failed: 0,
+                cancelled: 0,
+                partiallyCompleted: 0,
+                successRate: 0,
+                todayCounts: {
+                  total: 0,
+                  completed: 0,
+                  pending: 0,
+                  processing: 0,
+                  confirmed: 0,
+                  failed: 0,
+                  cancelled: 0,
+                  partiallyCompleted: 0,
+                },
+              },
+              revenue: {
+                total: 0,
+                today: 0,
+                orderCount: 0,
+                averageOrderValue: 0,
               },
               wallet: { balance: 0 },
               charts: {
@@ -414,12 +428,6 @@ export const DashboardPage = () => {
               today: 0,
               orderCount: 0,
               averageOrderValue: 0,
-            },
-            commissions: {
-              totalCommission: 0,
-              paidCommission: 0,
-              pendingCommission: 0,
-              commissionCount: 0,
             },
             wallet: { balance: 0 },
             charts: {
@@ -950,28 +958,6 @@ export const DashboardPage = () => {
               </div>
               <div className="text-xl font-bold text-white">
                 ₵{analyticsData.revenue.today.toFixed(2)}
-              </div>
-            </CardBody>
-          </Card>
-          <Card
-            size="sm"
-            style={{
-              backgroundColor: "var(--color-primary-500)",
-              borderColor: "var(--color-primary-600)",
-            }}
-          >
-            <CardBody className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <div className="text-gray-300 text-xs">
-                  Commission Earned This Month
-                </div>
-              </div>
-              <div className="text-xl font-bold text-white">
-                ₵{(analyticsData.commissions.totalCommission || 0).toFixed(2)}
-              </div>
-              <div className="text-xs text-gray-300 mt-2">
-                Paid: ₵
-                {(analyticsData.commissions.paidCommission || 0).toFixed(2)}
               </div>
             </CardBody>
           </Card>

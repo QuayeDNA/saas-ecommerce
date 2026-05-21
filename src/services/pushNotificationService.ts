@@ -4,7 +4,6 @@ interface PushNotificationPreferences {
   enabled: boolean;
   orderUpdates: boolean;
   walletUpdates: boolean;
-  commissionUpdates: boolean;
   announcements: boolean;
 }
 class PushNotificationService {

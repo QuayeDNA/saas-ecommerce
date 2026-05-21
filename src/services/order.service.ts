@@ -236,7 +236,6 @@ class OrderService {
     monthlyRevenue: number;
     monthlyOrderCount: number;
     month: string;
-    monthlyCommission: number;
     statusCounts: {
       completed: number;
       processing: number;
@@ -254,7 +253,7 @@ class OrderService {
       params: { timeframe },
     });
 
-    // Backend returns { success: true, data: { orders, revenue, commissions, wallet, charts, timeframe } }
+    // Backend returns { success: true, data: { orders, revenue, wallet, charts, timeframe } }
     const analytics = response.data.data;
 
     // Transform backend structure to match frontend expectations
@@ -272,7 +271,6 @@ class OrderService {
         month: "long",
         year: "numeric",
       }),
-      monthlyCommission: analytics.commissions?.totalCommission || 0,
       statusCounts: {
         completed: analytics.orders?.completed || 0,
         processing: analytics.orders?.processing || 0,

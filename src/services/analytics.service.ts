@@ -73,19 +73,6 @@ export interface AnalyticsData {
     active: number;
     newThisMonth: number;
   };
-  commissions: {
-    totalEarned: number;
-    totalPaid: number;
-    totalRecords: number;
-    pendingCount: number;
-    pendingAmount: number;
-    byStatus?: {
-      pending: number;
-      paid: number;
-      rejected: number;
-      cancelled: number;
-    };
-  };
   payouts?: {
     totalRequests: number;
     totalAmountAllTime: number;
@@ -148,18 +135,11 @@ export interface AnalyticsData {
       percent: number;
       trend: string;
     };
-    commissions: {
-      current: number;
-      previous: number;
-      percent: number;
-      trend: string;
-    };
   };
   overview?: {
     totalUsers: number;
     totalOrders: number;
     totalRevenue: number;
-    totalCommissions: number;
     totalWalletBalance: number;
     activeProviders: number;
     payoutLiability: number;
@@ -168,7 +148,6 @@ export interface AnalyticsData {
   breakdowns?: {
     userTypes: Record<string, number>;
     orderStatuses: Record<string, number>;
-    commissionStatuses: Record<string, number>;
     payoutStatuses: Record<string, number>;
   };
   topPerformers?: {
@@ -180,15 +159,6 @@ export interface AnalyticsData {
       orders: number;
       revenue: number;
       averageOrderValue: number;
-    }>;
-    commissionLeaders: Array<{
-      userId: string;
-      fullName: string;
-      agentCode?: string;
-      userType: string;
-      records: number;
-      totalCommission: number;
-    }>;
     storefronts: Array<{
       storefrontId: string;
       storefrontName: string;
@@ -213,7 +183,6 @@ export interface AnalyticsData {
     orders: Array<Record<string, unknown>>;
     transactions: Array<Record<string, unknown>>;
     payouts?: Array<Record<string, unknown>>;
-    commissions?: Array<Record<string, unknown>>;
   };
   activityFeed?: Array<{
     id: string;
@@ -239,7 +208,6 @@ export interface AnalyticsData {
     revenue: number[];
     completedOrders: number[];
     userRegistrations: number[];
-    commissions?: number[];
     orderStatus: {
       completed: number;
       pending: number;
@@ -292,12 +260,6 @@ export interface AgentAnalyticsData {
     orderCount: number;
     averageOrderValue: number;
   };
-  commissions: {
-    totalCommission: number;
-    paidCommission: number;
-    pendingCommission: number;
-    commissionCount: number;
-  };
   wallet: {
     balance: number;
     totalCredits: number;
@@ -329,7 +291,6 @@ export interface ChartData {
   revenue: number[];
   completedOrders: number[];
   userRegistrations?: number[];
-  commissions?: number[];
   orderStatus?: {
     completed: number;
     pending: number;

@@ -80,7 +80,6 @@ class WebSocketService {
     userId?: string;
     balance?: number;
     recentTransactions?: unknown[];
-    commission?: unknown;
   }) {
     switch (data.type) {
       case "notification":
@@ -105,30 +104,6 @@ class WebSocketService {
         break;
       case "transaction_update":
         this.emit("transaction_update", data.data);
-        break;
-      case "commission_update":
-        this.emit("commission", {
-          type: "commission_update",
-          commission: data.commission,
-        });
-        break;
-      case "commission_created":
-        this.emit("commission", {
-          type: "commission_created",
-          commission: data.commission,
-        });
-        break;
-      case "commission_paid":
-        this.emit("commission", {
-          type: "commission_paid",
-          commission: data.commission,
-        });
-        break;
-      case "commission_updated":
-        this.emit("commission_updated", data.commission);
-        break;
-      case "commission_finalized":
-        this.emit("commission_finalized", data.commission);
         break;
       case "announcement":
         this.emit("announcement", data.data);
