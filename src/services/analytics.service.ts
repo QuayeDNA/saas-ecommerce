@@ -159,23 +159,24 @@ export interface AnalyticsData {
       orders: number;
       revenue: number;
       averageOrderValue: number;
-    storefronts: Array<{
-      storefrontId: string;
-      storefrontName: string;
-      businessName?: string;
-      agentId?: string;
-      agentName?: string;
-      totalOrders: number;
-      netProfit: number;
-      grossRevenue: number;
-      orders: number;
-      revenue: number;
-      averageOrderValue: number;
-    }>;
-    orderTypes: Array<{
-      orderType: string;
-      count: number;
-      revenue: number;
+      storefronts: Array<{
+        storefrontId: string;
+        storefrontName: string;
+        businessName?: string;
+        agentId?: string;
+        agentName?: string;
+        totalOrders: number;
+        netProfit: number;
+        grossRevenue: number;
+        orders: number;
+        revenue: number;
+        averageOrderValue: number;
+      }>;
+      orderTypes: Array<{
+        orderType: string;
+        count: number;
+        revenue: number;
+      }>;
     }>;
   };
   recentActivity?: {

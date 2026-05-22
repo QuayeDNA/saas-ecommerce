@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useWallet } from "../hooks";
 import { type WalletTransaction } from "../types/wallet";
@@ -11,6 +12,7 @@ import {
   FaFilter,
   FaSearch,
   FaTimes,
+  FaTimesCircle,
   FaReceipt,
 } from "react-icons/fa";
 import {
@@ -21,15 +23,14 @@ import {
   TabsTrigger,
   Spinner,
   Pagination,
-  StatsGrid,
   Card,
   CardHeader,
   CardBody,
 } from "../design-system";
 import { useToast } from "../design-system/components/toast";
 import { TopUpRequestModal } from "../components/wallet/TopUpRequestModal";
-import { SearchAndFilter } from "../components/common/SearchAndFilter";
 import { EarningsManager } from "../components/storefront/earnings-manager";
+import { FaClock } from "react-icons/fa6";
 
 export const WalletPage = () => {
   const {
@@ -62,12 +63,6 @@ export const WalletPage = () => {
   const [activeTab, setActiveTab] = useState<
     "wallet" | "earnings"
   >("wallet");
-
-  // Search + date range for filters (used by SearchAndFilter)
-  const [searchTerm, setSearchTerm] = useState<string>("");
-
-  // Monthly history expansion
-  const [expandedMonthlyHistory, setExpandedMonthlyHistory] = useState(false);
 
   // Load transactions function
   const loadTransactions = useCallback(async () => {
