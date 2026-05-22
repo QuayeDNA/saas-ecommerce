@@ -3,6 +3,7 @@
 export interface Package {
   _id?: string;
   name: string;
+  slug?: string;
   description?: string;
   provider: string; // Provider code (MTN, TELECEL, etc.)
   category: "daily" | "weekly" | "monthly" | "unlimited" | "custom";

@@ -5,6 +5,7 @@ import { useOrder } from "../contexts/OrderContext";
 import { useProvider } from "../hooks/use-provider";
 import { useSiteStatus } from "../contexts/site-status-context";
 import { orderService } from "../services/order.service";
+import { packageService } from "../services/package.service";
 import { Card, CardHeader, CardBody, Badge, Spinner } from "../design-system";
 import {
   FaPhone,
@@ -18,6 +19,7 @@ import {
 } from "react-icons/fa";
 import type { WalletTransaction } from "../types/wallet";
 import type { Order } from "../types/order";
+import type { Package } from "../types/package";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -65,38 +67,6 @@ ChartJS.register(
   Filler,
   BarElement,
 );
-
-// Define the 4 specific packages that should be displayed
-const quickActionPackages = [
-  {
-    name: "MTN",
-    code: "MTN",
-    providerCode: "MTN",
-    color: "bg-yellow-500",
-    bgColor: "bg-yellow-50",
-  },
-  {
-    name: "TELECEL",
-    code: "TELECEL",
-    providerCode: "TELECEL",
-    color: "bg-red-500",
-    bgColor: "bg-red-50",
-  },
-  {
-    name: "AT BIG TIME",
-    code: "AT-BIG-TIME",
-    providerCode: "AT",
-    color: "bg-blue-500",
-    bgColor: "bg-blue-50",
-  },
-  {
-    name: "AT iShare Premium",
-    code: "AT-ISHARE-PREMIUM",
-    providerCode: "AT",
-    color: "bg-purple-600",
-    bgColor: "bg-purple-50",
-  },
-];
 
 export const DashboardPage = () => {
   const { getTransactionHistory } = useWallet();
@@ -152,6 +122,8 @@ export const DashboardPage = () => {
   const [showSiteMessage, setShowSiteMessage] = useState(true);
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [activeOrdersLoading, setActiveOrdersLoading] = useState(true);
+  const [dashboardPackages, setDashboardPackages] = useState<Package[]>([]);
+  const [dashboardPackagesLoading, setDashboardPackagesLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -181,8 +153,8 @@ export const DashboardPage = () => {
   };
 
   // Handle quick link click
-  const handleQuickLinkClick = (packageCode: string) => {
-    navigate(`./packages/${packageCode.toLowerCase()}`);
+  const handleQuickLinkClick = (slug: string) => {
+    navigate(`./packages/${slug}`);
   };
 
   // Get provider logo by provider code
@@ -191,16 +163,34 @@ export const DashboardPage = () => {
     return provider?.logo;
   };
 
-  // Get package with provider logo
-  const getPackagesWithLogos = () => {
-    return quickActionPackages.map((packageItem) => {
-      const providerLogo = getProviderLogo(packageItem.providerCode);
-      return {
-        ...packageItem,
-        logo: providerLogo,
-      };
-    });
+  // Get provider color by provider code
+  const getProviderColor = (providerCode: string) => {
+    const colorMap: Record<string, string> = {
+      MTN: "bg-yellow-500",
+      TELECEL: "bg-red-500",
+      AT: "bg-blue-500",
+      AFA: "bg-green-500",
+    };
+    return colorMap[providerCode] || "bg-gray-500";
   };
+
+  // Fetch packages for quick actions
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        setDashboardPackagesLoading(true);
+        const response = await packageService.getPackages({
+          isActive: true,
+        });
+        setDashboardPackages(response.packages || []);
+      } catch {
+        setDashboardPackages([]);
+      } finally {
+        setDashboardPackagesLoading(false);
+      }
+    };
+    fetchPackages();
+  }, []);
 
   // Format transaction amount
   const formatAmount = (amount: number) => {
@@ -319,82 +309,6 @@ export const DashboardPage = () => {
                 orders: data.charts?.orders || [],
                 revenue: data.charts?.revenue || [],
                 completedOrders: data.charts?.completedOrders || [],
-              },
-            });
-          } else {
-            // Set default values if analytics fails
-            setAnalyticsData({
-              orders: {
-                total: 0,
-                completed: 0,
-                pending: 0,
-                processing: 0,
-                confirmed: 0,
-                failed: 0,
-                cancelled: 0,
-                partiallyCompleted: 0,
-                successRate: 0,
-                todayCounts: {
-                  total: 0,
-                  completed: 0,
-                  pending: 0,
-                  processing: 0,
-                  confirmed: 0,
-                  failed: 0,
-                  cancelled: 0,
-                  partiallyCompleted: 0,
-                },
-              },
-              revenue: {
-                total: 0,
-                today: 0,
-                orderCount: 0,
-                averageOrderValue: 0,
-              },
-              wallet: { balance: 0 },
-              charts: {
-                labels: [],
-                orders: [],
-                revenue: [],
-                completedOrders: [],
-              },
-            });
-          } else {
-            // Set default values if analytics fails
-            setAnalyticsData({
-              orders: {
-                total: 0,
-                completed: 0,
-                pending: 0,
-                processing: 0,
-                confirmed: 0,
-                failed: 0,
-                cancelled: 0,
-                partiallyCompleted: 0,
-                successRate: 0,
-                todayCounts: {
-                  total: 0,
-                  completed: 0,
-                  pending: 0,
-                  processing: 0,
-                  confirmed: 0,
-                  failed: 0,
-                  cancelled: 0,
-                  partiallyCompleted: 0,
-                },
-              },
-              revenue: {
-                total: 0,
-                today: 0,
-                orderCount: 0,
-                averageOrderValue: 0,
-              },
-              wallet: { balance: 0 },
-              charts: {
-                labels: [],
-                orders: [],
-                revenue: [],
-                completedOrders: [],
               },
             });
           }
@@ -842,66 +756,66 @@ export const DashboardPage = () => {
       {/* Quick Actions */}
       <div className="quick-actions">
         <h2 className="text-lg font-medium text-gray-800 mb-3 px-2 sm:px-0">
-          Quick Actions
+          All Packages
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {loading ? (
+          {dashboardPackagesLoading ? (
             <div className="col-span-full flex flex-col items-center justify-center py-8">
               <Spinner />
-              <p className="text-gray-500 text-sm mt-2">Loading providers...</p>
-            </div>
-          ) : providersLoading ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-8">
-              <Spinner />
-              <p className="text-sm text-gray-500 mt-2">
-                Loading provider data...
+              <p className="text-gray-500 text-sm mt-2">
+                Loading packages...
               </p>
             </div>
-          ) : getPackagesWithLogos().length === 0 ? (
+          ) : dashboardPackages.length === 0 ? (
             <div className="col-span-full text-center py-8 text-gray-500">
               <h3 className="text-sm font-medium text-gray-900 mb-2">
-                No providers found
+                No packages found
               </h3>
               <p className="text-sm text-gray-500">
-                Please add providers in the settings to see quick links.
+                No packages are available at the moment.
               </p>
             </div>
           ) : (
-            getPackagesWithLogos().map((packageItem) => (
-              <Card
-                key={packageItem.code}
-                variant="interactive"
-                size="sm"
-                className="cursor-pointer"
-                onClick={() => handleQuickLinkClick(packageItem.code)}
-              >
-                <CardBody className="text-center">
-                  <div
-                    className={`${packageItem.color} text-white rounded-full mx-auto mb-2 w-12 h-12 flex items-center justify-center overflow-hidden`}
-                  >
-                    {packageItem.logo?.url &&
-                    !failedLogos.has(packageItem.code) ? (
-                      <img
-                        src={packageItem.logo.url}
-                        alt={packageItem.logo.alt || packageItem.name}
-                        className="w-12 h-12 object-cover rounded-full"
-                        onError={() => {
-                          setFailedLogos((prev) =>
-                            new Set(prev).add(packageItem.code),
-                          );
-                        }}
-                      />
-                    ) : (
-                      <FaPhone className="w-6 h-6" />
-                    )}
-                  </div>
-                  <div className="font-semibold text-sm">
-                    {packageItem.name}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-1">Order data</div>
-                </CardBody>
-              </Card>
-            ))
+            dashboardPackages.map((pkg) => {
+              const providerLogo = getProviderLogo(pkg.provider);
+              const providerColor = getProviderColor(pkg.provider);
+              const key = pkg._id || pkg.slug;
+              return (
+                <Card
+                  key={key}
+                  variant="interactive"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => handleQuickLinkClick(pkg.slug)}
+                >
+                  <CardBody className="text-center">
+                    <div
+                      className={`${providerColor} text-white rounded-full mx-auto mb-2 w-12 h-12 flex items-center justify-center overflow-hidden`}
+                    >
+                      {providerLogo?.url &&
+                      !failedLogos.has(pkg.provider) ? (
+                        <img
+                          src={providerLogo.url}
+                          alt={providerLogo.alt || pkg.name}
+                          className="w-12 h-12 object-cover rounded-full"
+                          onError={() => {
+                            setFailedLogos((prev) =>
+                              new Set(prev).add(pkg.provider),
+                            );
+                          }}
+                        />
+                      ) : (
+                        <FaPhone className="w-6 h-6" />
+                      )}
+                    </div>
+                    <div className="font-semibold text-sm">{pkg.name}</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      Browse bundles
+                    </div>
+                  </CardBody>
+                </Card>
+              );
+            })
           )}
         </div>
       </div>
