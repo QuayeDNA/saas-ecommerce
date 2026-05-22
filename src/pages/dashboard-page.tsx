@@ -776,7 +776,7 @@ export const DashboardPage = () => {
               </p>
             </div>
           ) : (
-            dashboardPackages.map((pkg) => {
+            dashboardPackages.filter((pkg) => pkg._id).map((pkg) => {
               const providerLogo = getProviderLogo(pkg.provider);
               const providerColor = getProviderColor(pkg.provider);
               const key = pkg._id || pkg.slug;
@@ -786,7 +786,7 @@ export const DashboardPage = () => {
                   variant="interactive"
                   size="sm"
                   className="cursor-pointer"
-                  onClick={() => handleQuickLinkClick(pkg.slug)}
+                  onClick={() => handleQuickLinkClick(pkg._id)}
                 >
                   <CardBody className="text-center">
                     <div

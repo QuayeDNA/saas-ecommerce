@@ -78,7 +78,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   }, [authState.isAuthenticated]);
 
   const fetchAllNotifications = useCallback(
-    async (page = 1, limit = 50, read?: boolean) => {
+    async (page = 1, limit = 50, read?: boolean, category?: string) => {
       if (!authState.isAuthenticated)
         return { notifications: [], pagination: undefined };
 
@@ -86,7 +86,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         const response = await notificationService.getAllNotifications(
           page,
           limit,
-          read
+          read,
+          category
         );
         return {
           notifications: response.notifications,

@@ -50,6 +50,8 @@ export const AUTH_API_ENDPOINTS = {
   VERIFY_TOKEN: "/api/auth/verify-token",
   SETUP_PIN: "/api/auth/setup-pin",
   UPDATE_FIRST_TIME: "/api/auth/update-first-time",
+  SEND_OTP: "/api/auth/send-otp",
+  VERIFY_OTP: "/api/auth/verify-otp",
 } as const;
 
 export const PASSWORD_RULES = {
@@ -62,6 +64,7 @@ export const PASSWORD_RULES = {
 export const STEPS_REGISTRATION = [
   { title: "Account", icon: "User" },
   { title: "Business", icon: "Building2" },
+  { title: "Verify", icon: "Smartphone" },
   { title: "Security", icon: "Shield" },
 ] as const;
 

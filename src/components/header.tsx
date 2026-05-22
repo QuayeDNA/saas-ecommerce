@@ -14,10 +14,12 @@ import {
   FaWallet,
   FaSync,
   FaWifi,
+  FaShareAlt,
+  FaCopy,
 } from "react-icons/fa";
 import { NotificationDropdown } from "./notifications/NotificationDropdown";
 import { ImpersonationService } from "../utils/impersonation";
-import { canHaveWallet, isAdminUser } from "../utils/userTypeHelpers";
+import { canHaveWallet, isAdminUser, isBusinessUser } from "../utils/userTypeHelpers";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -37,7 +39,22 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   // Check if user can have a wallet (all business users)
   const canShowWallet = canHaveWallet(authState.user?.userType || "");
   const isAdmin = isAdminUser(authState.user?.userType || "");
+  const isAgent = isBusinessUser(authState.user?.userType || "");
   const firstName = authState.user?.fullName.split(" ")[0] ?? "";
+  const [referralCopied, setReferralCopied] = useState(false);
+
+  const copyReferralCode = async () => {
+    const code = authState.user?.agentCode;
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setReferralCopied(true);
+      addToast("Referral code copied", "success");
+      setTimeout(() => setReferralCopied(false), 2000);
+    } catch {
+      addToast("Failed to copy", "error");
+    }
+  };
 
   // Get connection status indicator
   const getConnectionStatusIndicator = () => {
@@ -293,6 +310,23 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
               </div>
             )}
 
+            {/* Referral Code Badge - Agents only */}
+            {isAgent && authState.user?.agentCode && (
+              <div className="flex-shrink-0 hidden sm:block">
+                <button
+                  onClick={copyReferralCode}
+                  className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg px-3 py-1.5 text-xs font-mono font-bold tracking-wider transition-all"
+                  title="Click to copy referral code"
+                >
+                  <FaShareAlt className="h-3 w-3" />
+                  <span>{authState.user.agentCode}</span>
+                  {referralCopied ? (
+                    <FaCopy className="h-3 w-3 text-green-300" />
+                  ) : null}
+                </button>
+              </div>
+            )}
+
             {/* Notifications */}
             <div className="flex-shrink-0">
               <NotificationDropdown />
@@ -340,6 +374,14 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       <div className="text-xs text-gray-500 truncate mt-0.5">
                         {authState.user?.email}
                       </div>
+                      {isAgent && authState.user?.agentCode && (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-mono font-bold text-blue-700">
+                            <FaShareAlt className="h-2.5 w-2.5" />
+                            {authState.user.agentCode}
+                          </span>
+                        </div>
+                      )}
                       {/* Impersonation Indicator */}
                       {ImpersonationService.isImpersonating() && (
                         <div className="mt-2 px-2 py-1 bg-yellow-50 border border-yellow-200 rounded-md">

@@ -18,6 +18,8 @@ import {
   FaHistory,
   FaBullhorn,
   FaStore,
+  FaShareAlt,
+  FaMoneyCheckAlt,
 } from "react-icons/fa";
 import { Home, Plus, LogOut, ChevronRight, Check, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -67,6 +69,16 @@ const getAgentNavItems = (packages: NavItem[] = []): NavItem[] => [
     label: "Wallet",
     path: "/agent/dashboard/wallet",
     icon: <FaWallet />,
+  },
+  {
+    label: "Commission",
+    path: "/agent/dashboard/commissions",
+    icon: <FaMoneyCheckAlt />,
+  },
+  {
+    label: "Referrals",
+    path: "/agent/dashboard/referrals",
+    icon: <FaShareAlt />,
   },
   {
     label: "My Storefront",
@@ -184,6 +196,11 @@ const getSuperAdminNavItems = (): NavItem[] => {
     //   path: "/superadmin/audit-logs",
     //   icon: <FaFileAlt />, // Replaced FileText since react-icons/fa uses FaFileAlt
     // },
+    {
+      label: "Referrals",
+      path: "/superadmin/referrals",
+      icon: <FaShareAlt />,
+    },
     { label: "Settings", path: "/superadmin/settings", icon: <FaCog /> },
   ];
 
@@ -212,11 +229,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         const response = await packageService.getPackages({
           isActive: true,
         });
-        const items: NavItem[] = (response.packages || []).map((pkg) => ({
-          label: pkg.name,
-          path: `/agent/dashboard/packages/${pkg.slug}`,
-          icon: <FaBox />,
-        }));
+        const items: NavItem[] = (response.packages || [])
+          .filter((pkg) => pkg._id)
+          .map((pkg) => ({
+            label: pkg.name,
+            path: `/agent/dashboard/packages/${pkg._id}`,
+            icon: <FaBox />,
+          }));
         setPackageNavItems(items);
       } catch {
         setPackageNavItems([]);

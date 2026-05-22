@@ -125,6 +125,21 @@ const StorefrontDashboardPage = lazy(() =>
 );
 
 // =============================================================================
+// LAZY LOADED COMPONENTS - COMMISSION & REFERRAL PAGES
+// =============================================================================
+const CommissionPage = lazy(() =>
+  import("../pages/agent/commission-page").then((module) => ({
+    default: module.CommissionPage,
+  })),
+);
+
+const ReferralDashboardPage = lazy(() =>
+  import("../pages/agent/referral-dashboard-page").then((module) => ({
+    default: module.ReferralDashboardPage,
+  })),
+);
+
+// =============================================================================
 // LAZY LOADED COMPONENTS - PACKAGE SPECIFIC PAGES
 // =============================================================================
 const PackageDetailPage = lazy(() =>
@@ -374,7 +389,7 @@ const agentRoutes: RouteObject[] = [
             ),
           },
           {
-            path: "packages/:packageSlug",
+            path: "packages/:packageId",
             element: (
               <Suspense fallback={<PageLoader />}>
                 <PackageDetailPage />
@@ -410,6 +425,22 @@ const agentRoutes: RouteObject[] = [
             element: (
               <Suspense fallback={<PageLoader />}>
                 <WalletPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "commissions",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <CommissionPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "referrals",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ReferralDashboardPage />
               </Suspense>
             ),
           },

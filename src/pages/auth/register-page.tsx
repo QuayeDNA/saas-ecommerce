@@ -1,10 +1,4 @@
-// src/pages/auth/register-page.tsx
-
-/**
- * Agent Registration Page within the centralized auth flow.
- */
-
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FaUser,
@@ -20,6 +14,9 @@ import {
   FaLock,
   FaCheckCircle,
   FaCheck,
+  FaShareAlt,
+  FaMobileAlt,
+  FaClock,
 } from "react-icons/fa";
 import {
   Button,
@@ -33,6 +30,7 @@ import {
 import { useAuth } from "../../hooks";
 import { useSiteStatus } from "../../contexts/site-status-context";
 import { useToast } from "../../design-system/components/toast";
+import { authService } from "../../services/auth.service";
 import type { RegisterAgentData } from "../../services/auth.service";
 import { AuthLayout } from "../../layouts/auth-layout";
 import {
@@ -48,6 +46,7 @@ interface FormData {
   phone: string;
   password: string;
   confirmPassword: string;
+  referralCode: string;
 }
 
 interface PasswordValidation {
@@ -65,6 +64,7 @@ interface FieldErrors {
   phone?: string;
   password?: string;
   confirmPassword?: string;
+  referralCode?: string;
 }
 
 export const RegisterPage = () => {
@@ -89,6 +89,7 @@ export const RegisterPage = () => {
     phone: "",
     password: "",
     confirmPassword: "",
+    referralCode: "",
   });
 
   const [passwordValidation, setPasswordValidation] =
@@ -100,7 +101,26 @@ export const RegisterPage = () => {
       match: false,
     });
 
+  // OTP state
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
   const totalSteps = STEPS_REGISTRATION.length;
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const validateField = (
     field: keyof FormData,
@@ -134,6 +154,10 @@ export const RegisterPage = () => {
       case "confirmPassword":
         if (!value) return "Please confirm your password";
         if (value !== formData.password) return "Passwords do not match";
+        return undefined;
+      case "referralCode":
+        if (value && value.trim().length < 3)
+          return "Referral code seems invalid";
         return undefined;
       default:
         return undefined;
@@ -192,11 +216,63 @@ export const RegisterPage = () => {
       );
     }
 
+    if (currentStep === 3) {
+      return otpVerified;
+    }
+
     return Object.values(passwordValidation).every(Boolean);
   };
 
-  const nextStep = () => {
-    if (currentStep < totalSteps && validateCurrentStep()) {
+  // Send OTP when moving to step 3
+  const handleSendOtp = useCallback(async () => {
+    setOtpSending(true);
+    setOtpError(null);
+    try {
+      await authService.sendOtp(formData.phone);
+      setOtpSent(true);
+      setResendCooldown(60);
+      addToast("OTP sent to your phone", "success");
+    } catch (err: any) {
+      setOtpError(err?.message || "Failed to send OTP");
+    } finally {
+      setOtpSending(false);
+    }
+  }, [formData.phone, addToast]);
+
+  // Verify OTP
+  const handleVerifyOtp = async () => {
+    const code = otpCode.join("");
+    if (code.length !== 6) {
+      setOtpError("Please enter the complete 6-digit code");
+      return;
+    }
+    setOtpVerifying(true);
+    setOtpError(null);
+    try {
+      await authService.verifyOtp(formData.phone, code);
+      setOtpVerified(true);
+      addToast("Phone verified successfully", "success");
+    } catch (err: any) {
+      setOtpError(err?.message || "Invalid or expired OTP code");
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    await handleSendOtp();
+  };
+
+  const nextStep = async () => {
+    if (!validateCurrentStep()) return;
+
+    if (currentStep === 2) {
+      await handleSendOtp();
+    }
+
+    if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -206,6 +282,38 @@ export const RegisterPage = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  // Handle OTP digit input
+  const handleOtpDigitChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otpCode];
+    newOtp[index] = value.slice(-1);
+    setOtpCode(newOtp);
+    setOtpError(null);
+
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !otpCode[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const newOtp = [...otpCode];
+    for (let i = 0; i < pasted.length; i++) {
+      newOtp[i] = pasted[i];
+    }
+    setOtpCode(newOtp);
+    if (pasted.length === 6) {
+      otpInputRefs.current[5]?.focus();
     }
   };
 
@@ -229,6 +337,9 @@ export const RegisterPage = () => {
         phone: formData.phone.trim(),
         password: formData.password,
         businessName: formData.businessName.trim(),
+        ...(formData.referralCode.trim()
+          ? { referralCode: formData.referralCode.trim() }
+          : {}),
       };
 
       await registerAgent(agentData);
@@ -265,6 +376,12 @@ export const RegisterPage = () => {
     if (strength > 0) return { strength, label: "Weak", color: "bg-red-500" };
     return { strength: 0, label: "Very Weak", color: "bg-slate-300" };
   })();
+
+  const maskPhone = (phone: string) => {
+    if (phone.length < 8) return phone;
+    const visible = phone.slice(0, 3) + "***" + phone.slice(-3);
+    return visible;
+  };
 
   return (
     <AuthLayout
@@ -359,8 +476,125 @@ export const RegisterPage = () => {
         )}
 
         {currentStep === 3 && (
+          <div className="space-y-6">
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                {otpVerified ? (
+                  <FaCheckCircle className="h-6 w-6" />
+                ) : (
+                  <FaMobileAlt className="h-6 w-6" />
+                )}
+              </div>
+              <p className="font-medium text-slate-900">
+                {otpVerified
+                  ? "Phone Verified"
+                  : "Verify your phone number"}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {otpVerified
+                  ? maskPhone(formData.phone)
+                  : `We sent a code to ${maskPhone(formData.phone)}`}
+              </p>
+            </div>
+
+            {!otpVerified && (
+              <>
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-slate-700">
+                    Enter verification code
+                  </label>
+                  <div
+                    className="flex justify-center gap-2 sm:gap-3"
+                    onPaste={handleOtpPaste}
+                  >
+                    {otpCode.map((digit, index) => (
+                      <input
+                        key={index}
+                        ref={(el) => { otpInputRefs.current[index] = el; }}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpDigitChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        className="h-12 w-10 sm:h-14 sm:w-12 rounded-xl border-2 border-slate-300 text-center text-lg font-bold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
+                        autoFocus={index === 0}
+                        aria-label={`Digit ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                  {otpError && (
+                    <p className="text-center text-sm text-red-600">
+                      {otpError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={handleVerifyOtp}
+                    disabled={otpCode.join("").length !== 6 || otpVerifying}
+                    className="w-full"
+                    isLoading={otpVerifying}
+                  >
+                    {otpVerifying ? "Verifying..." : "Verify Code"}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleResendOtp}
+                    disabled={resendCooldown > 0 || otpSending}
+                    className="w-full text-sm"
+                  >
+                    {resendCooldown > 0 ? (
+                      <span className="flex items-center justify-center gap-2 text-slate-500">
+                        <FaClock className="h-3 w-3" />
+                        Resend in {resendCooldown}s
+                      </span>
+                    ) : (
+                      "Resend code"
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {otpVerified && (
+              <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4 text-center">
+                <FaCheckCircle className="mx-auto mb-2 h-6 w-6 text-green-600" />
+                <p className="font-medium text-green-800">Phone verified</p>
+                <p className="text-sm text-green-600">
+                  You can now proceed to set up your account security.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {currentStep === 4 && (
           <div className="space-y-5">
-            <div className="space-y-4">
+            <Input
+              label="Referral Code (optional)"
+              value={formData.referralCode}
+              onChange={(e) => handleInputChange("referralCode", e.target.value)}
+              onBlur={() => handleFieldBlur("referralCode")}
+              type="text"
+              placeholder="Enter referral code if you have one"
+              leftIcon={<FaShareAlt className="text-slate-400" />}
+              errorText={
+                touchedFields.has("referralCode")
+                  ? fieldErrors.referralCode
+                  : undefined
+              }
+            />
+            <div className="rounded-3xl border border-slate-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Have a referral code? Enter it above to get started with bonus
+              benefits from your referrer.
+            </div>
+            <div className="space-y-4 pt-2">
               <Input
                 label={FIELD_LABELS.password}
                 value={formData.password}
@@ -479,10 +713,17 @@ export const RegisterPage = () => {
               type="button"
               variant="primary"
               onClick={nextStep}
-              disabled={!validateCurrentStep()}
+              disabled={
+                !validateCurrentStep() ||
+                (currentStep === 2 && otpSending)
+              }
               className="flex-1"
+              isLoading={currentStep === 2 && otpSending}
             >
-              Next <FaArrowRight className="ml-2" />
+              {currentStep === 2 && otpSending
+                ? "Sending Code..."
+                : "Next"}
+              {currentStep !== 2 && <FaArrowRight className="ml-2" />}
             </Button>
           ) : (
             <Button

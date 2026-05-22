@@ -32,6 +32,7 @@ const PayoutManagement = lazy(
 );
 const AnalyticsPage = lazy(() => import("../pages/superadmin/analytics"));
 const AuditLogsPage = lazy(() => import("../pages/superadmin/AuditLogs"));
+const ReferralManagementPage = lazy(() => import("../pages/superadmin/referral-management"));
 
 const superadminRoutes: RouteObject = {
   path: "/superadmin",
@@ -155,6 +156,14 @@ const superadminRoutes: RouteObject = {
           element: (
             <Suspense fallback={<PageLoader />}>
               <StoresPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: "referrals",
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <ReferralManagementPage />
             </Suspense>
           ),
         },

@@ -2,9 +2,9 @@ import { useParams } from 'react-router-dom';
 import { ProviderPackageDisplay } from '../components/products/ProviderPackageDisplay';
 
 export const PackageDetailPage = () => {
-  const { packageSlug } = useParams<{ packageSlug: string }>();
+  const { packageId } = useParams<{ packageId: string }>();
 
-  if (!packageSlug) {
+  if (!packageId || packageId === "undefined") {
     return (
       <div className="text-center py-12 text-gray-500">
         <p>No package specified.</p>
@@ -12,5 +12,5 @@ export const PackageDetailPage = () => {
     );
   }
 
-  return <ProviderPackageDisplay packageSlug={packageSlug} />;
+  return <ProviderPackageDisplay packageId={packageId} />;
 };

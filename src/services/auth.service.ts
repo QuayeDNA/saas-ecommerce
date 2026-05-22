@@ -31,6 +31,7 @@ export interface RegisterAgentData {
   businessName: string;
   businessCategory?: "electronics" | "fashion" | "food" | "services" | "other";
   subscriptionPlan?: "basic" | "premium" | "enterprise";
+  referralCode?: string;
 }
 
 export interface ForgotPasswordData {
@@ -390,6 +391,32 @@ class AuthService {
         "Account verification failed",
       );
       this.throwServiceError(message, code);
+    }
+  }
+
+  /**
+   * Send OTP to phone for registration verification
+   */
+  async sendOtp(phone: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await publicApiClient.post("/api/auth/send-otp", { phone });
+      return response.data;
+    } catch (err: unknown) {
+      const { message } = this.extractErrorMessage(err, "Failed to send OTP");
+      this.throwServiceError(message);
+    }
+  }
+
+  /**
+   * Verify OTP code
+   */
+  async verifyOtp(phone: string, code: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await publicApiClient.post("/api/auth/verify-otp", { phone, code });
+      return response.data;
+    } catch (err: unknown) {
+      const { message } = this.extractErrorMessage(err, "Invalid or expired OTP");
+      this.throwServiceError(message);
     }
   }
 

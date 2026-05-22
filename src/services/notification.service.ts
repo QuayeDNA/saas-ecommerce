@@ -8,6 +8,8 @@ export interface Notification {
   message: string;
   type: 'success' | 'error' | 'warning' | 'info';
   read: boolean;
+  category?: 'system' | 'order' | 'wallet' | 'announcement' | 'commission';
+  announcementId?: string;
   metadata: Record<string, any>;
   createdAt: string;
   readAt?: string;
@@ -34,20 +36,23 @@ class NotificationService {
   /**
    * Get user's unread notifications
    */
-  async getUnreadNotifications(page = 1, limit = 20): Promise<NotificationResponse> {
-    const response = await apiClient.get('/api/notifications/unread', {
-      params: { page, limit }
-    });
+  async getUnreadNotifications(page = 1, limit = 20, category?: string): Promise<NotificationResponse> {
+    const params: any = { page, limit };
+    if (category) params.category = category;
+    const response = await apiClient.get('/api/notifications/unread', { params });
     return response.data;
   }
 
   /**
    * Get all notifications (both read and unread)
    */
-  async getAllNotifications(page = 1, limit = 50, read?: boolean): Promise<NotificationResponse> {
+  async getAllNotifications(page = 1, limit = 50, read?: boolean, category?: string): Promise<NotificationResponse> {
     const params: any = { page, limit };
     if (read !== undefined) {
       params.read = read;
+    }
+    if (category) {
+      params.category = category;
     }
     const response = await apiClient.get('/api/notifications', { params });
     return response.data;
@@ -114,8 +119,10 @@ class NotificationService {
   /**
    * Get notification count for badge
    */
-  async getNotificationCount(): Promise<NotificationCountResponse> {
-    const response = await apiClient.get('/api/notifications/count');
+  async getNotificationCount(category?: string): Promise<NotificationCountResponse> {
+    const params: any = {};
+    if (category) params.category = category;
+    const response = await apiClient.get('/api/notifications/count', { params });
     return response.data;
   }
 }
