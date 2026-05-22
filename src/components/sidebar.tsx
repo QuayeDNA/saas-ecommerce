@@ -76,11 +76,6 @@ const getAgentNavItems = (packages: NavItem[] = []): NavItem[] => [
     icon: <FaMoneyCheckAlt />,
   },
   {
-    label: "Referrals",
-    path: "/agent/dashboard/referrals",
-    icon: <FaShareAlt />,
-  },
-  {
     label: "My Storefront",
     path: "/agent/dashboard/storefront",
     icon: <FaStore />,

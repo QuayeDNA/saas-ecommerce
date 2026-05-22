@@ -16,7 +16,10 @@ export interface Commission {
 
 export interface CommissionBalanceResponse {
   success: boolean;
-  balance: number;
+  data: {
+    commissionBalance: number;
+    walletBalance: number;
+  };
 }
 
 export interface CommissionStats {

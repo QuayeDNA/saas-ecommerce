@@ -14,7 +14,7 @@ class CommissionService {
     const response = await apiClient.get<CommissionBalanceResponse>(
       "/api/commissions/balance"
     );
-    return response.data.balance;
+    return response.data.data.commissionBalance;
   }
 
   async getStats(): Promise<CommissionStats> {
