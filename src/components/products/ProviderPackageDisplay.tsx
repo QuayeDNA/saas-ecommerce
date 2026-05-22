@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { packageService } from "../../services/package.service";
 import { bundleService } from "../../services/bundle.service";
-import { providerService } from "../../services/provider.service";
 import { getProviderColors } from "../../utils/provider-colors";
 import { SingleOrderModal } from "../orders/SingleOrderModal";
 import { BulkOrderModal } from "../orders/BulkOrderModal";
@@ -62,71 +61,95 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
   const [selectedBulkPackage, setSelectedBulkPackage] =
     useState<Package | null>(null);
 
-  // Fetch packages based on props
+  // Tracks fetch generation to discard stale results (handles StrictMode double-mount)
+  const fetchGen = useRef(0);
+
   useEffect(() => {
+    const gen = ++fetchGen.current;
     setLoading(true);
     setError(null);
-    setPackages([]);
-    setBundles({});
-    setProviderData(null);
-    setProviderLogoFailed(false);
 
     const fetch = async () => {
       try {
-        // Fetch provider data first
-        try {
-          const providerResponse = await providerService.getProviders();
-          const providerInfo = providerResponse.providers.find(
-            (p) => p.code === provider
-          );
-          if (providerInfo) {
-            setProviderData(providerInfo);
-          }
-        } catch (providerError) {
-          // Provider fetch failed, continue with packages
-          console.warn("Failed to fetch provider data:", providerError);
-        }
-
         let pkgList: Package[] = [];
+        const bundleMap: Record<string, Bundle[]> = {};
+        let derivedProvider: Provider | null = null;
+
         if (packageId) {
-          // Fetch a single package by id
-          const pkg = await packageService.getPackage(packageId);
+          const [pkg, bundleResp] = await Promise.all([
+            packageService.getPackage(packageId),
+            bundleService.getBundlesByPackage(packageId, { limit: 1000 }),
+          ]);
+          if (gen !== fetchGen.current) return;
           if (pkg) pkgList = [pkg];
+          bundleMap[packageId] = bundleResp.bundles || [];
+
+          const pid = bundleResp.bundles[0]?.providerId;
+          if (typeof pid === "object" && pid !== null && "code" in pid) {
+            derivedProvider = pid as unknown as Provider;
+          }
         } else if (packageSlug) {
-          // Fetch a single package by stable slug
           const pkg = await packageService.getPackageBySlug(packageSlug);
-          if (pkg) pkgList = [pkg];
+          if (gen !== fetchGen.current) return;
+          if (pkg) {
+            pkgList = [pkg];
+            if (pkg._id) {
+              const bundleResp = await bundleService.getBundlesByPackage(
+                pkg._id,
+                { limit: 1000 },
+              );
+              if (gen !== fetchGen.current) return;
+              bundleMap[pkg._id] = bundleResp.bundles || [];
+
+              const pid = bundleResp.bundles[0]?.providerId;
+              if (typeof pid === "object" && pid !== null && "code" in pid) {
+                derivedProvider = pid as unknown as Provider;
+              }
+            }
+          }
         } else {
-          // Build filters - ensure we get all active packages
           const pkgFilters: Record<string, unknown> = {
             provider,
-            isActive: true, // Ensure only active packages
+            isActive: true,
             ...filters,
           };
           if (category) pkgFilters.category = category;
-          // Fetch all packages for provider/category
           const resp = await packageService.getPackages(pkgFilters);
+          if (gen !== fetchGen.current) return;
           pkgList = resp.packages || [];
-        }
-        setPackages(pkgList);
-        // Fetch bundles for each package - get all bundles without pagination
-        const bundleMap: Record<string, Bundle[]> = {};
-        for (const pkg of pkgList) {
-          if (pkg._id) {
-            // Get all bundles by setting a high limit
-            const resp = await bundleService.getBundlesByPackage(pkg._id, {
-              limit: 1000,
+
+          const bundlePromises = pkgList
+            .filter((p) => p._id)
+            .map(async (pkg) => {
+              const br = await bundleService.getBundlesByPackage(pkg._id!, {
+                limit: 1000,
+              });
+              return { id: pkg._id!, bundles: br.bundles || [] };
             });
-            bundleMap[pkg._id] = resp.bundles || [];
+          const results = await Promise.all(bundlePromises);
+          if (gen !== fetchGen.current) return;
+          for (const r of results) {
+            bundleMap[r.id] = r.bundles;
+          }
+
+          const allBundles = Object.values(bundleMap).flat();
+          const pid = allBundles[0]?.providerId;
+          if (typeof pid === "object" && pid !== null && "code" in pid) {
+            derivedProvider = pid as unknown as Provider;
           }
         }
+
+        if (gen !== fetchGen.current) return;
+        setPackages(pkgList);
         setBundles(bundleMap);
+        if (derivedProvider) setProviderData(derivedProvider);
       } catch (e: unknown) {
+        if (gen !== fetchGen.current) return;
         setError(
           e instanceof Error ? e.message : "Failed to fetch packages or bundles"
         );
       } finally {
-        setLoading(false);
+        if (gen === fetchGen.current) setLoading(false);
       }
     };
     fetch();
@@ -147,8 +170,9 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     return ["all", ...cats];
   }, [packages, category]);
 
-  // Provider display (for color, etc.)
-  const providerColors = getProviderColors(provider);
+  // Provider display (for color, etc.) — prefer providerData derived from bundles, fallback to prop
+  const effectiveProvider = providerData?.code || provider;
+  const providerColors = getProviderColors(effectiveProvider);
 
   // Search and filter configuration
   const searchAndFilterConfig = {
@@ -312,7 +336,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                 {providerData?.logo?.url && !providerLogoFailed ? (
                   <img
                     src={providerData.logo.url}
-                    alt={providerData.logo.alt || `${provider} Logo`}
+                    alt={providerData.logo.alt || `${effectiveProvider} Logo`}
                     className="w-full h-full object-cover"
                     onError={() => setProviderLogoFailed(true)}
                   />
@@ -322,7 +346,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {providerData?.name || provider} Data Packages
+                  {providerData?.name || effectiveProvider} Data Packages
                 </h2>
                 <p className="text-gray-600">Browse and order data bundles</p>
               </div>
@@ -515,8 +539,8 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
             onClose={() => setShowBulkOrderModal(false)}
             onSuccess={() => setShowBulkOrderModal(false)}
             packageId={selectedBulkPackage._id!}
-            provider={provider}
-            providerName={provider}
+            provider={effectiveProvider}
+            providerName={effectiveProvider}
           />
         )}
       </div>

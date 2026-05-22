@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { referralService } from "../../services/referral.service";
 import type { ReferralDashboard, LeaderboardEntry, ReferralTreeNode } from "../../types/referral";
 import { useAuth } from "../../hooks";
-import { FaCopy, FaShareAlt, FaWhatsapp, FaSms, FaCheck, FaUsers, FaMoneyBillWave, FaLink, FaTree, FaTrophy } from "react-icons/fa";
+import { FaCopy, FaShareAlt, FaWhatsapp, FaSms, FaCheck, FaUsers, FaMoneyBillWave, FaLink, FaTrophy } from "react-icons/fa";
 import { useToast } from "../../design-system/components/toast";
 
 export const ReferralDashboardPage = () => {
