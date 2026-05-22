@@ -29,11 +29,13 @@ class ReferralService {
     return response.data.data;
   }
 
-  async getReferralTree(depth = 3): Promise<ReferralTreeNode> {
+  async getReferralTree(depth = 3): Promise<ReferralTreeNode | null> {
     const response = await apiClient.get<ReferralTreeResponse>(
       `/api/referrals/tree?depth=${depth}`
     );
-    return response.data.data;
+    const raw: unknown = response.data.data;
+    if (!raw || (Array.isArray(raw) && raw.length === 0)) return null;
+    return raw as ReferralTreeNode;
   }
 
   async getAdminStats(): Promise<ReferralAdminStats> {

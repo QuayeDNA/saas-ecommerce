@@ -28,7 +28,7 @@ class CommissionService {
     page = 1,
     limit = 20,
     status?: string
-  ): Promise<CommissionListResponse["data"] & { pagination: CommissionListResponse["pagination"] }> {
+  ): Promise<Commission[]> {
     const params = new URLSearchParams();
     params.append("page", page.toString());
     params.append("limit", limit.toString());
@@ -37,7 +37,8 @@ class CommissionService {
     const response = await apiClient.get<CommissionListResponse>(
       `/api/commissions?${params.toString()}`
     );
-    return { ...response.data.data, pagination: response.data.pagination };
+    const raw = response.data.data;
+    return Array.isArray(raw) ? raw : [];
   }
 
   async withdraw(amount: number): Promise<WithdrawResponse["data"]> {
@@ -52,7 +53,8 @@ class CommissionService {
     const response = await apiClient.get<WithdrawalHistoryResponse>(
       "/api/commissions/withdrawals"
     );
-    return response.data.data;
+    const raw = response.data.data;
+    return Array.isArray(raw) ? raw : [];
   }
 
   async processDailyBatch(): Promise<{

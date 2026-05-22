@@ -79,9 +79,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
   const fetchAllNotifications = useCallback(
     async (page = 1, limit = 50, read?: boolean, category?: string) => {
-      if (!authState.isAuthenticated)
-        return { notifications: [], pagination: undefined };
-
       try {
         const response = await notificationService.getAllNotifications(
           page,
@@ -89,17 +86,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
           read,
           category
         );
-        return {
-          notifications: response.notifications,
-          pagination: response.pagination,
-        };
-      } catch {
-        setError("Failed to fetch all notifications");
-        return { notifications: [], pagination: undefined };
+        return response;
+      } catch (error) {
+        console.error('Failed to fetch all notifications:', error);
+        throw error;
       }
-    },
-    [authState.isAuthenticated]
-  );
+    }, []);
 
   const refreshCount = useCallback(async () => {
     if (!authState.isAuthenticated) return;

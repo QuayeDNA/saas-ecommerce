@@ -232,8 +232,9 @@ export const RegisterPage = () => {
       setOtpSent(true);
       setResendCooldown(60);
       addToast("OTP sent to your phone", "success");
-    } catch (err: any) {
-      setOtpError(err?.message || "Failed to send OTP");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setOtpError(error?.message || "Failed to send OTP");
     } finally {
       setOtpSending(false);
     }
@@ -252,8 +253,9 @@ export const RegisterPage = () => {
       await authService.verifyOtp(formData.phone, code);
       setOtpVerified(true);
       addToast("Phone verified successfully", "success");
-    } catch (err: any) {
-      setOtpError(err?.message || "Invalid or expired OTP code");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setOtpError(error?.message || "Invalid or expired OTP code");
     } finally {
       setOtpVerifying(false);
     }
