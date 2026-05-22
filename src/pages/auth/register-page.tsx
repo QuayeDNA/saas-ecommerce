@@ -228,7 +228,7 @@ export const RegisterPage = () => {
     setOtpSending(true);
     setOtpError(null);
     try {
-      await authService.sendOtp(formData.phone);
+      await authService.sendOtp(formData.phone, formData.email);
       setOtpSent(true);
       setResendCooldown(60);
       addToast("OTP sent to your phone", "success");

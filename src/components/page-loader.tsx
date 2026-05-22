@@ -13,7 +13,7 @@ export const PageLoader: React.FC<PageLoaderProps> = ({
     fullScreen 
       ? 'min-h-screen' 
       : 'min-h-[400px]'
-    } flex items-center justify-center bg-white`}>
+    } flex items-center justify-center`}>
     <div className="flex flex-col items-center space-y-4">
       <Spinner size="lg" color="primary" />
       <span className="text-gray-600 text-base font-medium">{text}</span>
