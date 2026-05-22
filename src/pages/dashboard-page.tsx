@@ -776,7 +776,7 @@ export const DashboardPage = () => {
               </p>
             </div>
           ) : (
-            dashboardPackages.filter((pkg) => pkg._id).map((pkg) => {
+            dashboardPackages.filter((pkg) => pkg._id && pkg.provider !== "AFA").map((pkg) => {
               const providerLogo = getProviderLogo(pkg.provider);
               const providerColor = getProviderColor(pkg.provider);
               const key = pkg._id || pkg.slug;
