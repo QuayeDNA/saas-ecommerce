@@ -17,6 +17,7 @@ import {
   FaShareAlt,
   FaCopy,
 } from "react-icons/fa";
+import { DarkModeToggle } from "./common/dark-mode-toggle";
 import { NotificationDropdown } from "./notifications/NotificationDropdown";
 import { ImpersonationService } from "../utils/impersonation";
 import { canHaveWallet, isAdminUser, isBusinessUser } from "../utils/userTypeHelpers";
@@ -69,13 +70,13 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const getConnectionStatusIndicator = () => {
     switch (connectionStatus) {
       case "websocket":
-        return <FaWifi className="w-3 h-3 text-green-400" />;
+        return <FaWifi className="w-3 h-3 text-success" />;
       case "polling":
-        return <FaSync className="w-3 h-3 text-yellow-400 animate-spin" />;
+        return <FaSync className="w-3 h-3 text-warning animate-spin" />;
       case "disconnected":
-        return <FaWifi className="w-3 h-3 text-red-400" />;
+        return <FaWifi className="w-3 h-3 text-error" />;
       default:
-        return <FaWifi className="w-3 h-3 text-gray-400" />;
+        return <FaWifi className="w-3 h-3 text-[var(--text-muted)]" />;
     }
   };
 
@@ -218,12 +219,9 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
 
   return (
     <header
-      className={`sticky z-10 bg-primary-500 shadow-sm border-b border-primary-600 rounded-b-xl ${isImpersonating ? "top-0" : "top-0"
+      className={`sticky z-10 shadow-sm border-b border-[var(--border-color)] rounded-b-xl ${isImpersonating ? "top-0" : "top-0"
         }`}
-      style={{
-        backgroundColor: "var(--color-primary-500)",
-        borderBottomColor: "var(--color-primary-600)",
-      }}
+      style={{ background: "var(--bg-header)" }}
     >
       <div className="px-2 sm:px-6 lg:px-8 py-4 sm:py-5">
         {/* Main Header Row */}
@@ -238,7 +236,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
               className="md:hidden flex-shrink-0 text-white"
               style={
                 {
-                  "--hover-bg": "var(--color-primary-600)",
+                  "--hover-bg": "var(--color-primary-hover)",
                 } as React.CSSProperties
               }
               aria-label="Open sidebar menu"
@@ -265,7 +263,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     </div>
                     <div
                       ref={welcomeContainerRef}
-                      className="overflow-hidden whitespace-nowrap mt-1 text-xs sm:text-sm text-gray-200"
+                      className="overflow-hidden whitespace-nowrap mt-1 text-xs sm:text-sm text-white/80"
                       aria-label="Welcome message"
                     >
                       <div
@@ -330,11 +328,16 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                   <FaShareAlt className="h-3 w-3" />
                   <span>{referralCode}</span>
                   {referralCopied ? (
-                    <FaCopy className="h-3 w-3 text-green-300" />
+                    <FaCopy className="h-3 w-3 text-success" />
                   ) : null}
                 </button>
               </div>
             )}
+
+            {/* Dark Mode Toggle */}
+            <div className="flex-shrink-0">
+              <DarkModeToggle />
+            </div>
 
             {/* Notifications */}
             <div className="flex-shrink-0">
@@ -350,17 +353,17 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 className="p-1.5 text-white relative"
                 style={
                   {
-                    "--hover-bg": "var(--color-primary-600)",
+                    "--hover-bg": "var(--color-primary-hover)",
                   } as React.CSSProperties
                 }
                 aria-label="User menu"
               >
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-medium shadow-sm text-sm relative">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-primary to-[var(--color-primary-hover)] text-white flex items-center justify-center font-medium shadow-sm text-sm relative">
                   {authState.user?.fullName.charAt(0)}
                   {authState.user?.fullName.split(" ")[1]?.charAt(0) ?? ""}
                   {/* Impersonation indicator dot */}
                   {ImpersonationService.isImpersonating() && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 border-2 border-white rounded-full animate-pulse" title="Impersonating User"></div>
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-warning border-2 border-white rounded-full animate-pulse" title="Impersonating User"></div>
                   )}
                 </div>
               </Button>
@@ -375,17 +378,17 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       if (e.key === "Escape") setIsDropdownOpen(false);
                     }}
                   />
-                  <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-white rounded-lg shadow-xl py-1 z-20 border border-gray-200 max-h-96 overflow-y-auto">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <div className="font-medium text-sm truncate">
+                  <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-[var(--bg-surface)] rounded-lg shadow-xl py-1 z-20 border border-[var(--border-color)] max-h-96 overflow-y-auto">
+                    <div className="px-4 py-3 border-b border-[var(--border-color)]">
+                      <div className="font-medium text-sm truncate text-[var(--text-primary)]">
                         {authState.user?.fullName}
                       </div>
-                      <div className="text-xs text-gray-500 truncate mt-0.5">
+                      <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
                         {authState.user?.email}
                       </div>
                       {isAgent && referralCode && (
                         <div className="mt-1 flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-mono font-bold text-blue-700">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-[var(--bg-surface-alt)] px-2 py-0.5 text-xs font-mono font-bold text-[var(--color-primary)]">
                             <FaShareAlt className="h-2.5 w-2.5" />
                             {referralCode}
                           </span>
@@ -393,14 +396,14 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       )}
                       {/* Impersonation Indicator */}
                       {ImpersonationService.isImpersonating() && (
-                        <div className="mt-2 px-2 py-1 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <div className="mt-2 px-2 py-1 bg-warning/10 border border-warning/30 rounded-md">
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                            <span className="text-xs font-medium text-yellow-800">
+                            <div className="w-2 h-2 bg-warning rounded-full animate-pulse"></div>
+                            <span className="text-xs font-medium text-warning">
                               Impersonating User
                             </span>
                           </div>
-                          <div className="text-xs text-yellow-600 mt-0.5">
+                          <div className="text-xs text-warning/80 mt-0.5">
                             You are acting as another user
                           </div>
                         </div>
@@ -411,10 +414,10 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     {canShowWallet && (
                       <Link
                         to="/agent/dashboard/profile"
-                        className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex items-center px-4 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-surface-alt)] transition-colors"
                         onClick={() => setIsDropdownOpen(false)}
                       >
-                        <FaUser className="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" />
+                        <FaUser className="w-4 h-4 mr-3 text-[var(--text-muted)] flex-shrink-0" />
                         <span className="truncate">My Profile</span>
                       </Link>
                     )}
@@ -423,11 +426,11 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                     {canShowWallet && (
                       <Link
                         to="/agent/dashboard/afa-registration"
-                        className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex items-center px-4 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-surface-alt)] transition-colors"
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <svg
-                          className="w-4 h-4 mr-3 text-gray-500 flex-shrink-0"
+                          className="w-4 h-4 mr-3 text-[var(--text-muted)] flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -443,7 +446,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       </Link>
                     )}
 
-                    <div className="border-t border-gray-100 my-1"></div>
+                    <div className="border-t border-[var(--border-color)] my-1"></div>
 
                     {/* Return to Admin - Only when impersonating */}
                     {ImpersonationService.isImpersonating() && (
@@ -465,9 +468,9 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                         setIsDropdownOpen(false);
                         logout();
                       }}
-                      className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+                      className="w-full justify-start text-error hover:bg-error/10 hover:text-error"
                     >
-                      <FaSignOutAlt className="w-4 h-4 mr-3 text-red-500 flex-shrink-0" />
+                      <FaSignOutAlt className="w-4 h-4 mr-3 text-error flex-shrink-0" />
                       <span className="truncate">Logout</span>
                     </Button>
                   </div>

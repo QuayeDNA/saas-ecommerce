@@ -45,10 +45,10 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     
     // Variant styles
     const variantClasses = {
-      elevated: 'shadow-md rounded-lg border border-gray-100',
-      outlined: 'border border-gray-200 rounded-lg',
+      elevated: 'shadow-md rounded-lg border border-[var(--border-color)]',
+      outlined: 'border border-[var(--border-color)] rounded-lg',
       flat: 'rounded-lg',
-      interactive: 'shadow-sm hover:shadow-md rounded-lg border border-gray-100 transition-shadow duration-200',
+      interactive: 'shadow-sm hover:shadow-md rounded-lg border border-[var(--border-color)] transition-shadow duration-200',
     };
     
     // Check if a custom background is provided
@@ -60,7 +60,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     // Combine all classes
     const cardClasses = [
       // Only add default background if no custom background is provided
-      !hasCustomBackground ? 'bg-white' : '',
+      !hasCustomBackground ? 'bg-[var(--bg-surface)]' : '',
       variantClasses[variant],
       // Only add default padding if explicitly not disabled and no custom padding is provided
       !noPadding && !hasCustomPadding ? sizeClasses[size] : '',
@@ -70,12 +70,12 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
 
     // Header and footer styles without padding (handled by parent)
     const headerClasses = [
-      'border-b border-gray-100 bg-gray-50 font-medium',
+      'border-b border-[var(--border-color)] bg-[var(--bg-surface-alt)] font-medium',
       size === 'sm' ? 'text-sm' : 'text-base',
     ].join(' ');
     
     const footerClasses = [
-      'border-t border-gray-100 bg-gray-50',
+      'border-t border-[var(--border-color)] bg-[var(--bg-surface-alt)]',
       size === 'sm' ? 'text-sm' : 'text-base',
     ].join(' ');
 
@@ -107,7 +107,7 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     return (
       <div
         ref={ref}
-        className={`border-b border-gray-100 font-medium ${className}`}
+        className={`border-b border-[var(--border-color)] font-medium ${className}`}
         {...props}
       >
         {children}
@@ -147,7 +147,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
     return (
       <div
         ref={ref}
-        className={`border-t border-gray-100 bg-gray-50 ${className}`}
+        className={`border-t border-[var(--border-color)] bg-[var(--bg-surface-alt)] ${className}`}
         {...props}
       >
         {children}

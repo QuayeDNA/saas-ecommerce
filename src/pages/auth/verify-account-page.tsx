@@ -77,13 +77,13 @@ export const VerifyAccountPage = () => {
     >
       {isVerifying ? (
         <div className="space-y-4">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-100 text-slate-700">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--bg-surface-alt)] text-[var(--text-secondary)]">
             <FaSpinner className="animate-spin" size={28} />
           </div>
           <div className="space-y-3">
-            <div className="h-3 rounded-full bg-slate-200"></div>
-            <div className="h-3 rounded-full bg-slate-200 w-5/6"></div>
-            <div className="h-3 rounded-full bg-slate-200 w-2/3"></div>
+            <div className="h-3 rounded-full bg-[var(--border-color)]"></div>
+            <div className="h-3 rounded-full bg-[var(--border-color)] w-5/6"></div>
+            <div className="h-3 rounded-full bg-[var(--border-color)] w-2/3"></div>
           </div>
         </div>
       ) : isSuccess ? (

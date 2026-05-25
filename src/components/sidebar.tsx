@@ -1,231 +1,65 @@
-// src/components/sidebar-new.tsx
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useLocation } from "react-router-dom";
+import { LogOut } from "lucide-react";
+import { FaBox } from "react-icons/fa";
 import { useAuth } from "../hooks/use-auth";
-import type { ReactNode } from "react";
-import {
-  FaBox,
-  FaMobile,
-  FaUsers,
-  FaUsersCog,
-  FaWallet,
-  FaUser,
-  FaCog,
-  FaTachometerAlt,
-  FaBuilding,
-  FaClipboardList,
-  FaMoneyBillWave,
-  FaCreditCard,
-  FaHistory,
-  FaBullhorn,
-  FaStore,
-  FaShareAlt,
-  FaMoneyCheckAlt,
-} from "react-icons/fa";
-import { Home, Plus, LogOut, ChevronRight, Check, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { BryteLinksSvgIcon } from "./common/BryteLinksSvgLogo";
-import { FaChartLine } from "react-icons/fa6";
 import { packageService } from "../services/package.service";
-
-// =============================================================================
-// TYPE DEFINITIONS
-// =============================================================================
-
-interface NavItem {
-  label: string;
-  path: string;
-  icon: ReactNode;
-  children?: NavItem[];
-}
+import { BryteLinksSvgIcon } from "./common/BryteLinksSvgLogo";
+import { NavItem } from "./sidebar/nav-item";
+import { getNavItems, isAgent } from "./sidebar/nav-config";
+import type { NavItem as NavItemConfig } from "./sidebar/nav-config";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-// =============================================================================
-// NAVIGATION CONFIGURATIONS
-// =============================================================================
+const prefixMatchPaths = new Set(["/superadmin/wallet"]);
+const isExactMatch = (a: string, b: string) =>
+  a.replace(/\/$/, "") === b.replace(/\/$/, "");
 
-// Agent navigation configuration
-const getAgentNavItems = (packages: NavItem[] = []): NavItem[] => [
-  {
-    label: "Dashboard",
-    path: "/agent/dashboard",
-    icon: <Home className="w-5 h-5" />,
-  },
-  {
-    label: "Packages",
-    path: "/agent/dashboard/packages",
-    icon: <FaBox />,
-    children: packages,
-  },
-  {
-    label: "Orders",
-    path: "/agent/dashboard/orders",
-    icon: <FaMobile />,
-  },
-  {
-    label: "Wallet",
-    path: "/agent/dashboard/wallet",
-    icon: <FaWallet />,
-  },
-  {
-    label: "Commission",
-    path: "/agent/dashboard/commissions",
-    icon: <FaMoneyCheckAlt />,
-  },
-  {
-    label: "My Storefront",
-    path: "/agent/dashboard/storefront",
-    icon: <FaStore />,
-  },
-  {
-    label: "AFA Registration",
-    path: "/agent/dashboard/afa-registration",
-    icon: <Plus className="w-5 h-5" />,
-  },
-  {
-    label: "Profile",
-    path: "/agent/dashboard/profile",
-    icon: <FaUser />,
-  },
-];
-
-// Admin navigation configuration
-const getAdminNavItems = (): NavItem[] => [
-  {
-    label: "Dashboard",
-    path: "/admin/dashboard",
-    icon: <Home className="w-5 h-5" />,
-  },
-  {
-    label: "User Management",
-    path: "/admin/dashboard/users",
-    icon: <FaUsersCog />,
-  },
-  {
-    label: "Packages",
-    path: "/admin/dashboard/packages",
-    icon: <FaBox />,
-  },
-  {
-    label: "Wallet",
-    path: "/admin/dashboard/wallet",
-    icon: <FaWallet />,
-  },
-  {
-    label: "Profile",
-    path: "/admin/dashboard/profile",
-    icon: <FaUser />,
-  },
-];
-
-// Super Admin navigation configuration
-const getSuperAdminNavItems = (): NavItem[] => {
-  const items: NavItem[] = [
-    {
-      label: "Dashboard",
-      path: "/superadmin",
-      icon: <FaTachometerAlt />,
+const useActivePath = (locationPathname: string) => {
+  return useCallback(
+    (path: string) => {
+      if (prefixMatchPaths.has(path)) {
+        return (
+          isExactMatch(path, locationPathname) ||
+          locationPathname.startsWith(path + "/")
+        );
+      }
+      return isExactMatch(path, locationPathname);
     },
-    {
-      label: "Analytics",
-      path: "/superadmin/analytics",
-      icon: <FaChartLine />,
-    },
-    {
-      label: "Users",
-      path: "/superadmin/users",
-      icon: <FaUsers />,
-    },
-    {
-      label: "Providers",
-      path: "/superadmin/providers",
-      icon: <FaBuilding />,
-    },
-    {
-      label: "Packages",
-      path: "/superadmin/packages",
-      icon: <FaBox />,
-    },
-    {
-      label: "Orders",
-      path: "/superadmin/orders",
-      icon: <FaClipboardList />,
-    },
-    {
-      label: "Announcements",
-      path: "/superadmin/announcements",
-      icon: <FaBullhorn />,
-    },
-    {
-      label: "Stores",
-      path: "/superadmin/stores",
-      icon: <FaStore />,
-    },
-    {
-      label: "Wallet",
-      path: "/superadmin/wallet",
-      icon: <FaWallet />,
-      children: [
-        {
-          label: "Top-ups",
-          path: "/superadmin/wallet/top-ups",
-          icon: <FaCreditCard />,
-        },
-        {
-          label: "Payouts",
-          path: "/superadmin/wallet/payouts",
-          icon: <FaMoneyBillWave />,
-        },
-        {
-          label: "Transaction History",
-          path: "/superadmin/wallet/history",
-          icon: <FaHistory />,
-        },
-      ],
-    },
-    // {
-    //   label: "Audit Logs",
-    //   path: "/superadmin/audit-logs",
-    //   icon: <FaFileAlt />, // Replaced FileText since react-icons/fa uses FaFileAlt
-    // },
-    {
-      label: "Referrals",
-      path: "/superadmin/referrals",
-      icon: <FaShareAlt />,
-    },
-    { label: "Settings", path: "/superadmin/settings", icon: <FaCog /> },
-  ];
-
-  return items;
+    [locationPathname],
+  );
 };
-
-// =============================================================================
-// SIDEBAR COMPONENT
-// =============================================================================
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const { authState, logout } = useAuth();
+  const isActivePath = useActivePath(location.pathname);
+
   const [expandedItems, setExpandedItems] = useState<Set<string>>(
-    new Set(["packages", "wallet"]),
+    () => new Set(["packages", "wallet"]),
   );
 
-  // Dynamically loaded package nav items
-  const [packageNavItems, setPackageNavItems] = useState<NavItem[]>([]);
+  const [packageNavItems, setPackageNavItems] = useState<NavItemConfig[]>([]);
   const [packagesLoading, setPackagesLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPackages = async () => {
+    const agent = isAgent(authState.user?.userType);
+    if (!agent) {
+      setPackagesLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const fetch = async () => {
       try {
         setPackagesLoading(true);
-        const response = await packageService.getPackages({
-          isActive: true,
-        });
-        const items: NavItem[] = (response.packages || [])
-          .filter((pkg) => pkg._id && pkg.provider !== "AFA")
+        const response = await packageService.getPackages({ isActive: true });
+        if (cancelled) return;
+        const items: NavItemConfig[] = (response.packages || [])
+          .filter((pkg) => !!pkg._id && pkg.provider !== "AFA")
           .map((pkg) => ({
             label: pkg.name,
             path: `/agent/dashboard/packages/${pkg._id}`,
@@ -233,343 +67,164 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           }));
         setPackageNavItems(items);
       } catch {
-        setPackageNavItems([]);
+        if (!cancelled) setPackageNavItems([]);
       } finally {
-        setPackagesLoading(false);
+        if (!cancelled) setPackagesLoading(false);
       }
     };
-    const isAgent = ["agent", "super_agent", "dealer", "super_dealer"].includes(
-      authState.user?.userType || "",
-    );
-    if (isAgent) {
-      fetchPackages();
-    } else {
-      setPackagesLoading(false);
-    }
+    fetch();
+    return () => { cancelled = true; };
   }, [authState.user?.userType]);
 
-  // Toggle expanded state for nav items with children
-  const toggleExpanded = (path: string) => {
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(path)) {
-      newExpanded.delete(path);
-    } else {
-      newExpanded.add(path);
-    }
-    setExpandedItems(newExpanded);
-  };
+  const navItems = useMemo(
+    () => getNavItems(authState.user?.userType, packageNavItems, packagesLoading),
+    [authState.user?.userType, packageNavItems, packagesLoading],
+  );
 
-  // Get app name for version display
-  const getAppName = () => {
-    if (authState.user?.businessName) {
-      return authState.user.businessName;
-    }
-    return "SaaS Telecom";
-  };
+  const toggleExpanded = useCallback((path: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
 
-  // Get navigation items based on user type
-  const getNavItems = (): NavItem[] => {
-    const loadingItem: NavItem = {
-      label: "Loading...",
-      path: "",
-      icon: <Loader2 className="w-4 h-4 animate-spin" />,
-    };
-    const resolvedPackageItems =
-      packagesLoading && packageNavItems.length === 0
-        ? [loadingItem]
-        : packageNavItems;
-    switch (authState.user?.userType) {
-      case "agent":
-      case "super_agent":
-      case "dealer":
-      case "super_dealer":
-        return getAgentNavItems(resolvedPackageItems);
-      case "super_admin":
-        return getSuperAdminNavItems();
-      default:
-        return getAdminNavItems(); // Fallback for admin
-    }
-  };
+  const hasActiveChild = useCallback(
+    (item: NavItemConfig) =>
+      item.children?.some((child) => isActivePath(child.path)) ?? false,
+    [isActivePath],
+  );
 
-  const navItems = getNavItems();
-
-  // Check if a path is active
-  const isActivePath = (path: string) => {
-    // Handle dashboard paths specifically - only match exact dashboard paths
-    if (path === "/superadmin") {
-      return (
-        location.pathname === "/superadmin" ||
-        location.pathname === "/superadmin/"
-      );
-    }
-    if (path === "/agent/dashboard") {
-      return (
-        location.pathname === "/agent/dashboard" ||
-        location.pathname === "/agent/dashboard/"
-      );
-    }
-    if (path === "/admin/dashboard") {
-      return (
-        location.pathname === "/admin/dashboard" ||
-        location.pathname === "/admin/dashboard/"
-      );
-    }
-
-    // Handle wallet nested routes - parent is active if any child is active
-    if (path === "/superadmin/wallet") {
-      return (
-        location.pathname === "/superadmin/wallet" ||
-        location.pathname === "/superadmin/wallet/" ||
-        location.pathname.startsWith("/superadmin/wallet/")
-      );
-    }
-
-    // For other paths, check exact match only
-    return location.pathname === path;
-  };
-
-  // Check if parent has active child
-  const hasActiveChild = (item: NavItem) => {
-    if (!item.children) return false;
-    return item.children.some((child) => isActivePath(child.path));
-  };
-
-  const renderNavItem = (item: NavItem, level = 0) => {
-    const hasChildren = item.children && item.children.length > 0;
-    const isExpanded = expandedItems.has(item.path);
-    const isActive = isActivePath(item.path);
-    const hasActiveChildItem = hasActiveChild(item);
-
-    return (
-      <li key={item.path}>
-        {hasChildren ? (
-          <>
-            <button
-              onClick={() => toggleExpanded(item.path)}
-              className={`w-full flex items-center justify-between px-3 py-3 rounded-md text-sm transition-all duration-200 ${
-                hasActiveChildItem
-                  ? "text-white shadow-md"
-                  : "text-gray-300 hover:text-white"
-              } ${level > 0 ? "ml-4" : ""}`}
-              style={{
-                backgroundColor: hasActiveChildItem
-                  ? "var(--color-secondary-500)"
-                  : "transparent",
-              }}
-              onMouseEnter={(e) => {
-                if (!hasActiveChildItem) {
-                  e.currentTarget.style.backgroundColor =
-                    "var(--color-primary-600)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!hasActiveChildItem) {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }
-              }}
-            >
-              <div className="flex items-center">
-                <span
-                  className={`mr-3 ${
-                    hasActiveChildItem ? "text-white" : "text-gray-400"
-                  }`}
-                >
-                  {item.icon}
-                </span>
-                <span className="font-medium">{item.label}</span>
-              </div>
-              <span
-                className={`transition-transform duration-200 ${
-                  isExpanded ? "rotate-90" : ""
-                }`}
-              >
-                <ChevronRight size={12} />
-              </span>
-            </button>
-
-            {isExpanded && (
-              <ul className="mt-1 space-y-1">
-                {item.children?.map((child) => renderNavItem(child, level + 1))}
-              </ul>
-            )}
-          </>
-        ) : (
-          <Link
-            to={item.path}
-            className={`flex items-center px-3 py-3 rounded-md text-sm transition-all duration-200 ${
-              isActive
-                ? "text-white shadow-md"
-                : "text-gray-300 hover:text-white"
-            } ${level > 0 ? "ml-6" : ""}`}
-            style={
-              {
-                backgroundColor: isActive
-                  ? "var(--color-secondary-500)"
-                  : "transparent",
-                "--hover-bg": "var(--color-primary-600)",
-              } as React.CSSProperties
-            }
-            onMouseEnter={(e) =>
-              !isActive &&
-              (e.currentTarget.style.backgroundColor =
-                "var(--color-primary-600)")
-            }
-            onMouseLeave={(e) =>
-              !isActive &&
-              (e.currentTarget.style.backgroundColor = "transparent")
-            }
-            onClick={() => onClose()}
-          >
-            <span
-              className={`mr-3 ${isActive ? "text-white" : "text-gray-400"} ${
-                level > 0 ? "text-xs" : ""
-              }`}
-            >
-              {item.icon}
-            </span>
-            <span className={`font-medium ${level > 0 ? "text-sm" : ""}`}>
-              {item.label}
-            </span>
-
-            {/* Show indicator for active link */}
-            {isActive && (
-              <span className="ml-auto">
-                <Check className="w-5 h-5" />
-              </span>
-            )}
-          </Link>
-        )}
-      </li>
-    );
-  };
+  const getAppName = useCallback(() => {
+    return authState.user?.businessName || "SaaS Telecom";
+  }, [authState.user?.businessName]);
 
   return (
-    <>
-      {/* Sidebar - slide in on mobile, fixed on desktop */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 text-white transform transition-all duration-300 ease-in-out flex flex-col ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}
-        style={{ backgroundColor: "var(--color-primary-500)" }}
+    <aside
+      className={`fixed inset-y-0 left-0 z-30 w-64 text-white transform transition-all duration-300 ease-in-out flex flex-col ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}
+      style={{ background: "var(--bg-sidebar)" }}
+    >
+      {/* Logo and close button */}
+      <div
+        className="flex items-center justify-between px-4 py-5 shadow-md"
+        style={{ background: "var(--bg-sidebar-header)" }}
       >
-        {/* Logo and close button */}
-        <div
-          className="flex items-center justify-between px-4 py-5 shadow-md"
-          style={{ backgroundColor: "var(--color-primary-600)" }}
+        <div className="flex items-center min-w-0 flex-1">
+          <BryteLinksSvgIcon className="w-10 h-10 mr-1 flex-shrink-0" />
+          <div className="text-lg sm:text-xl font-bold truncate text-white">
+            BryteLinks
+          </div>
+        </div>
+        <button
+          aria-label="Close sidebar"
+          className="text-white/60 hover:text-white md:hidden focus:outline-none focus:ring-2 focus:ring-opacity-50 rounded-md p-1 flex-shrink-0"
+          style={{
+            "--tw-ring-color": "var(--color-secondary-500)",
+          } as React.CSSProperties}
+          onClick={onClose}
         >
-          <div className="flex items-center min-w-0 flex-1">
-            <BryteLinksSvgIcon className="w-10 h-10 mr-1 flex-shrink-0" />
-            <div className="text-lg sm:text-xl font-bold truncate text-white">
-              BryteLinks
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-4">
+        <div className="px-6 py-2 mb-1">
+          <p className="text-xs font-medium text-white/40 uppercase tracking-wider">
+            Menu
+          </p>
+        </div>
+        <ul className="space-y-1 px-3">
+          {navItems.map((item) => (
+            <NavItem
+              key={item.path}
+              item={item}
+              level={0}
+              isActive={isActivePath(item.path)}
+              isExpanded={expandedItems.has(item.path)}
+              hasActiveChild={hasActiveChild(item)}
+              checkActive={isActivePath}
+              onToggle={toggleExpanded}
+              onClose={onClose}
+            />
+          ))}
+        </ul>
+      </nav>
+
+      {/* User info section */}
+      <div className="mt-auto">
+        <div
+          className="p-4 border-t"
+          style={{ borderColor: "var(--border-color)" }}
+        >
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="flex-shrink-0 relative">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md"
+                style={{
+                  background:
+                    "linear-gradient(to bottom right, var(--color-secondary-500), var(--color-secondary-600))",
+                }}
+              >
+                {authState.user?.fullName.charAt(0)}
+                {authState.user?.fullName.split(" ")[1]?.charAt(0) ?? ""}
+              </div>
+            </div>
+            <div className="overflow-hidden min-w-0 flex-1">
+              <div className="text-sm font-medium truncate text-white">
+                {authState.user?.fullName}
+              </div>
+              <div className="flex items-center">
+                <span
+                  className={`w-2 h-2 ${
+                    authState.isAuthenticated ? "bg-success" : "bg-white/40"
+                  } rounded-full mr-1 flex-shrink-0`}
+                />
+                <p className="text-xs text-white/60 truncate capitalize">
+                  {authState.user?.userType ?? "User"}
+                </p>
+                {isAgent(authState.user?.userType) &&
+                  authState.user?.agentCode && (
+                    <div className="ml-2 text-md font-mono font-bold text-white tracking-wide">
+                      {authState.user?.agentCode}
+                    </div>
+                  )}
+              </div>
             </div>
           </div>
+
           <button
-            aria-label="Close sidebar"
-            className="text-gray-300 hover:text-white md:hidden focus:outline-none focus:ring-2 focus:ring-opacity-50 rounded-md p-1 flex-shrink-0"
-            style={
-              {
-                "--tw-ring-color": "var(--color-secondary-500)",
-              } as React.CSSProperties
-            }
-            onClick={onClose}
+            onClick={() => { logout(); onClose(); }}
+            className="w-full flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-error hover:bg-error/90 rounded-md transition-colors duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-error focus:ring-opacity-50"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <LogOut className="w-5 h-5 mr-2" />
+            Logout
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
-          <div className="px-6 py-2 mb-1">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-              Menu
-            </p>
-          </div>
-          <ul className="space-y-1 px-3">
-            {navItems.map((item) => renderNavItem(item))}
-          </ul>
-        </nav>
-
-        {/* User info section */}
-        <div className="mt-auto">
-          {/* User profile */}
-          <div
-            className="p-4 border-t"
-            style={{ borderColor: "var(--color-primary-700)" }}
-          >
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="flex-shrink-0 relative">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md"
-                  style={{
-                    background:
-                      "linear-gradient(to bottom right, var(--color-secondary-500), var(--color-secondary-600))",
-                  }}
-                >
-                  {authState.user?.fullName.charAt(0)}
-                  {authState.user?.fullName.split(" ")[1]?.charAt(0) ?? ""}
-                </div>
-              </div>
-              <div className="overflow-hidden min-w-0 flex-1">
-                <div className="text-sm font-medium truncate text-white">
-                  {authState.user?.fullName}
-                </div>
-                <div className="flex items-center">
-                  <span
-                    className={`w-2 h-2 ${
-                      authState.isAuthenticated ? "bg-green-500" : "bg-gray-400"
-                    } rounded-full mr-1 flex-shrink-0`}
-                  ></span>
-                  <p className="text-xs text-gray-300 truncate capitalize">
-                    {authState.user?.userType ?? "User"}
-                  </p>
-                  {["agent", "super_agent", "dealer", "super_dealer"].includes(
-                    authState.user?.userType || "",
-                  ) &&
-                    authState.user?.agentCode && (
-                      <div className="ml-2 text-md font-mono font-bold text-white tracking-wide">
-                        {authState.user?.agentCode}
-                      </div>
-                    )}
-                </div>
-              </div>
-            </div>
-
-            {/* Logout button */}
-            <button
-              onClick={() => {
-                logout();
-                onClose();
-              }}
-              className="w-full flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-            >
-              <LogOut className="w-5 h-5 mr-2" />
-              Logout
-            </button>
-          </div>
-
-          {/* App version */}
-          <div
-            className="p-3 border-t text-center"
-            style={{ borderColor: "var(--color-primary-700)" }}
-          >
-            <div className="text-xs text-gray-400 truncate">{getAppName()}</div>
-            <div className="text-xs text-gray-300 font-semibold">v1.0.0</div>
-          </div>
+        <div
+          className="p-3 border-t text-center"
+          style={{ borderColor: "var(--border-color)" }}
+        >
+          <div className="text-xs text-white/40 truncate">{getAppName()}</div>
+          <div className="text-xs text-white/60 font-semibold">v1.0.0</div>
         </div>
-      </aside>
-    </>
+      </div>
+    </aside>
   );
 };

@@ -133,7 +133,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="md">
       <DialogHeader>
-        <h2 className="text-xl font-semibold text-gray-900">Edit Profile</h2>
+        <h2 className="text-xl font-semibold text-[var(--text-primary)]">Edit Profile</h2>
       </DialogHeader>
 
       <Form onSubmit={handleSubmit}>
@@ -210,7 +210,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
           </Button>
           <Button
             type="submit"
-            color="blue"
+            colorScheme="primary"
             disabled={isLoading}
             isLoading={isLoading}
           >

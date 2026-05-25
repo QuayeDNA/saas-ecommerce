@@ -5,7 +5,7 @@ import { Card } from "../../design-system/components/card";
 import { Badge } from "../../design-system/components/badge";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
-import { ColorSchemeSelector } from "../../components/common/color-scheme-selector";
+import { DarkModeToggle } from "../../components/common/dark-mode-toggle";
 import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type SystemInfo } from "../../services/settings.service";
 import pushNotificationService from "../../services/pushNotificationService";
 import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog } from "../../components/superadmin";
@@ -596,9 +596,13 @@ export default function SuperAdminSettingsPage() {
               </Card>
 
               <Card>
-                <SectionHeader title="Appearance" subtitle="Theme & color" />
-                <div className="mt-4">
-                  <ColorSchemeSelector />
+                <SectionHeader title="Appearance" subtitle="Toggle dark mode" />
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">Dark Mode</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Switch between light and dark theme</p>
+                  </div>
+                  <DarkModeToggle />
                 </div>
               </Card>
             </div>

@@ -366,7 +366,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="lg">
       <DialogHeader className="flex items-start justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 truncate">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)] truncate">
           {showSummary
             ? "Bulk Order Summary"
             : `Bulk Order for ${providerName}`}
@@ -375,7 +375,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600"
+          className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
         >
           <FaTimes size={18} />
         </Button>
@@ -386,45 +386,50 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
           // Order Form
           <div className="space-y-4">
             {/* Package Info */}
-            <Card variant="outlined">
+            <Card className="overflow-hidden">
+              <div
+                className="h-1 w-full"
+                style={{ backgroundColor: providerColors.primary }}
+              />
               <CardBody>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">
+                <div className="flex items-center gap-3 mb-4">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: providerColors.primary }}
+                  >
+                    <FaWifi className="text-white text-sm" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[var(--text-primary)]">
                       {providerName} Package
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Available active bundles in this package (
-                      {availableBundles.length} available)
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      {availableBundles.length} active bundles available
                     </p>
                   </div>
                 </div>
-                {/* Make available bundles scrollable */}
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {Array.isArray(availableBundles) &&
                     availableBundles.length > 0 &&
                     availableBundles.map((bundle: Bundle) => (
                       <div
                         key={bundle._id}
-                        className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded"
+                        className="flex items-center justify-between text-sm bg-[var(--bg-surface-alt)] p-2.5 rounded-lg"
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <FaWifi className="text-blue-500 flex-shrink-0" />
-                          <span className="truncate">
-                            {bundle.dataVolume} {bundle.dataUnit}
+                          <FaWifi className="text-[var(--text-muted)] flex-shrink-0 text-xs" />
+                          <span className="font-medium text-[var(--text-primary)]">
+                            {bundle.dataVolume}{bundle.dataUnit}
                           </span>
-                          <span className="text-gray-500 hidden sm:inline">
-                            •
-                          </span>
-                          <FaClock className="text-green-500 flex-shrink-0" />
-                          <span className="truncate">
+                          <span className="text-[var(--text-muted)]">·</span>
+                          <span className="text-[var(--text-secondary)]">
                             {bundle.validityUnit === "unlimited"
                               ? "Unlimited"
                               : `${bundle.validity} ${bundle.validityUnit}`}
                           </span>
                         </div>
                         <div
-                          className="font-bold text-sm flex-shrink-0 ml-2"
+                          className="font-semibold text-sm flex-shrink-0 ml-2"
                           style={{ color: providerColors.primary }}
                         >
                           {formatCurrency(
@@ -439,9 +444,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             </Card>
 
             {/* Import Method Selection */}
-            <Card>
+            <Card className="overflow-hidden">
+              <div
+                className="h-1 w-full"
+                style={{ backgroundColor: providerColors.primary }}
+              />
               <CardBody>
-                <h3 className="font-medium text-gray-900 mb-4">
+                <h3 className="font-medium text-[var(--text-primary)] mb-4">
                   Import Method
                 </h3>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -488,12 +497,12 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               <Card>
                 <CardBody>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
-                    <h3 className="font-medium text-gray-900">Upload File</h3>
+                    <h3 className="font-medium text-[var(--text-primary)]">Upload File</h3>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={downloadTemplate}
-                      className="text-blue-600 hover:text-blue-700 self-start sm:self-center"
+                      className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] self-start sm:self-center"
                     >
                       <FaDownload className="flex-shrink-0" />
                       <span className="truncate">Download Template</span>
@@ -503,9 +512,9 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     type="file"
                     accept=".csv,.xlsx,.xls"
                     onChange={handleFileUpload}
-                    className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full p-2 border border-[var(--border-color)] rounded-lg text-sm bg-[var(--bg-surface)] text-[var(--text-primary)] file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:text-white file:bg-[var(--color-primary)] hover:file:bg-[var(--color-primary-hover)] file:cursor-pointer"
                   />
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-[var(--text-muted)] mt-2">
                     Supported formats: CSV, Excel. Format: PhoneNumber
                     DataVolume
                   </p>
@@ -518,25 +527,25 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
               <Card>
                 <CardBody>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-gray-900">
+                    <h3 className="font-medium text-[var(--text-primary)]">
                       Bulk Order Input
                     </h3>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                       Enter orders (one per line)
                     </label>
                     <textarea
                       value={bulkText}
                       onChange={(e) => handleBulkTextChange(e.target.value)}
                       placeholder={`0241234567 5\n0201234567 2\n0271234567 1`}
-                      className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                      className="w-full h-32 px-3 py-2 border border-[var(--border-color)] rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent resize-none text-sm bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                     />
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-[var(--text-muted)] mt-2">
                       Format: PhoneNumber DataVolume (e.g., 0241234567 5). All
                       values are in GB.
                       <br />
-                      <span className="text-red-500 font-semibold">
+                      <span className="text-[var(--error)] font-semibold">
                         Do not type GB or MB, just the number.
                       </span>
                     </p>
@@ -611,7 +620,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                         >
                           {providerName}
                         </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                        <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
                           Package Summary
                         </p>
                       </div>
@@ -632,7 +641,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                         size="sm"
                         className="whitespace-nowrap"
                       >
-                        <FaExclamationCircle className="text-red-500 flex-shrink-0" />
+                        <FaExclamationCircle className="text-[var(--error)] flex-shrink-0" />
                         <span className="ml-1">
                           {invalidOrders.length} Invalid
                         </span>
@@ -642,20 +651,20 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    <div className="flex items-center gap-2 p-2 sm:p-3 bg-white/50 rounded-lg">
-                      <FaDatabase className="text-blue-500 flex-shrink-0 text-sm sm:text-base" />
+                    <div className="flex items-center gap-2 p-2 sm:p-3 bg-[var(--bg-surface)]/50 rounded-lg">
+                      <FaDatabase className="text-[var(--info)] flex-shrink-0 text-sm sm:text-base" />
                       <div className="min-w-0">
-                        <div className="text-xs text-gray-600">Total Data</div>
+                        <div className="text-xs text-[var(--text-secondary)]">Total Data</div>
                         <div className="font-semibold text-sm sm:text-base">
                           {totalGB} GB
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 p-2 sm:p-3 bg-white/50 rounded-lg">
-                      <FaBox className="text-yellow-500 flex-shrink-0 text-sm sm:text-base" />
+                    <div className="flex items-center gap-2 p-2 sm:p-3 bg-[var(--bg-surface)]/50 rounded-lg">
+                      <FaBox className="text-[var(--warning)] flex-shrink-0 text-sm sm:text-base" />
                       <div className="min-w-0">
-                        <div className="text-xs text-gray-600">
+                        <div className="text-xs text-[var(--text-secondary)]">
                           Total Orders
                         </div>
                         <div className="font-semibold text-sm sm:text-base">
@@ -664,10 +673,10 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 p-2 sm:p-3 bg-white/50 rounded-lg">
-                      <FaMoneyBillWave className="text-green-500 flex-shrink-0 text-sm sm:text-base" />
+                    <div className="flex items-center gap-2 p-2 sm:p-3 bg-[var(--bg-surface)]/50 rounded-lg">
+                      <FaMoneyBillWave className="text-[var(--success)] flex-shrink-0 text-sm sm:text-base" />
                       <div className="min-w-0">
-                        <div className="text-xs text-gray-600">
+                        <div className="text-xs text-[var(--text-secondary)]">
                           Total Amount
                         </div>
                         <div className="font-semibold text-sm sm:text-base">
@@ -683,14 +692,14 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
 
             {/* Valid Orders */}
             <div className="mb-4">
-              <h3 className="font-medium text-green-600 mb-2 text-base sm:text-lg">
+              <h3 className="font-medium text-[var(--success)] mb-2 text-base sm:text-lg">
                 Valid Orders ({validOrders.length})
               </h3>
 
               <Card noPadding>
                 {validOrders.length > 0 ? (
                   <>
-                    <CardHeader className="bg-[#142850] text-white p-3 sm:p-4">
+                    <CardHeader className="bg-[var(--color-primary)] text-white p-3 sm:p-4">
                       <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                         <div className="font-medium">Recipient</div>
                         <div className="font-medium">Data (GB)</div>
@@ -698,17 +707,17 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                       </div>
                     </CardHeader>
                     <CardBody className="p-0">
-                      <div className="divide-y divide-gray-100">
+                      <div className="divide-y divide-[var(--border-color)]">
                         {validOrders.map((item, index) => (
                           <div
                             key={`${item.customerPhone}-${item.dataVolume}-${index}`}
-                            className="p-3 sm:p-4 hover:bg-gray-50"
+                            className="p-3 sm:p-4 hover:bg-[var(--bg-surface-alt)]"
                           >
                             <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                               <div className="font-medium truncate">
                                 {item.customerPhone}
                               </div>
-                              <div className="text-gray-600">
+                              <div className="text-[var(--text-secondary)]">
                                 {item.dataVolume}
                               </div>
                               <div className="text-right font-medium">
@@ -734,7 +743,7 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                   </>
                 ) : (
                   <CardBody className="p-6 text-center">
-                    <div className="text-gray-500 text-sm sm:text-base">
+                    <div className="text-[var(--text-muted)] text-sm sm:text-base">
                       No valid orders found
                     </div>
                   </CardBody>
@@ -745,12 +754,12 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             {/* Invalid Orders */}
             {invalidOrders.length > 0 && (
               <div className="mb-4">
-                <h3 className="font-medium text-red-600 mb-2 text-base sm:text-lg">
+                <h3 className="font-medium text-[var(--error)] mb-2 text-base sm:text-lg">
                   Invalid Orders ({invalidOrders.length})
                 </h3>
 
                 <Card noPadding>
-                  <CardHeader className="bg-[#142850] text-white p-3 sm:p-4">
+                  <CardHeader className="bg-[var(--color-primary)] text-white p-3 sm:p-4">
                     <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                       <div className="font-medium">Recipient</div>
                       <div className="font-medium">Data (GB)</div>
@@ -758,20 +767,20 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                     </div>
                   </CardHeader>
                   <CardBody className="p-0">
-                    <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-[var(--border-color)]">
                       {invalidOrders.map((item, index) => (
                         <div
                           key={`${item.customerPhone}-${item.dataVolume}-${index}`}
-                          className="p-3 sm:p-4 hover:bg-gray-50"
+                          className="p-3 sm:p-4 hover:bg-[var(--bg-surface-alt)]"
                         >
                           <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                             <div className="font-medium truncate">
                               {item.customerPhone}
                             </div>
-                            <div className="text-gray-600">
+                            <div className="text-[var(--text-secondary)]">
                               {item.dataVolume}
                             </div>
-                            <div className="text-red-600">
+                            <div className="text-[var(--error)]">
                               {item.phoneError && (
                                 <div
                                   className="truncate"
@@ -799,10 +808,13 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
             )}
 
             {/* Total */}
-            <div className="border-t pt-4">
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total Amount:</span>
-                <span style={{ color: providerColors.primary }}>
+            <div className="rounded-lg bg-[var(--bg-surface-alt)] p-4">
+              <div className="flex justify-between items-center text-base font-bold text-[var(--text-primary)]">
+                <span>Total Amount</span>
+                <span
+                  className="text-lg"
+                  style={{ color: providerColors.primary }}
+                >
                   GHS{" "}
                   {validOrders
                     .reduce(

@@ -1,9 +1,9 @@
 import { useRoutes } from "react-router-dom";
 import { routes } from "./routes";
-import { ThemeProvider, Button } from "./design-system";
+import { ThemeProvider } from "./design-system";
+import { Button } from "./design-system/components/button";
 import { ToastProvider } from "./design-system/components/toast";
 import "./App.css";
-import "./design-system/theme.css";
 import { AppProvider } from "./providers/app-provider";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { AnnouncementProvider } from "./contexts/AnnouncementContext";
@@ -63,7 +63,7 @@ function App() {
             </Button>
           </div>
         )}
-        <ThemeProvider initialTheme="default">
+        <ThemeProvider>
           <ToastProvider>
             <AppProvider>
               <NotificationProvider>

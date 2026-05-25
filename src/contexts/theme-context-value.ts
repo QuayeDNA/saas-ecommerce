@@ -1,24 +1,17 @@
 import { createContext } from "react";
 
-// Available theme options
-export type ThemeColor =
-  | "blue"
-  | "black"
-  | "teal"
-  | "purple"
-  | "green"
-  | "orange"
-  | "red"
-  | "default";
+export type Theme = "light" | "dark";
 
-// Theme context type
 export interface ThemeContextType {
-  primaryColor: ThemeColor;
-  setPrimaryColor: (color: ThemeColor) => void;
+  theme: Theme;
+  toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
+  isDark: boolean;
 }
 
-// Create context with default values
 export const ThemeContext = createContext<ThemeContextType>({
-  primaryColor: "default",
-  setPrimaryColor: () => {},
+  theme: "light",
+  toggleTheme: () => {},
+  setTheme: () => {},
+  isDark: false,
 });

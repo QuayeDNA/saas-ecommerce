@@ -84,10 +84,10 @@ export const ResetPasswordPage = () => {
     >
       {isSuccess ? (
         <div className="space-y-6 text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-success/20 text-success">
             <FaCheck size={28} />
           </div>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[var(--text-secondary)]">
             Your password has been updated successfully.
           </p>
           <Link to="/login">
@@ -118,12 +118,12 @@ export const ResetPasswordPage = () => {
               required
               placeholder="••••••••"
               fullWidth
-              leftIcon={<FaLock className="text-slate-400" />}
+              leftIcon={<FaLock className="text-[var(--text-muted)]" />}
               rightIcon={
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-slate-400 hover:text-slate-500"
+                  className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
@@ -140,12 +140,12 @@ export const ResetPasswordPage = () => {
               required
               placeholder="••••••••"
               fullWidth
-              leftIcon={<FaLock className="text-slate-400" />}
+              leftIcon={<FaLock className="text-[var(--text-muted)]" />}
               rightIcon={
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="text-slate-400 hover:text-slate-500"
+                  className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                 >
                   {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>

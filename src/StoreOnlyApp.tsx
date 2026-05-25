@@ -29,7 +29,7 @@ const PublicStorePage = lazy(() =>
 
 export default function StoreOnlyApp() {
     return (
-        <ThemeProvider initialTheme="default">
+        <ThemeProvider>
             <ToastProvider>
                 <SiteStatusProvider>
                     <AnnouncementProvider isPublic={true}>

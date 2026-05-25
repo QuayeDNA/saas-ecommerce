@@ -16,7 +16,6 @@ import {
   Card,
   CardBody,
   Button,
-  Badge,
   Alert,
   Skeleton,
   Container,
@@ -52,7 +51,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    category || "all"
+    category || "all",
   );
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
@@ -146,7 +145,9 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
       } catch (e: unknown) {
         if (gen !== fetchGen.current) return;
         setError(
-          e instanceof Error ? e.message : "Failed to fetch packages or bundles"
+          e instanceof Error
+            ? e.message
+            : "Failed to fetch packages or bundles",
         );
       } finally {
         if (gen === fetchGen.current) setLoading(false);
@@ -184,20 +185,20 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     filters: {
       ...(!category && !packageId && categories.length > 1
         ? {
-          category: {
-            label: "Category",
-            value: selectedCategory,
-            options: categories.map((cat) => ({
-              value: cat ?? "",
-              label:
-                cat === "all"
-                  ? "All Categories"
-                  : typeof cat === "string"
-                    ? cat.charAt(0).toUpperCase() + cat.slice(1)
-                    : "",
-            })),
-          },
-        }
+            category: {
+              label: "Category",
+              value: selectedCategory,
+              options: categories.map((cat) => ({
+                value: cat ?? "",
+                label:
+                  cat === "all"
+                    ? "All Categories"
+                    : typeof cat === "string"
+                      ? cat.charAt(0).toUpperCase() + cat.slice(1)
+                      : "",
+              })),
+            },
+          }
         : {}),
       status: {
         label: "Status",
@@ -224,7 +225,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
         setSelectedStatus(value);
       }
     },
-    onSearch: () => { },
+    onSearch: () => {},
     onClearFilters: () => {
       setSearchTerm("");
       setSelectedCategory(category || "all");
@@ -257,26 +258,53 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
           {[...Array(2)].map((_, pi) => (
             <Card key={pi} className="overflow-hidden">
               <CardBody>
-                <div className="flex items-center gap-2 mb-4">
-                  <Skeleton variant="rectangular" width="2.5rem" height="2.5rem" />
-                  <Skeleton variant="text" height="1.25rem" width="150px" />
+                <div className="flex items-start justify-between gap-4 mb-5">
+                  <div className="space-y-2 flex-1">
+                    <Skeleton variant="text" height="1.25rem" width="180px" />
+                    <Skeleton variant="text" height="0.875rem" width="260px" />
+                  </div>
+                  <Skeleton
+                    variant="rectangular"
+                    height="2rem"
+                    width="100px"
+                    className="rounded-lg"
+                  />
                 </div>
-                <Skeleton variant="text" height="0.875rem" width="80%" className="mb-4" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {[...Array(6)].map((_, bi) => (
-                    <Card key={bi}>
-                      <CardBody>
-                        <div className="space-y-3">
-                          <Skeleton variant="text" height="1.1rem" width="70%" />
-                          <div className="flex gap-2">
-                            <Skeleton variant="rectangular" height="1.25rem" width="50px" />
-                            <Skeleton variant="rectangular" height="1.25rem" width="60px" />
-                          </div>
-                          <Skeleton variant="text" height="1.5rem" width="90px" />
-                          <Skeleton variant="rectangular" height="2.25rem" />
+                    <div
+                      key={bi}
+                      className="rounded-xl p-4 bg-[var(--bg-surface-alt)] flex flex-col gap-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <Skeleton
+                          variant="circular"
+                          width="2.5rem"
+                          height="2.5rem"
+                        />
+                        <div className="flex gap-1.5">
+                          <Skeleton
+                            variant="rectangular"
+                            height="1.25rem"
+                            width="45px"
+                            className="rounded-full"
+                          />
+                          <Skeleton
+                            variant="rectangular"
+                            height="1.25rem"
+                            width="35px"
+                            className="rounded-full"
+                          />
                         </div>
-                      </CardBody>
-                    </Card>
+                      </div>
+                      <Skeleton variant="text" height="1rem" width="70%" />
+                      <Skeleton variant="text" height="1.75rem" width="100px" />
+                      <Skeleton
+                        variant="rectangular"
+                        height="2.5rem"
+                        className="rounded-lg"
+                      />
+                    </div>
                   ))}
                 </div>
               </CardBody>
@@ -304,11 +332,11 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
         <Card>
           <CardBody>
             <div className="text-center">
-              <FaBox className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
+              <FaBox className="mx-auto h-12 w-12 text-[var(--text-muted)]" />
+              <h3 className="mt-2 text-sm font-medium text-[var(--text-primary)]">
                 No packages found
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
                 No data packages available for this provider.
               </p>
             </div>
@@ -322,7 +350,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
     <Container padding="none">
       <div className="space-y-6">
         {/* Header */}
-        <Section padding="none" background="gray">
+        <Section padding="none" background="none">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div
@@ -345,10 +373,12 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
                 )}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-[var(--text-primary)]">
                   {providerData?.name || effectiveProvider} Data Packages
                 </h2>
-                <p className="text-gray-600">Browse and order data bundles</p>
+                <p className="text-[var(--text-secondary)]">
+                  Browse and order data bundles
+                </p>
               </div>
             </div>
           </div>
@@ -360,162 +390,151 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
         {/* Package and Bundle Cards */}
         <div className="space-y-6">
           {filteredPackages.map((pkg) => (
-            <Card
-              key={pkg._id}
-              className="overflow-hidden"
-              style={{ backgroundColor: providerColors.primary }}
-            >
-              <CardBody className="p-0">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="ml-auto mb-2"
-                  onClick={() => {
-                    setSelectedBulkPackage(pkg);
-                    setShowBulkOrderModal(true);
-                  }}
-                >
-                  Bulk Order
-                </Button>
-                <div className="flex items-center gap-2 mb-2">
-                  <FaBox
-                    className="text-xl w-10 h-10"
-                    style={{ color: providerColors.secondary }}
-                  />
-                  <span className="font-semibold text-lg text-white">
-                    {pkg.name}
-                  </span>
-                </div>
-                <p className="mb-2 text-gray-100">{pkg.description}</p>
-                <div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {(bundles[pkg._id!] || [])
-                      .filter((bundle) => {
-                        // Search filter
-                        const matchesSearch =
-                          searchTerm === "" ||
-                          bundle.name
-                            .toLowerCase()
-                            .includes(searchTerm.toLowerCase()) ||
-                          (bundle.description?.toLowerCase() ?? "").includes(
-                            searchTerm.toLowerCase()
-                          );
-
-                        // Status filter
-                        const matchesStatus =
-                          selectedStatus === "all" ||
-                          (selectedStatus === "active" && bundle.isActive) ||
-                          (selectedStatus === "inactive" && !bundle.isActive);
-
-                        return matchesSearch && matchesStatus;
-                      })
-
-                      .map((bundle) => (
-                        <Card
-                          key={bundle._id}
-                          className={`hover:shadow-md transition ${!bundle.isActive ? "opacity-75" : ""
-                            }`}
-                        >
-                          <CardBody>
-                            <div className="flex flex-col gap-3">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-base text-gray-900">
-                                  {bundle.name}
-                                </span>
-                                {!bundle.isActive && (
-                                  <Badge colorScheme="error" size="sm">
-                                    Inactive
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex gap-2 text-sm">
-                                <Badge
-                                  colorScheme="info"
-                                  className="border"
-                                  style={{
-                                    borderColor: providerColors.primary,
-                                  }}
-                                >
-                                  {bundle.dataVolume}
-                                  {bundle.dataUnit}
-                                </Badge>
-                                <Badge
-                                  colorScheme="info"
-                                  className="border"
-                                  style={{
-                                    borderColor: providerColors.secondary,
-                                  }}
-                                >
-                                  {bundle.validity === "unlimited" &&
-                                    bundle.validityUnit === "unlimited"
-                                    ? "Unlimited"
-                                    : `${bundle.validity} ${bundle.validityUnit}`}
-                                </Badge>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="text-lg font-bold text-gray-900">
-                                  {userType
-                                    ? formatCurrency(
-                                      getPriceForUserType(bundle, userType),
-                                      bundle.currency
-                                    )
-                                    : `${bundle.price} ${bundle.currency}`}
-                                </div>
-                                {userType &&
-                                  (() => {
-                                    const userPrice = getPriceForUserType(
-                                      bundle,
-                                      userType
-                                    );
-                                    const discount =
-                                      calculateDiscountPercentage(
-                                        bundle.price,
-                                        userPrice
-                                      );
-                                    return discount > 0 ? (
-                                      <div className="flex items-center gap-2">
-                                        <Badge
-                                          variant="subtle"
-                                          colorScheme="success"
-                                          className="text-xs"
-                                        >
-                                          {discount}% OFF
-                                        </Badge>
-                                        <span className="text-sm text-gray-500 line-through">
-                                          {formatCurrency(
-                                            bundle.price,
-                                            bundle.currency
-                                          )}
-                                        </span>
-                                      </div>
-                                    ) : null;
-                                  })()}
-                              </div>
-                              <Button
-                                className="font-semibold"
-                                disabled={!bundle.isActive}
-                                style={{
-                                  backgroundColor: bundle.isActive
-                                    ? providerColors.primary
-                                    : "#9CA3AF",
-                                  color: bundle.isActive
-                                    ? providerColors.text
-                                    : "#FFFFFF",
-                                }}
-                                onClick={() => {
-                                  if (bundle.isActive) {
-                                    setSelectedBundle(bundle);
-                                    setShowOrderModal(true);
-                                  }
-                                }}
-                              >
-                                {bundle.isActive ? "Order Now" : "Out of Stock"}
-                              </Button>
-                            </div>
-                          </CardBody>
-                        </Card>
-                      ))}
+            <Card key={pkg._id} className="overflow-hidden">
+              <CardBody>
+                <div className="flex items-start justify-between gap-4 mb-5">
+                  <div>
+                    <h3 className="text-lg font-bold text-[var(--text-primary)]">
+                      {pkg.name}
+                    </h3>
+                    {pkg.description && (
+                      <p className="text-sm text-[var(--text-secondary)] mt-1">
+                        {pkg.description}
+                      </p>
+                    )}
                   </div>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => {
+                      setSelectedBulkPackage(pkg);
+                      setShowBulkOrderModal(true);
+                    }}
+                  >
+                    Bulk Order
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {(bundles[pkg._id!] || [])
+                    .filter((bundle) => {
+                      const matchesSearch =
+                        searchTerm === "" ||
+                        bundle.name
+                          .toLowerCase()
+                          .includes(searchTerm.toLowerCase()) ||
+                        (bundle.description?.toLowerCase() ?? "").includes(
+                          searchTerm.toLowerCase(),
+                        );
+
+                      const matchesStatus =
+                        selectedStatus === "all" ||
+                        (selectedStatus === "active" && bundle.isActive) ||
+                        (selectedStatus === "inactive" && !bundle.isActive);
+
+                      return matchesSearch && matchesStatus;
+                    })
+                    .map((bundle) => (
+                      <div
+                        key={bundle._id}
+                        className={`relative overflow-hidden rounded-xl p-4 flex flex-col gap-3 transition h-full ${
+                          !bundle.isActive ? "opacity-50" : ""
+                        }`}
+                        style={{
+                          backgroundColor: providerColors.primary,
+                          color: providerColors.text,
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
+                            {providerData?.logo?.url && !providerLogoFailed ? (
+                              <img
+                                src={providerData.logo.url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={() => setProviderLogoFailed(true)}
+                              />
+                            ) : (
+                              <FaBuilding className="w-5 h-5 text-white/80" />
+                            )}
+                          </div>
+                          <div className="flex gap-1.5">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/15 text-white">
+                              {bundle.dataVolume}
+                              {bundle.dataUnit}
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/15 text-white">
+                              {bundle.validity === "unlimited" &&
+                              bundle.validityUnit === "unlimited"
+                                ? "Unlimited"
+                                : `${bundle.validity} ${bundle.validityUnit}`}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex-1 flex flex-col gap-3">
+                          <span className="font-bold text-base">
+                            {bundle.name}
+                          </span>
+
+                          {!bundle.isActive && (
+                            <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                              Inactive
+                            </span>
+                          )}
+
+                          <div className="text-2xl font-bold">
+                            {userType
+                              ? formatCurrency(
+                                  getPriceForUserType(bundle, userType),
+                                  bundle.currency,
+                                )
+                              : `${bundle.price} ${bundle.currency}`}
+                          </div>
+
+                          {userType &&
+                            (() => {
+                              const userPrice = getPriceForUserType(
+                                bundle,
+                                userType,
+                              );
+                              const discount = calculateDiscountPercentage(
+                                bundle.price,
+                                userPrice,
+                              );
+                              return discount > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--success)]/30 text-white">
+                                    {discount}% OFF
+                                  </span>
+                                  <span className="text-sm text-white/60 line-through">
+                                    {formatCurrency(
+                                      bundle.price,
+                                      bundle.currency,
+                                    )}
+                                  </span>
+                                </div>
+                              ) : null;
+                            })()}
+                        </div>
+
+                        <button
+                          disabled={!bundle.isActive}
+                          onClick={() => {
+                            if (bundle.isActive) {
+                              setSelectedBundle(bundle);
+                              setShowOrderModal(true);
+                            }
+                          }}
+                          className="w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition
+                            bg-white/10 border border-white/20 text-white
+                            hover:bg-white/20 active:bg-white/25
+                            disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {bundle.isActive ? "Order Now" : "Out of Stock"}
+                        </button>
+                      </div>
+                    ))}
                 </div>
               </CardBody>
             </Card>

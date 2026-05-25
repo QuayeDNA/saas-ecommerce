@@ -4,7 +4,7 @@ import type { ReactNode, HTMLAttributes } from 'react';
 
 interface SectionProps extends HTMLAttributes<HTMLElement> {
   children: ReactNode;
-  background?: 'white' | 'gray' | 'blue' | 'gradient' | 'dark';
+  background?: 'white' | 'gray' | 'blue' | 'gradient' | 'dark' |'none';
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
@@ -18,11 +18,12 @@ export const Section = forwardRef<HTMLElement, SectionProps>(
     ...props 
   }, ref) => {
     const backgroundClasses = {
-      white: 'bg-white',
-      gray: 'bg-gray-50',
-      blue: 'bg-blue-50',
-      gradient: 'bg-gradient-to-br from-blue-50 via-white to-indigo-100',
-      dark: 'bg-gray-900 text-white',
+      white: 'bg-[var(--bg-surface)]',
+      gray: 'bg-[var(--bg-surface-alt)]',
+      blue: 'bg-[var(--bg-surface-alt)]',
+      gradient: 'bg-[var(--bg-surface-alt)]',
+      dark: 'bg-[var(--color-navy-dark)] text-[var(--text-inverse)]',
+      none: 'bg-transparent',
     };
 
     const paddingClasses = {
@@ -65,11 +66,11 @@ export const SectionHeader = forwardRef<HTMLDivElement, SectionHeaderProps>(
         className={`mb-16 ${alignmentClasses} ${className}`}
         {...props}
       >
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] mb-4">
           {title}
         </h2>
         {subtitle && (
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-[var(--text-secondary)] max-w-3xl mx-auto">
             {subtitle}
           </p>
         )}

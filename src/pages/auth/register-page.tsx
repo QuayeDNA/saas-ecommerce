@@ -397,7 +397,7 @@ export const RegisterPage = () => {
       {localError && (
         <Alert status="error" variant="left-accent" className="mb-6">
           <div className="flex items-start gap-2">
-            <FaExclamationTriangle className="mt-0.5 text-red-600" />
+            <FaExclamationTriangle className="mt-0.5 text-error" />
             <span>{localError}</span>
           </div>
         </Alert>
@@ -414,7 +414,7 @@ export const RegisterPage = () => {
               type="text"
               required
               placeholder="Enter your full name"
-              leftIcon={<FaUser className="text-slate-400" />}
+              leftIcon={<FaUser className="text-[var(--text-muted)]" />}
               errorText={
                 touchedFields.has("fullName") ? fieldErrors.fullName : undefined
               }
@@ -427,12 +427,12 @@ export const RegisterPage = () => {
               type="email"
               required
               placeholder="your.email@example.com"
-              leftIcon={<FaEnvelope className="text-slate-400" />}
+              leftIcon={<FaEnvelope className="text-[var(--text-muted)]" />}
               errorText={
                 touchedFields.has("email") ? fieldErrors.email : undefined
               }
             />
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            <div className="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-4 text-sm text-[var(--text-secondary)]">
               Provide the name and email used for notifications and account
               security.
             </div>
@@ -451,7 +451,7 @@ export const RegisterPage = () => {
               type="text"
               required
               placeholder="Enter your business name"
-              leftIcon={<FaBuilding className="text-slate-400" />}
+              leftIcon={<FaBuilding className="text-[var(--text-muted)]" />}
               errorText={
                 touchedFields.has("businessName")
                   ? fieldErrors.businessName
@@ -466,12 +466,12 @@ export const RegisterPage = () => {
               type="tel"
               required
               placeholder="+233 XX XXX XXXX"
-              leftIcon={<FaPhoneAlt className="text-slate-400" />}
+              leftIcon={<FaPhoneAlt className="text-[var(--text-muted)]" />}
               errorText={
                 touchedFields.has("phone") ? fieldErrors.phone : undefined
               }
             />
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            <div className="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-4 text-sm text-[var(--text-secondary)]">
               Your business details help us approve your account faster.
             </div>
           </div>
@@ -479,20 +479,20 @@ export const RegisterPage = () => {
 
         {currentStep === 3 && (
           <div className="space-y-6">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+            <div className="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-5 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--bg-surface-alt)] text-primary">
                 {otpVerified ? (
                   <FaCheckCircle className="h-6 w-6" />
                 ) : (
                   <FaMobileAlt className="h-6 w-6" />
                 )}
               </div>
-              <p className="font-medium text-slate-900">
+              <p className="font-medium text-[var(--text-primary)]">
                 {otpVerified
                   ? "Phone Verified"
                   : "Verify your phone number"}
               </p>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
                 {otpVerified
                   ? maskPhone(formData.phone)
                   : `We sent a code to ${maskPhone(formData.phone)}`}
@@ -502,7 +502,7 @@ export const RegisterPage = () => {
             {!otpVerified && (
               <>
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-[var(--text-secondary)]">
                     Enter verification code
                   </label>
                   <div
@@ -519,14 +519,14 @@ export const RegisterPage = () => {
                         value={digit}
                         onChange={(e) => handleOtpDigitChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="h-12 w-10 sm:h-14 sm:w-12 rounded-xl border-2 border-slate-300 text-center text-lg font-bold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
+                        className="h-12 w-10 sm:h-14 sm:w-12 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] text-center text-lg font-bold focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-soft)] transition-all"
                         autoFocus={index === 0}
                         aria-label={`Digit ${index + 1}`}
                       />
                     ))}
                   </div>
                   {otpError && (
-                    <p className="text-center text-sm text-red-600">
+                    <p className="text-center text-sm text-error">
                       {otpError}
                     </p>
                   )}
@@ -552,7 +552,7 @@ export const RegisterPage = () => {
                     className="w-full text-sm"
                   >
                     {resendCooldown > 0 ? (
-                      <span className="flex items-center justify-center gap-2 text-slate-500">
+                      <span className="flex items-center justify-center gap-2 text-[var(--text-muted)]">
                         <FaClock className="h-3 w-3" />
                         Resend in {resendCooldown}s
                       </span>
@@ -565,10 +565,10 @@ export const RegisterPage = () => {
             )}
 
             {otpVerified && (
-              <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4 text-center">
-                <FaCheckCircle className="mx-auto mb-2 h-6 w-6 text-green-600" />
-                <p className="font-medium text-green-800">Phone verified</p>
-                <p className="text-sm text-green-600">
+              <div className="rounded-xl border-2 border-success/30 bg-success/10 p-4 text-center">
+                <FaCheckCircle className="mx-auto mb-2 h-6 w-6 text-success" />
+                <p className="font-medium text-success">Phone verified</p>
+                <p className="text-sm text-success">
                   You can now proceed to set up your account security.
                 </p>
               </div>
@@ -585,14 +585,14 @@ export const RegisterPage = () => {
               onBlur={() => handleFieldBlur("referralCode")}
               type="text"
               placeholder="Enter referral code if you have one"
-              leftIcon={<FaShareAlt className="text-slate-400" />}
+              leftIcon={<FaShareAlt className="text-[var(--text-muted)]" />}
               errorText={
                 touchedFields.has("referralCode")
                   ? fieldErrors.referralCode
                   : undefined
               }
             />
-            <div className="rounded-3xl border border-slate-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <div className="rounded-3xl border border-[var(--border-color)] bg-[var(--warning)]/10 p-4 text-sm text-[var(--warning)]">
               Have a referral code? Enter it above to get started with bonus
               benefits from your referrer.
             </div>
@@ -605,7 +605,7 @@ export const RegisterPage = () => {
                 type={showPasswords ? "text" : "password"}
                 required
                 placeholder="Create a strong password"
-                leftIcon={<FaLock className="text-slate-400" />}
+                leftIcon={<FaLock className="text-[var(--text-muted)]" />}
                 rightIcon={
                   <button
                     type="button"
@@ -626,21 +626,21 @@ export const RegisterPage = () => {
               />
               {formData.password && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm text-slate-600">
+                  <div className="flex items-center justify-between text-sm text-[var(--text-secondary)]">
                     <span>Password Strength</span>
                     <span
                       className={
                         passwordStrength.strength === 100
-                          ? "text-emerald-600"
+                          ? "text-success"
                           : passwordStrength.strength >= 60
-                            ? "text-amber-600"
-                            : "text-rose-600"
+                            ? "text-[var(--warning)]"
+                            : "text-error"
                       }
                     >
                       {passwordStrength.label}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div className="h-2 overflow-hidden rounded-full bg-[var(--border-color)]">
                     <div
                       className={`${passwordStrength.color} h-full transition-all duration-300`}
                       style={{ width: `${passwordStrength.strength}%` }}
@@ -659,14 +659,14 @@ export const RegisterPage = () => {
               type={showPasswords ? "text" : "password"}
               required
               placeholder="Confirm your password"
-              leftIcon={<FaLock className="text-slate-400" />}
+              leftIcon={<FaLock className="text-[var(--text-muted)]" />}
               errorText={
                 touchedFields.has("confirmPassword")
                   ? fieldErrors.confirmPassword
                   : undefined
               }
             />
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 grid gap-2 text-sm text-slate-600">
+            <div className="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-4 grid gap-2 text-sm text-[var(--text-secondary)]">
               {[
                 {
                   valid: passwordValidation.length,
@@ -685,7 +685,7 @@ export const RegisterPage = () => {
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-3">
                   <div
-                    className={`flex h-5 w-5 items-center justify-center rounded-full ${item.valid ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}
+                    className={`flex h-5 w-5 items-center justify-center rounded-full ${item.valid ? "bg-success/20 text-success" : "bg-[var(--border-color)] text-[var(--text-muted)]"}`}
                   >
                     {item.valid ? (
                       <FaCheck size={12} />
@@ -700,7 +700,7 @@ export const RegisterPage = () => {
           </div>
         )}
 
-        <div className="flex gap-3 pt-6 border-t border-slate-200">
+        <div className="flex gap-3 pt-6 border-t border-[var(--border-color)]">
           <Button
             type="button"
             variant="outline"
@@ -751,10 +751,10 @@ export const RegisterPage = () => {
           )}
         </div>
 
-        <div className="text-center mt-6 text-sm text-slate-600">
+        <div className="text-center mt-6 text-sm text-[var(--text-secondary)]">
           Already have an account?{" "}
           <Link
-            className="font-semibold text-slate-900 hover:text-slate-700"
+            className="font-semibold text-primary hover:text-[var(--color-primary-hover)]"
             to="/login"
           >
             Sign in here
@@ -769,21 +769,21 @@ export const RegisterPage = () => {
       >
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-600">
+            <div className="rounded-2xl bg-success/20 p-3 text-success">
               <FaCheckCircle size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-semibold text-[var(--text-primary)]">
                 Registration submitted
               </h2>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-[var(--text-secondary)]">
                 Your account is pending approval.
               </p>
             </div>
           </div>
         </DialogHeader>
         <DialogBody>
-          <div className="space-y-3 text-sm text-slate-600">
+          <div className="space-y-3 text-sm text-[var(--text-secondary)]">
             <p>We will review your registration within 24-48 hours.</p>
             <ul className="list-disc pl-5 space-y-2">
               <li>Watch your inbox for approval updates.</li>
