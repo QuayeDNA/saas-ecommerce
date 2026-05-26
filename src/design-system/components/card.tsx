@@ -73,14 +73,14 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
 
     // Header and footer styles without padding (handled by parent)
     const headerClasses = [
-      'border-b border-[var(--border-color)] bg-[var(--bg-surface-alt)] font-medium',
-      size === 'sm' ? 'text-sm' : 'text-base',
-    ].join(' ');
-    
+      "border-b border-[var(--border-color)] bg-[var(--bg-surface-alt)] font-medium",
+      size === "sm" ? "text-sm" : "text-base",
+    ].join(" ");
+
     const footerClasses = [
-      'border-t border-[var(--border-color)] bg-[var(--bg-surface-alt)]',
-      size === 'sm' ? 'text-sm' : 'text-base',
-    ].join(' ');
+      "border-t border-[var(--border-color)] bg-[var(--bg-surface-alt)]",
+      size === "sm" ? "text-sm" : "text-base",
+    ].join(" ");
 
     // Return the card component
     return (
@@ -104,12 +104,9 @@ interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ children, className = "", ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={`border-b border-[var(--border-color)] font-medium ${className}`}
-        {...props}
-      >
-        {children}
+      <div ref={ref} className={className} {...props}>
+        <div className="font-medium">{children}</div>
+        <div className="border-b border-[var(--border-color)] py-2" />
       </div>
     );
   },
