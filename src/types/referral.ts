@@ -1,17 +1,12 @@
 export interface ReferralDashboard {
-  totalReferrals: number;
-  activeReferrals: number;
-  totalEarnedFromReferrals: number;
+  totalReferred: number;
+  activeReferred: number;
+  totalCommissionsEarned: number;
   referralCode: string;
-  recentReferrals: Array<{
-    _id: string;
-    fullName: string;
-    phone: string;
-    createdAt: string;
-    totalSpent: number;
-  }>;
+  shareLink: string;
   commissionBalance: number;
   pendingCommissions: number;
+  walletBalance: number;
 }
 
 export interface ReferralDashboardResponse {

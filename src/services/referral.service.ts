@@ -29,13 +29,24 @@ class ReferralService {
     return response.data.data;
   }
 
-  async getReferralTree(depth = 3): Promise<ReferralTreeNode | null> {
+  async getReferralTree(depth = 3, userInfo?: { fullName?: string; phone?: string }): Promise<ReferralTreeNode | null> {
     const response = await apiClient.get<ReferralTreeResponse>(
       `/api/referrals/tree?depth=${depth}`
     );
     const raw: unknown = response.data.data;
     if (!raw || (Array.isArray(raw) && raw.length === 0)) return null;
-    return raw as ReferralTreeNode;
+
+    const transform = (node: any, level: number): ReferralTreeNode => ({
+      userId: node.user?._id || "",
+      fullName: node.user?.fullName || "Unknown",
+      phone: node.user?.phone || "",
+      level,
+      createdAt: node.user?.createdAt || "",
+      children: (node.children || []).map((c: any) => transform(c, level + 1)),
+    });
+
+    const arr = Array.isArray(raw) ? raw : [raw];
+    return transform({ user: { _id: "", fullName: userInfo?.fullName || "You", phone: userInfo?.phone || "", createdAt: "" }, children: arr }, 0);
   }
 
   async getAdminStats(): Promise<ReferralAdminStats> {

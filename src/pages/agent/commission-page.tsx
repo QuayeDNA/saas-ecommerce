@@ -22,13 +22,17 @@ import {Tabs, TabsList, TabsTrigger, TabsContent } from "../../design-system/com
 import type { Commission, CommissionStats, WithdrawResponse, WithdrawalHistoryResponse } from "../../types/commission";
 import type { ReferralDashboard, ReferralTreeNode } from "../../types/referral";
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return "";
   const d = new Date(dateString);
+  if (isNaN(d.getTime())) return "";
   return d.toLocaleDateString("en-GH", { day: "2-digit", month: "short", year: "numeric" });
 };
 
-const formatTime = (dateString: string) => {
+const formatTime = (dateString: string | null | undefined) => {
+  if (!dateString) return "";
   const d = new Date(dateString);
+  if (isNaN(d.getTime())) return "";
   return d.toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit" });
 };
 
@@ -146,7 +150,7 @@ export const CommissionPage = () => {
     if (activeTab === "tree" && !treeFetchedRef.current) {
       treeFetchedRef.current = true;
       setTreeLoading(true);
-      referralService.getReferralTree(3).then(setTree).catch(() => {}).finally(() => setTreeLoading(false));
+      referralService.getReferralTree(3, { fullName: authState.user?.fullName, phone: authState.user?.phone }).then(setTree).catch(() => {}).finally(() => setTreeLoading(false));
     }
   }, [activeTab]);
 
@@ -280,10 +284,10 @@ export const CommissionPage = () => {
       {dashboard && (
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: "Total Referrals", value: dashboard.totalReferrals, icon: FaUsers },
-            { label: "Active Referrals", value: dashboard.activeReferrals, icon: FaUserPlus },
+            { label: "Total Referrals", value: dashboard.totalReferred, icon: FaUsers },
+            { label: "Active Referrals", value: dashboard.activeReferred, icon: FaUserPlus },
             { label: "Commission Balance", value: `GHS ${(dashboard.commissionBalance || 0).toFixed(2)}`, icon: FaWallet },
-            { label: "Total Earned", value: `GHS ${(dashboard.totalEarnedFromReferrals || 0).toFixed(2)}`, icon: FaMoneyBillWave },
+            { label: "Total Earned", value: `GHS ${(dashboard.totalCommissionsEarned || 0).toFixed(2)}`, icon: FaMoneyBillWave },
           ].map((stat) => (
             <Card
               key={stat.label}

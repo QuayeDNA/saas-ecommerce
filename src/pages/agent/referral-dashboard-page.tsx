@@ -28,7 +28,7 @@ export const ReferralDashboardPage = () => {
         const [dash, board, referralTree] = await Promise.all([
           referralService.getDashboard(),
           referralService.getLeaderboard(timeframe),
-          referralService.getReferralTree(treeDepth),
+          referralService.getReferralTree(treeDepth, { fullName: authState.user?.fullName, phone: authState.user?.phone }),
         ]);
         setDashboard(dash);
         setLeaderboard(board);
@@ -110,10 +110,10 @@ export const ReferralDashboardPage = () => {
       {dashboard && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Total Referrals", value: dashboard.totalReferrals, icon: FaUsers, color: "text-blue-600 bg-blue-100" },
-            { label: "Active", value: dashboard.activeReferrals, icon: FaUsers, color: "text-green-600 bg-green-100" },
+            { label: "Total Referrals", value: dashboard.totalReferred, icon: FaUsers, color: "text-blue-600 bg-blue-100" },
+            { label: "Active", value: dashboard.activeReferred, icon: FaUsers, color: "text-green-600 bg-green-100" },
             { label: "Commission Balance", value: `GHS ${(dashboard.commissionBalance || 0).toFixed(2)}`, icon: FaMoneyBillWave, color: "text-emerald-600 bg-emerald-100" },
-            { label: "Total Earned", value: `GHS ${(dashboard.totalEarnedFromReferrals || 0).toFixed(2)}`, icon: FaTrophy, color: "text-amber-600 bg-amber-100" },
+            { label: "Total Earned", value: `GHS ${(dashboard.totalCommissionsEarned || 0).toFixed(2)}`, icon: FaTrophy, color: "text-amber-600 bg-amber-100" },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className={`inline-flex rounded-lg p-2 ${stat.color} mb-2`}>

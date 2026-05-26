@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   FaUser,
   FaEye,
@@ -81,6 +81,7 @@ export const RegisterPage = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+  const [selectedChannel, setSelectedChannel] = useState<"email" | "phone">("email");
 
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
@@ -104,6 +105,8 @@ export const RegisterPage = () => {
   // OTP state
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
+  const [otpChannel, setOtpChannel] = useState<"email" | "phone">("email");
+  const [maskedContact, setMaskedContact] = useState("");
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
@@ -111,7 +114,18 @@ export const RegisterPage = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  const [searchParams] = useSearchParams();
+
   const totalSteps = STEPS_REGISTRATION.length;
+
+  // Read referral code from URL query param on mount
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      setFormData((prev) => ({ ...prev, referralCode: ref }));
+      setTouchedFields((prev) => new Set(prev).add("referralCode"));
+    }
+  }, [searchParams]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -228,17 +242,27 @@ export const RegisterPage = () => {
     setOtpSending(true);
     setOtpError(null);
     try {
-      await authService.sendOtp(formData.phone, formData.email);
+      const result = await authService.sendOtp(formData.phone, formData.email, selectedChannel);
       setOtpSent(true);
       setResendCooldown(60);
-      addToast("OTP sent to your phone", "success");
+      const channel = result.channel || selectedChannel;
+      setOtpChannel(channel);
+      setMaskedContact(result.maskedContact || "");
+      addToast(
+        channel === "email"
+          ? `Verification code sent to your email`
+          : "OTP sent to your phone",
+        "success",
+      );
     } catch (err: unknown) {
       const error = err as { message?: string };
-      setOtpError(error?.message || "Failed to send OTP");
+      const message = error?.message || "Failed to send OTP";
+      setOtpError(message);
+      addToast(message, "error");
     } finally {
       setOtpSending(false);
     }
-  }, [formData.phone, addToast]);
+  }, [formData.phone, formData.email, selectedChannel, addToast]);
 
   // Verify OTP
   const handleVerifyOtp = async () => {
@@ -270,10 +294,6 @@ export const RegisterPage = () => {
   const nextStep = async () => {
     if (!validateCurrentStep()) return;
 
-    if (currentStep === 2) {
-      await handleSendOtp();
-    }
-
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -282,6 +302,12 @@ export const RegisterPage = () => {
 
   const prevStep = () => {
     if (currentStep > 1) {
+      if (currentStep === 3) {
+        setOtpSent(false);
+        setOtpVerified(false);
+        setOtpCode(["", "", "", "", "", ""]);
+        setOtpError(null);
+      }
       setCurrentStep(currentStep - 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -479,99 +505,187 @@ export const RegisterPage = () => {
 
         {currentStep === 3 && (
           <div className="space-y-6">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                {otpVerified ? (
-                  <FaCheckCircle className="h-6 w-6" />
-                ) : (
-                  <FaMobileAlt className="h-6 w-6" />
-                )}
-              </div>
-              <p className="font-medium text-slate-900">
-                {otpVerified
-                  ? "Phone Verified"
-                  : "Verify your phone number"}
-              </p>
-              <p className="mt-1 text-sm text-slate-600">
-                {otpVerified
-                  ? maskPhone(formData.phone)
-                  : `We sent a code to ${maskPhone(formData.phone)}`}
-              </p>
-            </div>
+            {otpError && (
+              <Alert status="error" variant="left-accent" className="mb-2">
+                <div className="flex items-start gap-2">
+                  <FaExclamationTriangle className="mt-0.5 text-red-600 flex-shrink-0" />
+                  <span>{otpError}</span>
+                </div>
+              </Alert>
+            )}
 
-            {!otpVerified && (
-              <>
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-slate-700">
-                    Enter verification code
-                  </label>
-                  <div
-                    className="flex justify-center gap-2 sm:gap-3"
-                    onPaste={handleOtpPaste}
+            {!otpSent && !otpVerified && (
+              <div className="space-y-5">
+                <label className="block text-sm font-semibold text-slate-800">
+                  Choose how to receive your code
+                </label>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChannel("email")}
+                    className={`flex-1 flex items-center gap-4 rounded-xl border-2 p-5 transition-all text-left ${
+                      selectedChannel === "email"
+                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                    }`}
                   >
-                    {otpCode.map((digit, index) => (
-                      <input
-                        key={index}
-                        ref={(el) => { otpInputRefs.current[index] = el; }}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpDigitChange(index, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="h-12 w-10 sm:h-14 sm:w-12 rounded-xl border-2 border-slate-300 text-center text-lg font-bold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
-                        autoFocus={index === 0}
-                        aria-label={`Digit ${index + 1}`}
-                      />
-                    ))}
+                    <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 flex-shrink-0 ${
+                      selectedChannel === "email"
+                        ? "border-blue-500 bg-blue-500"
+                        : "border-slate-300"
+                    }`}>
+                      {selectedChannel === "email" && (
+                        <div className="h-2.5 w-2.5 rounded-full bg-white" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FaEnvelope className={`text-xl flex-shrink-0 ${selectedChannel === "email" ? "text-blue-600" : "text-slate-400"}`} />
+                      <div className="min-w-0">
+                        <p className={`text-sm font-semibold ${selectedChannel === "email" ? "text-blue-700" : "text-slate-700"}`}>
+                          Email
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {formData.email}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled
+                    className="flex-1 flex items-center gap-4 rounded-xl border-2 border-slate-200 bg-slate-50 p-5 text-left opacity-50 cursor-not-allowed"
+                    title="SMS verification coming soon"
+                  >
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-slate-300 bg-slate-100 flex-shrink-0">
+                    </div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FaMobileAlt className="text-xl text-slate-300 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-400">
+                          Phone (SMS)
+                        </p>
+                        <p className="text-xs text-slate-300 truncate">
+                          {formData.phone} &middot; Coming soon
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={handleSendOtp}
+                  className="w-full"
+                  isLoading={otpSending}
+                  disabled={otpSending}
+                >
+                  {otpSending ? "Sending..." : "Send Verification Code"}
+                </Button>
+              </div>
+            )}
+
+            {(otpSent || otpVerified) && (
+              <>
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    {otpVerified ? (
+                      <FaCheckCircle className="h-7 w-7" />
+                    ) : selectedChannel === "email" ? (
+                      <FaEnvelope className="h-7 w-7" />
+                    ) : (
+                      <FaMobileAlt className="h-7 w-7" />
+                    )}
                   </div>
-                  {otpError && (
-                    <p className="text-center text-sm text-red-600">
-                      {otpError}
+                  <p className="text-lg font-semibold text-slate-900">
+                    {otpVerified
+                      ? `${selectedChannel === "email" ? "Email" : "Phone"} Verified`
+                      : `Verify your ${selectedChannel === "email" ? "email" : "phone number"}`}
+                  </p>
+                  <p className="mt-1.5 text-sm text-slate-600">
+                    {otpVerified
+                      ? (maskedContact || (selectedChannel === "email" ? formData.email : maskPhone(formData.phone)))
+                      : `We sent a code to ${maskedContact || (selectedChannel === "email" ? formData.email : maskPhone(formData.phone))}`}
+                  </p>
+
+                  {selectedChannel === "phone" && !otpVerified && (
+                    <p className="mt-2 text-xs text-amber-600">
+                      SMS not available yet. Switch to email to receive your code.
                     </p>
                   )}
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={handleVerifyOtp}
-                    disabled={otpCode.join("").length !== 6 || otpVerifying}
-                    className="w-full"
-                    isLoading={otpVerifying}
-                  >
-                    {otpVerifying ? "Verifying..." : "Verify Code"}
-                  </Button>
+                {!otpVerified && (
+                  <>
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-slate-700">
+                        Enter verification code
+                      </label>
+                      <div
+                        className="flex justify-center gap-2 sm:gap-3"
+                        onPaste={handleOtpPaste}
+                      >
+                        {otpCode.map((digit, index) => (
+                          <input
+                            key={index}
+                            ref={(el) => { otpInputRefs.current[index] = el; }}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(e) => handleOtpDigitChange(index, e.target.value)}
+                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                            className="h-12 w-10 sm:h-14 sm:w-12 rounded-xl border-2 border-slate-300 text-center text-lg font-bold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
+                            autoFocus={index === 0}
+                            aria-label={`Digit ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleResendOtp}
-                    disabled={resendCooldown > 0 || otpSending}
-                    className="w-full text-sm"
-                  >
-                    {resendCooldown > 0 ? (
-                      <span className="flex items-center justify-center gap-2 text-slate-500">
-                        <FaClock className="h-3 w-3" />
-                        Resend in {resendCooldown}s
-                      </span>
-                    ) : (
-                      "Resend code"
-                    )}
-                  </Button>
-                </div>
+                    <div className="flex flex-col gap-3">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={handleVerifyOtp}
+                        disabled={otpCode.join("").length !== 6 || otpVerifying}
+                        className="w-full"
+                        isLoading={otpVerifying}
+                      >
+                        {otpVerifying ? "Verifying..." : "Verify Code"}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleResendOtp}
+                        disabled={resendCooldown > 0 || otpSending}
+                        className="w-full text-sm"
+                      >
+                        {resendCooldown > 0 ? (
+                          <span className="flex items-center justify-center gap-2 text-slate-500">
+                            <FaClock className="h-3 w-3" />
+                            Resend in {resendCooldown}s
+                          </span>
+                        ) : (
+                          "Resend code"
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {otpVerified && (
+                  <div className="rounded-xl border-2 border-green-200 bg-green-50 p-5 text-center">
+                    <FaCheckCircle className="mx-auto mb-2 h-6 w-6 text-green-600" />
+                    <p className="font-semibold text-green-800">{selectedChannel === "email" ? "Email" : "Phone"} verified</p>
+                    <p className="text-sm text-green-600 mt-1">
+                      You can now proceed to set up your account security.
+                    </p>
+                  </div>
+                )}
               </>
-            )}
-
-            {otpVerified && (
-              <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4 text-center">
-                <FaCheckCircle className="mx-auto mb-2 h-6 w-6 text-green-600" />
-                <p className="font-medium text-green-800">Phone verified</p>
-                <p className="text-sm text-green-600">
-                  You can now proceed to set up your account security.
-                </p>
-              </div>
             )}
           </div>
         )}
