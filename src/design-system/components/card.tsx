@@ -1,11 +1,11 @@
-import { forwardRef } from 'react';
-import type { ReactNode, HTMLAttributes } from 'react';
+import { forwardRef } from "react";
+import type { ReactNode, HTMLAttributes } from "react";
 
 // Card variants
-type CardVariant = 'elevated' | 'outlined' | 'flat' | 'interactive';
+type CardVariant = "elevated" | "outlined" | "flat" | "interactive";
 
 // Card sizes
-type CardSize = 'sm' | 'md' | 'lg';
+type CardSize = "sm" | "md" | "lg";
 
 // Card props interface
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -24,9 +24,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
   (
     {
       children,
-      variant = 'elevated',
-      size = 'md',
-      className = '',
+      variant = "elevated",
+      size = "md",
+      className = "",
       withHeader = false,
       withFooter = false,
       header,
@@ -34,39 +34,42 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       noPadding = false,
       ...props
     },
-    ref
+    ref,
   ) => {
     // Size styles with responsive padding
     const sizeClasses = {
-      sm: 'p-2 sm:p-3',
-      md: 'p-3 sm:p-4',
-      lg: 'p-4 sm:p-5',
+      sm: "p-2 sm:p-3",
+      md: "p-3 sm:p-4",
+      lg: "p-4 sm:p-5",
     };
-    
+
     // Variant styles
     const variantClasses = {
-      elevated: 'shadow-md rounded-lg border border-[var(--border-color)]',
-      outlined: 'border border-[var(--border-color)] rounded-lg',
-      flat: 'rounded-lg',
-      interactive: 'shadow-sm hover:shadow-md rounded-lg border border-[var(--border-color)] transition-shadow duration-200',
+      elevated: "shadow-md rounded-lg border border-[var(--border-color)]",
+      outlined: "border border-[var(--border-color)] rounded-lg",
+      flat: "rounded-lg",
+      interactive:
+        "shadow-sm hover:shadow-md rounded-lg border border-[var(--border-color)] transition-shadow duration-200",
     };
-    
+
     // Check if a custom background is provided
-    const hasCustomBackground = className.includes('bg-');
-    
+    const hasCustomBackground = className.includes("bg-");
+
     // Check if custom padding is provided (p-* classes)
-    const hasCustomPadding = className.includes('p-');
-    
+    const hasCustomPadding = className.includes("p-");
+
     // Combine all classes
     const cardClasses = [
       // Only add default background if no custom background is provided
-      !hasCustomBackground ? 'bg-[var(--bg-surface)]' : '',
+      !hasCustomBackground ? "bg-[var(--bg-surface)]" : "",
       variantClasses[variant],
       // Only add default padding if explicitly not disabled and no custom padding is provided
-      !noPadding && !hasCustomPadding ? sizeClasses[size] : '',
-      'overflow-hidden',
+      !noPadding && !hasCustomPadding ? sizeClasses[size] : "",
+      "overflow-hidden",
       className,
-    ].filter(Boolean).join(' ');
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     // Header and footer styles without padding (handled by parent)
     const headerClasses = [
@@ -82,19 +85,15 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     // Return the card component
     return (
       <div ref={ref} className={cardClasses} {...props}>
-        {withHeader && header && (
-          <div className={headerClasses}>{header}</div>
-        )}
+        {withHeader && header && <div className={headerClasses}>{header}</div>}
         <div>{children}</div>
-        {withFooter && footer && (
-          <div className={footerClasses}>{footer}</div>
-        )}
+        {withFooter && footer && <div className={footerClasses}>{footer}</div>}
       </div>
     );
-  }
+  },
 );
 
-Card.displayName = 'Card';
+Card.displayName = "Card";
 
 // Card Header Component
 interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {
@@ -103,7 +102,7 @@ interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
-  ({ children, className = '', ...props }, ref) => {
+  ({ children, className = "", ...props }, ref) => {
     return (
       <div
         ref={ref}
@@ -113,10 +112,10 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
         {children}
       </div>
     );
-  }
+  },
 );
 
-CardHeader.displayName = 'CardHeader';
+CardHeader.displayName = "CardHeader";
 
 // Card Body Component
 interface CardBodyProps extends HTMLAttributes<HTMLDivElement> {
@@ -125,16 +124,16 @@ interface CardBodyProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const CardBody = forwardRef<HTMLDivElement, CardBodyProps>(
-  ({ children, className = '', ...props }, ref) => {
+  ({ children, className = "", ...props }, ref) => {
     return (
       <div ref={ref} className={`pt-2 ${className}`} {...props}>
         {children}
       </div>
     );
-  }
+  },
 );
 
-CardBody.displayName = 'CardBody';
+CardBody.displayName = "CardBody";
 
 // Card Footer Component
 interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {
@@ -143,7 +142,7 @@ interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
-  ({ children, className = '', ...props }, ref) => {
+  ({ children, className = "", ...props }, ref) => {
     return (
       <div
         ref={ref}
@@ -153,7 +152,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
         {children}
       </div>
     );
-  }
+  },
 );
 
-CardFooter.displayName = 'CardFooter';
+CardFooter.displayName = "CardFooter";

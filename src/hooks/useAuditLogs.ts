@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { auditLogService } from "../services/auditLogService";
-import type { AuditLogFilters } from "../types/auditLog";
+import type { AuditLogFilters, DayFilter } from "../types/auditLog";
 
 export const useAuditLogs = (
   filters: AuditLogFilters & { page?: number; limit?: number },
@@ -36,6 +36,19 @@ export const useUserActivity = (
     queryKey: ["user-activity", userId, page, limit, startDate, endDate],
     queryFn: () =>
       auditLogService.getUserActivity(userId, page, limit, startDate, endDate),
+    enabled: Boolean(userId),
+  });
+};
+
+export const useUserActivityTimeline = (
+  userId: string,
+  dayFilter: DayFilter = "today",
+  page: number = 1,
+) => {
+  return useQuery({
+    queryKey: ["user-activity-timeline", userId, dayFilter, page],
+    queryFn: () =>
+      auditLogService.getUserActivitySimplified(userId, dayFilter, page, 20),
     enabled: Boolean(userId),
   });
 };
