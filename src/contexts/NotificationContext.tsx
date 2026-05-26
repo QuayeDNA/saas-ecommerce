@@ -23,7 +23,8 @@ interface NotificationContextType {
   fetchAllNotifications: (
     page?: number,
     limit?: number,
-    read?: boolean
+    read?: boolean,
+    category?: string
   ) => Promise<{ notifications: Notification[]; pagination?: any }>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAsUnread: (notificationId: string) => Promise<void>;

@@ -99,7 +99,6 @@ export const CommissionPage = () => {
 
   const [dashboard, setDashboard] = useState<ReferralDashboard | null>(null);
   const [tree, setTree] = useState<ReferralTreeNode | null>(null);
-  const [treeLoading, setTreeLoading] = useState(false);
   const treeFetchedRef = useRef(false);
   const [copied, setCopied] = useState(false);
   const [shareDropdownOpen, setShareDropdownOpen] = useState(false);
@@ -149,8 +148,7 @@ export const CommissionPage = () => {
   useEffect(() => {
     if (activeTab === "tree" && !treeFetchedRef.current) {
       treeFetchedRef.current = true;
-      setTreeLoading(true);
-      referralService.getReferralTree(3, { fullName: authState.user?.fullName, phone: authState.user?.phone }).then(setTree).catch(() => {}).finally(() => setTreeLoading(false));
+      referralService.getReferralTree(3, { fullName: authState.user?.fullName, phone: authState.user?.phone }).then(setTree).catch(() => {});
     }
   }, [activeTab]);
 

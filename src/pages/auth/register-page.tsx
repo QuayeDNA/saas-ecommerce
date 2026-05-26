@@ -105,7 +105,6 @@ export const RegisterPage = () => {
   // OTP state
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
-  const [otpChannel, setOtpChannel] = useState<"email" | "phone">("email");
   const [maskedContact, setMaskedContact] = useState("");
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
   const [otpSending, setOtpSending] = useState(false);
@@ -246,7 +245,6 @@ export const RegisterPage = () => {
       setOtpSent(true);
       setResendCooldown(60);
       const channel = result.channel || selectedChannel;
-      setOtpChannel(channel);
       setMaskedContact(result.maskedContact || "");
       addToast(
         channel === "email"

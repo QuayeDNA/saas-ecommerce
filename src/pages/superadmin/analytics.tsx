@@ -361,7 +361,7 @@ export default function SuperAdminAnalyticsPage() {
           <AnalyticsBreakdownStage
             loading={sectionLoading}
             userTypeBreakdown={userTypeBreakdown}
-            orderTypeLeaders={data.topPerformers?.orderTypes || []}
+            orderTypeLeaders={data.topPerformers?.agents?.flatMap(a => a.orderTypes) || []}
           />
 
           <AnalyticsActivityStage
@@ -372,8 +372,8 @@ export default function SuperAdminAnalyticsPage() {
               performanceData?.agents || data.topPerformers?.agents || []
             }
             topStorefronts={
-              performanceData?.storefronts ||
-              data.topPerformers?.storefronts ||
+              performanceData?.agents?.flatMap(a => a.storefronts) ||
+              data.topPerformers?.agents?.flatMap(a => a.storefronts) ||
               []
             }
             performanceTimeframe={performanceTimeframe}
