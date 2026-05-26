@@ -665,34 +665,6 @@ export default function SuperAdminDashboard() {
               </CardBody>
             </Card>
 
-            {/* Total Commissions */}
-            <Card
-              className="transition-colors duration-200"
-              style={{
-                backgroundColor: "var(--color-primary-500)",
-                borderColor: "var(--color-primary-600)",
-              }}
-            >
-              <CardBody>
-                <div className="flex items-center justify-between gap-2 sm:gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] xs:text-xs sm:text-sm font-medium text-gray-300 mb-1 truncate">
-                      Total Commissions
-                    </p>
-                    <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white leading-tight truncate">
-                      {formatCurrency(stats.commissions.totalEarned)}
-                    </p>
-                    <p className="text-[9px] xs:text-xs text-yellow-400 mt-0.5 sm:mt-1 truncate">
-                      Paid: {formatCurrency(stats.commissions.totalPaid)} | {stats.commissions.pendingCount} pending
-                    </p>
-                  </div>
-                  <div className="p-2 sm:p-2.5 md:p-3 lg:p-4 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <FaMoneyBillWave className="text-white text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl" />
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-
             {/* Active Providers */}
             <Card
               className="transition-colors duration-200"

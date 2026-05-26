@@ -54,7 +54,6 @@ export type TutorialCategory =
   | "ordering"
   | "storefront"
   | "wallet"
-  | "commissions"
   | "admin";
 
 export const CATEGORY_LABELS: Record<TutorialCategory, string> = {
@@ -62,7 +61,6 @@ export const CATEGORY_LABELS: Record<TutorialCategory, string> = {
   ordering: "Ordering",
   storefront: "Storefront",
   wallet: "Wallet & Payments",
-  commissions: "Commissions",
   admin: "Admin",
 };
 
@@ -294,39 +292,6 @@ const walletTutorial: Tutorial = {
   ],
 };
 
-const commissionsTutorial: Tutorial = {
-  id: "commissions-overview",
-  title: "Understanding Commissions",
-  description: "Learn how the commission system works and track your earnings.",
-  category: "commissions",
-  targetRoutes: ["/dashboard/commissions"],
-  estimatedMinutes: 2,
-  roles: ["super_agent", "dealer", "super_dealer"],
-  steps: [
-    {
-      title: "How Commissions Work",
-      content:
-        "You earn commissions when agents in your network make sales. The commission percentage depends on your tier and the product type.",
-    },
-    {
-      title: "Daily Accumulation",
-      content:
-        "Commissions accumulate daily from your agents' transactions. You can see the running total on this page.",
-    },
-    {
-      title: "Monthly Summaries",
-      content:
-        "At the end of each month, commissions are finalized and added to your wallet. Check the summary to see breakdowns by agent and product.",
-    },
-    {
-      title: "Tracking Your Network",
-      content:
-        "More active agents = more commissions. Grow your network and support your agents to maximize earnings!",
-      ctaText: "Finish",
-    },
-  ],
-};
-
 // --- Registry ---
 
 export const TUTORIALS: Tutorial[] = [
@@ -335,7 +300,6 @@ export const TUTORIALS: Tutorial[] = [
   storefrontSetupTutorial,
   storefrontOrdersTutorial,
   walletTutorial,
-  commissionsTutorial,
 ];
 
 /**

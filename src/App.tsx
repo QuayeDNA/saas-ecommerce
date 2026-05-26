@@ -6,7 +6,6 @@ import "./App.css";
 import "./design-system/theme.css";
 import { AppProvider } from "./providers/app-provider";
 import { NotificationProvider } from "./contexts/NotificationContext";
-import { CommissionProvider } from "./contexts/CommissionContext";
 import { AnnouncementProvider } from "./contexts/AnnouncementContext";
 import { StorefrontSessionProvider } from "./contexts/storefront-session-context";
 import { NetworkStatusIndicator } from "./components/network-status-indicator";
@@ -67,44 +66,22 @@ function App() {
         <ThemeProvider initialTheme="default">
           <ToastProvider>
             <AppProvider>
-              {/* Commission system disabled in production — enabled only in development */}
-              {import.meta.env.DEV ? (
-                <CommissionProvider>
-                  <NotificationProvider>
-                    <AnnouncementProvider>
-                      <PushNotificationInitializer />
-                      <div
-                        className={`min-h-screen flex flex-col ${
-                          isImpersonating && isAuthenticatedRoute ? "pt-0" : ""
-                        }`}
-                      >
-                        <MaintenanceBanner />
-                        <div className="flex-1">{routeElement}</div>
-                        <NetworkStatusIndicator />
-                        <InstallPrompt />
-                        <AnnouncementPopupHandler />
-                      </div>
-                    </AnnouncementProvider>
-                  </NotificationProvider>
-                </CommissionProvider>
-              ) : (
-                <NotificationProvider>
-                  <AnnouncementProvider>
-                    <PushNotificationInitializer />
-                    <div
-                      className={`min-h-screen flex flex-col ${
-                        isImpersonating && isAuthenticatedRoute ? "pt-0" : ""
-                      }`}
-                    >
-                      <MaintenanceBanner />
-                      <div className="flex-1">{routeElement}</div>
-                      <NetworkStatusIndicator />
-                      <InstallPrompt />
-                      <AnnouncementPopupHandler />
-                    </div>
-                  </AnnouncementProvider>
-                </NotificationProvider>
-              )}
+              <NotificationProvider>
+                <AnnouncementProvider>
+                  <PushNotificationInitializer />
+                  <div
+                    className={`min-h-screen flex flex-col ${
+                      isImpersonating && isAuthenticatedRoute ? "pt-0" : ""
+                    }`}
+                  >
+                    <MaintenanceBanner />
+                    <div className="flex-1">{routeElement}</div>
+                    <NetworkStatusIndicator />
+                    <InstallPrompt />
+                    <AnnouncementPopupHandler />
+                  </div>
+                </AnnouncementProvider>
+              </NotificationProvider>
             </AppProvider>
           </ToastProvider>
         </ThemeProvider>

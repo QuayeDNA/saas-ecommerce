@@ -139,12 +139,6 @@ interface OrderContextType {
       orderCount: number;
       averageOrderValue: number;
     };
-    commissions: {
-      totalCommission: number;
-      paidCommission: number;
-      pendingCommission: number;
-      commissionCount: number;
-    };
     wallet: {
       balance: number;
     };
@@ -746,7 +740,6 @@ export const useOrder = () => {
           todayCounts: { total: 0, completed: 0, pending: 0, processing: 0, confirmed: 0, failed: 0, cancelled: 0, partiallyCompleted: 0 },
         },
         revenue: { total: 0, today: 0, thisMonth: 0, orderCount: 0, averageOrderValue: 0 },
-        commissions: { totalCommission: 0, paidCommission: 0, pendingCommission: 0, commissionCount: 0 },
         wallet: { balance: 0, totalCredits: 0, totalDebits: 0, transactionCount: 0, subscriptionStatus: "inactive", recentTransactions: [] },
         charts: { labels: [], orders: [], revenue: [], completedOrders: [] },
         timeframe: "30d",

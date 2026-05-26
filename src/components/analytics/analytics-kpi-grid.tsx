@@ -58,15 +58,6 @@ const cardToneMap: Record<
         downTrendClass: "text-red-700",
         flatTrendClass: "text-emerald-700",
     },
-    commissions: {
-        cardClass: "bg-amber-50 border border-amber-200",
-        iconClass: "text-amber-600",
-        titleClass: "text-amber-700",
-        valueClass: "text-amber-950",
-        upTrendClass: "text-emerald-700",
-        downTrendClass: "text-red-700",
-        flatTrendClass: "text-amber-700",
-    },
     wallet: {
         cardClass: "bg-teal-50 border border-teal-200",
         iconClass: "text-teal-600",

@@ -11,8 +11,7 @@ export interface AuditLog {
     | "storefront"
     | "payout"
     | "settings"
-    | "bundle"
-    | "commission";
+    | "bundle";
   resource?: {
     type: string;
     id: string;

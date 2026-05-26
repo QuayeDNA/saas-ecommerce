@@ -25,7 +25,7 @@ ChartJS.register(
     Legend
 );
 
-export type TrendMetric = "revenue" | "orders" | "users" | "commissions";
+export type TrendMetric = "revenue" | "orders" | "users";
 
 interface OrderStatusSnapshot {
     completed: number;
@@ -50,14 +50,12 @@ const metricOptions = [
     { value: "revenue", label: "Revenue" },
     { value: "orders", label: "Orders" },
     { value: "users", label: "Users" },
-    { value: "commissions", label: "Commissions" },
 ];
 
 const trendLabelMap: Record<TrendMetric, string> = {
     revenue: "Revenue (GHS)",
     orders: "Orders",
     users: "Users",
-    commissions: "Commissions (GHS)",
 };
 
 export function AnalyticsTrendStage({
@@ -97,7 +95,7 @@ export function AnalyticsTrendStage({
                 beginAtZero: true,
                 ticks: {
                     callback: (value: number | string) => {
-                        if (selectedMetric === "revenue" || selectedMetric === "commissions") {
+                        if (selectedMetric === "revenue") {
                             return `GHS ${Number(value).toLocaleString()}`;
                         }
                         return Number(value).toLocaleString();
@@ -161,7 +159,7 @@ export function AnalyticsTrendStage({
                     <div>
                         <h2 className="text-base sm:text-lg font-semibold text-slate-900">Performance Trend</h2>
                         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                            Compare revenue, orders, users, and commissions over time.
+                            Compare revenue, orders, and users over time.
                         </p>
                     </div>
                     <Select

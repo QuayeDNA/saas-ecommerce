@@ -105,7 +105,7 @@ export const getTenantUserTypes = (): UserType[] => {
 };
 
 /**
- * Check if user is eligible for business features (orders, packages, commissions, etc.)
+ * Check if user is eligible for business features (orders, packages, etc.)
  */
 export const canAccessBusinessFeatures = (
   userType: UserType | string

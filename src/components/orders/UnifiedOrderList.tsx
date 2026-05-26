@@ -168,12 +168,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           todayProcessingOrders: analytics.orders.today?.processing || 0,
           todayPendingOrders: analytics.orders.today?.pending || 0,
           todayCancelledOrders: analytics.orders.today?.cancelled || 0,
-          commission: {
-            totalEarned: analytics.commissions?.totalEarned || 0,
-            totalPaid: analytics.commissions?.totalPaid || 0,
-            pendingAmount: analytics.commissions?.pendingAmount || 0,
-            pendingCount: analytics.commissions?.pendingCount || 0,
-          },
           statusCounts: {
             processing: analytics.orders.processing || 0,
             pending: analytics.orders.pending || 0,

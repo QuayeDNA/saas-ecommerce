@@ -189,13 +189,6 @@ export interface DashboardStats {
     active: number;
     newThisMonth: number;
   };
-  commissions: {
-    totalEarned: number;
-    totalPaid: number;
-    totalRecords: number;
-    pendingCount: number;
-    pendingAmount: number;
-  };
   recentActivity: {
     users: Array<{
       _id: string;

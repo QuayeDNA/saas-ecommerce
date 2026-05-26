@@ -117,7 +117,7 @@ export function AnalyticsCommandCenter({
                 <div>
                     <h1 className="text-xl font-bold text-gray-900">Sales & Operations Analytics</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Monitor platform performance across revenue, orders, users, commissions, and payouts.
+                        Monitor platform performance across revenue, orders, users, and payouts.
                     </p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                         <span className="inline-flex items-center gap-1.5">

@@ -2452,8 +2452,8 @@ const PublicStore: React.FC = () => {
       `}</style>
 
             {/* SECURITY: marks this browser session as storefront-only so that
- *           system routes (/login, /register, etc.) are blocked for this tab */}
-            *       {businessName && <StorefrontEntryMarker businessName={businessName} />}
+           system routes (/login, /register, etc.) are blocked for this tab */}
+            {businessName && <StorefrontEntryMarker businessName={businessName} />}
 
             <AnnouncementPopupHandler
                 announcements={publicAnnouncements.filter(

@@ -20,7 +20,6 @@ const categoryOptions = [
   { value: "payout", label: "Payouts" },
   { value: "settings", label: "Settings" },
   { value: "bundle", label: "Bundles" },
-  { value: "commission", label: "Commission" },
 ];
 
 const severityColor = (severity: AuditLog["severity"]) => {

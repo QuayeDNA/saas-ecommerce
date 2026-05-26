@@ -45,7 +45,6 @@ const categoryFilterOptions: FilterOption[] = [
   { value: "payout", label: "Payouts" },
   { value: "settings", label: "Settings" },
   { value: "bundle", label: "Bundles" },
-  { value: "commission", label: "Commission" },
 ];
 
 const severityFilterOptions: FilterOption[] = [

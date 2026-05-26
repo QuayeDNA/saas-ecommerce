@@ -56,18 +56,19 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
   const [isLoading, setIsLoading] = useState(false);
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
   const [filter, setFilter] = useState<'all' | 'read' | 'unread'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // Load all notifications
-  const loadNotifications = useCallback(async (page = 1, filterType = filter) => {
+  const loadNotifications = useCallback(async (page = 1, filterType = filter, category = categoryFilter) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const readFilter = filterType === 'read' ? true : filterType === 'unread' ? false : undefined;
-      const result = await fetchAllNotifications(page, 20, readFilter);
+      const result = await fetchAllNotifications(page, 20, readFilter, category);
       setAllNotifications(result.notifications || []);
       setPagination(result.pagination || null);
     } catch {
@@ -75,18 +76,25 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAllNotifications, filter]);
+  }, [fetchAllNotifications, filter, categoryFilter]);
 
   // Load notifications when modal opens or filter changes
   useEffect(() => {
     if (isOpen) {
-      loadNotifications(1, filter);
+      loadNotifications(1, filter, categoryFilter);
     }
-  }, [isOpen, filter]);
+  }, [isOpen, filter, categoryFilter]);
 
   // Handle filter change
   const handleFilterChange = (newFilter: 'all' | 'read' | 'unread') => {
     setFilter(newFilter);
+    setCurrentPage(1);
+    setSelectedNotifications([]);
+  };
+
+  // Handle category filter change
+  const handleCategoryFilterChange = (category: string | undefined) => {
+    setCategoryFilter(category);
     setCurrentPage(1);
     setSelectedNotifications([]);
   };
@@ -293,6 +301,30 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                 >
                   Read
                 </Button>
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { value: undefined, label: "All Categories", color: "bg-gray-100 text-gray-700 hover:bg-gray-200" },
+                  { value: "system", label: "System", color: "bg-gray-100 text-gray-700 hover:bg-gray-200" },
+                  { value: "order", label: "Order", color: "bg-blue-100 text-blue-700 hover:bg-blue-200" },
+                  { value: "wallet", label: "Wallet", color: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" },
+                  { value: "commission", label: "Commission", color: "bg-amber-100 text-amber-700 hover:bg-amber-200" },
+                  { value: "announcement", label: "Announcement", color: "bg-purple-100 text-purple-700 hover:bg-purple-200" },
+                ].map((cat) => (
+                  <button
+                    key={cat.value || "all"}
+                    onClick={() => handleCategoryFilterChange(cat.value)}
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
+                      categoryFilter === cat.value
+                        ? "ring-2 ring-primary-500 ring-offset-1 " + cat.color
+                        : cat.color
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
               </div>
             </div>
           </Card>

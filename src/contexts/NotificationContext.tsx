@@ -23,7 +23,8 @@ interface NotificationContextType {
   fetchAllNotifications: (
     page?: number,
     limit?: number,
-    read?: boolean
+    read?: boolean,
+    category?: string
   ) => Promise<{ notifications: Notification[]; pagination?: any }>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAsUnread: (notificationId: string) => Promise<void>;
@@ -78,27 +79,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   }, [authState.isAuthenticated]);
 
   const fetchAllNotifications = useCallback(
-    async (page = 1, limit = 50, read?: boolean) => {
-      if (!authState.isAuthenticated)
-        return { notifications: [], pagination: undefined };
-
+    async (page = 1, limit = 50, read?: boolean, category?: string) => {
       try {
         const response = await notificationService.getAllNotifications(
           page,
           limit,
-          read
+          read,
+          category
         );
-        return {
-          notifications: response.notifications,
-          pagination: response.pagination,
-        };
-      } catch {
-        setError("Failed to fetch all notifications");
-        return { notifications: [], pagination: undefined };
+        return response;
+      } catch (error) {
+        console.error('Failed to fetch all notifications:', error);
+        throw error;
       }
-    },
-    [authState.isAuthenticated]
-  );
+    }, []);
 
   const refreshCount = useCallback(async () => {
     if (!authState.isAuthenticated) return;

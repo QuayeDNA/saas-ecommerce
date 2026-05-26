@@ -46,7 +46,6 @@ export const ProfilePage: React.FC = () => {
     enabled: true,
     orderUpdates: true,
     walletUpdates: true,
-    commissionUpdates: true,
     announcements: true,
   });
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
@@ -806,22 +805,6 @@ export const ProfilePage: React.FC = () => {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-700">
-                            Commission Updates
-                          </span>
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                            checked={pushPreferences.commissionUpdates}
-                            onChange={(e) =>
-                              handlePushPreferenceChange(
-                                "commissionUpdates",
-                                e.target.checked,
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">
                             Announcements
                           </span>
                           <input
@@ -1120,9 +1103,6 @@ export const ProfilePage: React.FC = () => {
                           )}
                           {pushPreferences.walletUpdates && (
                             <li>• Wallet changes</li>
-                          )}
-                          {pushPreferences.commissionUpdates && (
-                            <li>• Commissions</li>
                           )}
                           {pushPreferences.announcements && (
                             <li>• Announcements</li>
