@@ -182,8 +182,8 @@ export default function SuperAdminSettingsPage() {
   const SectionHeader: React.FC<{ title: string; subtitle?: string; action?: React.ReactNode }> = ({ title, subtitle, action }) => (
     <div className="flex items-start justify-between gap-4">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        {subtitle && <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -228,8 +228,8 @@ export default function SuperAdminSettingsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-          <p className="text-sm text-gray-600 mt-1">Manage site, API and wallet configuration</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>System Settings</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Manage site, API and wallet configuration</p>
         </div>
       </div>
 
@@ -253,75 +253,75 @@ export default function SuperAdminSettingsPage() {
                 <SectionHeader title="Site Management" subtitle="Control availability and maintenance message" action={<Button size="sm" variant="secondary" onClick={() => setSiteDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
 
                 <div className="mt-4 space-y-4">
-                  <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
                     <div>
-                      <div className="text-sm font-medium text-gray-900">Site status</div>
-                      <div className="text-xs text-gray-500 mt-1">{siteOpen ? 'Open to users' : 'Closed for maintenance'}</div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Site status</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{siteOpen ? 'Open to users' : 'Closed for maintenance'}</div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-sm font-medium ${siteOpen ? 'text-green-600' : 'text-red-600'}`}>{siteOpen ? 'Open' : 'Closed'}</span>
+                      <span className="text-sm font-medium" style={{ color: siteOpen ? 'var(--success)' : 'var(--error)' }}>{siteOpen ? 'Open' : 'Closed'}</span>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" checked={siteOpen} onChange={handleToggleSite} disabled={!!busyKeys['siteToggle']} />
-                        <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                        <div className="w-10 h-5 bg-[var(--bg-muted)] rounded-full peer-checked:bg-[var(--color-primary)] relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[var(--text-inverse)] after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
                       </label>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-900">Maintenance message</div>
-                    <div className="text-xs text-gray-500 mt-1">{data.siteSettings.customMessage || 'No custom message set'}</div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Maintenance message</div>
+                    <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{data.siteSettings.customMessage || 'No custom message set'}</div>
                   </div>
 
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-900">Dashboard greeting</div>
-                    <div className="text-xs text-gray-500 mt-1">{data.siteSettings.greetingText || 'Default time-based greeting'}</div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Dashboard greeting</div>
+                    <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{data.siteSettings.greetingText || 'Default time-based greeting'}</div>
                   </div>
 
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-900">Welcome message</div>
-                    <div className="text-xs text-gray-500 mt-1">{data.siteSettings.welcomeMessage || 'Welcome back!'}</div>
-                    <div className="text-xs text-gray-500 mt-1">Icon enabled: {data.siteSettings.showGreetingIcon ? 'Yes' : 'No'}</div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Welcome message</div>
+                    <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{data.siteSettings.welcomeMessage || 'Welcome back!'}</div>
+                    <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Icon enabled: {data.siteSettings.showGreetingIcon ? 'Yes' : 'No'}</div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
                     <div>
-                      <div className="text-sm font-medium text-gray-900">Storefront availability</div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Storefront availability</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                         {storefrontsOpen
                           ? 'All storefronts are open to customers'
                           : 'All storefronts are closed by admin'}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-sm font-medium ${storefrontsOpen ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className="text-sm font-medium" style={{ color: storefrontsOpen ? 'var(--success)' : 'var(--error)' }}>
                         {storefrontsOpen ? 'Open' : 'Closed'}
                       </span>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" checked={storefrontsOpen} onChange={handleToggleStorefronts} disabled={!!busyKeys['storefrontsToggle']} />
-                        <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                        <div className="w-10 h-5 bg-[var(--bg-muted)] rounded-full peer-checked:bg-[var(--color-primary)] relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[var(--text-inverse)] after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
                       </label>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
                     <div>
-                      <div className="text-sm font-medium text-gray-900">Require admin approval for signups</div>
-                      <div className="text-xs text-gray-500 mt-1">{signupRequired ? 'Approval required' : 'Auto-approve new users'}</div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Require admin approval for signups</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{signupRequired ? 'Approval required' : 'Auto-approve new users'}</div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" className="sr-only peer" checked={signupRequired} onChange={handleToggleSignupApproval} disabled={!!busyKeys['signupToggle']} />
-                      <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                      <div className="w-10 h-5 bg-[var(--bg-muted)] rounded-full peer-checked:bg-[var(--color-primary)] relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[var(--text-inverse)] after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
                     </label>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
                     <div>
-                      <div className="text-sm font-medium text-gray-900">Auto-approve storefronts</div>
-                      <div className="text-xs text-gray-500 mt-1">{autoApprove ? 'Auto' : 'Manual'}</div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Auto-approve storefronts</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{autoApprove ? 'Auto' : 'Manual'}</div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" className="sr-only peer" checked={autoApprove} onChange={handleToggleAutoApprove} disabled={!!busyKeys['autoApproveToggle']} />
-                      <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                      <div className="w-10 h-5 bg-[var(--bg-muted)] rounded-full peer-checked:bg-[var(--color-primary)] relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[var(--text-inverse)] after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
                     </label>
                   </div>
                 </div>
@@ -329,9 +329,9 @@ export default function SuperAdminSettingsPage() {
 
               <Card>
                 <SectionHeader title="User Management" subtitle="Admin & security settings" action={<Button size="sm" variant="secondary" onClick={() => setPasswordDialogOpen(true)}><KeyIcon className="w-3 h-3 mr-1" />Change Password</Button>} />
-                <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                  <div className="text-sm font-medium text-green-900">Admin account security</div>
-                  <div className="text-xs text-green-800 mt-1">Change your admin password regularly. You'll be required to log in again after changing it.</div>
+                <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' }}>
+                  <div className="text-sm font-medium" style={{ color: 'var(--success)' }}>Admin account security</div>
+                  <div className="text-xs mt-1" style={{ color: 'var(--success)' }}>Change your admin password regularly. You'll be required to log in again after changing it.</div>
                 </div>
               </Card>
             </div>
@@ -342,17 +342,17 @@ export default function SuperAdminSettingsPage() {
               <Card>
                 <SectionHeader title="API Settings" subtitle="External integrations & keys" action={<Button size="sm" variant="secondary" onClick={() => setApiDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
                 <div className="mt-4 space-y-3">
-                  <div className="p-3 bg-orange-50 rounded-lg">
-                    <div className="text-sm font-medium text-orange-900">API Endpoint</div>
-                    <div className="text-xs text-orange-800 font-mono mt-1">{data.apiSettings.apiEndpoint || 'Not configured'}</div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 8%, transparent)' }}>
+                    <div className="text-sm font-medium" style={{ color: 'var(--warning)' }}>API Endpoint</div>
+                    <div className="text-xs font-mono mt-1" style={{ color: 'var(--warning)' }}>{data.apiSettings.apiEndpoint || 'Not configured'}</div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* MTN key (masked, reveal) */}
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4 text-yellow-600" />MTN API Key</div>
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4" style={{ color: 'var(--warning)' }} />MTN API Key</div>
                       <div className="mt-2 flex items-center justify-between gap-3">
-                        <div className="font-mono text-sm text-gray-700 break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.mtn ? (data.apiSettings.mtnApiKey || 'Not configured') : formatMasked(data.apiSettings.mtnApiKey)}</div>
+                        <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto" style={{ color: 'var(--text-primary)' }}>{revealKeys.mtn ? (data.apiSettings.mtnApiKey || 'Not configured') : formatMasked(data.apiSettings.mtnApiKey)}</div>
                         <div className="flex items-center gap-2">
                           <Button size="sm" variant="ghost" leftIcon={revealKeys.mtn ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('mtn')}>{revealKeys.mtn ? 'Hide' : 'Reveal'}</Button>
                           <Badge colorScheme={data.apiSettings.mtnApiKey ? 'success' : 'error'}>{data.apiSettings.mtnApiKey ? 'Active' : 'Inactive'}</Badge>
@@ -361,10 +361,10 @@ export default function SuperAdminSettingsPage() {
                     </div>
 
                     {/* Telecel key (masked, reveal) */}
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4 text-blue-600" />Telecel API Key</div>
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />Telecel API Key</div>
                       <div className="mt-2 flex items-center justify-between gap-3">
-                        <div className="font-mono text-sm text-gray-700 break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.telecel ? (data.apiSettings.telecelApiKey || 'Not configured') : formatMasked(data.apiSettings.telecelApiKey)}</div>
+                        <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto" style={{ color: 'var(--text-primary)' }}>{revealKeys.telecel ? (data.apiSettings.telecelApiKey || 'Not configured') : formatMasked(data.apiSettings.telecelApiKey)}</div>
                         <div className="flex items-center gap-2">
                           <Button size="sm" variant="ghost" leftIcon={revealKeys.telecel ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('telecel')}>{revealKeys.telecel ? 'Hide' : 'Reveal'}</Button>
                           <Badge colorScheme={data.apiSettings.telecelApiKey ? 'success' : 'error'}>{data.apiSettings.telecelApiKey ? 'Active' : 'Inactive'}</Badge>
@@ -373,10 +373,10 @@ export default function SuperAdminSettingsPage() {
                     </div>
 
                     {/* AirtelTigo key (masked, reveal) */}
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4 text-red-600" />AirtelTigo API Key</div>
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4" style={{ color: 'var(--error)' }} />AirtelTigo API Key</div>
                       <div className="mt-2 flex items-center justify-between gap-3">
-                        <div className="font-mono text-sm text-gray-700 break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.airtelTigo ? (data.apiSettings.airtelTigoApiKey || 'Not configured') : formatMasked(data.apiSettings.airtelTigoApiKey)}</div>
+                        <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto" style={{ color: 'var(--text-primary)' }}>{revealKeys.airtelTigo ? (data.apiSettings.airtelTigoApiKey || 'Not configured') : formatMasked(data.apiSettings.airtelTigoApiKey)}</div>
                         <div className="flex items-center gap-2">
                           <Button size="sm" variant="ghost" leftIcon={revealKeys.airtelTigo ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('airtelTigo')}>{revealKeys.airtelTigo ? 'Hide' : 'Reveal'}</Button>
                           <Badge colorScheme={data.apiSettings.airtelTigoApiKey ? 'success' : 'error'}>{data.apiSettings.airtelTigoApiKey ? 'Active' : 'Inactive'}</Badge>
@@ -385,11 +385,11 @@ export default function SuperAdminSettingsPage() {
                     </div>
 
                     {/* Paystack block (show enabled + public/secret keys) */}
-                    <div className="p-3 bg-blue-50 rounded-lg col-span-full sm:col-span-2">
+                    <div className="p-3 rounded-lg col-span-full sm:col-span-2" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}>
                       <div className="flex items-start justify-between">
                         <div>
-                          <div className="text-sm font-medium flex items-center gap-2"><CreditCard className="w-4 h-4 text-blue-600" />Paystack</div>
-                          <div className="text-xs text-gray-500 mt-1">Payment gateway configuration (test & live keys)</div>
+                          <div className="text-sm font-medium flex items-center gap-2"><CreditCard className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />Paystack</div>
+                          <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Payment gateway configuration (test & live keys)</div>
                         </div>
                         <Badge colorScheme={data.apiSettings.paystackEnabled ? 'success' : 'warning'}>{data.apiSettings.paystackEnabled ? 'Enabled' : 'Disabled'}</Badge>
                       </div>
@@ -397,16 +397,16 @@ export default function SuperAdminSettingsPage() {
                       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {import.meta.env.DEV && (
                           <>
-                            <div className="p-3 bg-white rounded border">
-                              <div className="text-xs text-gray-500">Test public key</div>
+                            <div className="p-3 rounded border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+                              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Test public key</div>
                               <div className="mt-1 flex items-center justify-between gap-3">
                                 <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackTestPublic ? (data.apiSettings.paystackTestPublicKey || 'Not configured') : formatMasked(data.apiSettings.paystackTestPublicKey)}</div>
                                 <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackTestPublic ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackTestPublic')}>{revealKeys.paystackTestPublic ? 'Hide' : 'Reveal'}</Button>
                               </div>
                             </div>
 
-                            <div className="p-3 bg-white rounded border">
-                              <div className="text-xs text-gray-500">Test secret key</div>
+                            <div className="p-3 rounded border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+                              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Test secret key</div>
                               <div className="mt-1 flex items-center justify-between gap-3">
                                 {data.apiSettings.paystackTestSecretKey !== undefined ? (
                                   // dev: secret value returned — allow reveal
@@ -417,7 +417,7 @@ export default function SuperAdminSettingsPage() {
                                 ) : (
                                   // prod: secret redacted — show existence and let admin open dialog to replace
                                   <>
-                                    <div className="text-sm text-gray-700">{data.apiSettings.paystackTestSecretExists ? 'Stored on server' : 'Not configured'}</div>
+                                    <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{data.apiSettings.paystackTestSecretExists ? 'Stored on server' : 'Not configured'}</div>
                                     <div className="flex items-center gap-2">
                                       <Button size="sm" variant="ghost" leftIcon={<KeyIcon className="w-3 h-3" />} onClick={() => setApiDialogOpen(true)}>{data.apiSettings.paystackTestSecretExists ? 'Replace' : 'Set'}</Button>
                                     </div>
@@ -428,16 +428,16 @@ export default function SuperAdminSettingsPage() {
                           </>
                         )}
 
-                        <div className="p-3 bg-white rounded border">
-                          <div className="text-xs text-gray-500">Live public key</div>
+                        <div className="p-3 rounded border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+                          <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Live public key</div>
                           <div className="mt-1 flex items-center justify-between gap-3">
                             <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{revealKeys.paystackLivePublic ? (data.apiSettings.paystackLivePublicKey || 'Not configured') : formatMasked(data.apiSettings.paystackLivePublicKey)}</div>
                             <Button size="sm" variant="ghost" leftIcon={revealKeys.paystackLivePublic ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('paystackLivePublic')}>{revealKeys.paystackLivePublic ? 'Hide' : 'Reveal'}</Button>
                           </div>
                         </div>
 
-                        <div className="p-3 bg-white rounded border">
-                          <div className="text-xs text-gray-500">Live secret key</div>
+                        <div className="p-3 rounded border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+                          <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Live secret key</div>
                           <div className="mt-1 flex items-center justify-between gap-3">
                             {import.meta.env.DEV && data.apiSettings.paystackLiveSecretKey !== undefined ? (
                               // dev: secret value returned — allow reveal
@@ -448,7 +448,7 @@ export default function SuperAdminSettingsPage() {
                             ) : (
                               // prod: secret redacted — show existence and let admin open dialog to replace
                               <>
-                                <div className="text-sm text-gray-700">{data.apiSettings.paystackLiveSecretExists ? 'Stored on server' : 'Not configured'}</div>
+                                <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{data.apiSettings.paystackLiveSecretExists ? 'Stored on server' : 'Not configured'}</div>
                                 <div className="flex items-center gap-2">
                                   <Button size="sm" variant="ghost" onClick={() => setApiDialogOpen(true)}>{data.apiSettings.paystackLiveSecretExists ? 'Replace' : 'Set'}</Button>
                                 </div>
@@ -469,28 +469,28 @@ export default function SuperAdminSettingsPage() {
               <Card>
                 <SectionHeader title="Wallet Settings" subtitle="Top-up limits & behaviour" action={<Button size="sm" variant="secondary" onClick={() => setWalletDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Agent Minimum</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Agent Minimum</div>
                     <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.agent}</div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Super Agent Minimum</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Super Agent Minimum</div>
                     <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.super_agent}</div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Dealer Minimum</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Dealer Minimum</div>
                     <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.dealer}</div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Super Dealer Minimum</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Super Dealer Minimum</div>
                     <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.super_dealer}</div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between col-span-full sm:col-span-1">
-                    <div className="text-sm text-gray-600">Default Minimum</div>
+                  <div className="p-3 rounded-lg flex justify-between col-span-full sm:col-span-1" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Default Minimum</div>
                     <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.default}</div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg flex justify-between col-span-full sm:col-span-2">
-                    <div className="text-sm text-gray-600">Paystack Minimum</div>
+                  <div className="p-3 rounded-lg flex justify-between col-span-full sm:col-span-2" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Paystack Minimum</div>
                     <div className="font-medium">GH₵{data.walletSettings.paystackMinimumTopUpAmount ?? 0}</div>
                   </div>
                 </div>
@@ -499,16 +499,16 @@ export default function SuperAdminSettingsPage() {
               <Card>
                 <SectionHeader title="Storefront Collection Fees" subtitle="Fees applied to agent storefront payments via Paystack" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 bg-blue-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Paystack Fee</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Paystack Fee</div>
                     <div className="font-medium">{feeSettings?.paystackCollectionFeePercent ?? 1.95}%</div>
                   </div>
-                  <div className="p-3 bg-blue-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Platform Fee</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Platform Fee</div>
                     <div className="font-medium">{feeSettings?.platformFeePercent ?? 0}%</div>
                   </div>
-                  <div className="p-3 bg-blue-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Fee Bearer</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Fee Bearer</div>
                     <div className="font-medium">{(feeSettings?.delegateFeesToCustomer ?? true) ? 'Customer' : 'Platform'}</div>
                   </div>
                 </div>
@@ -517,16 +517,16 @@ export default function SuperAdminSettingsPage() {
               <Card>
                 <SectionHeader title="Wallet Top-Up Fees" subtitle="Fees applied when agents top up their wallet via Paystack" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 bg-violet-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Paystack Fee</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Paystack Fee</div>
                     <div className="font-medium">{feeSettings?.walletTopUpCollectionFeePercent ?? 1.95}%</div>
                   </div>
-                  <div className="p-3 bg-violet-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Platform Fee</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Platform Fee</div>
                     <div className="font-medium">{feeSettings?.walletTopUpPlatformFeePercent ?? 0}%</div>
                   </div>
-                  <div className="p-3 bg-violet-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Fee Bearer</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Fee Bearer</div>
                     <div className="font-medium">{(feeSettings?.walletTopUpDelegateFeesToCustomer ?? true) ? 'Agent' : 'Platform'}</div>
                   </div>
                 </div>
@@ -535,16 +535,16 @@ export default function SuperAdminSettingsPage() {
               <Card>
                 <SectionHeader title="Payout Transfer Fees" subtitle="Paystack transfer costs & payout configuration" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 bg-green-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">MoMo Transfer Fee</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>MoMo Transfer Fee</div>
                     <div className="font-medium">GH₵{(feeSettings?.paystackTransferFees?.mobile_money ?? 1.0).toFixed(2)}</div>
                   </div>
-                  <div className="p-3 bg-green-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Bank Transfer Fee</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Bank Transfer Fee</div>
                     <div className="font-medium">GH₵{(feeSettings?.paystackTransferFees?.bank_account ?? 8.0).toFixed(2)}</div>
                   </div>
-                  <div className="p-3 bg-green-50 rounded-lg flex justify-between">
-                    <div className="text-sm text-gray-600">Fee Bearer</div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Fee Bearer</div>
                     <div className="font-medium capitalize">{feeSettings?.payoutFeeBearer ?? 'agent'}</div>
                   </div>
                 </div>
@@ -552,14 +552,14 @@ export default function SuperAdminSettingsPage() {
 
               <Card>
                 <SectionHeader title="Referral Commission Rate" subtitle="Percentage of order value credited to referring agents" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
-                <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-amber-50 rounded-lg">
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 8%, transparent)' }}>
                   <div>
-                    <div className="text-sm font-medium text-amber-900">Current rate</div>
-                    <div className="text-xs text-amber-700 mt-1">Configurable via Fee Settings dialog</div>
+                    <div className="text-sm font-medium" style={{ color: 'var(--warning)' }}>Current rate</div>
+                    <div className="text-xs mt-1" style={{ color: 'var(--warning)' }}>Configurable via Fee Settings dialog</div>
                   </div>
                   <div className="sm:text-right">
-                    <div className="text-xl sm:text-2xl font-bold text-amber-900">{feeSettings?.commissionRatePercent ?? 5}%</div>
-                    <div className="text-xs text-amber-700">GH₵ {((feeSettings?.commissionRatePercent ?? 5) * 100 / 100).toFixed(2)} per GH₵ 100 order</div>
+                    <div className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--warning)' }}>{feeSettings?.commissionRatePercent ?? 5}%</div>
+                    <div className="text-xs" style={{ color: 'var(--warning)' }}>GH₵ {((feeSettings?.commissionRatePercent ?? 5) * 100 / 100).toFixed(2)} per GH₵ 100 order</div>
                   </div>
                 </div>
               </Card>
@@ -571,27 +571,27 @@ export default function SuperAdminSettingsPage() {
               <Card>
                 <SectionHeader title="System Information" subtitle="Health & metadata" />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-600">Version</div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Version</div>
                     <div className="font-medium mt-1">{data.systemInfo.version}</div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-600">Last updated</div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Last updated</div>
                     <div className="font-medium mt-1">{data.systemInfo.lastUpdated}</div>
                   </div>
 
-                  <div className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                  <div className="p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
                     <div>
-                      <div className="text-sm text-gray-600">API Status</div>
-                      <div className="text-xs text-gray-500 mt-1">{data.systemInfo.apiStatus}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>API Status</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{data.systemInfo.apiStatus}</div>
                     </div>
                     <Badge colorScheme={data.systemInfo.apiStatus === 'healthy' ? 'success' : 'warning'}>{data.systemInfo.apiStatus}</Badge>
                   </div>
 
-                  <div className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                  <div className="p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
                     <div>
-                      <div className="text-sm text-gray-600">DB Status</div>
-                      <div className="text-xs text-gray-500 mt-1">{data.systemInfo.databaseStatus}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>DB Status</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{data.systemInfo.databaseStatus}</div>
                     </div>
                     <Badge colorScheme={data.systemInfo.databaseStatus === 'connected' ? 'success' : 'warning'}>{data.systemInfo.databaseStatus}</Badge>
                   </div>
@@ -613,8 +613,8 @@ export default function SuperAdminSettingsPage() {
                 <SectionHeader title="Appearance" subtitle="Toggle dark mode" />
                 <div className="mt-4 flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">Dark Mode</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Switch between light and dark theme</p>
+                    <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Dark Mode</p>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Switch between light and dark theme</p>
                   </div>
                   <DarkModeToggle />
                 </div>

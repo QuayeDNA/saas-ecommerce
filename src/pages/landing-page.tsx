@@ -167,26 +167,17 @@ const FEATURES = [
 const NETWORKS = [
   {
     name: "MTN Ghana",
-    color: "from-yellow-400 to-yellow-500",
-    textColor: "text-yellow-700",
-    bgColor: "bg-yellow-50",
-    borderColor: "border-yellow-200",
+    brandColor: "var(--warning)",
     services: ["Airtime", "Data Bundles", "Flexi Bundles"],
   },
   {
     name: "Telecel Ghana",
-    color: "from-red-500 to-red-600",
-    textColor: "text-red-700",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-200",
+    brandColor: "var(--error)",
     services: ["Airtime", "Data Bundles", "Unlimited Plans"],
   },
   {
     name: "AirtelTigo",
-    color: "from-blue-500 to-blue-600",
-    textColor: "text-blue-700",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
+    brandColor: "var(--color-primary)",
     services: ["Airtime", "iShare Bundles", "BigTime Bundles"],
   },
 ] as const;
@@ -267,16 +258,15 @@ export const LandingPage: FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-surface)' }}>
       {/* ================================================================ */}
       {/*  NAVIGATION                                                       */}
       {/* ================================================================ */}
       <nav
         className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-          isScrolled
-            ? "bg-white/95 backdrop-blur-xl shadow-lg border-b border-gray-100"
-            : "bg-transparent"
+          isScrolled ? "backdrop-blur-xl shadow-lg border-b" : "bg-transparent"
         }`}
+        style={isScrolled ? { backgroundColor: 'color-mix(in srgb, var(--bg-surface) 95%, transparent)', borderColor: 'var(--border-color)' } : undefined}
       >
         <Container>
           <div className="flex justify-between items-center h-16 sm:h-20">
@@ -291,14 +281,16 @@ export const LandingPage: FC = () => {
                 <button
                   key={l.id}
                   onClick={() => scrollTo(l.id)}
-                  className="text-sm font-medium text-gray-600 hover:text-[var(--color-primary-600)] transition-colors"
+                  className="text-sm font-medium transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
                   {l.label}
                 </button>
               ))}
               <Link
                 to="/login"
-                className="text-sm font-medium text-gray-700 hover:text-[var(--color-primary-600)] transition-colors"
+                className="text-sm font-medium transition-colors"
+                style={{ color: 'var(--text-primary)' }}
               >
                 Sign In
               </Link>
@@ -309,9 +301,10 @@ export const LandingPage: FC = () => {
 
             {/* Mobile toggle */}
             <button
-              className="md:hidden p-2 text-gray-600"
+              className="md:hidden p-2"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle menu"
+              style={{ color: 'var(--text-secondary)' }}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -319,21 +312,26 @@ export const LandingPage: FC = () => {
 
           {/* Mobile drawer */}
           {isMenuOpen && (
-            <div className="md:hidden pb-6 border-t border-gray-100 bg-white/95 backdrop-blur-xl">
+            <div
+              className="md:hidden pb-6 border-t backdrop-blur-xl"
+              style={{ borderColor: 'var(--border-color)', backgroundColor: 'color-mix(in srgb, var(--bg-surface) 95%, transparent)' }}
+            >
               <div className="flex flex-col gap-2 pt-4">
                 {NAV_LINKS.map((l) => (
                   <button
                     key={l.id}
                     onClick={() => scrollTo(l.id)}
-                    className="text-left py-2 px-2 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+                    className="text-left py-2 px-2 rounded-lg font-medium"
+                    style={{ color: 'var(--text-primary)' }}
                   >
                     {l.label}
                   </button>
                 ))}
-                <hr className="my-2 border-gray-100" />
+                <hr className="my-2" style={{ borderColor: 'var(--border-color)' }} />
                 <Link
                   to="/login"
-                  className="py-2 px-2 text-gray-700 font-medium"
+                  className="py-2 px-2 font-medium"
+                  style={{ color: 'var(--text-primary)' }}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Sign In
@@ -366,14 +364,14 @@ export const LandingPage: FC = () => {
               Ghana&rsquo;s Smart Telecom Platform
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 leading-[1.1] tracking-tight mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.1] tracking-tight mb-6" style={{ color: 'var(--text-primary)' }}>
               Sell Airtime &amp; Data.{" "}
               <span className="bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-secondary-500)] bg-clip-text text-transparent">
                 Earn More.
               </span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto mb-10">
+            <p className="text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto mb-10" style={{ color: 'var(--text-secondary)' }}>
               BryteLinks is the all-in-one platform that lets agents, dealers,
 and enterprises sell mobile airtime &amp; data bundles across every
 Ghanaian network.
@@ -392,7 +390,8 @@ Ghanaian network.
               </Link>
               <button
                 onClick={() => scrollTo("services")}
-                className="group inline-flex items-center gap-2 text-gray-600 hover:text-[var(--color-primary-600)] font-medium transition-colors"
+                className="group inline-flex items-center gap-2 font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 Learn More
                 <ChevronDown className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
@@ -404,13 +403,14 @@ Ghanaian network.
               {HERO_STATS.map((s) => (
                 <div
                   key={s.label}
-                  className="bg-white/80 backdrop-blur rounded-2xl p-4 sm:p-5 shadow-md border border-gray-100"
+                  className="bg-white/80 backdrop-blur rounded-2xl p-4 sm:p-5 shadow-md border"
+                  style={{ borderColor: 'var(--border-color)' }}
                 >
                   <s.icon className="w-5 h-5 text-[var(--color-primary-500)] mx-auto mb-2" />
-                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
                     {s.value}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-500 font-medium">
+                  <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                     {s.label}
                   </div>
                 </div>
@@ -426,14 +426,15 @@ Ghanaian network.
       <section
         id="services"
         ref={assignRef("services")}
-        className="py-20 lg:py-28 bg-gray-50"
+        className="py-20 lg:py-28"
+        style={{ backgroundColor: 'var(--bg-muted)' }}
       >
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
               Everything You Need to Run a Telecom Business
             </h2>
-            <p className="text-gray-600 text-lg">
+            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
               From airtime top-ups to data bundles — BryteLinks handles
               it all so you can focus on growing.
             </p>
@@ -444,16 +445,17 @@ Ghanaian network.
               <Card
                 key={svc.title}
                 variant="interactive"
-                className="group border-0 bg-white hover:shadow-xl transition-all duration-300"
+                className="group border-0 hover:shadow-xl transition-all duration-300"
+                style={{ backgroundColor: 'var(--bg-surface)' }}
               >
                 <CardBody>
                   <div className="w-12 h-12 rounded-xl bg-[var(--color-primary-50)] flex items-center justify-center mb-5 group-hover:bg-[var(--color-primary-500)] transition-colors duration-300">
                     <svc.icon className="w-6 h-6 text-[var(--color-primary-500)] group-hover:text-white transition-colors duration-300" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
                     {svc.title}
                   </h3>
-                  <p className="text-gray-600 leading-relaxed text-sm">
+                  <p className="leading-relaxed text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {svc.description}
                   </p>
                 </CardBody>
@@ -466,13 +468,13 @@ Ghanaian network.
       {/* ================================================================ */}
       {/*  HOW IT WORKS                                                     */}
       {/* ================================================================ */}
-      <section className="py-20 lg:py-28 bg-white">
+      <section className="py-20 lg:py-28" style={{ backgroundColor: 'var(--bg-surface)' }}>
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
               Get Started in Minutes
             </h2>
-            <p className="text-gray-600 text-lg">
+            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
               Four simple steps to start earning with BryteLinks.
             </p>
           </div>
@@ -482,15 +484,15 @@ Ghanaian network.
               <div key={item.step} className="relative text-center">
                 {/* Connector line (desktop) */}
                 {i < HOW_IT_WORKS.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-[60%] w-[80%] border-t-2 border-dashed border-gray-200" />
+                  <div className="hidden lg:block absolute top-8 left-[60%] w-[80%] border-t-2 border-dashed" style={{ borderColor: 'var(--border-color)' }} />
                 )}
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--color-primary-500)] text-white text-xl font-bold mb-5 shadow-lg">
                   {item.step}
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
                   {item.title}
                 </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   {item.description}
                 </p>
               </div>
@@ -505,19 +507,19 @@ Ghanaian network.
       <section
         id="features"
         ref={assignRef("features")}
-        className="py-20 lg:py-28 bg-gradient-to-br from-gray-50 via-white to-gray-50"
+        className="py-20 lg:py-28 bg-gradient-to-br from-[var(--bg-muted)] via-[var(--bg-surface)] to-[var(--bg-muted)]"
       >
         <Container>
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Left — copy */}
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6 leading-tight" style={{ color: 'var(--text-primary)' }}>
                 Built for Reliability.{" "}
                 <span className="text-[var(--color-primary-500)]">
                   Designed for Growth.
                 </span>
               </h2>
-              <p className="text-gray-600 text-lg mb-10 leading-relaxed">
+              <p className="text-lg mb-10 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                 Every feature in BryteLinks is purpose-built for Ghana&rsquo;s
                 telecom market — from the security layer to the analytics
                 engine.
@@ -530,10 +532,10 @@ Ghanaian network.
                       <f.icon className="w-5 h-5 text-[var(--color-primary-500)]" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">
+                      <h4 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
                         {f.title}
                       </h4>
-                      <p className="text-gray-600 text-sm leading-relaxed">
+                      <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                         {f.description}
                       </p>
                     </div>
@@ -560,29 +562,29 @@ Ghanaian network.
                       </div>
                     </div>
                     <div className="flex gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                      <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--success)' }} />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--warning)' }} />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--error)' }} />
                     </div>
                   </div>
 
                   {/* Mock stats */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/10">
-                      <div className="text-2xl sm:text-3xl font-bold text-white">
+                      <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--text-inverse)' }}>
                         &#8373;12,450
                       </div>
                       <div className="text-white/70 text-xs flex items-center gap-1 mt-1">
-                        <TrendingUp className="w-3 h-3 text-green-400" />
+                        <TrendingUp className="w-3 h-3" style={{ color: 'var(--success)' }} />
                         Wallet Balance
                       </div>
                     </div>
                     <div className="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/10">
-                      <div className="text-2xl sm:text-3xl font-bold text-white">
+                      <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--text-inverse)' }}>
                         327
                       </div>
                       <div className="text-white/70 text-xs flex items-center gap-1 mt-1">
-                        <ShoppingCart className="w-3 h-3 text-blue-300" />
+                        <ShoppingCart className="w-3 h-3" style={{ color: 'var(--color-primary)' }} />
                         Orders Today
                       </div>
                     </div>
@@ -614,7 +616,12 @@ Ghanaian network.
               </Card>
 
               {/* Floating accent */}
-              <div className="absolute -top-4 -right-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white shadow-xl">
+              <div className="absolute -top-4 -right-4 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl"
+                style={{
+                  backgroundImage: 'linear-gradient(to bottom right, var(--success), color-mix(in srgb, var(--success) 70%, black))',
+                  color: 'var(--text-inverse)'
+                }}
+              >
                 <TrendingUp className="w-6 h-6" />
               </div>
             </div>
@@ -628,14 +635,15 @@ Ghanaian network.
       <section
         id="networks"
         ref={assignRef("networks")}
-        className="py-20 lg:py-28 bg-white"
+        className="py-20 lg:py-28"
+        style={{ backgroundColor: 'var(--bg-surface)' }}
       >
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
               All Major Ghanaian Networks
             </h2>
-            <p className="text-gray-600 text-lg">
+            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
               One platform, complete coverage. Sell across every network your
               customers use.
             </p>
@@ -645,23 +653,31 @@ Ghanaian network.
             {NETWORKS.map((net) => (
               <div
                 key={net.name}
-                className={`rounded-2xl ${net.bgColor} border ${net.borderColor} p-6 sm:p-8 text-center hover:shadow-lg transition-shadow duration-300`}
+                className="rounded-2xl p-6 sm:p-8 text-center hover:shadow-lg transition-shadow duration-300"
+                style={{
+                  backgroundColor: `color-mix(in srgb, ${net.brandColor} 8%, transparent)`,
+                  borderColor: `color-mix(in srgb, ${net.brandColor} 30%, transparent)`,
+                }}
               >
                 <div
-                  className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${net.color} text-white mb-5 shadow-md`}
+                  className="inline-flex items-center justify-center w-14 h-14 rounded-xl text-white mb-5 shadow-md"
+                  style={{
+                    backgroundImage: `linear-gradient(to bottom right, ${net.brandColor}, color-mix(in srgb, ${net.brandColor} 60%, black))`,
+                  }}
                 >
                   <Globe className="w-7 h-7" />
                 </div>
-                <h3 className={`text-xl font-bold ${net.textColor} mb-4`}>
+                <h3 className="text-xl font-bold mb-4" style={{ color: net.brandColor }}>
                   {net.name}
                 </h3>
                 <ul className="space-y-2">
                   {net.services.map((s) => (
                     <li
                       key={s}
-                      className="flex items-center justify-center gap-2 text-gray-700 text-sm"
+                      className="flex items-center justify-center gap-2 text-sm"
+                      style={{ color: 'var(--text-primary)' }}
                     >
-                      <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <Check className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--success)' }} />
                       {s}
                     </li>
                   ))}
@@ -678,14 +694,15 @@ Ghanaian network.
       <section
         id="about"
         ref={assignRef("about")}
-        className="py-20 lg:py-28 bg-gray-50"
+        className="py-20 lg:py-28"
+        style={{ backgroundColor: 'var(--bg-muted)' }}
       >
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
               Built for Every Level
             </h2>
-            <p className="text-gray-600 text-lg">
+            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
               Whether you&rsquo;re a solo agent or managing an entire
               distribution network — BryteLinks scales with you.
             </p>
@@ -696,16 +713,17 @@ Ghanaian network.
               <Card
                 key={t.title}
                 variant="interactive"
-                className="text-center border-0 bg-white hover:shadow-xl transition-all duration-300"
+                className="text-center border-0 hover:shadow-xl transition-all duration-300"
+                style={{ backgroundColor: 'var(--bg-surface)' }}
               >
                 <CardBody className="py-10">
                   <div className="w-14 h-14 rounded-2xl bg-[var(--color-primary-50)] flex items-center justify-center mx-auto mb-5">
                     <t.icon className="w-7 h-7 text-[var(--color-primary-500)]" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
                     {t.title}
                   </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                     {t.description}
                   </p>
                 </CardBody>
@@ -718,13 +736,13 @@ Ghanaian network.
       {/* ================================================================ */}
       {/*  TESTIMONIALS                                                     */}
       {/* ================================================================ */}
-      <section className="py-20 lg:py-28 bg-white">
+      <section className="py-20 lg:py-28" style={{ backgroundColor: 'var(--bg-surface)' }}>
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
               Loved by Agents Across Ghana
             </h2>
-            <p className="text-gray-600 text-lg">
+            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
               Real stories from real people building real businesses on
               BryteLinks.
             </p>
@@ -734,25 +752,29 @@ Ghanaian network.
             {TESTIMONIALS.map((t) => (
               <Card
                 key={t.name}
-                className="border-0 bg-gray-50 hover:shadow-lg transition-shadow duration-300"
+                className="border-0 hover:shadow-lg transition-shadow duration-300"
+                style={{ backgroundColor: 'var(--bg-muted)' }}
               >
                 <CardBody>
                   <div className="flex gap-1 mb-4">
                     {Array.from({ length: t.rating }).map((_, i) => (
                       <Star
                         key={i}
-                        className="w-4 h-4 text-yellow-400 fill-yellow-400"
+                        className="w-4 h-4"
+                        style={{ color: 'var(--warning)', fill: 'var(--warning)' }}
                       />
                     ))}
                   </div>
-                  <p className="text-gray-700 leading-relaxed mb-6 italic text-sm">
+                  <p className="leading-relaxed mb-6 italic text-sm" style={{ color: 'var(--text-primary)' }}>
                     &ldquo;{t.content}&rdquo;
                   </p>
                   <div>
-                    <div className="font-semibold text-gray-900 text-sm">
+                    <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                       {t.name}
                     </div>
-                    <div className="text-gray-500 text-xs">{t.role}</div>
+                    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      {t.role}
+                    </div>
                   </div>
                 </CardBody>
               </Card>
@@ -770,7 +792,7 @@ Ghanaian network.
 
         <Container className="relative z-10 text-center">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight" style={{ color: 'var(--text-inverse)' }}>
               Ready to Grow Your Telecom Business?
             </h2>
             <p className="text-lg sm:text-xl text-white/80 mb-10 leading-relaxed">
@@ -793,7 +815,11 @@ Ghanaian network.
                 <Button
                   size="lg"
                   variant="outline"
-                  className="text-base px-8 border-2 border-white text-white hover:bg-white hover:text-gray-900 transition-colors"
+                  className="text-base px-8 border-2 transition-colors"
+                  style={{
+                    borderColor: 'var(--text-inverse)',
+                    color: 'var(--text-inverse)',
+                  }}
                 >
                   Sign In
                 </Button>
@@ -818,7 +844,7 @@ Ghanaian network.
       {/* ================================================================ */}
       {/*  FOOTER                                                           */}
       {/* ================================================================ */}
-      <footer className="bg-gray-900 text-white">
+      <footer style={{ backgroundColor: 'var(--bg-inverse)', color: 'var(--text-inverse)' }}>
         <Container>
           <div className="py-12 lg:py-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
             {/* Brand */}
@@ -827,7 +853,7 @@ Ghanaian network.
                 <BryteLinksSvgIcon width={32} height={32} />
                 <span className="text-xl font-bold">BryteLinks</span>
               </div>
-              <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
+              <p className="text-sm leading-relaxed max-w-xs" style={{ color: 'var(--text-tertiary)' }}>
                 Ghana&rsquo;s smart telecom platform for agents, dealers, and
                 enterprises. Sell airtime &amp; data, and grow
                 your business.
@@ -836,7 +862,7 @@ Ghanaian network.
 
             {/* Quick Links */}
             <div>
-              <h4 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">
+              <h4 className="font-semibold text-sm uppercase tracking-wider mb-4" style={{ color: 'var(--text-tertiary)' }}>
                 Platform
               </h4>
               <ul className="space-y-2 text-sm">
@@ -848,7 +874,8 @@ Ghanaian network.
                   <li key={l.to}>
                     <Link
                       to={l.to}
-                      className="text-gray-400 hover:text-white transition-colors"
+                      className="transition-colors"
+                      style={{ color: 'var(--text-tertiary)' }}
                     >
                       {l.label}
                     </Link>
@@ -859,10 +886,10 @@ Ghanaian network.
 
             {/* Services */}
             <div>
-              <h4 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">
+              <h4 className="font-semibold text-sm uppercase tracking-wider mb-4" style={{ color: 'var(--text-tertiary)' }}>
                 Services
               </h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <ul className="space-y-2 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                 <li>Airtime Top-Up</li>
                 <li>Data Bundles</li>
                 <li>Agent Storefronts</li>
@@ -871,10 +898,10 @@ Ghanaian network.
 
             {/* Networks */}
             <div>
-              <h4 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">
+              <h4 className="font-semibold text-sm uppercase tracking-wider mb-4" style={{ color: 'var(--text-tertiary)' }}>
                 Supported Networks
               </h4>
-              <ul className="space-y-2 text-sm text-gray-400">
+              <ul className="space-y-2 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                 <li>MTN Ghana</li>
                 <li>Telecel Ghana</li>
                 <li>AirtelTigo</li>
@@ -883,20 +910,21 @@ Ghanaian network.
           </div>
 
           {/* Bottom bar */}
-          <div className="py-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-gray-500 text-xs">
+          <div className="py-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'var(--border-color)' }}>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               &copy; {new Date().getFullYear()} BryteLinks. All rights reserved.
             </p>
-            <div className="flex items-center gap-1 text-gray-500 text-xs">
+            <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
               <span>Designed &amp; Developed with</span>
-              <Heart className="w-3 h-3 text-red-500 fill-red-500" />
+              <Heart className="w-3 h-3" style={{ color: 'var(--error)', fill: 'var(--error)' }} />
               <span>
                 by{" "}
                 <a
                   href="https://github.com/QuayeDNA"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors font-medium"
+                  className="transition-colors font-medium"
+                  style={{ color: 'var(--text-tertiary)' }}
                 >
                   Dave
                 </a>

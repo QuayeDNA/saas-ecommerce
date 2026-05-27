@@ -246,8 +246,8 @@ const getLogoUrl = (logo?: { url?: string; alt?: string } | string) =>
 
 /** Shimmering skeleton that exactly mirrors final card shape */
 const BundleCardSkeleton = memo(() => (
-    <div className="rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
-        <div className="h-1 bg-gray-100" />
+    <div className="rounded-2xl overflow-hidden border shadow-sm" style={{ borderColor: 'var(--border-color)' , backgroundColor: 'var(--bg-surface)' }}>
+        <div className="h-1" style={{ backgroundColor: 'var(--bg-muted)' }} />
         <div className="p-4 space-y-3">
             <Skeleton height="1.75rem" width="60%" />
             <Skeleton height="0.9rem" width="80%" />
@@ -334,11 +334,11 @@ const FeaturedSection = memo((
                         ? <FaFire className="w-4 h-4" style={{ color: theme.primary }} />
                         : <FaTag className="w-4 h-4" style={{ color: theme.primary }} />
                     }
-                    <h2 className="text-sm font-black text-gray-800 tracking-wide uppercase">
+                    <h2 className="text-sm font-black tracking-wide uppercase" style={{ color: 'var(--text-primary)' }}>
                         {tab === 'trending' ? 'Trending Now' : 'Best Value'}
                     </h2>
                 </div>
-                <div className="flex rounded-xl overflow-hidden border border-gray-200 shrink-0">
+                <div className="flex rounded-xl overflow-hidden border shrink-0" style={{ borderColor: 'var(--border-color)' }}>
                     {(['trending', 'value'] as FeaturedTab[]).map(t => (
                         <button
                             key={t}
@@ -389,7 +389,7 @@ const FeaturedSection = memo((
                                     aria-label={`Buy ${b.name} for ${fmt(b.price)}`}
                                     style={{ background: `linear-gradient(145deg, ${pc.primary}, ${pc.secondary})` }}
                                 >
-                                    <div className="relative p-6 pb-7 text-white overflow-hidden">
+                                    <div className="relative p-6 pb-7 overflow-hidden" style={{ color: 'var(--text-inverse)' }}>
                                         {/* Decorative blobs */}
                                         <div className="absolute -top-12 -right-12 w-52 h-52 rounded-full bg-white/10 pointer-events-none" />
                                         <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-black/10 pointer-events-none" />
@@ -443,7 +443,7 @@ const FeaturedSection = memo((
                                                 <div className="text-3xl font-black">{fmt(b.price)}</div>
                                             </div>
                                             <div
-                                                className="flex items-center gap-2 bg-white rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all active:scale-95"
+                                                className="flex items-center gap-2 rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all active:scale-95"
                                                 style={{ color: pc.primary }}
                                             >
                                                 <FaBagShopping className="w-4 h-4" />
@@ -465,14 +465,14 @@ const FeaturedSection = memo((
                             className="absolute left-0 bottom-0 z-10 w-10 h-10 rounded-tr-2xl bg-black/20 backdrop-blur-sm flex items-center justify-center hover:bg-black/35 transition-all active:scale-95"
                             aria-label="Previous bundle"
                         >
-                            <FaChevronLeft className="w-3.5 h-3.5 text-white drop-shadow" />
+                            <FaChevronLeft className="w-3.5 h-3.5 drop-shadow" />
                         </button>
                         <button
                             onClick={() => goTo(activeIdx + 1)}
                             className="absolute right-0 bottom-0 z-10 w-10 h-10 rounded-tl-2xl bg-black/20 backdrop-blur-sm flex items-center justify-center hover:bg-black/35 transition-all active:scale-95"
                             aria-label="Next bundle"
                         >
-                            <FaChevronRight className="w-3.5 h-3.5 text-white drop-shadow" />
+                            <FaChevronRight className="w-3.5 h-3.5 drop-shadow" />
                         </button>
                     </>
                 )}
@@ -551,12 +551,12 @@ const BundleCard = memo(({ bundle, selected, onBuy, disabled }: {
 
             {/* Selected indicator */}
             {selected && (
-                <div className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center">
+                <div className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full shadow-md flex items-center justify-center" style={{ backgroundColor: 'var(--bg-surface)' }}>
                     <FaCircleCheck className="w-4 h-4" style={{ color: pc.primary }} />
                 </div>
             )}
 
-            <div className="relative p-4 text-white space-y-3">
+            <div className="relative p-4 space-y-3" style={{ color: 'var(--text-inverse)' }}>
                 {/* Provider + AFA badge */}
                 <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase tracking-widest opacity-75">{bundle.providerName}</span>
@@ -592,7 +592,7 @@ const BundleCard = memo(({ bundle, selected, onBuy, disabled }: {
                 <div className="flex items-center justify-between border-t border-white/15 pt-3">
                     <span className="text-xl font-extrabold">{fmt(bundle.price)}</span>
                     <div
-                        className="flex items-center gap-1.5 bg-white rounded-xl px-3 py-1.5 text-xs font-black shadow transition-all group-hover:shadow-lg"
+                        className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black shadow transition-all group-hover:shadow-lg"
                         style={{ color: pc.primary }}
                     >
                         <FaBagShopping className="w-3 h-3" /> Buy
@@ -612,20 +612,20 @@ const PackageHeader = memo(({ pkgName, count, collapsed, onToggle, color }: {
 }) => (
     <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-all text-left"
+        className="w-full flex items-center justify-between p-3 rounded-xl shadow-sm hover:shadow-md transition-all text-left"
         aria-expanded={!collapsed}
     >
         <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm"
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
                 style={{ backgroundColor: color }}>
                 <FaStore className="w-3.5 h-3.5" />
             </div>
             <div>
-                <div className="text-sm font-bold text-gray-900">{pkgName}</div>
-                <div className="text-xs text-gray-400">{count} bundle{count !== 1 ? 's' : ''}</div>
+                <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{pkgName}</div>
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{count} bundle{count !== 1 ? 's' : ''}</div>
             </div>
         </div>
-        <div className="text-gray-400 transition-transform duration-200" style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
+        <div className="transition-transform duration-200" style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)' , color: 'var(--text-tertiary)' }}>
             <FaChevronDown className="w-4 h-4" />
         </div>
     </button>
@@ -636,16 +636,16 @@ const PackageHeader = memo(({ pkgName, count, collapsed, onToggle, color }: {
 // =============================================================================
 
 const StoreSkeleton = memo(({ theme }: { theme: ThemeConfig }) => (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-muted)' }}>
         {/* Hero skeleton */}
         <div className="h-48 sm:h-64" style={{ background: theme.gradient, opacity: 0.15 }} />
         <div className="max-w-5xl mx-auto px-4 -mt-8 space-y-6">
             {/* Popular row skeleton */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <div className="rounded-2xl p-4 shadow-sm" style={{ backgroundColor: 'var(--bg-surface)' }}>
                 <Skeleton height="1rem" width="160px" className="mb-3" />
                 <div className="flex gap-3 overflow-hidden">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="shrink-0 w-36 h-28 rounded-2xl bg-gray-100 animate-pulse" />
+                        <div key={i} className="shrink-0 w-36 h-28 rounded-2xl animate-pulse" style={{ backgroundColor: 'var(--bg-muted)' }} />
                     ))}
                 </div>
             </div>
@@ -662,22 +662,25 @@ const StoreSkeleton = memo(({ theme }: { theme: ThemeConfig }) => (
 // =============================================================================
 
 const StoreError = memo(({ error, onRetry }: { error: string; onRetry: () => void }) => (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--bg-muted)' }}>
         <div className="max-w-sm w-full text-center space-y-5">
-            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
-                <FaTriangleExclamation className="w-8 h-8 text-red-400" />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 8%, transparent)' }}>
+                <FaTriangleExclamation className="w-8 h-8" style={{ color: 'var(--error)' }} />
             </div>
             <div>
-                <h2 className="text-xl font-bold text-gray-900">Store unavailable</h2>
-                <p className="text-sm text-gray-500 mt-2">{error}</p>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Store unavailable</h2>
+                <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>{error}</p>
             </div>
             <div className="flex gap-3 justify-center">
                 <button onClick={onRetry}
-                    className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm bg-gray-900 hover:bg-gray-800 transition active:scale-95">
+                    className="px-5 py-2.5 rounded-xl font-semibold text-sm transition active:scale-95"
+                    style={{ backgroundColor: 'color-mix(in srgb, var(--text-primary) 92%, transparent)', color: 'var(--text-inverse)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'color-mix(in srgb, var(--text-primary) 75%, transparent)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'color-mix(in srgb, var(--text-primary) 92%, transparent)'; }}>
                     Try again
                 </button>
                 <button onClick={() => window.location.href = '/'}
-                    className="px-5 py-2.5 rounded-xl font-semibold text-sm border border-gray-200 hover:bg-gray-50 transition">
+                    className="px-5 py-2.5 rounded-xl font-semibold text-sm border transition" style={{ backgroundColor: 'var(--bg-muted)' , borderColor: 'var(--border-color)' }}>
                     Go home
                 </button>
             </div>
@@ -687,22 +690,25 @@ const StoreError = memo(({ error, onRetry }: { error: string; onRetry: () => voi
 
 const EmptyBundles = memo(({ searchTerm, onClear }: { searchTerm: string; onClear: () => void }) => (
     <div className="py-20 text-center px-4">
-        <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <FaWifi className="w-8 h-8 text-gray-300" />
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--bg-muted)' }}>
+            <FaWifi className="w-8 h-8" style={{ color: 'var(--text-tertiary)' }} />
         </div>
         {searchTerm ? (
             <>
-                <h3 className="text-lg font-bold text-gray-800">No results for "{searchTerm}"</h3>
-                <p className="text-sm text-gray-400 mt-1 mb-4">Try different keywords or clear the search.</p>
+                <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>No results for "{searchTerm}"</h3>
+                <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-tertiary)' }}>Try different keywords or clear the search.</p>
                 <button onClick={onClear}
-                    className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition">
+                    className="px-4 py-2 rounded-xl text-sm font-semibold transition"
+                    style={{ backgroundColor: 'color-mix(in srgb, var(--text-primary) 92%, transparent)', color: 'var(--text-inverse)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'color-mix(in srgb, var(--text-primary) 75%, transparent)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'color-mix(in srgb, var(--text-primary) 92%, transparent)'; }}>
                     Clear search
                 </button>
             </>
         ) : (
             <>
-                <p className="text-gray-400 font-medium">No bundles available right now</p>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="font-medium" style={{ color: 'var(--text-tertiary)' }}>No bundles available right now</p>
+                <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
                     The store owner may not have activated any bundles yet. Check back later or contact them for assistance.
                 </p>
             </>
@@ -857,9 +863,8 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                                 )}
                             </div>
                             <div className={`${isLast ? 'pb-1' : 'pb-3'}`}>
-                                <p className={`text-sm font-semibold leading-tight ${step.failed ? 'text-red-600' : step.done ? 'text-gray-900' : 'text-gray-400'
-                                    }`}>{step.event}</p>
-                                <p className="text-xs text-gray-400 mt-0.5">
+                                <p className="text-sm font-semibold leading-tight" style={{ color: step.failed ? 'var(--error)' : step.done ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{step.event}</p>
+                                <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                                     {step.at ? fmtDate(step.at) : (step.done ? '' : 'Pending…')}
                                 </p>
                             </div>
@@ -867,30 +872,27 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                     );
                 })}
                 {order.items.length > 0 && (
-                    <div className="mt-2 pt-3 border-t border-gray-100 space-y-2">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Bundle Details</p>
+                    <div className="mt-2 pt-3 border-t space-y-2" style={{ borderColor: 'var(--border-color)' }}>
+                        <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>Bundle Details</p>
                         {order.items.map((item, i) => (
                             <div key={i} className="flex items-start justify-between text-xs gap-2">
                                 <div className="min-w-0">
-                                    <span className="font-semibold text-gray-800">{item.bundleName}</span>
-                                    {item.dataVolume > 0 && <span className="text-gray-400 ml-1">· {item.dataVolume}{item.dataUnit}</span>}
+                                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{item.bundleName}</span>
+                                    {item.dataVolume > 0 && <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>· {item.dataVolume}{item.dataUnit}</span>}
                                 </div>
                                 <div className="text-right shrink-0 flex items-center gap-2">
-                                    <p className="font-mono text-gray-600">
+                                    <p className="font-mono" style={{ color: 'var(--text-secondary)' }}>
                                         {showFull ? item.customerPhone : maskPhone(item.customerPhone)}
                                     </p>
                                     <button
                                         type="button"
                                         onClick={() => toggleShowFullPhoneForOrder(order.orderId)}
-                                        className="flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-100 transition"
+                                        className="flex items-center justify-center w-8 h-8 rounded-full transition"
                                         aria-label={showFull ? 'Hide phone number' : 'Show full phone number'}
                                     >
                                         {showFull ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
                                     </button>
-                                    <span className={`text-[10px] font-bold ${item.processingStatus === 'completed' ? 'text-green-600' :
-                                        item.processingStatus === 'failed' ? 'text-red-500' :
-                                            item.processingStatus === 'processing' ? 'text-blue-500' : 'text-amber-500'
-                                        }`}>{item.processingStatus}</span>
+                                    <span className="text-[10px] font-bold" style={{ color: item.processingStatus === 'completed' ? 'var(--success)' : item.processingStatus === 'failed' ? 'var(--error)' : item.processingStatus === 'processing' ? 'var(--color-primary)' : 'var(--warning)' }}>{item.processingStatus}</span>
                                 </div>
                             </div>
                         ))}
@@ -905,31 +907,31 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
         const live = liveData[entry.orderId];
         const isExpanded = expandedId === entry.orderId;
         return (
-            <div key={entry.orderId} className="rounded-2xl border border-gray-100 overflow-hidden bg-white shadow-sm">
+            <div key={entry.orderId} className="rounded-2xl border overflow-hidden shadow-sm" style={{ borderColor: 'var(--border-color)' , backgroundColor: 'var(--bg-surface)' }}>
                 <button onClick={() => handleExpand(entry)}
-                    className="w-full p-4 flex items-start justify-between gap-3 text-left hover:bg-gray-50/50 transition">
+                    className="w-full p-4 flex items-start justify-between gap-3 text-left transition" style={{ backgroundColor: 'var(--bg-muted)' }}>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-mono font-bold text-gray-600 shrink-0">{entry.orderNumber}</span>
+                            <span className="text-xs font-mono font-bold shrink-0" style={{ color: 'var(--text-secondary)' }}>{entry.orderNumber}</span>
                             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
                                 style={{ backgroundColor: cfg.bg, color: cfg.color }}>{cfg.label}</span>
                         </div>
-                        <p className="text-sm font-semibold text-gray-800 mt-1 truncate">{entry.bundleName}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-sm font-semibold mt-1 truncate" style={{ color: 'var(--text-primary)' }}>{entry.bundleName}</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                             GH₵{entry.total.toFixed(2)} · {
                                 entry.paymentType === 'paystack' ? '⚡ Paystack' :
                                     entry.paymentType === 'mobile_money' ? '📱 MoMo' : '🏦 Bank'
                             } · {new Date(entry.savedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </p>
                     </div>
-                    <FaChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 shrink-0 mt-1 ${isExpanded ? 'rotate-180' : ''}`} />
+                    <FaChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 mt-1 ${isExpanded ? 'rotate-180' : ''}`} style={{ color: 'var(--text-tertiary)' }} />
                 </button>
                 {isExpanded && (
-                    <div className="px-4 pb-4 border-t border-gray-100 bg-gray-50/50">
+                    <div className="px-4 pb-4 border-t" style={{ backgroundColor: 'var(--bg-muted)' , borderColor: 'var(--border-color)' }}>
                         {live
                             ? renderTimeline(live)
-                            : <div className="py-5 flex items-center justify-center gap-2 text-sm text-gray-400">
-                                <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                            : <div className="py-5 flex items-center justify-center gap-2 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" />
                                 Loading status…
                             </div>
                         }
@@ -942,9 +944,9 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
     const renderTrackResult = (order: TrackedOrder) => {
         const cfg = ORDER_STATUS_CFG[order.status] ?? ORDER_STATUS_CFG.pending;
         return (
-            <div className="rounded-2xl border border-gray-200 bg-white p-4">
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--border-color)' , backgroundColor: 'var(--bg-surface)' }}>
                 <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-mono font-bold text-gray-600">{order.orderNumber}</span>
+                    <span className="text-xs font-mono font-bold" style={{ color: 'var(--text-secondary)' }}>{order.orderNumber}</span>
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
                         style={{ backgroundColor: cfg.bg, color: cfg.color }}>{cfg.label}</span>
                 </div>
@@ -957,26 +959,24 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
     // controlled via CSS transitions on opacity and transform.
     return (
         <div className={`fixed inset-0 z-50 flex justify-end ${isOpen ? '' : 'pointer-events-none'}`} onClick={onClose}>
-            <div className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'
-                }`} />
-            <div className={`relative w-full max-w-md h-full flex flex-col bg-white shadow-2xl transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'
-                }`} onClick={e => e.stopPropagation()}>
+            <div className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0' }`} />
+            <div className={`relative w-full max-w-md h-full flex flex-col  shadow-2xl transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full' }`} style={{ backgroundColor: 'var(--bg-surface)' }} onClick={e => e.stopPropagation()}>
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+                <div className="flex items-center justify-between px-5 py-4 border-b shrink-0" style={{ borderColor: 'var(--border-color)' }}>
                     <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center"
                             style={{ backgroundColor: theme.primary + '18' }}>
                             <FaBoxOpen className="w-4 h-4" style={{ color: theme.primary }} />
                         </div>
                         <div>
-                            <h2 className="font-black text-gray-900 text-base leading-tight">My Orders</h2>
-                            <p className="text-[11px] text-gray-400 leading-tight">Track your purchases on this device</p>
+                            <h2 className="font-black text-base leading-tight" style={{ color: 'var(--text-primary)' }}>My Orders</h2>
+                            <p className="text-[11px] leading-tight" style={{ color: 'var(--text-tertiary)' }}>Track your purchases on this device</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={onClose}
-                            className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition">
+                            className="w-8 h-8 rounded-xl border flex items-center justify-center transition" style={{ color: 'var(--text-secondary)' , backgroundColor: 'var(--bg-muted)' , borderColor: 'var(--border-color)' }}>
                             <FaXmark className="w-3.5 h-3.5" />
                         </button>
                     </div>
@@ -986,14 +986,14 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                     {savedOrders.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-                                <FaBoxOpen className="w-8 h-8 text-gray-300" />
+                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                                <FaBoxOpen className="w-8 h-8" style={{ color: 'var(--text-tertiary)' }} />
                             </div>
-                            <p className="font-bold text-gray-700">No recent orders</p>
-                            <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                            <p className="font-bold" style={{ color: 'var(--text-primary)' }}>No recent orders</p>
+                            <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
                                 Orders placed on this device appear here for 24 hours.
                             </p>
-                            <p className="text-xs text-gray-300 mt-3">Have an order number? Use the lookup below.</p>
+                            <p className="text-xs mt-3" style={{ color: 'var(--text-tertiary)' }}>Have an order number? Use the lookup below.</p>
                         </div>
                     ) : (
                         savedOrders.map(entry => renderOrderCard(entry))
@@ -1001,10 +1001,10 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                 </div>
 
                 {/* Manual lookup */}
-                <div className="border-t border-gray-100 bg-gray-50/60 px-4 py-4 shrink-0 space-y-3">
+                <div className="border-t px-4 py-4 shrink-0 space-y-3" style={{ backgroundColor: 'var(--bg-muted)' , borderColor: 'var(--border-color)' }}>
                     <button
                         onClick={() => { setShowManual(m => !m); setTrackResult(null); setTrackError(null); }}
-                        className="flex items-center justify-between w-full text-sm font-bold text-gray-600 hover:text-gray-900 transition">
+                        className="flex items-center justify-between w-full text-sm font-bold transition" style={{ color: 'var(--text-secondary)' }}>
                         <span>Track by order number</span>
                         <FaChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showManual ? 'rotate-180' : ''}`} />
                     </button>
@@ -1016,21 +1016,21 @@ const TrackOrderDrawer = memo(({ businessName, theme, isOpen, onClose }: TrackOr
                                 value={manualRef}
                                 onChange={e => setManualRef(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleManualTrack()}
-                                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white placeholder:text-gray-300 focus:outline-none focus:ring-2"
+                                className="w-full px-3.5 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2"
                                 style={{ '--tw-ring-color': theme.primary + '50' } as React.CSSProperties}
                             />
                             <button
                                 onClick={handleManualTrack}
                                 disabled={!manualRef.trim() || trackLoading}
-                                className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition active:scale-95 disabled:opacity-40"
+                                className="w-full py-2.5 rounded-xl text-sm font-bold transition active:scale-95 disabled:opacity-40"
                                 style={{ backgroundColor: theme.primary }}>
                                 {trackLoading ? 'Looking up…' : 'Track Order'}
                             </button>
-                            {trackError && <p className="text-xs text-red-500 text-center">{trackError}</p>}
+                            {trackError && <p className="text-xs text-center" style={{ color: 'var(--error)' }}>{trackError}</p>}
                             {trackResult && renderTrackResult(trackResult)}
                         </div>
                     )}
-                    <p className="text-[10px] text-gray-300 text-center">
+                    <p className="text-[10px] text-center" style={{ color: 'var(--text-tertiary)' }}>
                         Data stored locally on this device · Clears after 24 hours
                     </p>
                 </div>
@@ -1562,8 +1562,8 @@ const PublicStore: React.FC = () => {
                         className="h-14 w-14 rounded-2xl mx-auto mb-4 object-cover shadow"
                         style={{ border: `2px solid ${theme.primary}40` }}
                     />
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">{storefront.displayName}</h1>
-                    <p className="text-sm text-gray-500 mt-1">{displayTagline}</p>
+                    <h1 className="text-2xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>{storefront.displayName}</h1>
+                    <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{displayTagline}</p>
                 </header>
             );
         }
@@ -1606,7 +1606,7 @@ const PublicStore: React.FC = () => {
                     <img src={logoSrc} alt={storefront.displayName}
                         className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl mx-auto mb-4 object-cover border-2 border-white/30 shadow-xl"
                     />
-                    <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-none">
+                    <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-none" style={{ color: 'var(--text-inverse)' }}>
                         {storefront.displayName}
                     </h1>
                     <p className="mt-3 text-white/70 text-sm sm:text-base max-w-xs mx-auto">{displayTagline}</p>
@@ -1626,50 +1626,51 @@ const PublicStore: React.FC = () => {
         );
 
         return (
-            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b shadow-sm" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="max-w-5xl mx-auto px-4 py-3 space-y-3">
                     {publicAnnouncement && (
-                        <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800 flex items-start justify-between gap-3">
+                        <div className="rounded-xl border p-3 text-sm flex items-start justify-between gap-3" style={{ color: 'var(--color-primary)' , backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' , borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
                             <div className="min-w-0">
                                 <div className="font-semibold">{publicAnnouncement.title}</div>
-                                <div className="truncate text-xs text-blue-700 mt-1">{publicAnnouncement.message}</div>
+                                <div className="truncate text-xs mt-1" style={{ color: 'var(--color-primary)' }}>{publicAnnouncement.message}</div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => dismissPublicAnnouncement(publicAnnouncement._id)}
-                                className="text-blue-500 hover:text-blue-700 text-xs font-semibold"
+                                className="text-xs font-semibold"
                             >
                                 Dismiss
                             </button>
                         </div>
                     )}
                     {storeClosed && (
-                        <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
+                        <div className="rounded-xl border p-3 text-sm" style={{ color: 'var(--warning)' , backgroundColor: 'color-mix(in srgb, var(--warning) 8%, transparent)' , borderColor: 'color-mix(in srgb, var(--warning) 30%, transparent)' }}>
                             <strong className="font-semibold">Store temporarily closed:</strong> {storeClosedMessage}
                         </div>
                     )}
                     {storefrontsClosed && (
-                        <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
+                        <div className="rounded-xl border p-3 text-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 8%, transparent)' , borderColor: 'color-mix(in srgb, var(--warning) 30%, transparent)' }}>
                             <strong className="font-semibold">Storefronts closed by admin:</strong> {storefrontsClosedMessage}
                         </div>
                     )}
                     {/* Search + view toggle row */}
                     <div className="flex items-center gap-2">
                         <div className="relative flex-1">
-                            <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
+                            <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--text-tertiary)' }} />
                             <input
                                 type="search"
                                 placeholder="Search bundles…"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent transition placeholder:text-gray-400"
-                                style={{ '--tw-ring-color': theme.primary + '40' } as React.CSSProperties}
+                                className="w-full pl-9 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent transition"
+                                style={{ backgroundColor: 'var(--bg-muted)', borderColor: 'var(--border-color)', '--tw-ring-color': theme.primary + '40' } as React.CSSProperties}
                             />
                         </div>
                         <button
                             onClick={() => setShowTrackDrawer(true)}
                             title="Track my orders"
-                            className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition whitespace-nowrap"
+                            className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-semibold transition whitespace-nowrap"
+                            style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
                         >
                             <FaBoxOpen className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">My Orders</span>
@@ -1707,7 +1708,7 @@ const PublicStore: React.FC = () => {
                                             {getLogoUrl(prov.logo) ? (
                                                 <img src={getLogoUrl(prov.logo)} alt={prov.name} className="w-4 h-4 rounded-full object-cover" />
                                             ) : (
-                                                <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                                                <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
                                                     style={{ backgroundColor: pc.primary }}>
                                                     {prov.name.charAt(0)}
                                                 </span>
@@ -1775,8 +1776,8 @@ const PublicStore: React.FC = () => {
                                                 : prov.name.charAt(0)}
                                         </div>
                                         <div>
-                                            <h2 className="text-base font-black text-gray-900">{prov.name}</h2>
-                                            <p className="text-xs text-gray-400">{total} bundle{total !== 1 ? 's' : ''}</p>
+                                            <h2 className="text-base font-black" style={{ color: 'var(--text-primary)' }}>{prov.name}</h2>
+                                            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{total} bundle{total !== 1 ? 's' : ''}</p>
                                         </div>
                                     </div>
                                     <div className="space-y-4 border-l-2 pl-4 ml-1" style={{ borderColor: pc.primary + '25' }}>
@@ -1814,8 +1815,8 @@ const PublicStore: React.FC = () => {
                                     {provName.charAt(0)}
                                 </div>
                                 <div>
-                                    <h2 className="text-base font-black text-gray-900">{provName}</h2>
-                                    <p className="text-xs text-gray-400">{total} bundle{total !== 1 ? 's' : ''}</p>
+                                    <h2 className="text-base font-black" style={{ color: 'var(--text-primary)' }}>{provName}</h2>
+                                    <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{total} bundle{total !== 1 ? 's' : ''}</p>
                                 </div>
                             </div>
                             <div className="space-y-4 border-l-2 pl-4 ml-1" style={{ borderColor: pc.primary + '25' }}>
@@ -1888,7 +1889,7 @@ const PublicStore: React.FC = () => {
                                 )}
                             </React.Fragment>
                         ))}
-                        <span className="ml-2 text-xs text-gray-400 font-semibold whitespace-nowrap">
+                        <span className="ml-2 text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
                             {orderStep === 'details' ? 'Bundle & Number' : orderStep === 'payment' ? 'Your Details' : 'Order Placed'}
                         </span>
                     </div>
@@ -1922,9 +1923,9 @@ const PublicStore: React.FC = () => {
                                                 {bundle.dataVolume}<span className="text-2xl font-bold ml-1 opacity-80">{bundle.dataUnit}</span>
                                             </div>
                                         )}
-                                        <h3 className="font-bold text-gray-900 mt-1">{bundle.name}</h3>
+                                        <h3 className="font-bold mt-1" style={{ color: 'var(--text-primary)' }}>{bundle.name}</h3>
                                         <div className="flex flex-wrap gap-1.5 mt-2">
-                                            <span className="text-xs px-2 py-0.5 rounded-full bg-white text-gray-600 border font-medium shadow-sm">
+                                            <span className="text-xs px-2 py-0.5 rounded-full border font-medium shadow-sm" style={{ color: 'var(--text-secondary)' , backgroundColor: 'var(--bg-surface)' }}>
                                                 {fmtValidity(bundle.validity, bundle.validityUnit)}
                                             </span>
                                             <span className="text-xs px-2 py-0.5 rounded-full font-bold"
@@ -1936,7 +1937,7 @@ const PublicStore: React.FC = () => {
                                     <div className="text-right shrink-0">
                                         <div className="text-2xl font-extrabold" style={{ color: pc.primary }}>{fmt(bundle.price)}</div>
                                         {paymentType === 'paystack' && feeEstimate && (
-                                            <div className="text-[10px] text-gray-400 mt-0.5">~{fmt(feeEstimate.charge)} w/ fees</div>
+                                            <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>~{fmt(feeEstimate.charge)} w/ fees</div>
                                         )}
                                     </div>
                                 </div>
@@ -1953,7 +1954,7 @@ const PublicStore: React.FC = () => {
 
                                 {/* Phone number */}
                                 <div>
-                                    <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                                    <label className="flex items-center gap-1.5 text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
                                         <FaPhone className="w-3 h-3 opacity-60" />
                                         Recipient Number *
                                     </label>
@@ -1965,13 +1966,13 @@ const PublicStore: React.FC = () => {
                                         autoComplete="tel"
                                     />
                                     {orderPhone && !phoneOk && (
-                                        <p className="text-xs text-rose-500 mt-1.5 flex items-center gap-1">
+                                        <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: 'var(--error)' }}>
                                             <FaTriangleExclamation className="w-3 h-3" />
                                             Enter a valid 10-digit Ghana number (e.g. 0244123456)
                                         </p>
                                     )}
                                     {phoneOk && (
-                                        <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+                                        <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: 'var(--success)' }}>
                                             <FaCircleCheck className="w-3 h-3" /> Looks good!
                                         </p>
                                     )}
@@ -1981,7 +1982,7 @@ const PublicStore: React.FC = () => {
                                 {isAfa && (
                                     <>
                                         <div>
-                                            <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                                            <label className="flex items-center gap-1.5 text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
                                                 <FaIdCard className="w-3 h-3 opacity-60" /> Recipient Full Name *
                                             </label>
                                             <Input
@@ -1992,7 +1993,7 @@ const PublicStore: React.FC = () => {
                                         </div>
                                         {bundle.requiresGhanaCard && (
                                             <div>
-                                                <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
+                                                <label className="flex items-center gap-1.5 text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
                                                     <FaIdCard className="w-3 h-3 opacity-60" /> Ghana Card Number *
                                                 </label>
                                                 <Input
@@ -2001,7 +2002,7 @@ const PublicStore: React.FC = () => {
                                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderGhanaCard(e.target.value)}
                                                 />
                                                 {orderGhanaCard && !/^[A-Z]{3}-?\d{9}-?\d$/i.test(orderGhanaCard) && (
-                                                    <p className="text-xs text-rose-500 mt-1">Format: GHA-000000000-0</p>
+                                                    <p className="text-xs mt-1" style={{ color: 'var(--error)' }}>Format: GHA-000000000-0</p>
                                                 )}
                                             </div>
                                         )}
@@ -2012,17 +2013,17 @@ const PublicStore: React.FC = () => {
                                 {feeEstimate && (
                                     <div className="rounded-xl p-3 text-xs space-y-1"
                                         style={{ backgroundColor: theme.bg, borderLeft: `3px solid ${theme.primary}` }}>
-                                        <p className="font-bold text-gray-700">Price Breakdown (Paystack)</p>
-                                        <div className="flex justify-between text-gray-600">
+                                        <p className="font-bold" style={{ color: 'var(--text-primary)' }}>Price Breakdown (Paystack)</p>
+                                        <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
                                             <span>Bundle price</span><span>{fmt(bundle.price)}</span>
                                         </div>
-                                        <div className="flex justify-between text-gray-600">
+                                        <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
                                             <span>Processing fee (~1.95%)</span><span>+{fmt(feeEstimate.fee)}</span>
                                         </div>
-                                        <div className="flex justify-between font-black pt-1 border-t border-gray-200" style={{ color: theme.primary }}>
+                                        <div className="flex justify-between font-black pt-1 border-t" style={{ color: theme.primary , borderColor: 'var(--border-color)' }}>
                                             <span>You pay</span><span>{fmt(feeEstimate.charge)}</span>
                                         </div>
-                                        <p className="text-gray-400 text-[10px] pt-0.5">Exact amount confirmed at payment. Fee covers Paystack processing.</p>
+                                        <p className="text-[10px] pt-0.5" style={{ color: 'var(--text-tertiary)' }}>Exact amount confirmed at payment. Fee covers Paystack processing.</p>
                                     </div>
                                 )}
                             </div>
@@ -2034,7 +2035,7 @@ const PublicStore: React.FC = () => {
                                 <button
                                     disabled={!step1Valid || ordersClosed}
                                     onClick={confirmDetails}
-                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40"
+                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40"
                                     style={{ backgroundColor: theme.primary }}
                                 >
                                     Continue to Payment <FaArrowRight className="w-3.5 h-3.5" />
@@ -2049,8 +2050,8 @@ const PublicStore: React.FC = () => {
                     <>
                         <DialogHeader>
                             <div className="space-y-1">
-                                <h3 className="font-black text-gray-900 text-lg">Complete your details</h3>
-                                <p className="text-sm text-gray-500">
+                                <h3 className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>Complete your details</h3>
+                                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                                     Ordering <strong>{bundle.name}</strong> → <span className="font-mono">{normalizePhone(orderPhone)}</span>
                                 </p>
                             </div>
@@ -2060,7 +2061,7 @@ const PublicStore: React.FC = () => {
                                 {/* Customer info */}
                                 <div className="space-y-3">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
+                                        <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
                                             Your Full Name *
                                         </label>
                                         <Input
@@ -2073,7 +2074,7 @@ const PublicStore: React.FC = () => {
 
                                 {/* Payment method */}
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">
+                                    <label className="block text-xs font-bold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
                                         How would you like to pay?
                                     </label>
                                     <div className="space-y-2">
@@ -2096,8 +2097,8 @@ const PublicStore: React.FC = () => {
                                                     style={active ? { borderColor: theme.primary, backgroundColor: theme.bg } : { borderColor: '#E5E7EB', backgroundColor: '#fff' }}>
                                                     <span className="text-2xl shrink-0">{icons[pm.type] || '💳'}</span>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-bold text-gray-900">{labels[pm.type] || pm.type}</p>
-                                                        <p className="text-xs text-gray-400 leading-snug">{descs[pm.type] || ''}</p>
+                                                        <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{labels[pm.type] || pm.type}</p>
+                                                        <p className="text-xs leading-snug" style={{ color: 'var(--text-tertiary)' }}>{descs[pm.type] || ''}</p>
                                                     </div>
                                                     <div className="w-4 h-4 rounded-full border-2 shrink-0 transition-all"
                                                         style={active ? { borderColor: theme.primary, backgroundColor: theme.primary } : { borderColor: '#D1D5DB' }} />
@@ -2117,16 +2118,16 @@ const PublicStore: React.FC = () => {
                                         {Array.isArray(selectedPayment.details?.accounts)
                                             ? (selectedPayment.details.accounts as PaymentAccount[]).map((acc, i) => (
                                                 <div key={i} className="text-sm space-y-1">
-                                                    {acc.provider && <div className="flex justify-between"><span className="text-gray-500">Provider</span><span className="font-semibold">{acc.provider}</span></div>}
-                                                    {acc.number && <div className="flex justify-between"><span className="text-gray-500">Number</span><span className="font-bold text-lg tracking-wider">{acc.number}</span></div>}
-                                                    {acc.accountName && <div className="flex justify-between"><span className="text-gray-500">Account Name</span><span className="font-semibold">{acc.accountName}</span></div>}
+                                                    {acc.provider && <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}><span className="">Provider</span><span className="font-semibold">{acc.provider}</span></div>}
+                                                    {acc.number && <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}><span className="">Number</span><span className="font-bold text-lg tracking-wider">{acc.number}</span></div>}
+                                                    {acc.accountName && <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}><span className="">Account Name</span><span className="font-semibold">{acc.accountName}</span></div>}
                                                 </div>
                                             ))
                                             : Object.entries(selectedPayment.details || {}).map(([k, v]) => {
                                                 if (v == null || typeof v === 'object') return null;
                                                 return (
                                                     <div key={k} className="flex justify-between text-sm">
-                                                        <span className="text-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                                        <span className="capitalize" style={{ color: 'var(--text-secondary)' }}>{k.replace(/([A-Z])/g, ' $1').trim()}</span>
                                                         <span className="font-semibold">{String(v)}</span>
                                                     </div>
                                                 );
@@ -2136,7 +2137,7 @@ const PublicStore: React.FC = () => {
                                             <p className="font-black text-base" style={{ color: theme.secondary }}>
                                                 Send exactly: {fmt(bundle.price)}
                                             </p>
-                                            <p className="text-xs text-gray-500 mt-0.5">
+                                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                                                 ✅ Send the exact amount — do not round up or down
                                             </p>
                                         </div>
@@ -2146,7 +2147,7 @@ const PublicStore: React.FC = () => {
                                 {/* MoMo transaction ref input */}
                                 {paymentType === 'mobile_money' && (
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
+                                        <label className="block text-xs font-bold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
                                             MoMo Transaction Reference *
                                         </label>
                                         <Input
@@ -2154,7 +2155,7 @@ const PublicStore: React.FC = () => {
                                             value={transactionRef}
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTransactionRef(e.target.value)}
                                         />
-                                        <p className="text-xs text-gray-400 mt-1">
+                                        <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
                                             💡 Make the payment first, then paste your reference ID here. You'll get it in your MoMo SMS.
                                         </p>
                                     </div>
@@ -2163,18 +2164,18 @@ const PublicStore: React.FC = () => {
                                 {/* Order summary */}
                                 <div className="rounded-xl p-3 space-y-1.5"
                                     style={{ backgroundColor: theme.bg }}>
-                                    <p className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Order Summary</p>
-                                    <div className="flex justify-between text-sm text-gray-600">
+                                    <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>Order Summary</p>
+                                    <div className="flex justify-between text-sm" style={{ color: 'var(--text-secondary)' }}>
                                         <span>{bundle.name}</span>
                                         <span>{fmt(bundle.price)}</span>
                                     </div>
                                     {feeEstimate && paymentType === 'paystack' && (
-                                        <div className="flex justify-between text-xs text-gray-500">
+                                        <div className="flex justify-between text-xs" style={{ color: 'var(--text-secondary)' }}>
                                             <span>Paystack processing fee (~1.95%)</span>
                                             <span>+{fmt(feeEstimate.fee)}</span>
                                         </div>
                                     )}
-                                    <div className="flex justify-between font-black pt-2 border-t border-gray-200 text-base"
+                                    <div className="flex justify-between font-black pt-2 border-t text-base"
                                         style={{ color: theme.primary }}>
                                         <span>Total to Pay</span>
                                         <span>{fmt(feeEstimate && paymentType === 'paystack' ? feeEstimate.charge : bundle.price)}</span>
@@ -2196,7 +2197,7 @@ const PublicStore: React.FC = () => {
                                 <button
                                     disabled={!canSubmitOrder || submitting || ordersClosed}
                                     onClick={submitOrder}
-                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
                                     style={{ backgroundColor: theme.primary }}
                                 >
                                     {submitting ? (
@@ -2221,19 +2222,19 @@ const PublicStore: React.FC = () => {
                     <>
                         <DialogHeader>
                             <div className="flex items-center gap-2">
-                                <FaCircleCheck className="w-6 h-6 text-emerald-500" />
-                                <h3 className="font-black text-gray-900 text-lg">Order Placed! 🎉</h3>
+                                <FaCircleCheck className="w-6 h-6" />
+                                <h3 className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>Order Placed! 🎉</h3>
                             </div>
                         </DialogHeader>
                         <DialogBody>
                             <div className="space-y-5 py-1">
                                 {/* Success icon */}
                                 <div className="flex flex-col items-center text-center pb-2">
-                                    <div className="w-20 h-20 rounded-2xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mb-3">
-                                        <FaCircleCheck className="w-10 h-10 text-emerald-500" />
+                                    <div className="w-20 h-20 rounded-2xl border-2 flex items-center justify-center mb-3" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--success) 30%, transparent)' }}>
+                                        <FaCircleCheck className="w-10 h-10" />
                                     </div>
-                                    <p className="text-xl font-black text-gray-900">Thank you!</p>
-                                    <p className="text-sm text-gray-500 mt-0.5">Order #{orderResult.orderNumber}</p>
+                                    <p className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>Thank you!</p>
+                                    <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Order #{orderResult.orderNumber}</p>
                                     <button
                                         onClick={() => { closeOrderDialog(); setShowTrackDrawer(true); }}
                                         className="text-xs font-bold mt-1.5 underline underline-offset-2"
@@ -2244,29 +2245,29 @@ const PublicStore: React.FC = () => {
                                 </div>
 
                                 {/* Order breakdown */}
-                                <div className="bg-gray-50 rounded-2xl p-4 space-y-2 text-sm">
+                                <div className="rounded-2xl p-4 space-y-2 text-sm" style={{ backgroundColor: 'var(--bg-muted)' }}>
                                     <div className="flex justify-between">
-                                        <span className="text-gray-500">Bundle</span>
+                                        <span className="" style={{ color: 'var(--text-secondary)' }}>Bundle</span>
                                         <span className="font-semibold">{bundle.name}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-gray-500">For number</span>
+                                        <span className="" style={{ color: 'var(--text-secondary)' }}>For number</span>
                                         <span className="font-mono font-semibold">{normalizePhone(orderPhone)}</span>
                                     </div>
                                     {/* Show actual fee breakdown from API response if available */}
                                     {(orderResult as any).subtotal && (orderResult as any).subtotal !== orderResult.total && (
                                         <>
                                             <div className="flex justify-between">
-                                                <span className="text-gray-500">Bundle price</span>
+                                                <span className="" style={{ color: 'var(--text-secondary)' }}>Bundle price</span>
                                                 <span>{fmt((orderResult as any).subtotal)}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-gray-500">Processing fee</span>
+                                                <span className="" style={{ color: 'var(--text-secondary)' }}>Processing fee</span>
                                                 <span>+{fmt(orderResult.total - (orderResult as any).subtotal)}</span>
                                             </div>
                                         </>
                                     )}
-                                    <div className="flex justify-between font-black text-lg pt-2 border-t border-gray-200">
+                                    <div className="flex justify-between font-black text-lg pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
                                         <span>Total Charged</span>
                                         <span style={{ color: theme.primary }}>{fmt(orderResult.total)}</span>
                                     </div>
@@ -2280,17 +2281,17 @@ const PublicStore: React.FC = () => {
                                             return (
                                                 <>
                                                     <div className="flex justify-between items-center">
-                                                        <span className="text-sm text-gray-600 font-semibold">Payment Status</span>
+                                                        <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Payment Status</span>
                                                         {paystackStatus === 'success' ? (
-                                                            <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full font-bold">
+                                                            <span className="text-xs border px-2.5 py-1 rounded-full font-bold" style={{ color: 'var(--success)', backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--success) 30%, transparent)' }}>
                                                                 ✓ Payment Confirmed
                                                             </span>
                                                         ) : paystackStatus === 'failed' ? (
-                                                            <span className="text-xs bg-red-50 text-red-700 border border-red-200 px-2.5 py-1 rounded-full font-bold">
+                                                            <span className="text-xs border px-2.5 py-1 rounded-full font-bold" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 8%, transparent)' , borderColor: 'color-mix(in srgb, var(--error) 30%, transparent)' }}>
                                                                 ✕ Failed
                                                             </span>
                                                         ) : (
-                                                            <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-bold animate-pulse">
+                                                            <span className="text-xs border px-2.5 py-1 rounded-full font-bold animate-pulse" style={{ color: 'var(--warning)' , backgroundColor: 'color-mix(in srgb, var(--warning) 8%, transparent)' , borderColor: 'color-mix(in srgb, var(--warning) 30%, transparent)' }}>
                                                                 ⏳ Awaiting Payment
                                                             </span>
                                                         )}
@@ -2298,7 +2299,7 @@ const PublicStore: React.FC = () => {
                                                     {paystackStatus !== 'success' && paystackReference && (
                                                         <button
                                                             onClick={() => openPaystackInline(paystackReference, orderResult.total)}
-                                                            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white"
+                                                            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold"
                                                             style={{ backgroundColor: theme.primary }}
                                                         >
                                                             <FaBolt className="w-4 h-4" /> Continue to Paystack Payment
@@ -2309,43 +2310,43 @@ const PublicStore: React.FC = () => {
                                         })()}
                                     </div>
                                 ) : (
-                                    <div className="flex justify-between items-center p-3 rounded-xl bg-amber-50 border border-amber-200">
-                                        <span className="text-sm text-amber-800 font-semibold">Awaiting manual verification</span>
-                                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">Pending</span>
+                                    <div className="flex justify-between items-center p-3 rounded-xl border" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 8%, transparent)' , borderColor: 'color-mix(in srgb, var(--warning) 30%, transparent)' }}>
+                                        <span className="text-sm font-semibold" style={{ color: 'var(--warning)' }}>Awaiting manual verification</span>
+                                        <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ color: 'var(--warning)' , backgroundColor: 'color-mix(in srgb, var(--warning) 15%, transparent)' }}>Pending</span>
                                     </div>
                                 )}
 
                                 {/* What's next */}
-                                <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-                                    <h4 className="text-xs font-black text-blue-900 uppercase tracking-wide mb-2.5">What Happens Next</h4>
-                                    <ol className="text-xs text-blue-800 space-y-2">
+                                <div className="rounded-2xl p-4 border" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' , borderColor: 'color-mix(in srgb, var(--color-primary) 20%, transparent)' }}>
+                                    <h4 className="text-xs font-black uppercase tracking-wide mb-2.5" style={{ color: 'var(--color-primary)' }}>What Happens Next</h4>
+                                    <ol className="text-xs space-y-2" style={{ color: 'var(--color-primary)' }}>
                                         {orderResult.paystack?.authorizationUrl ? (
                                             <>
                                                 <li className="flex items-start gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold shrink-0 mt-0.5">1</span>
+                                                    <span className="w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5" style={{ color: 'var(--color-primary)' }}>1</span>
                                                     Complete payment in the Paystack window that opened.
                                                 </li>
                                                 <li className="flex items-start gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold shrink-0 mt-0.5">2</span>
+                                                    <span className="w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5" style={{ color: 'var(--color-primary)' }}>2</span>
                                                     Your order is automatically processed upon confirmation.
                                                 </li>
                                                 <li className="flex items-start gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold shrink-0 mt-0.5">3</span>
+                                                    <span className="w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5" style={{ color: 'var(--color-primary)' }}>3</span>
                                                     Bundle is sent to <strong>{normalizePhone(orderPhone)}</strong> within minutes.
                                                 </li>
                                             </>
                                         ) : (
                                             <>
                                                 <li className="flex items-start gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold shrink-0 mt-0.5">1</span>
+                                                    <span className="w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5" style={{ color: 'var(--color-primary)' }}>1</span>
                                                     The store owner reviews your payment reference.
                                                 </li>
                                                 <li className="flex items-start gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold shrink-0 mt-0.5">2</span>
+                                                    <span className="w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5" style={{ color: 'var(--color-primary)' }}>2</span>
                                                     They approve and process the bundle order.
                                                 </li>
                                                 <li className="flex items-start gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold shrink-0 mt-0.5">3</span>
+                                                    <span className="w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5" style={{ color: 'var(--color-primary)' }}>3</span>
                                                     Bundle is delivered to <strong>{normalizePhone(orderPhone)}</strong>.
                                                 </li>
                                             </>
@@ -2359,7 +2360,7 @@ const PublicStore: React.FC = () => {
                                         href={`https://wa.me/${normalizeWhatsappNumber(storeData.storefront.contactInfo.whatsapp)}?text=${encodeURIComponent(`Hi, I just placed order #${orderResult.orderNumber} for ${bundle.name} on ${normalizePhone(orderPhone)}`)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-xl font-bold text-sm hover:bg-[#20BD5C] transition active:scale-95"
+                                        className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] rounded-xl font-bold text-sm hover:bg-[#20BD5C] transition active:scale-95"
                                     >
                                         <FaWhatsapp className="w-4 h-4" /> Message store on WhatsApp
                                     </a>
@@ -2369,7 +2370,7 @@ const PublicStore: React.FC = () => {
                         <DialogFooter>
                             <button
                                 onClick={closeOrderDialog}
-                                className="w-full py-3 rounded-xl font-bold text-white active:scale-95 transition"
+                                className="w-full py-3 rounded-xl font-bold active:scale-95 transition"
                                 style={{ backgroundColor: theme.primary }}
                             >
                                 Done — Browse More Bundles
@@ -2396,44 +2397,51 @@ const PublicStore: React.FC = () => {
         if (!hasSocial && !hasContact && !footerText) return null;
 
         return (
-            <footer className="border-t border-gray-100 bg-gray-50 px-4 py-8">
+            <footer className="border-t px-4 py-8" style={{ backgroundColor: 'var(--bg-muted)' , borderColor: 'var(--border-color)' }}>
                 <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="space-y-3 sm:space-y-0 text-center sm:text-left">
                         {hasSocial && (
                             <div className="flex items-center justify-center sm:justify-start gap-5">
-                                {social?.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition"><FaFacebook className="w-5 h-5" /></a>}
-                                {social?.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-500 transition"><FaTwitter className="w-5 h-5" /></a>}
-                                {social?.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-600 transition"><FaInstagram className="w-5 h-5" /></a>}
+                                {social?.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition" style={{ color: 'var(--text-tertiary)' }}><FaFacebook className="w-5 h-5" /></a>}
+                                {social?.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-sky-500 transition" style={{ color: 'var(--text-tertiary)' }}><FaTwitter className="w-5 h-5" /></a>}
+                                {social?.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-pink-600 transition" style={{ color: 'var(--text-tertiary)' }}><FaInstagram className="w-5 h-5" /></a>}
                             </div>
                         )}
                         {hasContact && (
-                            <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm text-gray-500">
+                            <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                                 {storefront.contactInfo?.phone && (
-                                    <a href={`tel:${storefront.contactInfo.phone}`} className="flex items-center gap-1.5 hover:text-gray-800 transition">
+                                    <a href={`tel:${storefront.contactInfo.phone}`} className="flex items-center gap-1.5 transition"
+                                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; }}
+                                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = ''; }}>
                                         <FaPhone className="w-3 h-3" />{storefront.contactInfo.phone}
                                     </a>
                                 )}
                                 {storefront.contactInfo?.whatsapp && (
                                     <a href={`https://wa.me/${normalizeWhatsappNumber(storefront.contactInfo.whatsapp)}`} target="_blank" rel="noopener noreferrer"
-                                        className="flex items-center gap-1.5 text-[#25D366] hover:text-[#20BD5C] transition font-semibold">
+                                        className="flex items-center gap-1.5 font-semibold transition"
+                                        style={{ color: '#25D366' }}
+                                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#20BD5C'; }}
+                                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#25D366'; }}>
                                         <FaWhatsapp className="w-4 h-4" />WhatsApp
                                     </a>
                                 )}
                                 {storefront.contactInfo?.email && (
-                                    <a href={`mailto:${storefront.contactInfo.email}`} className="flex items-center gap-1.5 hover:text-gray-800 transition">
+                                    <a href={`mailto:${storefront.contactInfo.email}`} className="flex items-center gap-1.5 transition"
+                                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; }}
+                                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = ''; }}>
                                         <FaEnvelope className="w-3 h-3" />{storefront.contactInfo.email}
                                     </a>
                                 )}
                             </div>
                         )}
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                             {footerText}
-                            <span className="mx-2 text-gray-300">|</span>
-                            <span className="font-medium text-gray-600">{storefront.businessName}</span>
+                            <span className="mx-2" style={{ color: 'var(--text-tertiary)' }}>|</span>
+                            <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{storefront.businessName}</span>
                         </p>
                     </div>
-                    <p className="text-xs text-gray-300 text-center sm:text-right">
-                        Made with love by <a href="https://quayedna-portfolio.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">DNA Studios</a>
+                    <p className="text-xs text-center sm:text-right" style={{ color: 'var(--text-tertiary)' }}>
+                        Made with love by <a href="https://quayedna-portfolio.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--color-primary)' }}>DNA Studios</a>
                     </p>
                 </div>
             </footer>
@@ -2445,7 +2453,7 @@ const PublicStore: React.FC = () => {
     // ==========================================================================
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-muted)' }}>
             <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -2473,15 +2481,15 @@ const PublicStore: React.FC = () => {
                 >
                     <DialogHeader className="border-b-0 pb-0">
                         <div className="flex flex-col items-center text-center gap-3">
-                            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ color: 'var(--warning)' , backgroundColor: 'color-mix(in srgb, var(--warning) 15%, transparent)' }}>
                                 <FaStore className="w-7 h-7" />
                             </div>
-                            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Storefronts Are Closed</h3>
+                            <h3 className="text-lg sm:text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Storefronts Are Closed</h3>
                         </div>
                     </DialogHeader>
-                    <DialogBody className="space-y-3 text-center text-sm sm:text-base text-gray-700">
+                    <DialogBody className="space-y-3 text-center text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>
                         <p>{storefrontsClosedMessage}</p>
-                        <p className="text-xs sm:text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                             Orders are paused for all storefronts until the admin reopens them.
                         </p>
                     </DialogBody>

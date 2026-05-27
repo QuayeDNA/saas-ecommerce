@@ -318,29 +318,29 @@ export default function SuperAdminUserDetailsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
       case "active":
-        return "text-green-600 bg-green-100";
+        return { color: 'var(--success)', backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' };
       case "pending":
-        return "text-yellow-600 bg-yellow-100";
+        return { color: 'var(--warning)', backgroundColor: 'color-mix(in srgb, var(--warning) 8%, transparent)' };
       case "rejected":
-        return "text-red-600 bg-red-100";
+        return { color: 'var(--error)', backgroundColor: 'color-mix(in srgb, var(--error) 8%, transparent)' };
       default:
-        return "text-gray-600 bg-gray-100";
+        return { color: 'var(--text-secondary)', backgroundColor: 'var(--bg-muted)' };
     }
   };
 
   const getUserTypeIcon = (userType: string) => {
     switch (userType) {
       case "agent":
-        return <FaUserShield className="text-blue-600" />;
+        return <FaUserShield style={{ color: 'var(--color-primary)' }} />;
       case "customer":
-        return <FaUser className="text-green-600" />;
+        return <FaUser style={{ color: 'var(--success)' }} />;
       case "super_admin":
-        return <FaUserCheck className="text-purple-600" />;
+        return <FaUserCheck style={{ color: 'var(--color-primary)' }} />;
       default:
-        return <FaUser className="text-gray-600" />;
+        return <FaUser style={{ color: 'var(--text-secondary)' }} />;
     }
   };
 
@@ -382,8 +382,8 @@ export default function SuperAdminUserDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
-          <FaExclamationTriangle className="text-red-500 text-3xl sm:text-4xl mx-auto mb-4" />
-          <p className="text-red-600 text-base sm:text-lg">
+          <FaExclamationTriangle className="text-3xl sm:text-4xl mx-auto mb-4" style={{ color: 'var(--error)' }} />
+          <p className="text-base sm:text-lg" style={{ color: 'var(--error)' }}>
             {error || "User not found"}
           </p>
           <Button
@@ -416,10 +416,10 @@ export default function SuperAdminUserDetailsPage() {
               <span className="hidden sm:inline">Back</span>
             </Button>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
                 User Details
               </h1>
-              <p className="text-sm sm:text-base text-gray-600">
+              <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
                 Manage user account and permissions
               </p>
             </div>
@@ -431,27 +431,26 @@ export default function SuperAdminUserDetailsPage() {
           <CardHeader>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-lg sm:text-2xl font-bold">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-lg sm:text-2xl font-bold" style={{ backgroundImage: 'linear-gradient(to bottom right, var(--color-primary), var(--color-primary))', color: 'var(--text-inverse)' }}>
                   {user.fullName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  <h2 className="text-lg sm:text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {user.fullName}
                   </h2>
-                  <div className="flex flex-row sm:items-center gap-2 sm:gap-2 text-sm text-gray-600 mt-1">
+                  <div className="flex flex-row sm:items-center gap-2 sm:gap-2 text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                     <div className="flex items-center gap-1">
                       {getUserTypeIcon(user.userType)}
                       <span>{getUserTypeLabel(user.userType)}</span>
                       {user.agentCode && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                           ({user.agentCode})
                         </span>
                       )}
                     </div>
                     <span
-                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                        user.status,
-                      )}`}
+                      className="inline-flex px-2 py-1 rounded-full text-xs font-medium"
+                      style={getStatusStyle(user.status)}
                     >
                       {user.status}
                     </span>
@@ -486,47 +485,47 @@ export default function SuperAdminUserDetailsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Personal Information */}
               <div className="space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
-                  <FaIdCard className="mr-2 text-blue-600" />
+                <h3 className="text-base sm:text-lg font-semibold flex items-center" style={{ color: 'var(--text-primary)' }}>
+                  <FaIdCard className="mr-2" style={{ color: 'var(--color-primary)' }} />
                   Personal Information
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-start space-x-3">
-                    <FaEnvelope className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                    <FaEnvelope className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-500">Email</p>
-                      <p className="text-sm sm:text-base text-gray-900 truncate">
+                      <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>Email</p>
+                      <p className="text-sm sm:text-base truncate" style={{ color: 'var(--text-primary)' }}>
                         {user.email}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <FaPhone className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                    <FaPhone className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-500">Phone</p>
-                      <p className="text-sm sm:text-base text-gray-900">
+                      <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>Phone</p>
+                      <p className="text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>
                         {user.phone}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <FaCalendar className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                    <FaCalendar className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-500">
+                      <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                         Registered
                       </p>
-                      <p className="text-sm sm:text-base text-gray-900">
+                      <p className="text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>
                         {user.createdAt ? formatDate(user.createdAt) : "N/A"}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <FaWallet className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                    <FaWallet className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm text-gray-500">
+                      <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                         Wallet Balance
                       </p>
-                      <p className="text-sm sm:text-base text-gray-900">
+                      <p className="text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>
                         {formatCurrency(user.walletBalance || 0)}
                       </p>
                     </div>
@@ -537,51 +536,51 @@ export default function SuperAdminUserDetailsPage() {
               {/* Business Information (for agents) */}
               {user.userType === "agent" && (
                 <div className="space-y-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
-                    <FaBuilding className="mr-2 text-green-600" />
+                  <h3 className="text-base sm:text-lg font-semibold flex items-center" style={{ color: 'var(--text-primary)' }}>
+                    <FaBuilding className="mr-2" style={{ color: 'var(--success)' }} />
                     Business Information
                   </h3>
                   <div className="space-y-3">
                     <div className="flex items-start space-x-3">
-                      <FaBuilding className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                      <FaBuilding className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                           Business Name
                         </p>
-                        <p className="text-sm sm:text-base text-gray-900 truncate">
+                        <p className="text-sm sm:text-base truncate" style={{ color: 'var(--text-primary)' }}>
                           {user.businessName || "N/A"}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
-                      <FaUserShield className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                      <FaUserShield className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                           Business Category
                         </p>
-                        <p className="text-sm sm:text-base text-gray-900 capitalize">
+                        <p className="text-sm sm:text-base capitalize" style={{ color: 'var(--text-primary)' }}>
                           {user.businessCategory || "N/A"}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
-                      <FaCheckCircle className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                      <FaCheckCircle className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                           Subscription Plan
                         </p>
-                        <p className="text-sm sm:text-base text-gray-900 capitalize">
+                        <p className="text-sm sm:text-base capitalize" style={{ color: 'var(--text-primary)' }}>
                           {user.subscriptionPlan || "N/A"}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
-                      <FaClock className="text-gray-400 w-4 h-4 mt-1 flex-shrink-0" />
+                      <FaClock className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                           Subscription Status
                         </p>
-                        <p className="text-sm sm:text-base text-gray-900 capitalize">
+                        <p className="text-sm sm:text-base capitalize" style={{ color: 'var(--text-primary)' }}>
                           {user.subscriptionStatus || "N/A"}
                         </p>
                       </div>
@@ -592,7 +591,7 @@ export default function SuperAdminUserDetailsPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--border-color)' }}>
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 {user.userType === "agent" && user.status === "pending" && (
                   <>
@@ -669,14 +668,14 @@ export default function SuperAdminUserDetailsPage() {
         {editMode && (
           <Card>
             <CardHeader>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+              <h3 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Edit User Information
               </h3>
             </CardHeader>
             <CardBody>
               {editError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-800 text-sm">{editError}</p>
+                <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--error) 30%, transparent)' }}>
+                  <p className="text-sm" style={{ color: 'var(--error)' }}>{editError}</p>
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -699,14 +698,15 @@ export default function SuperAdminUserDetailsPage() {
                   onChange={handleEditChange}
                 />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
                     User Type
                   </label>
                   <select
                     name="userType"
                     value={editData.userType || ""}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    style={{ borderColor: 'var(--border-color)' }}
                   >
                     <option value="agent">Agent</option>
                     <option value="super_agent">Super Agent</option>
@@ -726,14 +726,15 @@ export default function SuperAdminUserDetailsPage() {
                       onChange={handleEditChange}
                     />
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
                         Business Category
                       </label>
                       <select
                         name="businessCategory"
                         value={editData.businessCategory || ""}
                         onChange={handleEditChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        style={{ borderColor: 'var(--border-color)' }}
                       >
                         <option value="">Select Category</option>
                         <option value="electronics">Electronics</option>
@@ -744,14 +745,15 @@ export default function SuperAdminUserDetailsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
                         Subscription Plan
                       </label>
                       <select
                         name="subscriptionPlan"
                         value={editData.subscriptionPlan || ""}
                         onChange={handleEditChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        style={{ borderColor: 'var(--border-color)' }}
                       >
                         <option value="">Select Plan</option>
                         <option value="basic">Basic</option>
@@ -760,14 +762,15 @@ export default function SuperAdminUserDetailsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
                         Subscription Status
                       </label>
                       <select
                         name="subscriptionStatus"
                         value={editData.subscriptionStatus || ""}
                         onChange={handleEditChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                        style={{ borderColor: 'var(--border-color)' }}
                       >
                         <option value="">Select Status</option>
                         <option value="active">Active</option>
@@ -806,8 +809,8 @@ export default function SuperAdminUserDetailsPage() {
         {/* User Activity Timeline */}
         <Card>
           <CardHeader>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
-              <FaClock className="mr-2 text-blue-600" />
+            <h3 className="text-base sm:text-lg font-semibold flex items-center" style={{ color: 'var(--text-primary)' }}>
+              <FaClock className="mr-2" style={{ color: 'var(--color-primary)' }} />
               Activity Timeline
             </h3>
           </CardHeader>
@@ -820,11 +823,11 @@ export default function SuperAdminUserDetailsPage() {
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
-                <FaShoppingCart className="mr-2 text-blue-600" />
+              <h3 className="text-base sm:text-lg font-semibold flex items-center" style={{ color: 'var(--text-primary)' }}>
+                <FaShoppingCart className="mr-2" style={{ color: 'var(--color-primary)' }} />
                 Recent Orders
               </h3>
-              <div className="text-xs sm:text-sm text-gray-500">
+              <div className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                 {orders.length} order{orders.length !== 1 ? "s" : ""}
               </div>
             </div>
@@ -832,65 +835,64 @@ export default function SuperAdminUserDetailsPage() {
           <CardBody>
             {ordersLoading ? (
               <div className="text-center py-6 sm:py-8">
-                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-sm sm:text-base text-gray-600">
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--color-primary)' }}></div>
+                <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
                   Loading orders...
                 </p>
               </div>
             ) : orders.length === 0 ? (
               <div className="text-center py-6 sm:py-8">
-                <FaShoppingCart className="text-gray-400 text-3xl sm:text-4xl mx-auto mb-4" />
-                <p className="text-sm sm:text-base text-gray-500">
+                <FaShoppingCart className="text-3xl sm:text-4xl mx-auto mb-4" style={{ color: 'var(--text-tertiary)' }} />
+                <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
                   No orders found for this user.
                 </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-[var(--border-color)]">
+                  <thead style={{ backgroundColor: 'var(--bg-muted)' }}>
                     <tr>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                         Order
                       </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                         Status
                       </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                         Total
                       </th>
-                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                         Created
                       </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="divide-y divide-[var(--border-color)]" style={{ backgroundColor: 'var(--bg-surface)' }}>
                     {orders.map((order) => (
-                      <tr key={order._id} className="hover:bg-gray-50">
+                      <tr key={order._id} className="hover:bg-[var(--bg-muted)]">
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs sm:text-sm font-medium text-gray-900">
+                          <div className="text-xs sm:text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                             {order.orderNumber || order._id}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                             {order.items.length} item
                             {order.items.length !== 1 ? "s" : ""}
                           </div>
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                              order.status,
-                            )}`}
+                            className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                            style={getStatusStyle(order.status)}
                           >
                             {order.status}
                           </span>
                         </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm" style={{ color: 'var(--text-primary)' }}>
                           {formatCurrency(order.total || 0)}
                         </td>
-                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                           {order.createdAt
                             ? formatDate(order.createdAt)
                             : "N/A"}
@@ -921,7 +923,7 @@ export default function SuperAdminUserDetailsPage() {
             title="Reset Password"
           >
             <div className="space-y-4">
-              <p className="text-sm sm:text-base text-gray-600">
+              <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
                 Enter a new password for this user.
               </p>
               <Input
@@ -934,8 +936,8 @@ export default function SuperAdminUserDetailsPage() {
                 required
               />
               {resetError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-800 text-sm">{resetError}</p>
+                <div className="p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--error) 30%, transparent)' }}>
+                  <p className="text-sm" style={{ color: 'var(--error)' }}>{resetError}</p>
                 </div>
               )}
               <div className="flex flex-col sm:flex-row gap-3">
@@ -970,14 +972,14 @@ export default function SuperAdminUserDetailsPage() {
             title="Delete User"
           >
             <div className="space-y-4">
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="p-4 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--error) 30%, transparent)' }}>
                 <div className="flex items-start">
-                  <FaExclamationTriangle className="text-red-500 mr-3 mt-1 flex-shrink-0" />
+                  <FaExclamationTriangle className="mr-3 mt-1 flex-shrink-0" style={{ color: 'var(--error)' }} />
                   <div>
-                    <h4 className="text-red-800 font-semibold text-sm sm:text-base">
+                    <h4 className="font-semibold text-sm sm:text-base" style={{ color: 'var(--error)' }}>
                       Warning
                     </h4>
-                    <p className="text-red-700 text-xs sm:text-sm mt-1">
+                    <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--error)' }}>
                       Are you sure you want to delete this user? This action
                       cannot be undone and will permanently remove all user
                       data.

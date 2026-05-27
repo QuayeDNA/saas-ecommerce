@@ -768,10 +768,12 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                                     parseFloat(e.target.value) || 0,
                                   )
                                 }
-                                className={`w-full px-2 py-1 text-sm text-center border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${isChanged ? "border-yellow-400" : ""}`}
+                                className="w-full px-2 py-1 text-sm text-center border rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                                 style={{
                                   backgroundColor: isChanged ? `color-mix(in srgb, var(--warning) 8%, transparent)` : undefined,
-                                  borderColor: isChanged ? undefined : "var(--border-color)",
+                                  borderColor: isChanged
+                                    ? "color-mix(in srgb, var(--warning) 70%, transparent)"
+                                    : "var(--border-color)",
                                 }}
                               />
                             </td>
@@ -903,10 +905,12 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                                 parseFloat(e.target.value) || 0,
                               )
                             }
-                            className={`w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${isChanged ? "border-yellow-400" : ""}`}
+                            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                             style={{
                               backgroundColor: isChanged ? `color-mix(in srgb, var(--warning) 8%, transparent)` : undefined,
-                              borderColor: isChanged ? undefined : "var(--border-color)",
+                              borderColor: isChanged
+                                ? "color-mix(in srgb, var(--warning) 70%, transparent)"
+                                : "var(--border-color)",
                             }}
                           />
                         </div>

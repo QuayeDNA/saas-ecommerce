@@ -709,7 +709,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                   <>A payment request will be sent to your MTN number. Your wallet is credited once MTN confirms the MoMo transfer.</>
                 )}
                 {selectedPaymentMethod === 'paystack' && paystackMinimum > 0 && (
-                  <p className="mt-1 text-xs text-white/80">
+                  <p className="mt-1 text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>
                     Minimum GH₵{paystackMinimum} applies to Paystack instant top-ups.
                   </p>
                 )}

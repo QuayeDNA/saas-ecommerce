@@ -103,7 +103,7 @@ const StepProgress: React.FC<{ current: number; steps: string[] }> = ({ current,
         </React.Fragment>
       );
     })}
-    <span className="ml-2 text-xs text-white/80 font-semibold whitespace-nowrap">
+    <span className="ml-2 text-xs font-semibold whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.8)' }}>
       {steps[current - 1]}
     </span>
   </div>
@@ -729,25 +729,28 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="xl">
       <DialogHeader
-        className="relative text-white p-6"
-        style={{ backgroundColor: "var(--color-primary)" }}
+        className="relative p-6"
+        style={{ backgroundColor: 'var(--color-primary)', color: 'var(--text-inverse)' }}
       >
         <Button
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="absolute top-4 right-4 text-white hover:bg-white/20"
+          className="absolute top-4 right-4"
+          style={{ color: 'var(--text-inverse)' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--text-inverse) 20%, transparent)'; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
         >
           <X className="w-5 h-5" />
         </Button>
 
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-            <Store className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--text-inverse) 20%, transparent)' }}>
+            <Store className="w-6 h-6" style={{ color: 'var(--text-inverse)' }} />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Create Your Store</h2>
-            <p className="text-white/80 text-sm">
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--text-inverse)' }}>Create Your Store</h2>
+            <p className="text-sm" style={{ color: 'color-mix(in srgb, var(--text-inverse) 80%, transparent)' }}>
               Launch your digital storefront in minutes
             </p>
           </div>
