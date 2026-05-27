@@ -221,11 +221,11 @@ export const AuthLayout = ({
               <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 flex items-center justify-center">
                 <BryteLinksSvgLogoCompact width="100%" height="100%" />
               </div>
-              <div className="text-right sm:text-left">
-                <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.24em] text-slate-400">
+              <div className="text-left">
+                <p className="text-xs sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.24em] text-[var(--text-primary)] font-medium">
                   BryteLinks
                 </p>
-                <p className="text-xs sm:text-sm text-slate-300">
+                <p className="text-xs sm:text-sm text-[var(--text-muted)]">
                   Data Solutions
                 </p>
               </div>
@@ -321,8 +321,8 @@ export const AuthLayout = ({
                         <Smartphone className="h-4 w-4 sm:h-5 sm:w-5" />
                       </div>
                       <div>
-                        <p className="text-[10px] sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.24em] text-slate-500 font-medium">
-                          Agent Portal
+                        <p className="text-[10px] sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.24em] text-[var(--text-muted)] font-medium">
+                          User Portal
                         </p>
                         <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 leading-tight">
                           {title}
