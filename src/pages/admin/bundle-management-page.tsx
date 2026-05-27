@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { bundleService } from "../../services/bundle.service";
 import { packageService } from "../../services/package.service";
@@ -10,13 +10,9 @@ import {
   FaTrash,
   FaPlus,
   FaBuilding,
-  FaDownload,
-  FaRedo,
-  FaCalendar,
+  FaArrowLeft,
   FaCheckCircle,
   FaDatabase,
-  FaArrowLeft,
-  FaTimesCircle,
   FaDollarSign,
 } from "react-icons/fa";
 import {
@@ -24,7 +20,6 @@ import {
   Card,
   CardHeader,
   CardBody,
-  Badge,
   Spinner,
   Dialog,
   DialogHeader,
@@ -39,29 +34,40 @@ import { getProviderColors } from "../../utils/provider-colors";
 
 const statusOptions = [
   { value: "", label: "All Status" },
-  { value: "active", label: "Active", color: "text-green-600 bg-green-100" },
-  { value: "inactive", label: "Inactive", color: "text-red-600 bg-red-100" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
 ];
 
 const categoryOptions = [
   { value: "", label: "All Categories" },
-  { value: "daily", label: "Daily", color: "text-blue-600 bg-blue-100" },
-  { value: "weekly", label: "Weekly", color: "text-purple-600 bg-purple-100" },
-  { value: "monthly", label: "Monthly", color: "text-green-600 bg-green-100" },
-  {
-    value: "unlimited",
-    label: "Unlimited",
-    color: "text-orange-600 bg-orange-100",
-  },
-  { value: "custom", label: "Custom", color: "text-gray-600 bg-gray-100" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "unlimited", label: "Unlimited" },
+  { value: "custom", label: "Custom" },
 ];
 
 const dataUnitOptions = [
   { value: "", label: "All Units" },
-  { value: "MB", label: "MB", color: "text-blue-600 bg-blue-100" },
-  { value: "GB", label: "GB", color: "text-green-600 bg-green-100" },
-  { value: "TB", label: "TB", color: "text-purple-600 bg-purple-100" },
+  { value: "MB", label: "MB" },
+  { value: "GB", label: "GB" },
+  { value: "TB", label: "TB" },
 ];
+
+const PROVIDER_INITIALS: Record<string, string> = {
+  MTN: "M",
+  TELECEL: "T",
+  AT: "A",
+  AFA: "A",
+};
+
+const STAT_BG: Record<string, string> = {
+  total: "bg-[var(--info)]/10 text-[var(--info)]",
+  active: "bg-[var(--success)]/10 text-[var(--success)]",
+  inactive: "bg-[var(--error)]/10 text-[var(--error)]",
+  value: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
+  provider: "bg-[var(--warning)]/10 text-[var(--warning)]",
+};
 
 export const BundleManagementPage: React.FC = () => {
   const { packageId } = useParams<{ packageId: string }>();
@@ -82,13 +88,28 @@ export const BundleManagementPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Filter states
+  const fetchGen = useRef(0);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  // Helper to get provider logo URL from bundle's populated providerId
+  const getProviderLogo = (bundle: Bundle): string | null => {
+    const pid = bundle.providerId;
+    if (typeof pid === "object" && pid !== null) {
+      const p = pid as { logo?: { url?: string } };
+      return p.logo?.url || null;
+    }
+    return null;
+  };
+
+  const handleImageError = (bundleId: string) => {
+    setImageErrors((prev) => ({ ...prev, [bundleId]: true }));
+  };
+
   const [status, setStatus] = useState("");
   const [category, setCategory] = useState("");
   const [dataUnit, setDataUnit] = useState("");
   const [search, setSearch] = useState("");
 
-  // Filter options for the reusable component
   const filterOptions = {
     status: {
       value: status,
@@ -112,53 +133,49 @@ export const BundleManagementPage: React.FC = () => {
 
   const fetchBundles = async () => {
     if (!packageId) return;
+    const gen = ++fetchGen.current;
     setLoading(true);
     setError(null);
     try {
-      // Fetch all bundles for this package without filters
       const response = await bundleService.getBundlesByPackage(packageId, {
         page: 1,
-        limit: 1000, // Get all bundles for this package
+        limit: 1000,
       });
+      if (gen !== fetchGen.current) return;
 
       const fetchedBundles = response.bundles || [];
-      setAllBundles(fetchedBundles); // Store all bundles for filtering
-
-      // Apply current filters to the fetched bundles
+      setAllBundles(fetchedBundles);
       applyFiltersToBundles(fetchedBundles);
     } catch {
+      if (gen !== fetchGen.current) return;
       setError("Failed to fetch bundles");
       addToast("Failed to fetch bundles", "error");
     } finally {
-      setLoading(false);
+      if (gen === fetchGen.current) setLoading(false);
     }
   };
 
   const applyFiltersToBundles = (bundlesToFilter: Bundle[]) => {
     let filteredBundles = bundlesToFilter;
 
-    // Filter by status
     if (status) {
       filteredBundles = filteredBundles.filter((bundle) =>
         status === "active" ? bundle.isActive : !bundle.isActive
       );
     }
 
-    // Filter by category
     if (category) {
       filteredBundles = filteredBundles.filter(
         (bundle) => bundle.category === category
       );
     }
 
-    // Filter by data unit
     if (dataUnit) {
       filteredBundles = filteredBundles.filter(
         (bundle) => bundle.dataUnit === dataUnit
       );
     }
 
-    // Filter by search term
     if (search.trim()) {
       const searchTerm = search.trim().toLowerCase();
       filteredBundles = filteredBundles.filter(
@@ -184,11 +201,12 @@ export const BundleManagementPage: React.FC = () => {
 
   const fetchPackage = async () => {
     if (!packageId) return;
+    const gen = ++fetchGen.current;
     try {
       const packageData = await packageService.getPackage(packageId);
-      setPkg(packageData);
+      if (gen === fetchGen.current) setPkg(packageData);
     } catch {
-      setError("Failed to fetch package details");
+      if (gen === fetchGen.current) setError("Failed to fetch package details");
     }
   };
 
@@ -223,14 +241,9 @@ export const BundleManagementPage: React.FC = () => {
   };
 
   const handleFilterChange = (filterKey: string, value: string) => {
-    if (filterKey === "status") {
-      setStatus(value);
-    } else if (filterKey === "category") {
-      setCategory(value);
-    } else if (filterKey === "dataUnit") {
-      setDataUnit(value);
-    }
-    // Apply filters immediately when filter changes
+    if (filterKey === "status") setStatus(value);
+    else if (filterKey === "category") setCategory(value);
+    else if (filterKey === "dataUnit") setDataUnit(value);
     setTimeout(() => applyFilters(), 0);
   };
 
@@ -298,7 +311,6 @@ export const BundleManagementPage: React.FC = () => {
     setActionError(null);
     try {
       if (editBundle?._id) {
-        // For updates, handle providerId properly
         let providerIdValue: string | undefined = data.providerId;
         if (typeof data.providerId === "object" && data.providerId !== null) {
           const providerObj = data.providerId as { _id?: string; id?: string };
@@ -317,7 +329,6 @@ export const BundleManagementPage: React.FC = () => {
           tags: data.tags,
         };
 
-        // Only include data fields for non-AFA bundles
         const isAfaBundle = pkg?.provider === "AFA";
         if (!isAfaBundle) {
           finalUpdateData.dataVolume = data.dataVolume;
@@ -326,13 +337,11 @@ export const BundleManagementPage: React.FC = () => {
           finalUpdateData.validityUnit = data.validityUnit;
         }
 
-        // Include AFA-specific fields if applicable
         if (isAfaBundle) {
           finalUpdateData.requiresGhanaCard = data.requiresGhanaCard;
           finalUpdateData.afaRequirements = data.afaRequirements;
         }
 
-        // Only add providerId if we have a valid value
         if (providerIdValue) {
           finalUpdateData.providerId = String(providerIdValue);
         }
@@ -340,7 +349,6 @@ export const BundleManagementPage: React.FC = () => {
         await bundleService.updateBundle(editBundle._id, finalUpdateData);
         addToast("Bundle updated successfully", "success");
       } else {
-        // For creation, only send providerCode, not providerId
         if (!pkg?.provider) {
           throw new Error("Package provider information is missing");
         }
@@ -356,10 +364,9 @@ export const BundleManagementPage: React.FC = () => {
           category: data.category,
           tags: data.tags,
           packageId: packageId || "",
-          providerCode: pkg.provider, // Only send providerCode for creation
+          providerCode: pkg.provider,
         };
 
-        // Only include data fields for non-AFA bundles
         const isAfaBundle = pkg?.provider === "AFA";
         if (!isAfaBundle) {
           createData.dataVolume = data.dataVolume;
@@ -368,7 +375,6 @@ export const BundleManagementPage: React.FC = () => {
           createData.validityUnit = data.validityUnit;
         }
 
-        // Include AFA-specific fields if applicable
         if (isAfaBundle) {
           createData.requiresGhanaCard = data.requiresGhanaCard;
           createData.afaRequirements = data.afaRequirements;
@@ -380,38 +386,12 @@ export const BundleManagementPage: React.FC = () => {
       setShowFormModal(false);
       setEditBundle(null);
       await fetchBundles();
-    } catch (error) {
-      console.error("Bundle save error:", error);
+    } catch {
       setActionError("Failed to save bundle");
       addToast("Failed to save bundle", "error");
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "daily":
-        return "text-blue-600 bg-blue-100";
-      case "weekly":
-        return "text-purple-600 bg-purple-100";
-      case "monthly":
-        return "text-green-600 bg-green-100";
-      case "unlimited":
-        return "text-orange-600 bg-orange-100";
-      case "custom":
-        return "text-gray-600 bg-gray-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
-  };
-
-  const formatDate = (date: string | Date) => {
-    return new Intl.DateTimeFormat("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(new Date(date));
   };
 
   const formatCurrency = (amount: number, currency: string = "GHS") => {
@@ -421,7 +401,13 @@ export const BundleManagementPage: React.FC = () => {
     }).format(amount);
   };
 
-  // Calculate statistics
+  const formatValidity = (bundle: Bundle) => {
+    if (bundle.validity === "unlimited" || bundle.validityUnit === "unlimited") {
+      return "Unlimited";
+    }
+    return `${bundle.validity} ${bundle.validityUnit}`;
+  };
+
   const stats = {
     total: bundles.length,
     active: bundles.filter((b) => b.isActive).length,
@@ -429,12 +415,32 @@ export const BundleManagementPage: React.FC = () => {
     totalValue: bundles.reduce((sum, b) => sum + (b.price || 0), 0),
   };
 
+  const statCards = [
+    { key: "total", label: "Total Bundles", value: stats.total, icon: FaCube },
+    { key: "active", label: "Active", value: stats.active, icon: FaCheckCircle },
+    { key: "inactive", label: "Inactive", value: stats.inactive, icon: FaTrash },
+    { key: "value", label: "Total Value", value: formatCurrency(stats.totalValue), icon: FaDatabase },
+    { key: "provider", label: "Provider", value: pkg?.provider || "N/A", icon: FaBuilding },
+  ];
+
+  const brand = getProviderColors(pkg?.provider);
+
+  // Get brand colors from the bundle's populated providerId (fallback to package provider)
+  const getBundleBrand = (bundle: Bundle) => {
+    const pid = bundle.providerId;
+    if (typeof pid === "object" && pid !== null) {
+      const p = pid as { code?: string };
+      if (p.code) return getProviderColors(p.code);
+    }
+    return brand;
+  };
+
   if (loading && !pkg) {
     return (
       <div className="p-6 text-center">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading package details...</span>
+        <div className="flex items-center justify-center gap-3">
+          <Spinner size="lg" />
+          <span className="text-sm text-[var(--text-muted)]">Loading package details...</span>
         </div>
       </div>
     );
@@ -443,70 +449,55 @@ export const BundleManagementPage: React.FC = () => {
   if (error && !pkg) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
+        <div className="rounded-xl border border-[var(--error)]/30 bg-[var(--error)]/5 p-4">
+          <p className="text-sm font-medium text-[var(--error)]">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Header */}
       <Card>
         <CardHeader>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => navigate(-1)}
-                className="flex items-center gap-2"
               >
-                <FaArrowLeft />
+                <FaArrowLeft className="mr-1.5" />
                 Back
               </Button>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold mb-2">
+                <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
                   Bundle Management
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600">
+                <p className="text-sm text-[var(--text-secondary)]">
                   Managing bundles for:{" "}
-                  <span className="font-semibold">{pkg?.name}</span>
+                  <span className="font-semibold text-[var(--text-primary)]">{pkg?.name}</span>
                 </p>
                 {pkg?.description && (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
                     {pkg.description}
                   </p>
                 )}
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                onClick={fetchBundles}
-                disabled={loading}
-                size="sm"
-              >
-                <FaRedo className="mr-2" />
-                Refresh
-              </Button>
+            <div className="flex flex-row sm:flex-row gap-2">
               <Button
                 variant="outline"
                 onClick={handleBulkPricing}
                 disabled={loading || bundles.length === 0}
                 size="sm"
-                className="bg-green-50 text-green-700 border-green-300 hover:bg-green-100"
               >
-                <FaDollarSign className="mr-2" />
+                <FaDollarSign className="mr-1.5" />
                 Bulk Pricing
               </Button>
-              <Button variant="outline" size="sm">
-                <FaDownload className="mr-2" />
-                Export
-              </Button>
               <Button onClick={handleCreate} size="sm">
-                <FaPlus className="mr-2" />
+                <FaPlus className="mr-1.5" />
                 Create Bundle
               </Button>
             </div>
@@ -515,136 +506,50 @@ export const BundleManagementPage: React.FC = () => {
       </Card>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Total Bundles
-                </p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900">
-                  {stats.total}
-                </p>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        {statCards.map((s) => (
+          <Card key={s.key}>
+            <CardBody>
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-[var(--text-secondary)] truncate">
+                    {s.label}
+                  </p>
+                  <p className="text-lg sm:text-2xl font-bold text-[var(--text-primary)] mt-0.5 truncate">
+                    {s.value}
+                  </p>
+                </div>
+                <div className={`p-2.5 sm:p-3 rounded-full shrink-0 ${STAT_BG[s.key]}`}>
+                  <s.icon className="text-lg sm:text-xl" />
+                </div>
               </div>
-              <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
-                <FaCube className="text-blue-600 text-lg sm:text-xl" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Active
-                </p>
-                <p className="text-lg sm:text-2xl font-bold text-green-600">
-                  {stats.active}
-                </p>
-              </div>
-              <div className="p-2 sm:p-3 bg-green-100 rounded-full">
-                <FaCheckCircle className="text-green-600 text-lg sm:text-xl" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Inactive
-                </p>
-                <p className="text-lg sm:text-2xl font-bold text-red-600">
-                  {stats.inactive}
-                </p>
-              </div>
-              <div className="p-2 sm:p-3 bg-red-100 rounded-full">
-                <FaTimesCircle className="text-red-600 text-lg sm:text-xl" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Total Value
-                </p>
-                <p className="text-lg sm:text-2xl font-bold text-purple-600">
-                  {formatCurrency(stats.totalValue)}
-                </p>
-              </div>
-              <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
-                <FaDatabase className="text-purple-600 text-lg sm:text-xl" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">
-                  Provider
-                </p>
-                <p
-                  className="text-lg sm:text-2xl font-bold"
-                  style={{
-                    color: getProviderColors(pkg?.provider)?.primary,
-                  }}
-                >
-                  {pkg?.provider || "N/A"}
-                </p>
-              </div>
-              <div
-                className="p-2 sm:p-3 rounded-full"
-                style={{
-                  backgroundColor: getProviderColors(pkg?.provider)?.background,
-                }}
-              >
-                <FaBuilding
-                  className={`text-lg sm:text-xl ${
-                    getProviderColors(pkg?.provider)?.primary
-                  }`}
-                />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+            </CardBody>
+          </Card>
+        ))}
       </div>
 
       {/* Bulk Pricing Info Banner */}
       {bundles.length > 0 && (
-        <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+        <Card className="border-[var(--color-primary)]/20">
           <CardBody>
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-                <FaDollarSign className="text-green-600 text-xl" />
+              <div className="p-2 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] shrink-0">
+                <FaDollarSign className="text-xl" />
               </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                  💡 Bulk Pricing Management Available
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
+                  Bulk Pricing Management Available
                 </h3>
-                <p className="text-xs text-gray-700 mb-2">
+                <p className="text-xs text-[var(--text-secondary)] mb-2">
                   Manage pricing for all {bundles.length} bundles across
                   multiple user types (Customer, Agent, Super Agent, Dealer,
-                  Super Dealer) in one place. Click "Bulk Pricing" to open the
-                  management table.
+                  Super Dealer) in one place.
                 </p>
                 <Button
                   size="sm"
                   onClick={handleBulkPricing}
-                  className="bg-green-600 hover:bg-green-700 text-white"
                 >
-                  <FaDollarSign className="mr-2" />
+                  <FaDollarSign className="mr-1.5" />
                   Open Bulk Pricing Manager
                 </Button>
               </div>
@@ -667,244 +572,150 @@ export const BundleManagementPage: React.FC = () => {
         isLoading={loading}
       />
 
-      {/* Error Message */}
-      {error && (
+      {/* Error / Action Error */}
+      {(error || actionError) && (
         <Card>
           <CardBody>
-            <p className="text-red-800 text-sm sm:text-base">{error}</p>
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Action Error */}
-      {actionError && (
-        <Card>
-          <CardBody>
-            <p className="text-red-800 text-sm sm:text-base">{actionError}</p>
+            <p className="text-sm font-medium text-[var(--error)]">{error || actionError}</p>
           </CardBody>
         </Card>
       )}
 
       {/* Bundles Grid */}
-      <Card>
-        <CardBody>
+      <Card noPadding>
+        <CardBody className="p-0">
           {loading ? (
             <div className="p-6 sm:p-8 text-center">
               <Spinner size="lg" />
-              <span className="ml-3 text-sm sm:text-base text-gray-600">
-                Loading bundles...
-              </span>
+              <span className="ml-3 text-sm text-[var(--text-muted)]">Loading bundles...</span>
             </div>
           ) : bundles.length === 0 ? (
-            <div className="p-6 sm:p-8 text-center">
-              <FaCube className="mx-auto text-gray-400 text-3xl sm:text-4xl mb-4" />
-              <p className="text-sm sm:text-base text-gray-500">
-                No bundles found matching your criteria.
+            <div className="p-8 sm:p-10 text-center">
+              <FaCube className="mx-auto text-3xl sm:text-4xl text-[var(--text-muted)] mb-4" />
+              <p className="text-sm text-[var(--text-muted)] mb-4">
+                {status || category || dataUnit || search.trim()
+                  ? "No bundles found matching your criteria."
+                  : "No bundles yet."}
               </p>
-              <Button onClick={handleCreate} className="mt-4">
+              <Button onClick={handleCreate}>
                 <FaPlus className="mr-2" />
                 Create Your First Bundle
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {bundles.map((bundle) => {
-                const providerColors = getProviderColors(pkg?.provider);
-                return (
-                  <Card
-                    key={bundle._id}
-                    className="hover:shadow-lg transition-all duration-200 group"
-                    style={{
-                      borderTop: `4px solid ${providerColors.primary}`,
-                      backgroundColor: providerColors.background,
-                    }}
-                  >
-                    {/* Card Header with Provider Branding */}
-                    <div className="pb-3">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="p-2 rounded-full"
-                            style={{ backgroundColor: providerColors.primary }}
-                          >
-                            <FaCube className="text-white text-sm" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-semibold text-gray-900 truncate">
-                              {bundle.name}
-                            </h3>
-                            <p
-                              className="text-xs font-medium mt-1"
-                              style={{ color: providerColors.primary }}
-                            >
-                              {pkg?.provider || "N/A"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Badge
-                            colorScheme={bundle.isActive ? "success" : "error"}
-                            size="sm"
-                          >
-                            {bundle.isActive ? (
-                              <FaCheckCircle className="w-3 h-3 mr-1" />
-                            ) : (
-                              <FaTimesCircle className="w-3 h-3 mr-1" />
-                            )}
-                            {bundle.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      {bundle.description && (
-                        <p className="text-xs text-gray-600 line-clamp-2 mb-3">
-                          {bundle.description}
-                        </p>
-                      )}
-
-                      {/* Bundle Details */}
-                      <div className="space-y-2 mb-3">
-                        {pkg?.provider === "AFA" ? (
-                          // AFA-specific details
-                          <>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">
-                                Type:
-                              </span>
-                              <span className="text-xs font-medium text-gray-900">
-                                AFA Registration Service
-                              </span>
-                            </div>
-                            {bundle.requiresGhanaCard && (
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500">
-                                  Ghana Card:
-                                </span>
-                                <span className="text-xs font-medium text-green-600">
-                                  Required
-                                </span>
-                              </div>
-                            )}
-                            {bundle.afaRequirements &&
-                              bundle.afaRequirements.length > 0 && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-gray-500">
-                                    Requirements:
-                                  </span>
-                                  <span className="text-xs font-medium text-gray-900">
-                                    {bundle.afaRequirements.length} item
-                                    {bundle.afaRequirements.length !== 1
-                                      ? "s"
-                                      : ""}
-                                  </span>
-                                </div>
-                              )}
-                          </>
-                        ) : (
-                          // Regular bundle details
-                          <>
-                            {/* Data Volume */}
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">
-                                Data:
-                              </span>
-                              <span className="text-xs font-medium text-gray-900">
-                                {bundle.dataVolume} {bundle.dataUnit}
-                              </span>
-                            </div>
-
-                            {/* Validity */}
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">
-                                Validity:
-                              </span>
-                              <span className="text-xs font-medium text-gray-900">
-                                {bundle.validity === "unlimited" ||
-                                bundle.validityUnit === "unlimited"
-                                  ? "Unlimited"
-                                  : `${bundle.validity} ${bundle.validityUnit}`}
-                              </span>
-                            </div>
-                          </>
-                        )}
-
-                        {/* Price */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">Price:</span>
-                          <span className="text-xs font-medium text-gray-900">
-                            {formatCurrency(bundle.price, bundle.currency)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 sm:p-5">
+              {bundles.map((bundle) => (
+                <div
+                  key={bundle._id}
+                  className={`relative overflow-hidden rounded-xl flex flex-col gap-3 transition-all duration-200 ${
+                    !bundle.isActive ? "opacity-55" : ""
+                  }`}
+                  style={{
+                    backgroundColor: getBundleBrand(bundle).primary,
+                    color: getBundleBrand(bundle).text,
+                  }}
+                >
+                  {/* Top row: provider avatar + data/validity pills */}
+                  <div className="p-4 pb-0 flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                      {(() => {
+                        const logoUrl = getProviderLogo(bundle);
+                        if (logoUrl && !imageErrors[bundle._id!]) {
+                          return (
+                            <img
+                              src={logoUrl}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              onError={() => handleImageError(bundle._id!)}
+                            />
+                          );
+                        }
+                        return (
+                          <span className="text-sm font-bold text-white">
+                            {PROVIDER_INITIALS[pkg?.provider || ""] || "?"}
                           </span>
-                        </div>
-                      </div>
+                        );
+                      })()}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/15 text-white">
+                        {bundle.dataVolume}{bundle.dataUnit}
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/15 text-white">
+                        {formatValidity(bundle)}
+                      </span>
+                    </div>
+                  </div>
 
-                      {/* Tags */}
-                      <div className="flex flex-wrap items-center gap-1">
-                        {bundle.category && (
-                          <Badge
-                            variant="outline"
-                            size="sm"
-                            className={getCategoryColor(bundle.category)}
-                          >
-                            {bundle.category}
-                          </Badge>
-                        )}
-                        <Badge
-                          variant="outline"
-                          size="sm"
-                          className="bg-gray-100 text-gray-700"
-                        >
-                          <FaCalendar className="w-3 h-3 mr-1" />
-                          {formatDate(bundle.createdAt || "")}
-                        </Badge>
-                      </div>
+                  {/* Content area */}
+                  <div className="px-4 flex-1 flex flex-col gap-2">
+                    <span className="font-bold text-base leading-snug">
+                      {bundle.name}
+                    </span>
+
+                    {!bundle.isActive && (
+                      <span className="inline-flex items-center self-start px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                        Inactive
+                      </span>
+                    )}
+
+                    {/* Category & Pricing info */}
+                    <div className="flex items-center gap-2 mt-1">
+                      {bundle.category && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/15 text-white">
+                          {bundle.category}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Card Actions */}
-                    <div className="pt-3 border-t border-gray-100">
-                      <div className="flex flex-col gap-2">
-                        {/* Primary Actions */}
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(bundle)}
-                            disabled={actionLoading}
-                            className="flex-1 text-xs"
-                          >
-                            <FaEdit className="mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handlePricingManagement(bundle)}
-                            disabled={actionLoading}
-                            className="flex-1 text-xs text-green-600 border-green-200 hover:bg-green-50"
-                          >
-                            <FaDollarSign className="mr-1" />
-                            Pricing
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => handleDelete(bundle)}
-                            disabled={actionLoading}
-                            className="flex-1 text-xs border-none"
-                            style={{
-                              backgroundColor: providerColors.primary,
-                              color: providerColors.background,
-                            }}
-                          >
-                            <FaTrash className="mr-1" />
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
+                    <div className="text-2xl font-bold mt-1">
+                      {formatCurrency(bundle.price, bundle.currency)}
                     </div>
-                  </Card>
-                );
-              })}
+
+                    {bundle.description && (
+                      <p className="text-xs text-white/70 line-clamp-2 leading-relaxed">
+                        {bundle.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="px-4 pb-4 flex gap-2">
+                    <button
+                      onClick={() => handleEdit(bundle)}
+                      disabled={actionLoading}
+                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition
+                        bg-white/10 border border-white/20 text-white
+                        hover:bg-white/20 active:bg-white/25
+                        disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                    >
+                      <FaEdit />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handlePricingManagement(bundle)}
+                      disabled={actionLoading}
+                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition
+                        bg-white/10 border border-white/20 text-white
+                        hover:bg-white/20 active:bg-white/25
+                        disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                    >
+                      <FaDollarSign />
+                      Pricing
+                    </button>
+                    <button
+                      onClick={() => handleDelete(bundle)}
+                      disabled={actionLoading}
+                      className="flex-shrink-0 py-2 px-3 rounded-lg text-xs font-semibold transition
+                        bg-[var(--error)]/20 border border-[var(--error)]/30 text-white
+                        hover:bg-[var(--error)]/40 active:bg-[var(--error)]/50
+                        disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardBody>
@@ -933,13 +744,13 @@ export const BundleManagementPage: React.FC = () => {
         }}
       >
         <DialogHeader>
-          <h2 className="text-lg font-bold">Delete Bundle</h2>
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">Delete Bundle</h2>
         </DialogHeader>
         <DialogBody>
-          <p className="text-gray-600">
+          <p className="text-sm text-[var(--text-secondary)]">
             Are you sure you want to delete{" "}
-            <span className="font-semibold">{deleteBundle?.name}</span>? This
-            action cannot be undone.
+            <span className="font-semibold text-[var(--text-primary)]">{deleteBundle?.name}</span>?
+            This action cannot be undone.
           </p>
         </DialogBody>
         <DialogFooter>

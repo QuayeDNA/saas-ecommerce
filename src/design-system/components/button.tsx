@@ -116,7 +116,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const getVariantClasses = () => {
-      const colors = semanticColors[colorScheme];
+      const semanticVariant = variant === "danger" || variant === "success" || variant === "warning" || variant === "info"
+        ? variant
+        : undefined;
+      const scheme = semanticVariant ?? colorScheme;
+      const colors = semanticColors[scheme as ButtonColorScheme];
 
       switch (variant) {
         case "primary":
@@ -136,7 +140,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const getThemeStyles = (): React.CSSProperties => {
-      if (colorScheme !== "default") return {};
+      const isSemanticVariant = variant === "danger" || variant === "success" || variant === "warning" || variant === "info";
+      if (colorScheme !== "default" || isSemanticVariant) return {};
 
       if (variant === "primary" || variant === "accent") {
         return {

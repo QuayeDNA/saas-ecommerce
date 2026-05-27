@@ -134,7 +134,7 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   };
 
   return (
-    <Card className={className}>
+    <Card className={className} variant="outlined">
       <CardBody>
         <div className="flex flex-col sm:flex-row gap-4">
           <form onSubmit={handleImmediateSearch} className="flex-1">

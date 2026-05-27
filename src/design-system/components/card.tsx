@@ -45,7 +45,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
 
     // Variant styles
     const variantClasses = {
-      elevated: "shadow-md rounded-lg border border-[var(--border-color)]",
+      elevated: "shadow-sm rounded-lg border border-[var(--border-color)]",
       outlined: "border border-[var(--border-color)] rounded-lg",
       flat: "rounded-lg",
       interactive:

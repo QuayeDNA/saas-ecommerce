@@ -19,73 +19,91 @@ const cardToneMap: Record<
     string,
     {
         cardClass: string;
+        cardStyle?: React.CSSProperties;
         iconClass: string;
         titleClass: string;
         valueClass: string;
         upTrendClass: string;
         downTrendClass: string;
         flatTrendClass: string;
-        cardStyle?: React.CSSProperties;
     }
 > = {
     users: {
-        cardClass: "border-transparent text-white",
-        iconClass: "text-white/80",
-        titleClass: "text-white/70",
-        valueClass: "text-white",
-        upTrendClass: "text-emerald-200",
-        downTrendClass: "text-rose-200",
-        flatTrendClass: "text-white/75",
+        cardClass: "border-transparent",
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        upTrendClass: "",
+        downTrendClass: "",
+        flatTrendClass: "",
         cardStyle: {
-            background: "linear-gradient(to right, var(--color-primary-500), var(--color-primary-700))",
+            background: "var(--gradient-brand-dark)",
+            borderColor: "transparent",
         },
     },
     orders: {
-        cardClass: "bg-blue-50 border border-blue-200",
-        iconClass: "text-blue-600",
-        titleClass: "text-blue-700",
-        valueClass: "text-blue-950",
-        upTrendClass: "text-emerald-700",
-        downTrendClass: "text-red-700",
-        flatTrendClass: "text-blue-700",
+        cardClass: "",
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        upTrendClass: "",
+        downTrendClass: "",
+        flatTrendClass: "",
+        cardStyle: {
+            backgroundColor: "color-mix(in srgb, var(--info) 10%, var(--bg-surface))",
+            borderColor: "color-mix(in srgb, var(--info) 30%, transparent)",
+        },
     },
     revenue: {
-        cardClass: "bg-emerald-50 border border-emerald-200",
-        iconClass: "text-emerald-600",
-        titleClass: "text-emerald-700",
-        valueClass: "text-emerald-950",
-        upTrendClass: "text-emerald-700",
-        downTrendClass: "text-red-700",
-        flatTrendClass: "text-emerald-700",
+        cardClass: "",
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        upTrendClass: "",
+        downTrendClass: "",
+        flatTrendClass: "",
+        cardStyle: {
+            backgroundColor: "color-mix(in srgb, var(--success) 10%, var(--bg-surface))",
+            borderColor: "color-mix(in srgb, var(--success) 30%, transparent)",
+        },
     },
     wallet: {
-        cardClass: "bg-teal-50 border border-teal-200",
-        iconClass: "text-teal-600",
-        titleClass: "text-teal-700",
-        valueClass: "text-teal-950",
-        upTrendClass: "text-emerald-700",
-        downTrendClass: "text-red-700",
-        flatTrendClass: "text-teal-700",
+        cardClass: "",
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        upTrendClass: "",
+        downTrendClass: "",
+        flatTrendClass: "",
+        cardStyle: {
+            backgroundColor: "color-mix(in srgb, var(--color-secondary) 10%, var(--bg-surface))",
+            borderColor: "color-mix(in srgb, var(--color-secondary) 30%, transparent)",
+        },
     },
     providers: {
-        cardClass: "bg-violet-50 border border-violet-200",
-        iconClass: "text-violet-600",
-        titleClass: "text-violet-700",
-        valueClass: "text-violet-950",
-        upTrendClass: "text-emerald-700",
-        downTrendClass: "text-red-700",
-        flatTrendClass: "text-violet-700",
+        cardClass: "",
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        upTrendClass: "",
+        downTrendClass: "",
+        flatTrendClass: "",
+        cardStyle: {
+            backgroundColor: "color-mix(in srgb, var(--accent) 10%, var(--bg-surface))",
+            borderColor: "color-mix(in srgb, var(--accent) 30%, transparent)",
+        },
     },
 };
 
 const fallbackTone = {
-    cardClass: "bg-slate-50 border border-slate-200",
-    iconClass: "text-slate-600",
-    titleClass: "text-slate-600",
-    valueClass: "text-slate-900",
-    upTrendClass: "text-emerald-700",
-    downTrendClass: "text-red-700",
-    flatTrendClass: "text-slate-600",
+    cardClass: "",
+    cardStyle: { backgroundColor: "var(--bg-surface-alt)", borderColor: "var(--border-color)" } as React.CSSProperties,
+    iconClass: "",
+    titleClass: "",
+    valueClass: "",
+    upTrendClass: "",
+    downTrendClass: "",
+    flatTrendClass: "",
 };
 
 function getTrendDetails(
@@ -128,18 +146,22 @@ export function AnalyticsKpiGrid({ cards }: AnalyticsKpiGridProps) {
                     >
                         <CardBody className="pt-0">
                             <div className="flex items-center gap-3">
-                                <div className={`shrink-0 text-base sm:text-lg ${tone.iconClass}`}>
+                                <div className={`shrink-0 text-base sm:text-lg ${tone.iconClass}`}
+                                    style={{ color: card.id === "users" ? "var(--text-inverse)" : "var(--text-secondary)" }}>
                                     {card.icon}
                                 </div>
 
                                 <div className="min-w-0 flex-1">
-                                    <p className={`text-[10px] uppercase tracking-wide font-medium truncate ${tone.titleClass}`}>
+                                    <p className={`text-[10px] uppercase tracking-wide font-medium truncate ${tone.titleClass}`}
+                                        style={{ color: card.id === "users" ? "color-mix(in srgb, var(--text-inverse) 70%, transparent)" : "var(--text-secondary)" }}>
                                         {card.title}
                                     </p>
-                                    <p className={`text-base sm:text-lg font-bold leading-tight truncate ${tone.valueClass}`}>
+                                    <p className={`text-base sm:text-lg font-bold leading-tight truncate ${tone.valueClass}`}
+                                        style={{ color: card.id === "users" ? "var(--text-inverse)" : "var(--text-primary)" }}>
                                         {card.value}
                                     </p>
-                                    <p className={`mt-0.5 text-[11px] font-medium truncate inline-flex items-center gap-1 ${trend.className}`}>
+                                    <p className={`mt-0.5 text-[11px] font-medium truncate inline-flex items-center gap-1 ${trend.className}`}
+                                        style={{ color: card.id === "users" ? "color-mix(in srgb, var(--text-inverse) 75%, transparent)" : "var(--success)" }}>
                                         {trend.icon}
                                         <span>{card.subtitle}</span>
                                     </p>

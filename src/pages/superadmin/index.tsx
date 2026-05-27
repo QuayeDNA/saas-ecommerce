@@ -8,7 +8,6 @@ import {
   FaCog,
   FaMoneyBillWave,
   FaBox,
-  FaChartLine,
   FaUserTie,
   FaUserShield,
   FaUserCheck,
@@ -31,19 +30,14 @@ const quickLinks = [
     icon: (
       <FaUsers
         className="text-xl sm:text-2xl"
-        style={{ color: "var(--color-primary-600)" }}
+        style={{ color: "var(--color-primary)" }}
       />
     ),
   },
   {
-    to: "/superadmin/providers",
-    label: "Manage Providers",
-    icon: <FaBuilding className="text-[var(--success)] text-xl sm:text-2xl" />,
-  },
-  {
     to: "/superadmin/packages",
-    label: "Manage Packages",
-    icon: <FaBox className="text-orange-600 text-xl sm:text-2xl" />,
+    label: "Manage Packages & Providers",
+     icon: <FaBox className="text-xl sm:text-2xl" style={{ color: "var(--warning)" }} />,
   },
   {
     to: "/superadmin/orders",
@@ -251,7 +245,7 @@ export default function SuperAdminDashboard() {
               {/* Platform Health */}
               <div>
                 <p className="text-xs text-[var(--text-muted)] mb-1">Success Rate</p>
-                <p className="text-2xl sm:text-3xl font-bold" style={{ color: stats.orders.successRate >= 90 ? "#16a34a" : stats.orders.successRate >= 70 ? "#ca8a04" : "#dc2626" }}>
+                <p className="text-2xl sm:text-3xl font-bold" style={{ color: stats.orders.successRate >= 90 ? "var(--success)" : stats.orders.successRate >= 70 ? "var(--warning)" : "var(--error)" }}>
                   {stats.orders.successRate}%
                 </p>
                 <p className="text-[10px] text-[var(--text-muted)] mt-1">
@@ -394,7 +388,33 @@ export default function SuperAdminDashboard() {
         </CardBody>
       </Card>
 
-      {/* Detailed Statistics */}
+      {/* Analytics Summary */}
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-base sm:text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+              Analytics Summary
+            </h3>
+            <p className="text-sm" style={{ color: "var(--text-secondary)", maxWidth: "32rem" }}>
+              A quick overview of your top business KPIs. See the full analytics
+              dashboard for detailed trends and breakdowns.
+            </p>
+          </div>
+          <Link
+            to="/superadmin/analytics"
+            className="inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition"
+            style={{
+              borderColor: "var(--border-color)",
+              backgroundColor: "var(--bg-surface)",
+              color: "var(--text-primary)",
+            }}
+          >
+            See more
+          </Link>
+        </div>
+      </div>
+
+      {/* Analytics Details */}
       {loadingStats ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card className="animate-pulse">
@@ -414,7 +434,7 @@ export default function SuperAdminDashboard() {
             <CardBody>
               <div className="h-6 bg-[var(--bg-surface-alt)] rounded w-32 mb-4"></div>
               <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
+                {[...Array(3)].map((_, i) => (
                   <div key={i} className="flex justify-between items-center">
                     <div className="h-4 bg-[var(--bg-surface-alt)] rounded w-24"></div>
                     <div className="h-4 bg-[var(--bg-surface-alt)] rounded w-12"></div>
@@ -426,327 +446,78 @@ export default function SuperAdminDashboard() {
         </div>
       ) : stats ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* User Statistics */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <FaUsers style={{ color: "var(--color-primary-600)" }} />
-                User Statistics
-              </h3>
-            </CardHeader>
-            <CardBody>
-              <div className="space-y-3">
-                {/* Dynamic User Type Statistics */}
-                {stats.users.byType &&
-                  Object.entries(stats.users.byType).map(
-                    ([userType, count]) => (
-                      <div
-                        key={userType}
-                        className="flex justify-between items-center"
-                      >
-                        <span className="text-sm text-[var(--text-muted)] capitalize">
-                          {userType.replace(/_/g, " ").replace(/s$/, "")}s
-                        </span>
-                        <span className="font-medium">{count}</span>
-                      </div>
-                    )
-                  )}
-
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Verified Users</span>
-                  <span className="font-medium">{stats.users.verified}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Active Agents</span>
-                  <Badge colorScheme="warning" size="sm">
-                    {stats.users.activeAgents}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">
-                    Verification Rate
-                  </span>
-                  <Badge colorScheme="success" size="sm">
-                    {stats?.rates?.userVerification ?? 0}%
-                  </Badge>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
           {/* Order Statistics */}
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <FaClipboardList className="text-[var(--warning)]" />
+                <FaClipboardList style={{ color: "var(--warning)" }} />
                 Order Statistics
               </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">
-                    Completed Orders
-                  </span>
-                  <Badge colorScheme="success" size="sm">
-                    {stats.orders.completed}
-                  </Badge>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Completed Orders</span>
+                  <Badge colorScheme="success" size="sm">{stats.orders.completed}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Pending Orders</span>
-                  <Badge colorScheme="warning" size="sm">
-                    {stats.orders.pending}
-                  </Badge>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Pending Orders</span>
+                  <Badge colorScheme="warning" size="sm">{stats.orders.pending}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Failed Orders</span>
-                  <Badge colorScheme="error" size="sm">
-                    {stats.orders.failed}
-                  </Badge>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Failed Orders</span>
+                  <Badge colorScheme="error" size="sm">{stats.orders.failed}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Total Orders</span>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Total Orders</span>
                   <span className="font-medium">{stats.orders.total}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Success Rate</span>
-                  <Badge colorScheme="success" size="sm">
-                    {stats.orders.successRate}%
-                  </Badge>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Success Rate</span>
+                  <Badge colorScheme="success" size="sm">{stats.orders.successRate}%</Badge>
                 </div>
               </div>
             </CardBody>
           </Card>
-        </div>
-      ) : null}
 
-      {/* Revenue & Provider Stats */}
-      {loadingStats ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <Card className="animate-pulse">
-            <CardBody>
-              <div className="h-6 bg-[var(--bg-surface-alt)] rounded w-32 mb-4"></div>
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="flex justify-between items-center">
-                    <div className="h-4 bg-[var(--bg-surface-alt)] rounded w-24"></div>
-                    <div className="h-4 bg-[var(--bg-surface-alt)] rounded w-12"></div>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-          <Card className="animate-pulse">
-            <CardBody>
-              <div className="h-6 bg-[var(--bg-surface-alt)] rounded w-32 mb-4"></div>
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="flex justify-between items-center">
-                    <div className="h-4 bg-[var(--bg-surface-alt)] rounded w-24"></div>
-                    <div className="h-4 bg-[var(--bg-surface-alt)] rounded w-12"></div>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      ) : stats ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Revenue Statistics */}
           <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <FaMoneyBillWave className="text-[var(--success)]" />
+                <FaMoneyBillWave style={{ color: "var(--success)" }} />
                 Revenue Statistics
               </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Total Revenue</span>
-                  <span className="font-medium text-[var(--success)]">
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Total Revenue</span>
+                  <span className="font-medium" style={{ color: "var(--success)" }}>
                     {formatCurrency(stats.revenue.total)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Total Revenue</span>
-                  <span className="font-medium">
-                    {formatCurrency(stats.revenue.total)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Avg Order Value</span>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Avg Order Value</span>
                   <span className="font-medium">
                     {formatCurrency(stats.revenue.averageOrderValue)}
                   </span>
                 </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Provider Statistics */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <FaBuilding style={{ color: "var(--color-primary-600)" }} />
-                Provider Statistics
-              </h3>
-            </CardHeader>
-            <CardBody>
-              <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">Total Providers</span>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Total Providers</span>
                   <span className="font-medium">{stats.providers.total}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">
-                    Active Providers
-                  </span>
-                  <Badge colorScheme="success" size="sm">
-                    {stats.providers.active}
-                  </Badge>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Active Providers</span>
+                  <Badge colorScheme="success" size="sm">{stats.providers.active}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--text-muted)]">New This Month</span>
-                  <span className="font-medium">
-                    {stats.providers.newThisMonth}
-                  </span>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>New This Month</span>
+                  <span className="font-medium">{stats.providers.newThisMonth}</span>
                 </div>
               </div>
             </CardBody>
           </Card>
         </div>
-      ) : null}
-
-      {/* Recent Activity */}
-      {loadingStats ? (
-        <Card className="animate-pulse">
-          <CardBody>
-            <div className="h-6 bg-[var(--bg-surface-alt)] rounded w-32 mb-4"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[...Array(3)].map((_, i) => (
-                <div key={i}>
-                  <div className="h-5 bg-[var(--bg-surface-alt)] rounded w-24 mb-3"></div>
-                  <div className="space-y-2">
-                    {[...Array(5)].map((_, j) => (
-                      <div
-                        key={j}
-                        className="flex items-center justify-between p-2 bg-[var(--bg-surface-alt)] rounded"
-                      >
-                        <div className="flex-1">
-                          <div className="h-4 bg-[var(--bg-surface-alt)] rounded w-20 mb-1"></div>
-                          <div className="h-3 bg-[var(--bg-surface-alt)] rounded w-16"></div>
-                        </div>
-                        <div className="h-6 bg-[var(--bg-surface-alt)] rounded w-12"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      ) : stats?.recentActivity ? (
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <FaChartLine className="text-[var(--accent)]" />
-              Recent Activity
-            </h3>
-          </CardHeader>
-          <CardBody>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              {/* Recent Users */}
-              <div>
-                <h4 className="font-medium text-[var(--text-secondary)] mb-3">Recent Users</h4>
-                <div className="space-y-2">
-                  {stats.recentActivity.users?.slice(0, 5)?.map((user) => (
-                    <div
-                      key={user._id}
-                      className="flex items-center justify-between p-2 bg-[var(--bg-surface-alt)] rounded"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">{user.fullName}</p>
-                        <p className="text-xs text-[var(--text-muted)]">{user.email}</p>
-                      </div>
-                      <Badge
-                        variant="subtle"
-                        colorScheme={getStatusColor(user.status)}
-                        size="xs"
-                      >
-                        {user.userType}
-                      </Badge>
-                    </div>
-                  )) || []}
-                </div>
-              </div>
-
-              {/* Recent Orders */}
-              <div>
-                <h4 className="font-medium text-[var(--text-secondary)] mb-3">
-                  Recent Orders
-                </h4>
-                <div className="space-y-2">
-                  {stats.recentActivity.orders?.slice(0, 5)?.map((order) => (
-                    <div
-                      key={order._id}
-                      className="flex items-center justify-between p-2 bg-[var(--bg-surface-alt)] rounded"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">
-                          {order.orderNumber}
-                        </p>
-                        <p className="text-xs text-[var(--text-muted)]">
-                          {formatCurrency(order.total)}
-                        </p>
-                      </div>
-                      <Badge
-                        variant="subtle"
-                        colorScheme={getStatusColor(order.status)}
-                        size="xs"
-                      >
-                        {order.status}
-                      </Badge>
-                    </div>
-                  )) || []}
-                </div>
-              </div>
-
-              {/* Recent Transactions */}
-              <div>
-                <h4 className="font-medium text-[var(--text-secondary)] mb-3">
-                  Recent Transactions
-                </h4>
-                <div className="space-y-2">
-                  {stats.recentActivity.transactions
-                    ?.slice(0, 5)
-                    ?.map((transaction) => (
-                      <div
-                        key={transaction._id}
-                        className="flex items-center justify-between p-2 bg-[var(--bg-surface-alt)] rounded"
-                      >
-                        <div>
-                          <p className="text-sm font-medium">
-                            {transaction.description || transaction.type}
-                          </p>
-                          <p className="text-xs text-[var(--text-muted)]">
-                            {formatCurrency(transaction.amount)}
-                          </p>
-                        </div>
-                        <Badge
-                          variant="subtle"
-                          colorScheme={getStatusColor(transaction.type)}
-                          size="xs"
-                        >
-                          {transaction.type}
-                        </Badge>
-                      </div>
-                    )) || []}
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
       ) : null}
     </div>
   );
