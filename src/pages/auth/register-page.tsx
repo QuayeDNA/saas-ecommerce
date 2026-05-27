@@ -67,6 +67,9 @@ interface FieldErrors {
   referralCode?: string;
 }
 
+const SMS_COMING_SOON_MESSAGE =
+  "SMS verification coming soon";
+
 export const RegisterPage = () => {
   const { registerAgent } = useAuth();
   const { signupApprovalRequired, isLoading: siteStatusLoading } =
@@ -552,8 +555,10 @@ export const RegisterPage = () => {
                   <button
                     type="button"
                     disabled
+                    aria-disabled={true}
                     className="flex-1 flex items-center gap-4 rounded-xl border-2 border-slate-200 bg-slate-50 p-5 text-left opacity-50 cursor-not-allowed"
-                    title="SMS verification coming soon"
+                    title={SMS_COMING_SOON_MESSAGE}
+                    aria-label="Phone verification via SMS coming soon"
                   >
                     <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-slate-300 bg-slate-100 flex-shrink-0">
                     </div>
@@ -609,7 +614,7 @@ export const RegisterPage = () => {
 
                   {selectedChannel === "phone" && !otpVerified && (
                     <p className="mt-2 text-xs text-amber-600">
-                      SMS not available yet. Switch to email to receive your code.
+                      {`${SMS_COMING_SOON_MESSAGE}. Switch to email to receive your code.`}
                     </p>
                   )}
                 </div>

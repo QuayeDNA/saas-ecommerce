@@ -99,7 +99,6 @@ export const CommissionPage = () => {
 
   const [dashboard, setDashboard] = useState<ReferralDashboard | null>(null);
   const [tree, setTree] = useState<ReferralTreeNode[]>([]);
-  
   const treeFetchedRef = useRef(false);
   const [copied, setCopied] = useState(false);
   const [shareDropdownOpen, setShareDropdownOpen] = useState(false);

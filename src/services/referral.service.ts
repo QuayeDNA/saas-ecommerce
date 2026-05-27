@@ -13,6 +13,8 @@ import type {
   BackendPagination,
 } from "../types/referral";
 
+const SELF_USER_ID = "self";
+
 class ReferralService {
   async getDashboard(): Promise<ReferralDashboard> {
     const response = await apiClient.get<ReferralDashboardResponse>(
@@ -45,7 +47,7 @@ class ReferralService {
     return [
       {
         user: {
-          _id: "self",
+          _id: SELF_USER_ID,
           fullName: userInfo.fullName || "You",
           email: "",
           phone: userInfo.phone || "",
