@@ -139,22 +139,6 @@ export default function SuperAdminDashboard() {
     }).format(amount);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-      case "active":
-      case "verified":
-        return "success";
-      case "pending":
-        return "warning";
-      case "failed":
-      case "rejected":
-        return "error";
-      default:
-        return "default";
-    }
-  };
-
   if (error && !stats) {
     return (
       <div className="text-center py-8">

@@ -108,7 +108,7 @@ const fallbackTone = {
 
 function getTrendDetails(
     trend: AnalyticsKpiCardItem["trend"],
-    tone: typeof fallbackTone
+    tone: { upTrendClass: string; downTrendClass: string; flatTrendClass: string }
 ) {
     if (trend === "up") {
         return {
