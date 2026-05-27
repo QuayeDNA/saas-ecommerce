@@ -105,8 +105,8 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
   return (
     <Dialog isOpen={isOpen} onClose={handleClose} size="md">
       <DialogHeader>
-        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+        <h2 className="text-xl font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <span className="w-8 h-8 bg-error/20 rounded-lg flex items-center justify-center">
             🔒
           </span>
           Change Admin Password
@@ -116,12 +116,12 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
       <Form onSubmit={handleSubmit}>
         <DialogBody>
           <div className="space-y-4">
-            <div className="bg-red-50 p-4 rounded-lg">
+            <div className="bg-error/10 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <span className="text-red-600 mt-0.5">⚠️</span>
+                <span className="text-error mt-0.5">⚠️</span>
                 <div>
-                  <h4 className="font-medium text-red-900">Security Notice</h4>
-                  <p className="text-sm text-red-800 mt-1">
+                  <h4 className="font-medium text-error">Security Notice</h4>
+                  <p className="text-sm text-error/80 mt-1">
                     Changing your admin password will require you to log in
                     again with the new password.
                   </p>
@@ -130,7 +130,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
             </div>
 
             {errors.submit && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <div className="bg-error/10 border border-error/30 text-error px-4 py-3 rounded-lg">
                 {errors.submit}
               </div>
             )}
@@ -151,7 +151,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility("current")}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                 >
                   {showPasswords.current ? "🙈" : "👁️"}
                 </button>
@@ -174,13 +174,13 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility("new")}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                 >
                   {showPasswords.new ? "🙈" : "👁️"}
                 </button>
               }
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[var(--text-muted)] mt-1">
               Password must be at least 8 characters long
             </p>
 
@@ -200,7 +200,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility("confirm")}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                 >
                   {showPasswords.confirm ? "🙈" : "👁️"}
                 </button>

@@ -5,7 +5,7 @@ import { Card } from "../../design-system/components/card";
 import { Badge } from "../../design-system/components/badge";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
-import { ColorSchemeSelector } from "../../components/common/color-scheme-selector";
+import { DarkModeToggle } from "../../components/common/dark-mode-toggle";
 import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type SystemInfo } from "../../services/settings.service";
 import pushNotificationService from "../../services/pushNotificationService";
 import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog } from "../../components/superadmin";
@@ -549,6 +549,20 @@ export default function SuperAdminSettingsPage() {
                   </div>
                 </div>
               </Card>
+
+              <Card>
+                <SectionHeader title="Referral Commission Rate" subtitle="Percentage of order value credited to referring agents" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-amber-50 rounded-lg">
+                  <div>
+                    <div className="text-sm font-medium text-amber-900">Current rate</div>
+                    <div className="text-xs text-amber-700 mt-1">Configurable via Fee Settings dialog</div>
+                  </div>
+                  <div className="sm:text-right">
+                    <div className="text-xl sm:text-2xl font-bold text-amber-900">{feeSettings?.commissionRatePercent ?? 5}%</div>
+                    <div className="text-xs text-amber-700">GH₵ {((feeSettings?.commissionRatePercent ?? 5) * 100 / 100).toFixed(2)} per GH₵ 100 order</div>
+                  </div>
+                </div>
+              </Card>
             </div>
           )}
 
@@ -596,9 +610,13 @@ export default function SuperAdminSettingsPage() {
               </Card>
 
               <Card>
-                <SectionHeader title="Appearance" subtitle="Theme & color" />
-                <div className="mt-4">
-                  <ColorSchemeSelector />
+                <SectionHeader title="Appearance" subtitle="Toggle dark mode" />
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">Dark Mode</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Switch between light and dark theme</p>
+                  </div>
+                  <DarkModeToggle />
                 </div>
               </Card>
             </div>

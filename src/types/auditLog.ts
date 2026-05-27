@@ -78,3 +78,44 @@ export interface AuditLogResponse {
     limit: number;
   };
 }
+
+export type DayFilter = "today" | "yesterday" | "2daysago" | "all";
+
+export interface UserActivityLog {
+  _id: string;
+  user: {
+    fullName: string;
+    email: string;
+  };
+  action: string;
+  category: string;
+  severity: "info" | "warning" | "critical";
+  time: string;
+  date: string;
+  timestamp: string;
+  description: string;
+  raw: {
+    metadata: Record<string, any>;
+    changes: {
+      before: Record<string, any>;
+      after: Record<string, any>;
+    } | null;
+    resource: {
+      type: string;
+      id: string;
+    } | null;
+    ipAddress: string;
+    userAgent: string;
+  };
+}
+
+export interface UserActivityLogResponse {
+  success: boolean;
+  logs: UserActivityLog[];
+  pagination: {
+    total: number;
+    page: number;
+    pages: number;
+    limit: number;
+  };
+}

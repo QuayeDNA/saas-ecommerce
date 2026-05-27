@@ -66,14 +66,21 @@ export function AnalyticsTrendStage({
     trendSeries,
     orderStatus,
 }: AnalyticsTrendStageProps) {
+    const root = document.documentElement;
+    const secondaryColor = getComputedStyle(root).getPropertyValue("--color-secondary").trim() || "#00aeef";
+    const successColor = getComputedStyle(root).getPropertyValue("--success").trim() || "#00c781";
+    const infoColor = getComputedStyle(root).getPropertyValue("--info").trim() || "#3ba4ff";
+    const warningColor = getComputedStyle(root).getPropertyValue("--warning").trim() || "#f5a524";
+    const errorColor = getComputedStyle(root).getPropertyValue("--error").trim() || "#ff4d67";
+
     const trendChartData = {
         labels,
         datasets: [
             {
                 label: trendLabelMap[selectedMetric],
                 data: trendSeries,
-                borderColor: "rgb(14, 116, 144)",
-                backgroundColor: "rgba(6, 182, 212, 0.15)",
+                borderColor: secondaryColor,
+                backgroundColor: secondaryColor + "26",
                 tension: 0.35,
                 fill: true,
                 pointRadius: 2,
@@ -138,13 +145,13 @@ export function AnalyticsTrendStage({
                 label: "Orders",
                 data: statusValues,
                 backgroundColor: [
-                    "rgba(16, 185, 129, 0.85)",
-                    "rgba(59, 130, 246, 0.85)",
-                    "rgba(245, 158, 11, 0.85)",
-                    "rgba(6, 182, 212, 0.85)",
-                    "rgba(239, 68, 68, 0.85)",
-                    "rgba(107, 114, 128, 0.85)",
-                    "rgba(168, 85, 247, 0.85)",
+                    `${successColor}D9`,
+                    `${infoColor}D9`,
+                    `${warningColor}D9`,
+                    `${secondaryColor}D9`,
+                    `${errorColor}D9`,
+                    `rgba(107, 114, 128, 0.85)`,
+                    `rgba(168, 85, 247, 0.85)`,
                 ],
             },
         ],
@@ -157,8 +164,8 @@ export function AnalyticsTrendStage({
             <Card className="xl:col-span-2 p-4 sm:p-5">
                 <CardHeader className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h2 className="text-base sm:text-lg font-semibold text-slate-900">Performance Trend</h2>
-                        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                        <h2 className="text-base sm:text-lg font-semibold" style={{ color: "var(--text-primary)" }}>Performance Trend</h2>
+                        <p className="text-xs sm:text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
                             Compare revenue, orders, and users over time.
                         </p>
                     </div>
@@ -184,8 +191,8 @@ export function AnalyticsTrendStage({
 
             <Card className="p-4 sm:p-5">
                 <CardHeader className="pb-3">
-                    <h3 className="text-base sm:text-lg font-semibold text-slate-900">Order Status Breakdown</h3>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                    <h3 className="text-base sm:text-lg font-semibold" style={{ color: "var(--text-primary)" }}>Order Status Breakdown</h3>
+                    <p className="text-xs sm:text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
                         Distribution of order outcomes for the selected period.
                     </p>
                 </CardHeader>
@@ -218,14 +225,14 @@ export function AnalyticsTrendStage({
 
                                     return (
                                         <div key={label}>
-                                            <div className="flex items-center justify-between text-xs text-slate-600">
+                                            <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-secondary)" }}>
                                                 <span>{label}</span>
                                                 <span>{value.toLocaleString()} ({ratio.toFixed(1)}%)</span>
                                             </div>
-                                            <div className="mt-1 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                                            <div className="mt-1 h-1.5 w-full rounded-full overflow-hidden" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                                                 <div
-                                                    className="h-full rounded-full bg-blue-500"
-                                                    style={{ width: `${Math.min(100, ratio)}%` }}
+                                                    className="h-full rounded-full"
+                                                    style={{ width: `${Math.min(100, ratio)}%`, backgroundColor: infoColor }}
                                                 />
                                             </div>
                                         </div>

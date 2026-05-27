@@ -65,17 +65,17 @@ export const Pagination: React.FC<PaginationProps> = ({
   const visiblePages = getVisiblePages();
 
   // Shared button classes
-  const baseBtn = 'inline-flex items-center justify-center rounded-lg border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed select-none';
+  const baseBtn = 'inline-flex items-center justify-center rounded-lg border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed select-none';
   const sizeClasses = {
     sm: 'h-8 w-8 text-xs',
     md: 'h-9 w-9 text-sm',
     lg: 'h-10 w-10 text-base',
   };
-  const navBtn = `${baseBtn} ${sizeClasses[size]} border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100`;
+  const navBtn = `${baseBtn} ${sizeClasses[size]} border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-alt)] hover:border-[var(--border-color-strong)] active:bg-[var(--bg-surface-alt)]`;
   const pageBtn = (active: boolean) =>
     `${baseBtn} ${sizeClasses[size]} ${active
-      ? 'border-blue-600 bg-blue-600 text-white shadow-sm hover:bg-blue-700'
-      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100'
+      ? 'border-primary bg-primary text-[var(--text-inverse)] shadow-sm hover:bg-[var(--color-primary-hover)]'
+      : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-surface-alt)] hover:border-[var(--border-color-strong)] active:bg-[var(--bg-surface-alt)]'
     }`;
 
   return (
@@ -83,21 +83,21 @@ export const Pagination: React.FC<PaginationProps> = ({
       {/* ── Row 1 (mobile): info + per-page ───────────────────────────────── */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         {showInfo && (
-          <p className="text-xs sm:text-sm text-gray-500 leading-tight">
-            <span className="font-medium text-gray-700">{startItem}–{endItem}</span>
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-tight">
+            <span className="font-medium text-[var(--text-primary)]">{startItem}–{endItem}</span>
             {' '}of{' '}
-            <span className="font-medium text-gray-700">{totalItems}</span>
+            <span className="font-medium text-[var(--text-primary)]">{totalItems}</span>
             {' '}results
           </p>
         )}
 
         {showPerPageSelector && onItemsPerPageChange && (
           <div className="flex items-center gap-1.5 ml-auto">
-            <span className="text-xs text-gray-500 whitespace-nowrap">Per page:</span>
+            <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">Per page:</span>
             <select
               value={itemsPerPage}
               onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-              className="h-8 rounded-lg border border-gray-300 bg-white px-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+              className="h-8 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent cursor-pointer"
             >
               {perPageOptions.map((option) => (
                 <option key={option} value={option}>{option}</option>
@@ -133,13 +133,13 @@ export const Pagination: React.FC<PaginationProps> = ({
 
         {/* Page numbers / compact label */}
         {variant === 'compact' ? (
-          <span className="px-3 py-1 text-sm text-gray-600 font-medium">
+          <span className="px-3 py-1 text-sm text-[var(--text-secondary)] font-medium">
             {currentPage} / {totalPages}
           </span>
         ) : (
           <>
             {/* Mobile: show only current / total */}
-            <span className="sm:hidden px-2 py-1 text-sm text-gray-600 font-medium whitespace-nowrap">
+            <span className="sm:hidden px-2 py-1 text-sm text-[var(--text-secondary)] font-medium whitespace-nowrap">
               {currentPage} / {totalPages}
             </span>
 
@@ -147,7 +147,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             <div className="hidden sm:flex items-center gap-1 flex-wrap">
               {visiblePages.map((page, index) =>
                 page === '...' ? (
-                  <span key={`dots-${index}`} className="w-8 text-center text-sm text-gray-400 select-none">
+                    <span key={`dots-${index}`} className="w-8 text-center text-sm text-[var(--text-muted)] select-none">
                     ···
                   </span>
                 ) : (

@@ -1,82 +1,7 @@
 @import "tailwindcss";
 @import "react-data-grid/lib/styles.css";
 @import "./design-system/theme.css";
-
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;600;700&display=swap');
-
-:root {
-  --font-family-sans: 'Montserrat', 'Open Sans', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, sans-serif;
-}
-
-html {
-  font-family: var(--font-family-sans);
-  scroll-behavior: smooth;
-}
-
-body {
-  font-family: var(--font-family-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Make focus outlines consistent across browsers */
-*:focus-visible {
-  outline: 2px solid #3b82f6; /* Blue-500 */
-  outline-offset: 2px;
-}
-
-/* Apply smooth transitions to interactive elements */
-a, button, input, select, textarea {
-  transition: all 0.2s ease;
-}
-
-/* Header animations */
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-in-from-bottom {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-up {
-  animation: slide-up 0.5s ease-out;
-}
-
-.animate-slide-in-from-bottom {
-  animation: slide-in-from-bottom 0.5s ease-out;
-}
-
-/* Marquee animation for scrolling text */
-@keyframes marquee {
-  0% {
-    transform: translateX(100%);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
-}
-
-.animate-marquee {
-  animation: marquee 10s linear infinite;
-  /* Ensure the text is wide enough to scroll */
-  min-width: max-content;
-}
+@import "./design-system/brytelinks-theme.css";
 
 /* Excel View Custom Styles */
 .rdg-light {
@@ -96,7 +21,6 @@ a, button, input, select, textarea {
   --rdg-font-size: 14px;
 }
 
-/* Excel-like header styling */
 .rdg-light .rdg-header-row {
   background-color: #f3f4f6 !important;
   font-weight: 600 !important;
@@ -104,55 +28,74 @@ a, button, input, select, textarea {
   border-bottom: 2px solid #d1d5db !important;
 }
 
-/* Excel-like cell styling */
 .rdg-light .rdg-cell {
   border-right: 1px solid #e5e7eb !important;
   border-bottom: 1px solid #e5e7eb !important;
   padding: 8px 12px !important;
 }
 
-/* Excel-like row hover */
 .rdg-light .rdg-row:hover {
   background-color: #f9fafb !important;
 }
 
-/* Excel-like focus styling */
 .rdg-light .rdg-cell:focus {
   outline: 2px solid #3b82f6 !important;
   outline-offset: -2px !important;
 }
 
-/* Custom Scrollbar Styles for Notifications */
-.scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: #d1d5db #f9fafb;
+/* Apply smooth transitions to interactive elements */
+a, button, input, select, textarea {
+  transition: all 0.2s ease;
 }
-
-.scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
+/* Header animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: #f9fafb;
-  border-radius: 3px;
+@keyframes slide-in-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 3px;
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out;
 }
-
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+.animate-slide-in-from-bottom {
+  animation: slide-in-from-bottom 0.5s ease-out;
+}
+/* Marquee animation for scrolling text */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+.animate-marquee {
+  animation: marquee 10s linear infinite;
+  /* Ensure the text is wide enough to scroll */
+  min-width: max-content;
 }
 
 /* Utility: hide scrollbar while keeping scroll behavior (mobile-friendly) */
 .hide-scrollbar {
-  -ms-overflow-style: none; /* IE/Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 .hide-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Webkit */
+  display: none;
 }
 
 /* Line clamp utility for text truncation */

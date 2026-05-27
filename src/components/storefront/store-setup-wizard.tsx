@@ -181,7 +181,7 @@ export const StorefrontManager: React.FC<StorefrontManagerProps> = ({
           <Button
             variant="primary"
             onClick={() => window.location.reload()}
-            useThemeColor
+
           >
             Try Again
           </Button>
@@ -206,7 +206,7 @@ export const StorefrontManager: React.FC<StorefrontManagerProps> = ({
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               variant="primary"
-              useThemeColor
+  
               className="flex items-center gap-2"
             >
               <ShoppingBag className="w-4 h-4" />
@@ -319,7 +319,7 @@ export const StorefrontManager: React.FC<StorefrontManagerProps> = ({
             variant="primary"
             size="lg"
             onClick={() => setShowWizard(true)}
-            useThemeColor
+
             className="w-full sm:w-auto px-8 flex items-center justify-center gap-2"
           >
             <Plus className="w-5 h-5" />
@@ -785,7 +785,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                 }
                 placeholder="your-business-name"
                 leftIcon={<Store className="w-4 h-4" />}
-                useThemeColor
+    
               />
               <p className="text-xs text-gray-500 mt-1">
                 This is used in your storefront URL and must be lowercase with no spaces.
@@ -808,7 +808,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                 }
                 placeholder="How your store appears to customers"
                 leftIcon={<Store className="w-4 h-4" />}
-                useThemeColor
+    
               />
             </FormField>
 
@@ -819,7 +819,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                   onChange={(e) => handleFieldChange("phone", e.target.value)}
                   placeholder="Customer contact number"
                   leftIcon={<Phone className="w-4 h-4" />}
-                  useThemeColor
+      
                 />
               </FormField>
 
@@ -830,7 +830,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                   onChange={(e) => handleFieldChange("email", e.target.value)}
                   placeholder="Optional email address"
                   leftIcon={<Mail className="w-4 h-4" />}
-                  useThemeColor
+      
                 />
               </FormField>
             </div>
@@ -841,7 +841,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                 onChange={(e) => handleFieldChange("address", e.target.value)}
                 placeholder="Optional business location"
                 leftIcon={<MapPin className="w-4 h-4" />}
-                useThemeColor
+    
               />
             </FormField>
           </div>
@@ -1001,7 +1001,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                                         )
                                       }
                                       placeholder="e.g., 0241234567"
-                                      useThemeColor
+                          
                                     />
                                   </FormField>
                                   <FormField label="Account Name">
@@ -1015,7 +1015,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                                         )
                                       }
                                       placeholder="Account holder name"
-                                      useThemeColor
+                          
                                     />
                                   </FormField>
                                 </div>
@@ -1048,7 +1048,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                                   )
                                 }
                                 placeholder="e.g., GCB Bank"
-                                useThemeColor
+                    
                               />
                             </FormField>
                             <FormField label="Account Number">
@@ -1062,7 +1062,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                                   )
                                 }
                                 placeholder="Account number"
-                                useThemeColor
+                    
                               />
                             </FormField>
                             <FormField label="Account Name">
@@ -1076,7 +1076,7 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
                                   )
                                 }
                                 placeholder="Account holder name"
-                                useThemeColor
+                    
                               />
                             </FormField>
                           </div>
@@ -1221,7 +1221,6 @@ const StoreSetupWizardDialog: React.FC<StoreSetupWizardDialogProps> = ({
           variant="primary"
           onClick={currentStep === STEPS.length - 1 ? handleSubmit : handleNext}
           disabled={isLoading}
-          useThemeColor
         >
           {isLoading ? (
             <>

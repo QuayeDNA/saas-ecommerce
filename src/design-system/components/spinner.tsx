@@ -28,12 +28,12 @@ export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
 
     // Color classes
     const colorClasses = {
-      primary: 'border-blue-600',
+      primary: 'border-primary',
       white: 'border-white',
-      gray: 'border-gray-600',
-      success: 'border-green-600',
-      warning: 'border-yellow-500',
-      error: 'border-red-600',
+      gray: 'border-[var(--text-secondary)]',
+      success: 'border-success',
+      warning: 'border-warning',
+      error: 'border-error',
     };
 
     // Thickness classes

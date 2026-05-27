@@ -129,7 +129,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   return (
     <Dialog isOpen={isOpen} onClose={handleClose} size="md">
       <DialogHeader>
-        <h2 className="text-xl font-semibold text-gray-900">Change Password</h2>
+        <h2 className="text-xl font-semibold text-[var(--text-primary)]">Change Password</h2>
       </DialogHeader>
 
       <Form onSubmit={handleSubmit}>
@@ -149,7 +149,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] focus:outline-none"
                     aria-label={
                       showCurrentPassword ? "Hide password" : "Show password"
                     }
@@ -178,7 +178,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] focus:outline-none"
                     aria-label={
                       showNewPassword ? "Hide password" : "Show password"
                     }
@@ -207,7 +207,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] focus:outline-none"
                     aria-label={
                       showConfirmPassword ? "Hide password" : "Show password"
                     }
@@ -222,7 +222,7 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
               />
             </FormField>
 
-            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+            <div className="text-sm text-[var(--text-secondary)] bg-[var(--bg-surface-alt)] rounded-lg">
               <p className="font-medium mb-1">Password Requirements:</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>At least 8 characters long</li>

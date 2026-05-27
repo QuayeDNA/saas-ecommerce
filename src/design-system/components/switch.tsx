@@ -86,9 +86,9 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(
     let bgStyle: React.CSSProperties = {};
 
     if (isDisabled) {
-      bgClass = "bg-gray-300 cursor-not-allowed";
+      bgClass = "bg-[var(--border-color)] cursor-not-allowed";
     } else if (!checked) {
-      bgClass = "bg-gray-300";
+      bgClass = "bg-[var(--border-color)]";
     } else if (isDefault) {
       // Use CSS variable for theme-aware primary color (avoids Tailwind JIT purge)
       bgClass = "";
@@ -151,7 +151,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(
           />
         </button>
         {label && (
-          <span className="ml-3 text-sm font-medium text-gray-900">
+          <span className="ml-3 text-sm font-medium text-[var(--text-primary)]">
             {label}
           </span>
         )}
