@@ -1046,10 +1046,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                           <div
                             key={order._id}
                             className="flex items-center gap-3 p-2.5 rounded-lg transition cursor-pointer"
-                            style={{
-                              border: "1px solid var(--border-color)",
-                              hover: { backgroundColor: "var(--bg-surface-alt)" },
-                            }}
+                            style={{ border: "1px solid var(--border-color)" }}
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--bg-surface-alt)"}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}
                             onClick={() => setActiveTab("orders")}
