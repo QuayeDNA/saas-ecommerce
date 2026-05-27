@@ -694,8 +694,8 @@ a:hover {
    ========================================================= */
 
 ::-webkit-scrollbar {
-  width: 4px;
-  margin-top: 4px;
+  width: 2px;
+  height: 2px;
 }
 
 ::-webkit-scrollbar-track {

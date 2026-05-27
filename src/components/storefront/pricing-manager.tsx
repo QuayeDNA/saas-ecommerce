@@ -82,6 +82,11 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showEnabledOnly, setShowEnabledOnly] = useState(false);
   const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
+  const [hoveredPackageCard, setHoveredPackageCard] = useState<string | null>(null);
+  const [isBackBtnHovered, setIsBackBtnHovered] = useState(false);
+  const [isInstructionsHovered, setIsInstructionsHovered] = useState(false);
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  const [hoveredLabelId, setHoveredLabelId] = useState<string | null>(null);
 
   // Bulk state
   const [bulkMarkupType, setBulkMarkupType] = useState<"percentage" | "fixed">(
@@ -414,11 +419,11 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
+            <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
+              <DollarSign className="w-5 h-5" style={{ color: "var(--success)" }} />
               Pricing Management
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
               Select a package to manage bundle pricing &amp; visibility
             </p>
           </div>
@@ -453,13 +458,16 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
             <Card
               key={pkg.name}
               variant="outlined"
-              className="cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+              className="cursor-pointer hover:shadow-md transition-all"
               onClick={() => setSelectedPackage(pkg.name)}
+              onMouseEnter={() => setHoveredPackageCard(pkg.name)}
+              onMouseLeave={() => setHoveredPackageCard(null)}
+              style={hoveredPackageCard === pkg.name ? { borderColor: `color-mix(in srgb, var(--color-secondary) 30%, transparent)` } : {}}
             >
               <CardBody className="p-4 sm:p-5">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <Package className="w-5 h-5 text-blue-600" />
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: `color-mix(in srgb, var(--color-secondary) 8%, transparent)` }}>
+                    <Package className="w-5 h-5" style={{ color: "var(--color-secondary)" }} />
                   </div>
                   <Badge
                     colorScheme={pkg.enabledCount > 0 ? "success" : "gray"}
@@ -469,10 +477,10 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                     {pkg.enabledCount}/{pkg.count} enabled
                   </Badge>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1 truncate">
+                <h3 className="font-semibold mb-1 truncate" style={{ color: "var(--text-primary)" }}>
                   {pkg.name}
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                   {pkg.count} bundle{pkg.count !== 1 ? "s" : ""}
                 </p>
               </CardBody>
@@ -507,7 +515,10 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                 setShowEnabledOnly(false);
                 setSelectedBundleIds(new Set());
               }}
-              className="shrink-0 p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+              className="shrink-0 p-1.5 rounded-lg transition-colors"
+              style={{ color: "var(--text-muted)", backgroundColor: isBackBtnHovered ? "var(--bg-surface-alt)" : undefined }}
+              onMouseEnter={() => setIsBackBtnHovered(true)}
+              onMouseLeave={() => setIsBackBtnHovered(false)}
               title="Back to packages"
             >
               <svg
@@ -525,11 +536,11 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
               </svg>
             </button>
             <div className="min-w-0">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-green-600 shrink-0" />
+              <h2 className="text-lg sm:text-xl font-bold truncate flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
+                <DollarSign className="w-5 h-5 shrink-0" style={{ color: "var(--success)" }} />
                 {selectedPackage}
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                 {filteredBundles.length} of {currentPkg?.count || 0} bundles
                 {showEnabledOnly ? " (enabled only)" : ""}
               </p>
@@ -565,26 +576,29 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
         </div>
 
         {/* Instructions Accordion */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
-          <button
-            onClick={() => setIsInstructionsOpen(!isInstructionsOpen)}
-            className="w-full flex items-center justify-between p-3 text-left hover:bg-blue-100 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-blue-600 shrink-0" />
-              <span className="text-xs sm:text-sm font-semibold text-blue-800">
-                How pricing works
-              </span>
-            </div>
-            {isInstructionsOpen ? (
-              <ChevronUp className="w-4 h-4 text-blue-600 shrink-0" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-blue-600 shrink-0" />
-            )}
-          </button>
-          {isInstructionsOpen && (
-            <div className="px-3 pb-3 border-t border-blue-200">
-              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm text-blue-800 mt-2">
+            <div className="rounded-lg overflow-hidden" style={{ backgroundColor: `color-mix(in srgb, var(--color-secondary) 8%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent)` }}>
+              <button
+                onClick={() => setIsInstructionsOpen(!isInstructionsOpen)}
+                className="w-full flex items-center justify-between p-3 text-left transition-colors"
+                style={{ backgroundColor: isInstructionsHovered ? `color-mix(in srgb, var(--color-secondary) 12%, transparent)` : undefined }}
+                onMouseEnter={() => setIsInstructionsHovered(true)}
+                onMouseLeave={() => setIsInstructionsHovered(false)}
+              >
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 shrink-0" style={{ color: "var(--color-secondary)" }} />
+                  <span className="text-xs sm:text-sm font-semibold" style={{ color: "var(--color-secondary)" }}>
+                    How pricing works
+                  </span>
+                </div>
+                {isInstructionsOpen ? (
+                  <ChevronUp className="w-4 h-4 shrink-0" style={{ color: "var(--color-secondary)" }} />
+                ) : (
+                  <ChevronDown className="w-4 h-4 shrink-0" style={{ color: "var(--color-secondary)" }} />
+                )}
+              </button>
+              {isInstructionsOpen && (
+                <div className="px-3 pb-3 border-t" style={{ borderColor: `color-mix(in srgb, var(--color-secondary) 20%, transparent)` }}>
+                  <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm mt-2" style={{ color: "var(--color-secondary)" }}>
                 <li>
                   <strong>Tier Price</strong> is your cost — set by admin based
                   on your account type
@@ -627,7 +641,7 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
             {/* ============================================================ */}
             <TabsContent value="individual">
               {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-col sm:flex-row gap-3 mb-4 p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                 <div className="flex-1">
                   <Input
                     value={searchTerm}
@@ -671,27 +685,27 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
               <div className="hidden lg:block border rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                       <tr>
-                        <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
-                          Bundle
+                        <th className="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider min-w-[200px]" style={{ color: "var(--text-secondary)" }}>
+                          Bundle Name
                         </th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]">
-                          Provider
+                        <th className="px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wider w-[100px]" style={{ color: "var(--text-secondary)" }}>
+                          Enabled
                         </th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[110px]">
-                          Tier Price
+                        <th className="px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wider w-[110px]" style={{ color: "var(--text-secondary)" }}>
+                          Base Price
                         </th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[130px]">
+                        <th className="px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wider w-[130px]" style={{ color: "var(--text-secondary)" }}>
                           Your Price
                         </th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]">
+                        <th className="px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wider w-[100px]" style={{ color: "var(--text-secondary)" }}>
                           Markup
                         </th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]">
-                          Profit
+                        <th className="px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wider w-[100px]" style={{ color: "var(--text-secondary)" }}>
+                          Markup %
                         </th>
-                        <th className="px-3 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[80px]">
+                        <th className="px-3 py-2.5 text-center text-xs font-medium uppercase tracking-wider w-[80px]" style={{ color: "var(--text-secondary)" }}>
                           Visible
                         </th>
                       </tr>
@@ -715,14 +729,19 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                         return (
                           <tr
                             key={bundle._id}
-                            className={`hover:bg-gray-50 transition-colors ${isChanged ? "bg-yellow-50" : ""} ${!edit.isEnabled ? "opacity-60" : ""}`}
+                            onMouseEnter={() => setHoveredRowId(bundle._id)}
+                            onMouseLeave={() => setHoveredRowId(null)}
+                            style={{
+                              backgroundColor: isChanged ? `color-mix(in srgb, var(--warning) 8%, transparent)` : hoveredRowId === bundle._id ? "var(--bg-surface-alt)" : undefined,
+                            }}
+                            className={`transition-colors ${!edit.isEnabled ? "opacity-60" : ""}`}
                           >
                             <td className="px-3 py-2.5">
                               <div>
-                                <p className="font-medium text-sm text-gray-900 truncate">
+                                <p className="font-medium text-sm truncate" style={{ color: "var(--text-primary)" }}>
                                   {bundle.name}
                                 </p>
-                                <p className="text-xs text-gray-500 capitalize">
+                                <p className="text-xs capitalize" style={{ color: "var(--text-secondary)" }}>
                                   {bundle.dataVolume}
                                   {bundle.dataUnit} &middot;{" "}
                                   {bundle.category || "N/A"}
@@ -733,7 +752,7 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                               {getProviderBadge(bundle.provider.code)}
                             </td>
                             <td className="px-3 py-2.5 text-center">
-                              <span className="text-sm font-medium text-gray-700">
+                              <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                                 GHS {bundle.tierPrice.toFixed(2)}
                               </span>
                             </td>
@@ -749,15 +768,17 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                                     parseFloat(e.target.value) || 0,
                                   )
                                 }
-                                className={`w-full px-2 py-1 text-sm text-center border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${isChanged
-                                  ? "border-yellow-400 bg-yellow-50"
-                                  : "border-gray-300"
-                                  }`}
+                                className={`w-full px-2 py-1 text-sm text-center border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${isChanged ? "border-yellow-400" : ""}`}
+                                style={{
+                                  backgroundColor: isChanged ? `color-mix(in srgb, var(--warning) 8%, transparent)` : undefined,
+                                  borderColor: isChanged ? undefined : "var(--border-color)",
+                                }}
                               />
                             </td>
                             <td className="px-3 py-2.5 text-center">
                               <span
-                                className={`text-sm font-medium ${pct > 0 ? "text-green-600" : pct < 0 ? "text-red-600" : "text-gray-500"}`}
+                                className="text-sm font-medium"
+                                style={{ color: pct > 0 ? "var(--success)" : pct < 0 ? "var(--error)" : "var(--text-muted)" }}
                               >
                                 {pct > 0 ? "+" : ""}
                                 {pct.toFixed(1)}%
@@ -827,20 +848,21 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                   return (
                     <div
                       key={bundle._id}
-                      className={`border rounded-lg p-3 sm:p-4 space-y-3 transition-all ${isChanged
-                        ? "border-yellow-300 bg-yellow-50/50"
-                        : "border-gray-200"
-                        } ${!edit.isEnabled ? "opacity-60" : ""}`}
+                      className={`rounded-lg p-3 sm:p-4 space-y-3 transition-all ${!edit.isEnabled ? "opacity-60" : ""}`}
+                      style={{
+                        border: isChanged ? "1px solid #fbbf24" : "1px solid var(--border-color)",
+                        backgroundColor: isChanged ? `color-mix(in srgb, var(--warning) 8%, transparent)` : undefined,
+                      }}
                     >
                       {/* Name + toggle */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-gray-900 truncate text-sm">
+                          <p className="font-medium truncate text-sm" style={{ color: "var(--text-primary)" }}>
                             {bundle.name}
                           </p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {getProviderBadge(bundle.provider.code)}
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
                               {bundle.dataVolume}
                               {bundle.dataUnit} &middot;{" "}
                               {bundle.category || "N/A"}
@@ -859,15 +881,15 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                       {/* Pricing */}
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">
+                          <p className="text-xs mb-1" style={{ color: "var(--text-secondary)" }}>
                             Tier Price
                           </p>
-                          <p className="font-medium text-gray-700 text-sm">
+                          <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
                             GHS {bundle.tierPrice.toFixed(2)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">
+                          <p className="text-xs mb-1" style={{ color: "var(--text-secondary)" }}>
                             Your Price
                           </p>
                           <input
@@ -881,10 +903,11 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                                 parseFloat(e.target.value) || 0,
                               )
                             }
-                            className={`w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${isChanged
-                              ? "border-yellow-400 bg-yellow-50"
-                              : "border-gray-300"
-                              }`}
+                            className={`w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${isChanged ? "border-yellow-400" : ""}`}
+                            style={{
+                              backgroundColor: isChanged ? `color-mix(in srgb, var(--warning) 8%, transparent)` : undefined,
+                              borderColor: isChanged ? undefined : "var(--border-color)",
+                            }}
                           />
                         </div>
                       </div>
@@ -892,7 +915,8 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                       {/* Markup line */}
                       <div className="flex items-center justify-between text-sm">
                         <span
-                          className={`font-medium ${pct > 0 ? "text-green-600" : pct < 0 ? "text-red-600" : "text-gray-500"}`}
+                          className="font-medium"
+                          style={{ color: pct > 0 ? "var(--success)" : pct < 0 ? "var(--error)" : "var(--text-muted)" }}
                         >
                           {pct > 0 ? "+" : ""}
                           {pct.toFixed(1)}% markup
@@ -929,38 +953,38 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
               </div>
 
               {filteredBundles.length === 0 && (
-                <div className="text-center py-8 text-gray-500 text-sm">
+                <div className="text-center py-8 text-sm" style={{ color: "var(--text-muted)" }}>
                   No bundles match your filters
                 </div>
               )}
 
               {/* Summary bar */}
               {filteredBundles.length > 0 && (
-                <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                <div className="mt-4 rounded-lg p-3 sm:p-4" style={{ backgroundColor: "var(--bg-surface-alt)", border: "1px solid var(--border-color)" }}>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">
+                      <p className="text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>
                         Total Bundles
                       </p>
-                      <p className="text-sm sm:text-base font-bold text-gray-900">
+                      <p className="text-sm sm:text-base font-bold" style={{ color: "var(--text-primary)" }}>
                         {currentPkg?.count || 0}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Enabled</p>
-                      <p className="text-sm sm:text-base font-bold text-green-600">
+                      <p className="text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>Enabled</p>
+                      <p className="text-sm sm:text-base font-bold" style={{ color: "var(--success)" }}>
                         {currentPkg?.enabledCount || 0}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Modified</p>
-                      <p className="text-sm sm:text-base font-bold text-yellow-600">
+                      <p className="text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>Modified</p>
+                      <p className="text-sm sm:text-base font-bold" style={{ color: "var(--warning)" }}>
                         {changedCount}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Showing</p>
-                      <p className="text-sm sm:text-base font-bold text-blue-600">
+                      <p className="text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>Showing</p>
+                      <p className="text-sm sm:text-base font-bold" style={{ color: "var(--color-secondary)" }}>
                         {filteredBundles.length}
                       </p>
                     </div>
@@ -981,7 +1005,7 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                       <h3 className="text-base font-semibold">
                         Select Bundles
                       </h3>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
                         {selectedBundleIds.size} selected
                       </span>
                     </div>
@@ -1010,7 +1034,10 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                       {filteredBundles.map((bundle) => (
                         <label
                           key={bundle._id}
-                          className="flex items-center gap-3 py-2.5 px-3 cursor-pointer hover:bg-gray-50"
+                          className="flex items-center gap-3 py-2.5 px-3 cursor-pointer"
+                          onMouseEnter={() => setHoveredLabelId(bundle._id)}
+                          onMouseLeave={() => setHoveredLabelId(null)}
+                          style={{ backgroundColor: hoveredLabelId === bundle._id ? "var(--bg-surface-alt)" : undefined }}
                         >
                           <input
                             type="checkbox"
@@ -1021,21 +1048,20 @@ export const PricingManager: React.FC<PricingManagerProps> = () => {
                                 e.target.checked,
                               )
                             }
-                            className="rounded border-gray-300"
+                            className="rounded"
+                            style={{ borderColor: "var(--border-color)" }}
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-gray-900 truncate">
+                            <p className="font-medium text-sm truncate" style={{ color: "var(--text-primary)" }}>
                               {bundle.name}
                             </p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {getProviderBadge(bundle.provider.code)}
-                              <span className="text-xs text-gray-500">
-                                {bundle.dataVolume}
-                                {bundle.dataUnit}
-                              </span>
-                            </div>
+                            <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                              {bundle.dataVolume}
+                              {bundle.dataUnit} &middot;{" "}
+                              {bundle.category || "N/A"}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-gray-700 shrink-0">
+                          <span className="text-sm font-medium shrink-0" style={{ color: "var(--text-primary)" }}>
                             GHS {bundle.tierPrice.toFixed(2)}
                           </span>
                         </label>

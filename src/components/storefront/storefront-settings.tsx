@@ -202,7 +202,8 @@ function SubaccountTooltip() {
     <span className="relative inline-flex items-center">
       <button
         type="button"
-        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+        className="focus:outline-none"
+        style={{ color: visible ? "var(--text-secondary)" : "var(--text-muted)" }}
         onMouseEnter={() => setVisible(true)}
         onMouseLeave={() => setVisible(false)}
         onFocus={() => setVisible(true)}
@@ -213,7 +214,10 @@ function SubaccountTooltip() {
         <HelpCircle className="w-3.5 h-3.5" />
       </button>
       {visible && (
-        <span className="absolute left-5 top-1/2 -translate-y-1/2 z-50 w-64 rounded-lg bg-gray-900 text-white text-xs px-3 py-2 shadow-lg pointer-events-none">
+        <span
+          className="absolute left-5 top-1/2 -translate-y-1/2 z-50 w-64 rounded-lg text-white text-xs px-3 py-2 shadow-lg pointer-events-none"
+          style={{ backgroundColor: "var(--text-primary)" }}
+        >
           Paystack subaccount configuration is managed by the platform administrator. Contact support if you need a direct-payout subaccount linked to your store.
         </span>
       )}
@@ -731,10 +735,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               {(method.details.accounts || []).map((account, accountIdx) => (
                 <div
                   key={accountIdx}
-                  className="p-3 border border-gray-200 rounded-lg"
+                  className="p-3 border rounded-lg"
+                  style={{ borderColor: "var(--border-color)" }}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h5 className="text-sm font-medium text-gray-900">
+                    <h5 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                       Account {accountIdx + 1}
                     </h5>
                     {(method.details.accounts || []).length > 1 && (
@@ -743,7 +748,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                         size="xs"
                         onClick={() => removeMomoAccount(index, accountIdx)}
                       >
-                        <X className="w-4 h-4 text-red-500" />
+                        <X className="w-4 h-4" style={{ color: "var(--error)" }} />
                       </Button>
                     )}
                   </div>
@@ -857,7 +862,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
             <div className="space-y-3 text-sm">
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-gray-700">Paystack Subaccount</span>
+                  <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Paystack Subaccount</span>
                   <SubaccountTooltip />
                 </div>
                 <Input
@@ -866,7 +871,8 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                   placeholder="Managed by platform"
                   size="sm"
                   disabled
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="cursor-not-allowed"
+                  style={{ backgroundColor: "var(--bg-surface-alt)" }}
                 />
               </div>
             </div>
@@ -882,12 +888,12 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     <div className="space-y-4 sm:space-y-6">
       {/* Page header */}
       <div className="flex items-center gap-3">
-        <Settings className="w-6 h-6 text-gray-700 shrink-0" />
+        <Settings className="w-6 h-6 shrink-0" style={{ color: "var(--text-primary)" }} />
         <div className="min-w-0">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+          <h2 className="text-lg sm:text-xl font-bold" style={{ color: "var(--text-primary)" }}>
             Storefront Settings
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
             Manage your storefront configuration and preferences
           </p>
         </div>
@@ -908,13 +914,16 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         {/* ===== General Settings ===== */}
         <TabsContent value="general" className="space-y-6">
           {/* Store Status banner */}
-          <div className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+          <div
+            className="p-3 sm:p-4 border rounded-xl space-y-3"
+            style={{ backgroundColor: "var(--bg-surface-alt)", borderColor: "var(--border-color)" }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge colorScheme={storeStatusColor}>
                   {storeStatusLabel}
                 </Badge>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
                   {storefront.suspendedByAdmin
                     ? "Suspended by an administrator"
                     : storefront.isActive
@@ -943,9 +952,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
           {/* Business Information */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-              <Store className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
+              <Store className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+              <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
                 Business Information
               </h3>
             </div>
@@ -957,14 +966,14 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 placeholder="your-business-name"
                 leftIcon={<Store className="w-4 h-4" />}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 This controls your storefront URL and must be lowercase with no spaces.
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 Preview: <span className="font-mono">{storefrontUrlPreview}</span>
               </p>
               {errors.businessName && (
-                <p className="text-sm text-red-600 mt-1">{errors.businessName}</p>
+                <p className="text-sm mt-1" style={{ color: "var(--error)" }}>{errors.businessName}</p>
               )}
             </FormField>
 
@@ -976,7 +985,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 leftIcon={<Store className="w-4 h-4" />}
               />
               {errors.displayName && (
-                <p className="text-sm text-red-600 mt-1">{errors.displayName}</p>
+                <p className="text-sm mt-1" style={{ color: "var(--error)" }}>{errors.displayName}</p>
               )}
             </FormField>
 
@@ -990,7 +999,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 rows={3}
                 maxLength={500}
               />
-              <p className="text-xs text-gray-400 mt-1 text-right">
+              <p className="text-xs mt-1 text-right" style={{ color: "var(--text-muted)" }}>
                 {formData.description.length}/500
               </p>
             </FormField>
@@ -998,9 +1007,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
           {/* Contact Details */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-              <Phone className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
+              <Phone className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+              <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
                 Contact Details
               </h3>
             </div>
@@ -1014,7 +1023,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                   leftIcon={<Phone className="w-4 h-4" />}
                 />
                 {errors.phone && (
-                  <p className="text-sm text-red-600 mt-1">{errors.phone}</p>
+                  <p className="text-sm mt-1" style={{ color: "var(--error)" }}>{errors.phone}</p>
                 )}
               </FormField>
 
@@ -1027,7 +1036,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                   leftIcon={<Mail className="w-4 h-4" />}
                 />
                 {errors.email && (
-                  <p className="text-sm text-red-600 mt-1">{errors.email}</p>
+                  <p className="text-sm mt-1" style={{ color: "var(--error)" }}>{errors.email}</p>
                 )}
               </FormField>
 
@@ -1044,7 +1053,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
             <FormField label="Business Address">
               <div className="relative">
                 <div className="absolute top-3 left-3 pointer-events-none">
-                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <MapPin className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
                 </div>
                 <Textarea
                   value={formData.address}
@@ -1075,9 +1084,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         <TabsContent value="branding" className="space-y-6" data-tour="storefront-branding">
           {/* Appearance & Theme */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-              <Palette className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
+              <Palette className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+              <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
                 Appearance & Theme
               </h3>
             </div>
@@ -1098,7 +1107,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                     { value: "pink", label: "Pink" },
                   ]}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                   Sets the accent color on your public storefront page
                 </p>
               </FormField>
@@ -1113,7 +1122,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                     { value: "minimal", label: "Minimal — Clean, text-focused" },
                   ]}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                   How your public storefront looks to customers
                 </p>
               </FormField>
@@ -1127,7 +1136,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 leftIcon={<Type className="w-4 h-4" />}
                 maxLength={120}
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 {brandingData.tagline.trim()
                   ? `${brandingData.tagline.length}/120`
                   : `Auto-generated when left blank: "${getSystemTagline(formData.businessName || storefront.businessName)}"`}
@@ -1141,7 +1150,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 placeholder="Optional — leave blank to auto-generate a footer message."
                 maxLength={200}
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 {brandingData.footerText.trim()
                   ? `${brandingData.footerText.length}/200`
                   : `Auto-generated when left blank: "${getSystemFooterText(
@@ -1152,12 +1161,12 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
             {/* Toggle row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                 <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-gray-500" />
+                  <Eye className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Show Contact Info</p>
-                    <p className="text-xs text-gray-500">Phone, email on public store</p>
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Show Contact Info</p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Phone, email on public store</p>
                   </div>
                 </div>
                 <Switch
@@ -1165,12 +1174,12 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                   onCheckedChange={(checked) => handleBrandingChange("showContact", checked)}
                 />
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                 <div className="flex items-center gap-2">
-                  <Image className="w-4 h-4 text-gray-500" />
+                  <Image className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Show Banner</p>
-                    <p className="text-xs text-gray-500">Display banner on public store</p>
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Show Banner</p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Display banner on public store</p>
                   </div>
                 </div>
                 <Switch
@@ -1183,9 +1192,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
           {/* Logo & Banner */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-              <Image className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
+              <Image className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+              <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
                 Logo & Banner
               </h3>
             </div>
@@ -1202,12 +1211,16 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 />
               </FormField>
               {/* Logo preview — always visible */}
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+              <div
+                className="flex items-center gap-3 p-3 rounded-xl border"
+                style={{ backgroundColor: "var(--bg-surface-alt)", borderColor: "var(--border-color)" }}
+              >
                 {brandingData.logoUrl ? (
                   <img
                     src={brandingData.logoUrl}
                     alt="Store logo"
-                    className="w-14 h-14 rounded-xl object-cover border border-gray-200 shadow-sm"
+                    className="w-14 h-14 rounded-xl object-cover border shadow-sm"
+                    style={{ borderColor: "var(--border-color)" }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                       const fallback = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
@@ -1222,14 +1235,14 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                     brandingData.theme,
                   )}
                   alt="Auto logo"
-                  className="w-14 h-14 rounded-xl object-cover border border-gray-200 shadow-sm shrink-0"
-                  style={{ display: brandingData.logoUrl ? 'none' : 'block' }}
+                  className="w-14 h-14 rounded-xl object-cover border shadow-sm shrink-0"
+                  style={{ borderColor: "var(--border-color)", display: brandingData.logoUrl ? 'none' : 'block' }}
                 />
                 <div>
-                  <p className="text-sm font-medium text-gray-700">
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                     {brandingData.logoUrl ? 'Logo preview' : 'Auto-generated logo (no URL set)'}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                     {brandingData.logoUrl
                       ? 'This is how your logo appears on your storefront.'
                       : 'An initial-letter logo matching your theme is shown automatically when no logo URL is uploaded.'}
@@ -1250,13 +1263,17 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 />
               </FormField>
               {/* Banner preview — always visible */}
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-2">
-                <p className="text-xs font-medium text-gray-500">Banner preview</p>
+              <div
+                className="p-3 rounded-xl border space-y-2"
+                style={{ backgroundColor: "var(--bg-surface-alt)", borderColor: "var(--border-color)" }}
+              >
+                <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Banner preview</p>
                 {brandingData.bannerUrl ? (
                   <img
                     src={brandingData.bannerUrl}
                     alt="Store banner"
-                    className="w-full h-24 rounded-lg object-cover border border-gray-200"
+                    className="w-full h-24 rounded-lg object-cover border"
+                    style={{ borderColor: "var(--border-color)" }}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
@@ -1274,7 +1291,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 >
                   {formData.businessName || 'Your Store'}
                 </div>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {brandingData.bannerUrl
                     ? 'Your custom banner image will be shown on the storefront.'
                     : 'A gradient banner is generated from the theme color when no image is set.'}
@@ -1285,9 +1302,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
           {/* Social Links */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-              <Globe className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
+              <Globe className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+              <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
                 Social Links
               </h3>
             </div>
@@ -1348,14 +1365,14 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         {/* ===== Payment Methods ===== */}
         <TabsContent value="payment" className="space-y-6">
           <section className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+            <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
               <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-gray-500" />
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                <CreditCard className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+                <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
                   Payment Methods
                 </h3>
               </div>
-              <p className="text-xs text-gray-500 hidden sm:block">
+              <p className="text-xs hidden sm:block" style={{ color: "var(--text-secondary)" }}>
                 Configure how customers can pay
               </p>
             </div>
@@ -1393,9 +1410,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         {/* ===== Share & Promote ===== */}
         <TabsContent value="sharing" className="space-y-6">
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-              <Share2 className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
+              <Share2 className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+              <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
                 Share Your Storefront
               </h3>
             </div>
@@ -1405,7 +1422,8 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 <Input
                   value={getStorefrontUrl()}
                   readOnly
-                  className="flex-1 bg-gray-50"
+                  className="flex-1"
+                  style={{ backgroundColor: "var(--bg-surface-alt)" }}
                 />
                 <Button
                   variant={urlCopied ? "success" : "outline"}
@@ -1432,9 +1450,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               </span>
             </Alert>
 
-            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">Promotion Tips</h4>
-              <ul className="text-sm text-gray-600 space-y-1.5">
+            <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+              <h4 className="font-medium mb-2" style={{ color: "var(--text-primary)" }}>Promotion Tips</h4>
+              <ul className="text-sm space-y-1.5" style={{ color: "var(--text-secondary)" }}>
                 <li>• Share on WhatsApp groups and social media</li>
                 <li>• Include in business cards and promotional materials</li>
                 <li>• Add to your WhatsApp status and social media bios</li>
@@ -1448,16 +1466,16 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         <TabsContent value="advanced" className="space-y-6">
           {/* Storefront Information */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-              <Info className="w-4 h-4 text-gray-500" />
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
+              <Info className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+              <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
                 Storefront Information
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
               <div>
-                <p className="text-xs text-gray-500 flex items-center gap-1 mb-0.5">
+                <p className="text-xs flex items-center gap-1 mb-0.5" style={{ color: "var(--text-secondary)" }}>
                   <Calendar className="w-3 h-3" /> Created
                 </p>
                 <p className="font-medium text-sm">
@@ -1465,7 +1483,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 flex items-center gap-1 mb-0.5">
+                <p className="text-xs flex items-center gap-1 mb-0.5" style={{ color: "var(--text-secondary)" }}>
                   <Calendar className="w-3 h-3" /> Updated
                 </p>
                 <p className="font-medium text-sm">
@@ -1473,7 +1491,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 mb-0.5">Status</p>
+                <p className="text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>Status</p>
                 <Badge variant="subtle" colorScheme={storeStatusColor}>
                   {storefront.suspendedByAdmin ? (
                     "Suspended"
@@ -1487,7 +1505,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 </Badge>
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <p className="text-xs text-gray-500 mb-0.5">Storefront ID</p>
+                <p className="text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>Storefront ID</p>
                 <p className="font-mono text-xs truncate">{storefront._id}</p>
               </div>
             </div>
@@ -1495,11 +1513,17 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
           {/* Danger Zone */}
           <section>
-            <div className="border border-red-200 rounded-xl p-4 bg-red-50">
-              <h4 className="font-medium text-red-900 mb-2 flex items-center gap-2">
+            <div
+              className="border rounded-xl p-4"
+              style={{
+                borderColor: 'color-mix(in srgb, var(--error) 20%, transparent)',
+                backgroundColor: 'color-mix(in srgb, var(--error) 8%, transparent)',
+              }}
+            >
+              <h4 className="font-medium mb-2 flex items-center gap-2" style={{ color: "var(--error)" }}>
                 <AlertTriangle className="w-5 h-5" /> Danger Zone
               </h4>
-              <p className="text-sm text-red-700 mb-4">
+              <p className="text-sm mb-4" style={{ color: "var(--error)" }}>
                 Deleting your storefront is permanent and cannot be undone. All
                 custom pricing and order history will be lost.
               </p>
@@ -1521,7 +1545,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         onClose={() => setShowDeleteDialog(false)}
       >
         <DialogHeader>
-          <h3 className="text-lg font-semibold text-red-900">
+          <h3 className="text-lg font-semibold" style={{ color: "var(--error)" }}>
             Delete Storefront
           </h3>
         </DialogHeader>
@@ -1535,19 +1559,19 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               </div>
             </Alert>
 
-            <p className="text-gray-700 text-sm sm:text-base">
+            <p className="text-sm sm:text-base" style={{ color: "var(--text-primary)" }}>
               Are you sure you want to delete your storefront &quot;
               {storefront.businessName}&quot;? This will permanently remove:
             </p>
 
-            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+            <ul className="list-disc list-inside text-sm space-y-1" style={{ color: "var(--text-secondary)" }}>
               <li>Your custom bundle pricing</li>
               <li>Order history and customer data</li>
               <li>Payment method configurations</li>
               <li>Public storefront link access</li>
             </ul>
 
-            <p className="text-sm text-gray-700">
+            <p className="text-sm" style={{ color: "var(--text-primary)" }}>
               You can create a new storefront later, but all data will be
               lost.
             </p>

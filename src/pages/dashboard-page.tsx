@@ -6,7 +6,7 @@ import { useProvider } from "../hooks/use-provider";
 import { useSiteStatus } from "../contexts/site-status-context";
 import { orderService } from "../services/order.service";
 import { packageService } from "../services/package.service";
-import { Card, CardHeader, CardBody, Badge, Spinner } from "../design-system";
+import { Card, CardHeader, CardBody, Badge, Spinner, StatsGrid } from "../design-system";
 import {
   FaPhone,
   FaWallet,
@@ -142,15 +142,7 @@ export const DashboardPage = () => {
       : "Sorry, store is currently closed for business 😔";
   };
 
-  // Get site status color
-  const getSiteStatusColor = () => {
-    return siteStatus?.isSiteOpen ? "text-green-600" : "text-red-600";
-  };
-
-  // Get site status background
-  const getSiteStatusBg = () => {
-    return siteStatus?.isSiteOpen ? "bg-green-50" : "bg-red-50";
-  };
+  const siteStatusColor = siteStatus?.isSiteOpen ? "var(--success)" : "var(--error)";
 
   // Handle quick link click
   const handleQuickLinkClick = (slug: string) => {
@@ -171,7 +163,7 @@ export const DashboardPage = () => {
       AT: "bg-blue-500",
       AFA: "bg-green-500",
     };
-    return colorMap[providerCode] || "bg-gray-500";
+    return colorMap[providerCode] || "bg-[var(--text-muted)]";
   };
 
   // Fetch packages for quick actions
@@ -518,11 +510,10 @@ export const DashboardPage = () => {
         {
           label: "Revenue (GHS)",
           data: paddedRevenueData,
-          backgroundColor: "rgba(16, 185, 129, 0.7)", // Emerald
-          borderColor: "rgba(16, 185, 129, 1)", // Emerald darker
+          backgroundColor: "var(--success)",
+          borderColor: "var(--success)",
           borderWidth: 1.5,
           borderRadius: 4,
-          hoverBackgroundColor: "rgba(16, 185, 129, 0.9)",
         },
       ],
     };
@@ -580,14 +571,14 @@ export const DashboardPage = () => {
           label: "Orders",
           data,
           backgroundColor: [
-            "rgba(59, 130, 246, 0.8)", // Blue for total
-            "rgba(34, 197, 94, 0.8)", // Green for completed
-            "rgba(251, 191, 36, 0.8)", // Yellow for pending
+            "var(--color-primary)",
+            "var(--success)",
+            "var(--warning)",
           ],
           borderColor: [
-            "rgb(59, 130, 246)",
-            "rgb(34, 197, 94)",
-            "rgb(251, 191, 36)",
+            "var(--color-primary)",
+            "var(--success)",
+            "var(--warning)",
           ],
           borderWidth: 1,
         },
@@ -635,22 +626,45 @@ export const DashboardPage = () => {
             transform: showSiteMessage ? "translateY(0)" : "translateY(-20px)",
           }}
         >
-          <Card className="backdrop-blur-md border border-white/30 shadow-xl p-4">
+          <Card
+            className="backdrop-blur-md p-4"
+            style={{
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-xl)",
+            }}
+          >
             <CardBody className="text-center">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <div
-                  className={`p-3 rounded-full ${getSiteStatusBg()} ${getSiteStatusColor()}`}
+                  className="p-3 rounded-full"
+                  style={{ backgroundColor: "var(--bg-surface-alt)" }}
                 >
-                  <FaStar className="w-6 h-6" />
+                  <FaStar
+                    className="w-6 h-6"
+                    style={{ color: siteStatusColor }}
+                  />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm sm:text-base font-medium text-gray-700">
+                  <p
+                    className="text-sm sm:text-base font-medium"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     {getSiteMessage()}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowSiteMessage(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white/20 rounded-full transition-all duration-200"
+                  className="p-2 rounded-full transition-all duration-200"
+                  style={{
+                    color: "var(--text-muted)",
+                    transition: "color var(--transition-fast)",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = "var(--text-secondary)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "var(--text-muted)")
+                  }
                   aria-label="Close message"
                 >
                   <FaTimes className="w-4 h-4" />
@@ -664,14 +678,17 @@ export const DashboardPage = () => {
       {/* Active Orders - Show pending/processing/confirmed */}
       <div className="active-orders">
         <div className="flex items-center justify-between mb-3 px-2 sm:px-0">
-          <h2 className="text-lg font-medium text-gray-800 flex items-center gap-2">
-            <FaClock className="text-orange-500" />
+          <h2 className="text-lg font-medium flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
+            <FaClock style={{ color: "var(--warning)" }} />
             Active Orders
           </h2>
           <Link
             to="./orders"
-            className="text-sm font-medium flex items-center gap-1 hover:gap-2 transition-all duration-200"
-            style={{ color: "var(--color-primary-600)" }}
+            className="text-sm font-medium flex items-center gap-1"
+            style={{
+              color: "var(--color-secondary)",
+              transition: "gap var(--transition-fast)",
+            }}
           >
             View all <FaArrowRight className="text-xs" />
           </Link>
@@ -688,9 +705,9 @@ export const DashboardPage = () => {
         ) : activeOrders.length === 0 ? (
           <Card>
             <CardBody className="text-center py-6">
-              <FaShoppingCart className="mx-auto h-8 w-8 text-gray-300 mb-2" />
-              <p className="text-sm text-gray-500">No active orders</p>
-              <p className="text-xs text-gray-400 mt-1">
+              <FaShoppingCart className="mx-auto h-8 w-8 mb-2" style={{ color: "var(--text-muted)" }} />
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>No active orders</p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 All your orders are completed or you haven't placed any yet
               </p>
             </CardBody>
@@ -703,16 +720,15 @@ export const DashboardPage = () => {
                   <Card
                     variant="interactive"
                     size="sm"
-                    className="hover:shadow-md transition-shadow"
                   >
                     <CardBody>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="flex flex-col min-w-0">
-                            <span className="font-semibold text-sm text-gray-900 truncate">
+                            <span className="font-semibold text-sm truncate" style={{ color: "var(--text-primary)" }}>
                               {order.orderNumber}
                             </span>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
                               {order.items?.length || 0} item
                               {(order.items?.length || 0) !== 1
                                 ? "s"
@@ -734,7 +750,7 @@ export const DashboardPage = () => {
                           >
                             {order.status}
                           </Badge>
-                          <span className="font-semibold text-sm text-gray-900">
+                          <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
                             ₵{order.total.toFixed(2)}
                           </span>
                         </div>
@@ -745,7 +761,7 @@ export const DashboardPage = () => {
               ))}
             </div>
             {activeOrders.length > 2 && (
-              <p className="text-[10px] text-gray-400 text-center mt-1">
+              <p className="text-[10px] text-center mt-1" style={{ color: "var(--text-muted)" }}>
                 Scroll for more ({activeOrders.length} orders)
               </p>
             )}
@@ -755,23 +771,23 @@ export const DashboardPage = () => {
 
       {/* Quick Actions */}
       <div className="quick-actions">
-        <h2 className="text-lg font-medium text-gray-800 mb-3 px-2 sm:px-0">
+        <h2 className="text-lg font-medium mb-3 px-2 sm:px-0" style={{ color: "var(--text-primary)" }}>
           All Packages
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {dashboardPackagesLoading ? (
             <div className="col-span-full flex flex-col items-center justify-center py-8">
               <Spinner />
-              <p className="text-gray-500 text-sm mt-2">
+              <p className="text-sm mt-2" style={{ color: "var(--text-secondary)" }}>
                 Loading packages...
               </p>
             </div>
           ) : dashboardPackages.length === 0 ? (
-            <div className="col-span-full text-center py-8 text-gray-500">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">
+            <div className="col-span-full text-center py-8" style={{ color: "var(--text-secondary)" }}>
+              <h3 className="text-sm font-medium mb-2" style={{ color: "var(--text-primary)" }}>
                 No packages found
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                 No packages are available at the moment.
               </p>
             </div>
@@ -808,8 +824,8 @@ export const DashboardPage = () => {
                         <FaPhone className="w-6 h-6" />
                       )}
                     </div>
-                    <div className="font-semibold text-sm">{pkg.name}</div>
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{pkg.name}</div>
+                    <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                       Browse bundles
                     </div>
                   </CardBody>
@@ -822,74 +838,55 @@ export const DashboardPage = () => {
 
       {/* Stats */}
       <div className="account-overview">
-        <h2 className="text-lg font-medium text-gray-800 mb-3 px-2 sm:px-0">
+        <h2 className="text-lg font-medium mb-3 px-2 sm:px-0" style={{ color: "var(--text-primary)" }}>
           Account Overview
         </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Card
-            size="sm"
-            style={{
-              backgroundColor: "var(--color-primary-500)",
-              borderColor: "var(--color-primary-600)",
-            }}
-          >
-            <CardBody className="text-center">
-              <div className="text-gray-300 text-xs mb-1">
-                Total Orders Today
-              </div>
-              <div className="text-xl font-bold text-white">
-                {analyticsData.orders.todayCounts.total}
-              </div>
-              <div className="text-xs text-gray-400 mt-2">
-                Total: {analyticsData.orders.total}
-              </div>
-            </CardBody>
-          </Card>
-          <Card
-            size="sm"
-            style={{
-              backgroundColor: "var(--color-primary-500)",
-              borderColor: "var(--color-primary-600)",
-            }}
-          >
-            <CardBody className="text-center">
-              <div className="text-gray-300 text-xs mb-1">Today's Spending</div>
-              <div className="text-3xl font-bold text-white">
-                ₵{analyticsData.revenue.today.toFixed(2)}
-              </div>
-            </CardBody>
-          </Card>
-          <Card
-            size="sm"
-            style={{
-              backgroundColor: "var(--color-primary-500)",
-              borderColor: "var(--color-primary-600)",
-            }}
-          >
-            <CardBody className="text-center">
-              <div className="text-gray-300 text-xs mb-1">
-                Total Sales Today
-              </div>
-              <div className="text-xl font-bold text-white">
-                ₵{analyticsData.revenue.today.toFixed(2)}
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+        <StatsGrid
+          stats={[
+            {
+              title: "Total Orders Today",
+              value: analyticsData.orders.todayCounts.total,
+              subtitle: `Total: ${analyticsData.orders.total}`,
+              icon: <FaShoppingCart />,
+              size: "sm",
+            },
+            {
+              title: "Today's Spending",
+              value: `₵${analyticsData.revenue.today.toFixed(2)}`,
+              icon: <FaWallet />,
+              size: "sm",
+            },
+            {
+              title: "Total Sales Today",
+              value: `₵${analyticsData.revenue.today.toFixed(2)}`,
+              icon: <FaChartLine />,
+              size: "sm",
+            },
+          ]}
+          columns={3}
+          gap="sm"
+        />
       </div>
 
       {/* Sales Analytics Chart */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-800">
+            <h3 className="text-lg font-medium" style={{ color: "var(--text-primary)" }}>
               Sales Analytics
             </h3>
             <div className="flex gap-2">
               <select
                 value={analyticsTimeframe}
                 onChange={(e) => setAnalyticsTimeframe(e.target.value)}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2"
+                className="text-sm block p-2"
+                style={{
+                  backgroundColor: "var(--bg-surface-alt)",
+                  border: "1px solid var(--border-color)",
+                  color: "var(--text-primary)",
+                  borderRadius: "var(--radius-md)",
+                  outline: "none",
+                }}
               >
                 <option value="7d">Weekly (Last 7 Days)</option>
                 <option value="30d">Monthly (Last 30 Days)</option>
@@ -905,10 +902,16 @@ export const DashboardPage = () => {
             </div>
           ) : !analyticsData.charts.labels ||
             analyticsData.charts.labels.length === 0 ? (
-            <div className="bg-gray-50 h-40 sm:h-48 flex items-center justify-center rounded">
+            <div
+              className="h-40 sm:h-48 flex items-center justify-center"
+              style={{
+                backgroundColor: "var(--bg-surface-alt)",
+                borderRadius: "var(--radius-lg)",
+              }}
+            >
               <div className="text-center">
-                <FaChartLine className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-400 text-sm">
+                <FaChartLine className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--text-muted)" }} />
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                   No sales data available for selected period
                 </p>
               </div>
@@ -925,12 +928,16 @@ export const DashboardPage = () => {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-800">
+            <h3 className="text-lg font-medium" style={{ color: "var(--text-primary)" }}>
               Order Analytics ({getTimeframeLabel()})
             </h3>
             <Link
               to="./orders"
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              className="text-sm font-medium"
+              style={{
+                color: "var(--color-secondary)",
+                transition: "color var(--transition-fast)",
+              }}
             >
               View Orders
             </Link>
@@ -942,10 +949,16 @@ export const DashboardPage = () => {
               <Spinner />
             </div>
           ) : analyticsData.orders.total === 0 ? (
-            <div className="bg-gray-50 h-40 sm:h-48 flex items-center justify-center rounded">
+            <div
+              className="h-40 sm:h-48 flex items-center justify-center"
+              style={{
+                backgroundColor: "var(--bg-surface-alt)",
+                borderRadius: "var(--radius-lg)",
+              }}
+            >
               <div className="text-center">
-                <FaShoppingCart className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-400 text-sm">No order data available</p>
+                <FaShoppingCart className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--text-muted)" }} />
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>No order data available</p>
               </div>
             </div>
           ) : (
@@ -963,12 +976,16 @@ export const DashboardPage = () => {
       <Card className="recent-transactions">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-800">
+            <h3 className="text-lg font-medium" style={{ color: "var(--text-primary)" }}>
               Recent Transactions
             </h3>
             <Link
               to="./wallet"
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              className="text-sm font-medium"
+              style={{
+                color: "var(--color-secondary)",
+                transition: "color var(--transition-fast)",
+              }}
             >
               View all
             </Link>
@@ -980,12 +997,12 @@ export const DashboardPage = () => {
               <Spinner />
             </div>
           ) : recentTransactions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FaWallet className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-sm font-medium text-gray-900 mb-2">
+            <div className="text-center py-8" style={{ color: "var(--text-secondary)" }}>
+              <FaWallet className="mx-auto h-12 w-12 mb-4" style={{ color: "var(--text-muted)" }} />
+              <h3 className="text-sm font-medium mb-2" style={{ color: "var(--text-primary)" }}>
                 No transactions
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                 You don't have any wallet transactions yet.
               </p>
             </div>
@@ -995,11 +1012,15 @@ export const DashboardPage = () => {
                 {recentTransactions.map((transaction) => (
                   <div
                     key={transaction._id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3"
+                    style={{
+                      backgroundColor: "var(--bg-surface-alt)",
+                      borderRadius: "var(--radius-lg)",
+                    }}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium capitalize text-sm">
+                        <span className="font-medium capitalize text-sm" style={{ color: "var(--text-primary)" }}>
                           {transaction.type}
                         </span>
                         <Badge
@@ -1012,15 +1033,15 @@ export const DashboardPage = () => {
                           {transaction.status}
                         </Badge>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
                         {transaction.description}
                       </div>
-                      <div className="text-xs text-gray-400 mt-1">
+                      <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                         {formatDate(transaction.createdAt)}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold text-sm">
+                      <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
                         {formatAmount(transaction.amount)}
                       </div>
                     </div>

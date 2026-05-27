@@ -81,26 +81,38 @@ const ModeBanner: React.FC<ModeBannerProps> = ({ autoMode, canRequestPayout }) =
 
   if (autoMode) {
     return (
-      <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm">
-        <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shrink-0">
-          <Zap className="w-3.5 h-3.5 text-white" />
+      <div
+        className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm"
+        style={{
+          backgroundColor: `color-mix(in srgb, var(--success) 10%, transparent)`,
+          border: `1px solid color-mix(in srgb, var(--success) 30%, transparent)`,
+        }}
+      >
+        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--success)' }}>
+          <Zap className="w-3.5 h-3.5" style={{ color: 'var(--text-inverse)' }} />
         </div>
-        <div className="text-emerald-800">
+        <div style={{ color: 'var(--success)' }}>
           <span className="font-semibold">Instant withdrawals enabled.</span>{' '}
-          <span className="text-emerald-700">Your transfer is sent automatically via Paystack — no admin approval needed.</span>
+          <span style={{ color: 'var(--success)', opacity: 0.85 }}>Your transfer is sent automatically via Paystack — no admin approval needed.</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-sm">
-      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
-        <Clock className="w-3.5 h-3.5 text-white" />
+    <div
+      className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm"
+      style={{
+        backgroundColor: `color-mix(in srgb, var(--color-secondary) 10%, transparent)`,
+        border: `1px solid color-mix(in srgb, var(--color-secondary) 30%, transparent)`,
+      }}
+    >
+      <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--color-secondary)' }}>
+        <Clock className="w-3.5 h-3.5" style={{ color: 'var(--text-inverse)' }} />
       </div>
-      <div className="text-blue-800">
+      <div style={{ color: 'var(--color-secondary)' }}>
         <span className="font-semibold">Manual review mode.</span>{' '}
-        <span className="text-blue-700">Payout requests are reviewed by an admin before processing. Allow 5–30 minutes after approval.</span>
+        <span style={{ color: 'var(--color-secondary)', opacity: 0.85 }}>Payout requests are reviewed by an admin before processing. Allow 5–30 minutes after approval.</span>
       </div>
     </div>
   );
@@ -229,9 +241,9 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
       const number = destination.phoneNumber || '—';
       const name = payoutAccountName(destination);
       return (
-        <div className="text-xs text-gray-600">
+        <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
           <div>{provider}{number}</div>
-          {name ? <div className="text-gray-500">{name}</div> : null}
+          {name ? <div style={{ color: "var(--text-muted)" }}>{name}</div> : null}
         </div>
       );
     }
@@ -240,9 +252,9 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
     const bank = destination.bankCode ? ` (${destination.bankCode})` : '';
     const name = payoutAccountName(destination);
     return (
-      <div className="text-xs text-gray-600">
+      <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
         <div>{account}{bank}</div>
-        {name ? <div className="text-gray-500">{name}</div> : null}
+        {name ? <div style={{ color: "var(--text-muted)" }}>{name}</div> : null}
       </div>
     );
   };
@@ -353,30 +365,40 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
   const savedAccount = dashboard?.savedPayoutAccount ?? null;
   const canRequestPayout = dashboard?.canRequestPayout ?? false;
 
+  const colorVar = (c: string) => {
+    switch (c) {
+      case "green": return "var(--success)";
+      case "blue": return "var(--color-secondary)";
+      case "amber": return "var(--warning)";
+      case "red": return "var(--error)";
+      default: return "var(--text-muted)";
+    }
+  };
+
   const metrics = [
     {
       title: "Available balance",
       value: dashboard?.availableBalance ?? 0,
       icon: Wallet,
-      color: "green",
+      color: colorVar("green"),
     },
     {
       title: "Total earned",
       value: dashboard?.totalEarned ?? 0,
       icon: TrendingUp,
-      color: "blue",
+      color: colorVar("blue"),
     },
     {
       title: "Total withdrawn",
       value: dashboard?.totalWithdrawn ?? 0,
       icon: ArrowDownToLine,
-      color: "amber",
+      color: colorVar("amber"),
     },
     {
       title: "Failed / rejected",
       value: failedPayoutCount,
       icon: XCircle,
-      color: "red",
+      color: colorVar("red"),
       isCount: true,
     },
   ];
@@ -385,8 +407,8 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Earnings</h2>
-          <p className="text-sm text-gray-500">Track earnings and withdrawals from your storefront.</p>
+          <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>Earnings</h2>
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Track earnings and withdrawals from your storefront.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -413,13 +435,16 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">{metric.title}</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{metric.title}</p>
+                  <p className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
                     {metric.isCount ? metric.value : formatCurrency(metric.value)}
                   </p>
                 </div>
-                <div className={`w-9 h-9 rounded-lg bg-${metric.color}-50 flex items-center justify-center`}>
-                  <metric.icon className={`w-4 h-4 text-${metric.color}-600`} />
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: `color-mix(in srgb, ${metric.color} 15%, transparent)` }}
+                >
+                  <metric.icon className="w-4 h-4" style={{ color: metric.color }} />
                 </div>
               </div>
             </CardBody>
@@ -440,8 +465,8 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <ArrowDownToLine className="w-4 h-4 text-gray-500" />
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Payout History</h3>
+                  <ArrowDownToLine className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
+                  <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Payout History</h3>
                 </div>
                 {dashboard && (
                   <Badge colorScheme="gray" variant="subtle" size="sm">
@@ -455,30 +480,34 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
               {/* Mobile card list */}
               <div className="sm:hidden">
                 {!dashboard || dashboard.recentPayouts.length === 0 ? (
-                  <div className="text-center py-10 text-sm text-gray-500">
+                  <div className="text-center py-10 text-sm" style={{ color: "var(--text-secondary)" }}>
                     No payouts yet. Start earning from your storefront sales!
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y" style={{ borderColor: "var(--border-color)" }}>
                     {dashboard.recentPayouts.map((p: PayoutRequestItem) => {
                       const cfg = STATUS_CONFIG[p.status] ?? { color: 'info' as StatusColor, label: p.status, icon: null };
+                      const statusColor = p.status === 'completed' ? 'var(--success)' : p.status === 'failed' ? 'var(--error)' : 'var(--color-secondary)';
                       return (
                         <div key={p._id} className="flex items-start justify-between gap-3 px-4 py-3">
                           <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 mt-0.5">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                              style={{ backgroundColor: `color-mix(in srgb, ${statusColor} 15%, transparent)` }}
+                            >
                               {p.status === 'completed' ? (
-                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                <CheckCircle2 className="w-4 h-4" style={{ color: statusColor }} />
                               ) : p.status === 'failed' ? (
-                                <XCircle className="w-4 h-4 text-red-500" />
+                                <XCircle className="w-4 h-4" style={{ color: statusColor }} />
                               ) : (
-                                <Clock className="w-4 h-4 text-blue-500" />
+                                <Clock className="w-4 h-4" style={{ color: statusColor }} />
                               )}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-gray-800">
+                              <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                                 GH₵ {p.amount.toFixed(2)}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
                                 {new Date(p.requestedAt ?? p.createdAt).toLocaleDateString()}
                               </p>
                               {renderPayoutDestination(p.destination)}
@@ -489,7 +518,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                               {cfg.label}
                             </Badge>
                             {p.netAmount != null && (
-                              <p className="text-xs text-gray-500 mt-1">
+                              <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
                                 Net: GH₵ {p.netAmount.toFixed(2)}
                               </p>
                             )}
@@ -523,21 +552,21 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                         <TableRow key={p._id}>
                           <TableCell className="whitespace-nowrap text-xs">
                             {new Date(p.requestedAt ?? p.createdAt).toLocaleDateString()}
-                            <div className="text-[10px] text-gray-400">
+                            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
                               {new Date(p.requestedAt ?? p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </TableCell>
                           <TableCell className="font-medium">GH₵ {p.amount.toFixed(2)}</TableCell>
-                          <TableCell className="text-xs text-gray-500">
+                          <TableCell className="text-xs" style={{ color: "var(--text-secondary)" }}>
                             {p.transferFee ? `GH₵ ${p.transferFee.toFixed(2)}` : '—'}
                           </TableCell>
-                          <TableCell className="text-xs text-gray-700">
+                          <TableCell className="text-xs" style={{ color: "var(--text-primary)" }}>
                             {p.netAmount ? `GH₵ ${p.netAmount.toFixed(2)}` : '—'}
                           </TableCell>
-                          <TableCell className="text-xs text-gray-600">
+                          <TableCell className="text-xs" style={{ color: "var(--text-secondary)" }}>
                             {renderPayoutDestination(p.destination)}
                           </TableCell>
-                          <TableCell className="text-xs text-gray-600 truncate max-w-[180px]">
+                          <TableCell className="text-xs truncate max-w-[180px]" style={{ color: "var(--text-secondary)" }}>
                             {payoutAccountName(p.destination) || '—'}
                           </TableCell>
                           <TableCell>
@@ -545,7 +574,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                               {cfg.label}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-[10px] text-gray-400 font-mono">
+                          <TableCell className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
                             {p.paystackTransfer?.transferReference || p.paystackTransfer?.transferCode || '—'}
                           </TableCell>
                         </TableRow>
@@ -553,7 +582,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                     })}
                     {(!dashboard || dashboard.recentPayouts.length === 0) && (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center text-sm text-gray-500 py-8">
+                        <TableCell colSpan={8} className="text-center text-sm py-8" style={{ color: "var(--text-secondary)" }}>
                           No payouts yet. Start earning from your storefront sales!
                         </TableCell>
                       </TableRow>
@@ -570,8 +599,8 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-green-600" />
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Earnings History</h3>
+                  <Wallet className="w-4 h-4" style={{ color: "var(--success)" }} />
+                  <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>Earnings History</h3>
                 </div>
                 <Badge colorScheme="gray" variant="subtle" size="sm">
                   {historyTotal} records
@@ -580,9 +609,9 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
             </CardHeader>
             <CardBody className="p-0">
               {historyLoading ? (
-                <div className="text-center py-10 text-sm text-gray-500">Loading earnings history…</div>
+                <div className="text-center py-10 text-sm" style={{ color: "var(--text-secondary)" }}>Loading earnings history…</div>
               ) : history.length === 0 ? (
-                <div className="text-center py-10 text-sm text-gray-500">
+                <div className="text-center py-10 text-sm" style={{ color: "var(--text-secondary)" }}>
                   No earnings history yet.
                 </div>
               ) : (
@@ -602,20 +631,20 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                         <TableRow key={txn._id}>
                           <TableCell className="whitespace-nowrap text-xs">
                             {new Date(txn.createdAt).toLocaleDateString()}
-                            <div className="text-[10px] text-gray-400">
+                            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
                               {new Date(txn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </TableCell>
-                          <TableCell className="text-xs text-gray-600 capitalize">
+                          <TableCell className="text-xs capitalize" style={{ color: "var(--text-secondary)" }}>
                             {txn.type}
                           </TableCell>
-                          <TableCell className={`text-xs font-semibold ${txn.type === 'credit' ? 'text-green-700' : 'text-red-600'}`}>
+                          <TableCell className="text-xs font-semibold" style={{ color: txn.type === 'credit' ? 'var(--success)' : 'var(--error)' }}>
                             {txn.type === 'credit' ? '+' : '−'}{formatCurrency(txn.amount)}
                           </TableCell>
-                          <TableCell className="text-xs text-gray-600">
+                          <TableCell className="text-xs" style={{ color: "var(--text-secondary)" }}>
                             {formatCurrency(txn.balanceAfter)}
                           </TableCell>
-                          <TableCell className="text-[10px] text-gray-400 font-mono">
+                          <TableCell className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
                             {txn.reference || '—'}
                           </TableCell>
                         </TableRow>
@@ -652,10 +681,16 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
 
       {/* ── Transfer fee notice (only when agent bears fees) ──────────────── */}
       {dashboard?.payoutFeeBearer === 'agent' && dashboard?.transferFees && (
-        <div className="flex items-start gap-3 p-3.5 bg-blue-50 border border-blue-100 rounded-xl text-sm">
-          <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-          <div className="text-gray-600">
-            <span className="font-semibold text-gray-800">Fees deducted from your payout:</span>{' '}
+        <div
+          className="flex items-start gap-3 p-3.5 rounded-xl text-sm"
+          style={{
+            backgroundColor: `color-mix(in srgb, var(--color-secondary) 10%, transparent)`,
+            border: `1px solid color-mix(in srgb, var(--color-secondary) 25%, transparent)`,
+          }}
+        >
+          <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "var(--color-secondary)" }} />
+          <div style={{ color: "var(--text-secondary)" }}>
+            <span className="font-semibold" style={{ color: "var(--text-primary)" }}>Fees deducted from your payout:</span>{' '}
             Mobile Money GH₵ {dashboard.transferFees.mobile_money.toFixed(2)}
             {(dashboard.platformPayoutFeePercent ?? 0) > 0 && ` + ${dashboard.platformPayoutFeePercent}% platform`}
             {' · '}
@@ -670,8 +705,8 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
         <DialogHeader>
           <div className="flex items-center gap-2">
             {isAutoMode
-              ? <Zap className="w-5 h-5 text-emerald-500" />
-              : <ArrowDownToLine className="w-5 h-5 text-gray-500" />
+              ? <Zap className="w-5 h-5" style={{ color: "var(--success)" }} />
+              : <ArrowDownToLine className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
             }
             <h3 className="text-lg font-semibold">
               {isAutoMode ? 'Instant Withdrawal' : 'Request Payout'}
@@ -682,21 +717,41 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
         <DialogBody>
           <div className="space-y-4">
             {/* Balance pill */}
-            <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-              <span className="text-sm text-gray-500">Available balance</span>
-              <span className="text-lg font-bold text-green-600">
+            <div
+              className="flex items-center justify-between rounded-xl px-4 py-3"
+              style={{
+                backgroundColor: "var(--bg-surface-alt)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <span className="text-sm" style={{ color: "var(--text-secondary)" }}>Available balance</span>
+              <span className="text-lg font-bold" style={{ color: "var(--success)" }}>
                 GH₵ {dashboard?.availableBalance.toFixed(2) ?? '0.00'}
               </span>
             </div>
 
             {/* Mode notice */}
             {isAutoMode ? (
-              <div className="flex items-center gap-2.5 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800">
+              <div
+                className="flex items-center gap-2.5 p-3 rounded-xl text-sm"
+                style={{
+                  backgroundColor: `color-mix(in srgb, var(--success) 10%, transparent)`,
+                  border: `1px solid color-mix(in srgb, var(--success) 30%, transparent)`,
+                  color: 'var(--success)',
+                }}
+              >
                 <Zap className="w-4 h-4 shrink-0" />
                 Transfer sent automatically via Paystack — funds arrive in minutes.
               </div>
             ) : (
-              <div className="flex items-center gap-2.5 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+              <div
+                className="flex items-center gap-2.5 p-3 rounded-xl text-sm"
+                style={{
+                  backgroundColor: `color-mix(in srgb, var(--color-secondary) 10%, transparent)`,
+                  border: `1px solid color-mix(in srgb, var(--color-secondary) 30%, transparent)`,
+                  color: 'var(--color-secondary)',
+                }}
+              >
                 <Clock className="w-4 h-4 shrink-0" />
                 An admin will review and process this request. Allow 5–30 minutes after approval.
               </div>
@@ -710,24 +765,24 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                 min={minimumPayout}
                 max={dashboard?.availableBalance}
                 placeholder={`Min: GH₵ ${minimumPayout.toFixed(2)}`}
-                leftIcon={<span className="text-sm font-medium text-gray-500">GH₵</span>}
+                leftIcon={<span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>GH₵</span>}
                 helperText={`Minimum: GH₵ ${minimumPayout.toFixed(2)}`}
               />
             </FormField>
 
             {useSavedAccount && savedAccount && !editingAccount ? (
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3.5">
+              <div className="rounded-xl p-3.5" style={{ border: "1px solid var(--border-color)", backgroundColor: "var(--bg-surface-alt)" }}>
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">Saved payout account</p>
-                    <p className="text-xs text-gray-500">Paystack-supported method for quick withdrawals</p>
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Saved payout account</p>
+                    <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Paystack-supported method for quick withdrawals</p>
                   </div>
                   <Button variant="secondary" size="sm" onClick={() => setEditingAccount(true)}>
                     Edit
                   </Button>
                 </div>
 
-                <div className="mt-3 text-sm text-gray-700">
+                <div className="mt-3 text-sm" style={{ color: "var(--text-primary)" }}>
                   {savedAccount.type === 'mobile_money' ? (
                     <p>
                       <span className="font-medium">Mobile Money:</span> {savedAccount.mobileProvider} - {savedAccount.phoneNumber}
@@ -807,19 +862,25 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
 
             {/* Fee breakdown */}
             {feeEstimate && (
-              <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3.5 space-y-2 text-sm">
-                <div className="flex justify-between text-gray-600">
+              <div
+                className="rounded-xl p-3.5 space-y-2 text-sm"
+                style={{
+                  backgroundColor: `color-mix(in srgb, var(--color-primary) 8%, transparent)`,
+                  border: `1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)`,
+                }}
+              >
+                <div className="flex justify-between" style={{ color: "var(--text-secondary)" }}>
                   <span>Withdrawal amount</span>
-                  <span className="font-medium">GH₵ {Number(amount).toFixed(2)}</span>
+                  <span className="font-medium" style={{ color: "var(--text-primary)" }}>GH₵ {Number(amount).toFixed(2)}</span>
                 </div>
                 {feeEstimate.feeBearer === 'agent' && (
                   <>
-                    <div className="flex justify-between text-orange-600">
+                    <div className="flex justify-between" style={{ color: "var(--warning)" }}>
                       <span>Paystack fee ({destType === 'bank_account' ? 'bank' : 'MoMo'})</span>
                       <span>− GH₵ {feeEstimate.paystackFlatFee.toFixed(2)}</span>
                     </div>
                     {feeEstimate.platformFeePercent > 0 && (
-                      <div className="flex justify-between text-orange-600">
+                      <div className="flex justify-between" style={{ color: "var(--warning)" }}>
                         <span>Platform fee ({feeEstimate.platformFeePercent}%)</span>
                         <span>− GH₵ {feeEstimate.platformFee.toFixed(2)}</span>
                       </div>
@@ -827,11 +888,11 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                   </>
                 )}
                 {feeEstimate.feeBearer === 'platform' && (
-                  <div className="text-xs text-green-600">Platform covers the transfer fee — you receive the full amount.</div>
+                  <div className="text-xs" style={{ color: "var(--success)" }}>Platform covers the transfer fee — you receive the full amount.</div>
                 )}
-                <div className="flex justify-between border-t border-indigo-200 pt-2 font-semibold">
-                  <span className="text-gray-700">You receive</span>
-                  <span className={feeEstimate.netAmount <= 0 ? 'text-red-600' : 'text-green-600'}>
+                <div className="flex justify-between pt-2 font-semibold" style={{ borderTop: `1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)` }}>
+                  <span style={{ color: "var(--text-primary)" }}>You receive</span>
+                  <span style={{ color: feeEstimate.netAmount <= 0 ? "var(--error)" : "var(--success)" }}>
                     GH₵ {feeEstimate.netAmount.toFixed(2)}
                   </span>
                 </div>

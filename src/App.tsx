@@ -5,8 +5,6 @@ import { Button } from "./design-system/components/button";
 import { ToastProvider } from "./design-system/components/toast";
 import "./App.css";
 import { AppProvider } from "./providers/app-provider";
-import { NotificationProvider } from "./contexts/NotificationContext";
-import { AnnouncementProvider } from "./contexts/AnnouncementContext";
 import { StorefrontSessionProvider } from "./contexts/storefront-session-context";
 import { NetworkStatusIndicator } from "./components/network-status-indicator";
 import { MaintenanceBanner } from "./components/maintenance-banner";
@@ -66,22 +64,18 @@ function App() {
         <ThemeProvider>
           <ToastProvider>
             <AppProvider>
-              <NotificationProvider>
-                <AnnouncementProvider>
-                  <PushNotificationInitializer />
-                  <div
-                    className={`min-h-screen flex flex-col ${
-                      isImpersonating && isAuthenticatedRoute ? "pt-0" : ""
-                    }`}
-                  >
-                    <MaintenanceBanner />
-                    <div className="flex-1">{routeElement}</div>
-                    <NetworkStatusIndicator />
-                    <InstallPrompt />
-                    <AnnouncementPopupHandler />
-                  </div>
-                </AnnouncementProvider>
-              </NotificationProvider>
+              <PushNotificationInitializer />
+              <div
+                className={`min-h-screen flex flex-col ${
+                  isImpersonating && isAuthenticatedRoute ? "pt-0" : ""
+                }`}
+              >
+                <MaintenanceBanner />
+                <div className="flex-1">{routeElement}</div>
+                <NetworkStatusIndicator />
+                <InstallPrompt />
+                <AnnouncementPopupHandler />
+              </div>
             </AppProvider>
           </ToastProvider>
         </ThemeProvider>

@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { useWallet } from "../hooks";
 import { type WalletTransaction } from "../types/wallet";
 import {
@@ -60,9 +66,7 @@ export const WalletPage = () => {
   const [txSearch, setTxSearch] = useState("");
   const [showTxFilters, setShowTxFilters] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<
-    "wallet" | "earnings"
-  >("wallet");
+  const [activeTab, setActiveTab] = useState<"wallet" | "earnings">("wallet");
 
   // Load transactions function
   const loadTransactions = useCallback(async () => {
@@ -93,8 +97,6 @@ export const WalletPage = () => {
     txEndDate,
   ]);
 
-
-
   // Fetch transaction history on page load and when page changes or filters change
   useEffect(() => {
     loadTransactions();
@@ -104,8 +106,6 @@ export const WalletPage = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [txTypeFilter, txStartDate, txEndDate]);
-
-
 
   // Listen for postMessage events from payment popups (Paystack)
   useEffect(() => {
@@ -171,116 +171,75 @@ export const WalletPage = () => {
     }).format(amount);
   };
 
-  // Get transaction type styling
-  const getTransactionTypeStyles = (type: string) => {
-    switch (type) {
-      case "credit":
-        return {
-          icon: <FaArrowUp className="text-green-600" />,
-          bgColor: "bg-green-50",
-          borderColor: "border-green-200",
-          textColor: "text-green-800",
-          amountColor: "text-green-600",
-          badgeBg: "bg-green-100",
-          badgeText: "text-green-800",
-        };
-      case "debit":
-        return {
-          icon: <FaArrowDown className="text-red-600" />,
-          bgColor: "bg-red-50",
-          borderColor: "border-red-200",
-          textColor: "text-red-800",
-          amountColor: "text-red-600",
-          badgeBg: "bg-red-100",
-          badgeText: "text-red-800",
-        };
-      default:
-        return {
-          icon: <FaWallet className="text-gray-600" />,
-          bgColor: "bg-gray-50",
-          borderColor: "border-gray-200",
-          textColor: "text-gray-800",
-          amountColor: "text-gray-600",
-          badgeBg: "bg-gray-100",
-          badgeText: "text-gray-800",
-        };
-    }
-  };
+  const getTransactionColor = (
+    type: string,
+    transaction?: WalletTransaction,
+  ): string => {
+    const meta = transaction ? ((transaction.metadata || {}) as any) : null;
 
-  // Determine styles based on transaction details (status, provider reason)
-  const getTransactionStyles = (transaction: WalletTransaction) => {
-    const meta = (transaction.metadata || {}) as any;
-
-    // Pending top-up (MoMo or Paystack) -> warning
     if (
+      transaction &&
       transaction.type === "credit" &&
       transaction.status === "pending" &&
       meta?.momoReferenceId
     ) {
-      return {
-        icon: <FaClock className="text-yellow-600" />,
-        bgColor: "bg-yellow-50",
-        borderColor: "border-yellow-200",
-        textColor: "text-yellow-800",
-        amountColor: "text-yellow-600",
-        badgeBg: "bg-yellow-100",
-        badgeText: "text-yellow-800",
-      };
+      return "var(--warning)";
     }
 
-    // Rejected / failed top-up -> color by reason
-    if (transaction.type === "credit" && transaction.status === "rejected") {
+    if (
+      transaction &&
+      transaction.type === "credit" &&
+      transaction.status === "rejected"
+    ) {
       const momoStatus = String(meta?.momoStatus?.status || "").toUpperCase();
-
-      // Timeout/expired -> amber/orange
-      if (
-        momoStatus === "TIMEOUT" ||
-        momoStatus === "EXPIRED" ||
-        momoStatus === "STALE"
-      ) {
-        return {
-          icon: <FaTimesCircle className="text-orange-600" />,
-          bgColor: "bg-orange-50",
-          borderColor: "border-orange-200",
-          textColor: "text-orange-800",
-          amountColor: "text-orange-600",
-          badgeBg: "bg-orange-100",
-          badgeText: "text-orange-800",
-        };
+      if (["TIMEOUT", "EXPIRED", "STALE"].includes(momoStatus)) {
+        return "var(--warning)";
       }
-
-      // Hard failure / rejected -> red
-      if (
-        momoStatus === "FAILED" ||
-        momoStatus === "REJECTED" ||
-        momoStatus === "ERROR" ||
-        momoStatus === "CANCELLED"
-      ) {
-        return {
-          icon: <FaTimesCircle className="text-red-600" />,
-          bgColor: "bg-red-50",
-          borderColor: "border-red-200",
-          textColor: "text-red-800",
-          amountColor: "text-red-600",
-          badgeBg: "bg-red-100",
-          badgeText: "text-red-800",
-        };
-      }
-
-      // Fallback for other rejections
-      return {
-        icon: <FaTimesCircle className="text-red-600" />,
-        bgColor: "bg-red-50",
-        borderColor: "border-red-200",
-        textColor: "text-red-800",
-        amountColor: "text-red-600",
-        badgeBg: "bg-red-100",
-        badgeText: "text-red-800",
-      };
+      return "var(--error)";
     }
 
-    // Default: use type-based styling
-    return getTransactionTypeStyles(transaction.type);
+    switch (type) {
+      case "credit":
+        return "var(--success)";
+      case "debit":
+        return "var(--error)";
+      default:
+        return "var(--text-muted)";
+    }
+  };
+
+  const getTransactionIcon = (
+    type: string,
+    transaction?: WalletTransaction,
+  ): ReactNode => {
+    const meta = transaction ? ((transaction.metadata || {}) as any) : null;
+    const color = getTransactionColor(type, transaction);
+
+    if (
+      transaction &&
+      transaction.type === "credit" &&
+      transaction.status === "pending" &&
+      meta?.momoReferenceId
+    ) {
+      return <FaClock style={{ color }} />;
+    }
+
+    if (
+      transaction &&
+      transaction.type === "credit" &&
+      transaction.status === "rejected"
+    ) {
+      return <FaTimesCircle style={{ color }} />;
+    }
+
+    switch (type) {
+      case "credit":
+        return <FaArrowUp style={{ color }} />;
+      case "debit":
+        return <FaArrowDown style={{ color }} />;
+      default:
+        return <FaWallet style={{ color: "var(--text-muted)" }} />;
+    }
   };
 
   // Get connection status indicator
@@ -346,10 +305,16 @@ export const WalletPage = () => {
       <Card className="mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            <h1
+              className="text-2xl sm:text-3xl font-bold mb-2"
+              style={{ color: "var(--text-primary)" }}
+            >
               Wallet
             </h1>
-            <p className="text-sm sm:text-base text-gray-600">
+            <p
+              className="text-sm sm:text-base"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Manage your wallet balance and storefront earnings
             </p>
           </div>
@@ -368,7 +333,7 @@ export const WalletPage = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="mt-6 border-b border-gray-200">
+        <div className="mt-6">
           <Tabs
             value={activeTab}
             onValueChange={(v: string) =>
@@ -407,10 +372,13 @@ export const WalletPage = () => {
           )}
 
           {/* Wallet Balance Card (design-system) */}
-          <Card>
-            <CardHeader className="flex items-center justify-between">
+          <Card className="mb-6">
+            <CardHeader className="flex flex-col items-start justify-between">
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                <h2
+                  className="text-lg sm:text-xl font-semibold"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   Current Balance
                 </h2>
               </div>
@@ -426,10 +394,13 @@ export const WalletPage = () => {
               </Button>
             </CardHeader>
             <CardBody className="py-3">
-              <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">
+              <div
+                className="text-3xl sm:text-4xl font-bold mb-1"
+                style={{ color: "var(--text-primary)" }}
+              >
                 {formatCurrency(walletBalance)}
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                 Available for transactions and purchases
               </p>
             </CardBody>
@@ -437,14 +408,23 @@ export const WalletPage = () => {
 
           {/* Transaction History */}
           <Card className="mb-6">
-            <CardHeader className="p-4 border-b border-gray-200">
+            <CardHeader
+              className="p-4"
+              style={{ borderBottom: "1px solid var(--border-color)" }}
+            >
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  <h2
+                    className="text-lg sm:text-xl font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Transaction History
                   </h2>
                   {totalTransactions > 0 && (
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p
+                      className="text-xs mt-0.5"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       {totalTransactions} transaction
                       {totalTransactions !== 1 ? "s" : ""} total
                       {hasActiveFilters &&
@@ -456,23 +436,39 @@ export const WalletPage = () => {
                   {hasActiveFilters && (
                     <button
                       onClick={clearTxFilters}
-                      className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 transition-colors"
+                      className="flex items-center gap-1 text-xs transition-colors"
+                      style={{ color: "var(--error)" }}
                     >
                       <FaTimes className="text-xs" /> Clear filters
                     </button>
                   )}
                   <button
                     onClick={() => setShowTxFilters((v) => !v)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors"
+                    style={
                       showTxFilters || hasActiveFilters
-                        ? "bg-blue-50 border-blue-300 text-blue-700"
-                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                        ? {
+                            backgroundColor: `color-mix(in srgb, var(--color-secondary) 10%, transparent)`,
+                            borderColor: "var(--color-secondary)",
+                            color: "var(--color-secondary)",
+                          }
+                        : {
+                            backgroundColor: "var(--bg-surface)",
+                            borderColor: "var(--border-color)",
+                            color: "var(--text-secondary)",
+                          }
+                    }
                   >
                     <FaFilter className="text-xs" />
                     Filter
                     {hasActiveFilters && (
-                      <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-xs">
+                      <span
+                        className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-xs"
+                        style={{
+                          backgroundColor: "var(--color-secondary)",
+                          color: "var(--text-inverse)",
+                        }}
+                      >
                         {
                           [
                             txTypeFilter,
@@ -487,7 +483,12 @@ export const WalletPage = () => {
                   <button
                     onClick={loadTransactions}
                     disabled={isLoadingTransactions}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50"
+                    style={{
+                      borderColor: "var(--border-color)",
+                      backgroundColor: "var(--bg-surface)",
+                      color: "var(--text-secondary)",
+                    }}
                   >
                     <FaSync
                       className={
@@ -503,16 +504,29 @@ export const WalletPage = () => {
 
               {/* Expandable filter panel */}
               {showTxFilters && (
-                <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div
+                  className="mt-3 pt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+                  style={{ borderTop: "1px solid var(--border-color)" }}
+                >
                   {/* Text search */}
                   <div className="relative">
-                    <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-xs" />
+                    <FaSearch
+                      className="absolute left-2.5 top-2.5 text-xs"
+                      style={{ color: "var(--text-muted)" }}
+                    />
                     <input
                       type="text"
                       placeholder="Search description or ref…"
                       value={txSearch}
                       onChange={(e) => setTxSearch(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-8 pr-3 py-2 text-sm rounded-lg"
+                      style={{
+                        border: "1px solid var(--border-color)",
+                        backgroundColor: "var(--bg-surface)",
+                        color: "var(--text-primary)",
+                        borderRadius: "var(--radius-lg)",
+                        outline: "none",
+                      }}
                     />
                   </div>
                   {/* Type filter */}
@@ -521,7 +535,14 @@ export const WalletPage = () => {
                     onChange={(e) =>
                       setTxTypeFilter(e.target.value as "credit" | "debit" | "")
                     }
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full px-3 py-2 text-sm rounded-lg"
+                    style={{
+                      border: "1px solid var(--border-color)",
+                      backgroundColor: "var(--bg-surface)",
+                      color: "var(--text-primary)",
+                      borderRadius: "var(--radius-lg)",
+                      outline: "none",
+                    }}
                   >
                     <option value="">All types</option>
                     <option value="credit">Credits only</option>
@@ -529,26 +550,46 @@ export const WalletPage = () => {
                   </select>
                   {/* Start date */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">
+                    <label
+                      className="block text-xs mb-1"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       From
                     </label>
                     <input
                       type="date"
                       value={txStartDate}
                       onChange={(e) => setTxStartDate(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 text-sm rounded-lg"
+                      style={{
+                        border: "1px solid var(--border-color)",
+                        backgroundColor: "var(--bg-surface)",
+                        color: "var(--text-primary)",
+                        borderRadius: "var(--radius-lg)",
+                        outline: "none",
+                      }}
                     />
                   </div>
                   {/* End date */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">
+                    <label
+                      className="block text-xs mb-1"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       To
                     </label>
                     <input
                       type="date"
                       value={txEndDate}
                       onChange={(e) => setTxEndDate(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 text-sm rounded-lg"
+                      style={{
+                        border: "1px solid var(--border-color)",
+                        backgroundColor: "var(--bg-surface)",
+                        color: "var(--text-primary)",
+                        borderRadius: "var(--radius-lg)",
+                        outline: "none",
+                      }}
                     />
                   </div>
                 </div>
@@ -557,23 +598,53 @@ export const WalletPage = () => {
               {/* Filter summary stats bar */}
               {filteredTransactions.length > 0 &&
                 (hasActiveFilters || transactions.length > 0) && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-3 gap-2 text-center">
+                  <div
+                    className="mt-3 pt-3 grid grid-cols-3 gap-2 text-center"
+                    style={{ borderTop: "1px solid var(--border-color)" }}
+                  >
                     <div>
-                      <p className="text-xs text-gray-500">Total In</p>
-                      <p className="text-sm font-semibold text-green-600">
+                      <p
+                        className="text-xs"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Total In
+                      </p>
+                      <p
+                        className="text-sm font-semibold"
+                        style={{ color: "var(--success)" }}
+                      >
                         {formatCurrency(txSummary.totalCredits)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Total Out</p>
-                      <p className="text-sm font-semibold text-red-600">
+                      <p
+                        className="text-xs"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Total Out
+                      </p>
+                      <p
+                        className="text-sm font-semibold"
+                        style={{ color: "var(--error)" }}
+                      >
                         {formatCurrency(txSummary.totalDebits)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Net</p>
                       <p
-                        className={`text-sm font-semibold ${txSummary.net >= 0 ? "text-green-600" : "text-red-600"}`}
+                        className="text-xs"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Net
+                      </p>
+                      <p
+                        className="text-sm font-semibold"
+                        style={{
+                          color:
+                            txSummary.net >= 0
+                              ? "var(--success)"
+                              : "var(--error)",
+                        }}
                       >
                         {txSummary.net >= 0 ? "+" : ""}
                         {formatCurrency(txSummary.net)}
@@ -587,13 +658,13 @@ export const WalletPage = () => {
               {isLoadingTransactions ? (
                 <div className="flex items-center justify-center py-8">
                   <Spinner size="lg" color="primary" />
-                  <span className="ml-3 text-gray-600">
+                  <span className="ml-3" style={{ color: "var(--text-secondary)" }}>
                     Loading transactions...
                   </span>
                 </div>
               ) : filteredTransactions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FaWallet className="text-4xl mx-auto mb-4 text-gray-300" />
+                <div className="text-center py-8" style={{ color: "var(--text-secondary)" }}>
+                  <FaWallet className="text-4xl mx-auto mb-4" style={{ color: "var(--text-muted)" }} />
                   <p>
                     {hasActiveFilters
                       ? "No transactions match your filters"
@@ -602,7 +673,7 @@ export const WalletPage = () => {
                   {hasActiveFilters && (
                     <button
                       onClick={clearTxFilters}
-                      className="mt-2 text-sm text-blue-600 hover:underline"
+                      className="mt-2 text-sm hover:underline" style={{ color: "var(--color-primary)" }}
                     >
                       Clear filters
                     </button>
@@ -611,7 +682,6 @@ export const WalletPage = () => {
               ) : (
                 <div className="space-y-2 sm:space-y-3">
                   {filteredTransactions.map((transaction) => {
-                    // Detect if this transaction is a wallet top-up (paystack/MoMo) and whether it's pending
                     const meta = (transaction.metadata || {}) as any;
                     const desc = String(transaction.description || "");
                     const isTopUp =
@@ -620,7 +690,10 @@ export const WalletPage = () => {
                         meta && (meta.type === "wallet_topup" || meta.isTopUp),
                       ) ||
                         /top-?up/i.test(desc));
-                    const styles = getTransactionStyles(transaction);
+                    const txColor = getTransactionColor(
+                      transaction.type,
+                      transaction,
+                    );
                     const orderRef =
                       typeof transaction.relatedOrder === "object" &&
                       transaction.relatedOrder !== null
@@ -631,20 +704,32 @@ export const WalletPage = () => {
                     return (
                       <div
                         key={transaction._id}
-                        className={`p-3 sm:p-4 border rounded-xl hover:shadow-sm transition-all ${styles.borderColor} ${styles.bgColor}`}
+                        className="p-3 sm:p-4 border rounded-xl transition-all"
+                        style={{
+                          borderColor: `color-mix(in srgb, ${txColor} 30%, transparent)`,
+                          backgroundColor: `color-mix(in srgb, ${txColor} 8%, var(--bg-surface))`,
+                          boxShadow: "var(--shadow-sm)",
+                        }}
                       >
-                        {/* Top row: icon + description + amount */}
                         <div className="flex items-start gap-3">
-                          {/* Icon */}
-                          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white shadow-sm flex-shrink-0 mt-0.5">
-                            {styles.icon}
+                          <div
+                            className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0 mt-0.5"
+                            style={{
+                              backgroundColor: "var(--bg-surface)",
+                              boxShadow: "var(--shadow-sm)",
+                            }}
+                          >
+                            {getTransactionIcon(transaction.type, transaction)}
                           </div>
 
-                          {/* Description + badges */}
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${styles.badgeBg} ${styles.badgeText}`}
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                                style={{
+                                  backgroundColor: `color-mix(in srgb, ${txColor} 15%, transparent)`,
+                                  color: txColor,
+                                }}
                               >
                                 {isTopUp
                                   ? "Top-up"
@@ -655,41 +740,59 @@ export const WalletPage = () => {
                               {transaction.status &&
                                 transaction.status !== "completed" && (
                                   <span
-                                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                      transaction.status === "pending"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-red-100 text-red-800"
-                                    }`}
+                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                    style={{
+                                      backgroundColor: `color-mix(in srgb, ${transaction.status === "pending" ? "var(--warning)" : "var(--error)"} 15%, transparent)`,
+                                      color:
+                                        transaction.status === "pending"
+                                          ? "var(--warning)"
+                                          : "var(--error)",
+                                    }}
                                   >
                                     {transaction.status}
                                   </span>
                                 )}
                               {orderRef && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+                                <span
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
+                                  style={{
+                                    backgroundColor: "var(--bg-surface-alt)",
+                                    color: "var(--text-secondary)",
+                                  }}
+                                >
                                   <FaReceipt className="text-xs" /> {orderRef}
                                 </span>
                               )}
                             </div>
-                            <p className="font-medium text-gray-900 text-sm truncate">
+                            <p
+                              className="font-medium text-sm truncate"
+                              style={{ color: "var(--text-primary)" }}
+                            >
                               {transaction.description}
                             </p>
                             <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                              <p className="text-xs text-gray-500">
+                              <p
+                                className="text-xs"
+                                style={{ color: "var(--text-secondary)" }}
+                              >
                                 {formatDate(transaction.createdAt)}
                               </p>
                               {transaction.reference &&
                                 !transaction.reference.startsWith("TXN") && (
-                                  <p className="text-xs text-gray-400 font-mono truncate max-w-[180px]">
+                                  <p
+                                    className="text-xs font-mono truncate max-w-[180px]"
+                                    style={{ color: "var(--text-muted)" }}
+                                  >
                                     Ref: {transaction.reference.slice(0, 24)}
                                   </p>
                                 )}
                             </div>
                           </div>
 
-                          {/* Amount (top-right) */}
                           <div className="text-right flex-shrink-0 ml-2">
                             <p
-                              className={`font-bold text-base sm:text-lg leading-tight ${styles.amountColor}`}
+                              className="font-bold text-base sm:text-lg leading-tight"
+                              style={{ color: txColor }}
                             >
                               {transaction.type === "credit" ? "+" : "−"}
                               {formatCurrency(transaction.amount)}
@@ -697,9 +800,11 @@ export const WalletPage = () => {
                           </div>
                         </div>
 
-                        {/* Balance mini-timeline — hide for pending top-ups since wallet hasn't been updated yet */}
                         {isTopUp && transaction.status === "pending" ? (
-                          <div className="mt-2.5 ml-12 text-xs text-yellow-800">
+                          <div
+                            className="mt-2.5 ml-12 text-xs"
+                            style={{ color: "var(--warning)" }}
+                          >
                             Pending top-up — wallet will be updated once payment
                             confirmation is received.
                           </div>
@@ -711,22 +816,34 @@ export const WalletPage = () => {
                                 : transaction.balanceAfter + transaction.amount;
                             return (
                               <div className="mt-2.5 ml-12 flex items-center gap-1.5 text-xs flex-wrap">
-                                {/* Before */}
                                 <div className="flex flex-col items-center">
-                                  <span className="text-gray-400 uppercase tracking-wide text-[10px] leading-none mb-0.5">
+                                  <span
+                                    className="uppercase tracking-wide text-[10px] leading-none mb-0.5"
+                                    style={{ color: "var(--text-muted)" }}
+                                  >
                                     Before
                                   </span>
-                                  <span className="font-mono font-medium text-gray-600 bg-white border border-gray-200 rounded px-1.5 py-0.5 whitespace-nowrap">
+                                  <span
+                                    className="font-mono font-medium rounded px-1.5 py-0.5 whitespace-nowrap"
+                                    style={{
+                                      color: "var(--text-secondary)",
+                                      backgroundColor: "var(--bg-surface)",
+                                      border: "1px solid var(--border-color)",
+                                    }}
+                                  >
                                     {formatCurrency(balanceBefore)}
                                   </span>
                                 </div>
-                                {/* arrow + delta */}
                                 <div className="flex flex-col items-center">
-                                  <span className="text-gray-300 text-[10px] leading-none mb-0.5">
+                                  <span
+                                    className="text-[10px] leading-none mb-0.5"
+                                    style={{ color: "var(--text-muted)" }}
+                                  >
                                     &nbsp;
                                   </span>
                                   <span
-                                    className={`font-semibold whitespace-nowrap ${styles.amountColor}`}
+                                    className="font-semibold whitespace-nowrap"
+                                    style={{ color: txColor }}
                                   >
                                     {transaction.type === "credit"
                                       ? "＋"
@@ -734,12 +851,22 @@ export const WalletPage = () => {
                                     {formatCurrency(transaction.amount)} →
                                   </span>
                                 </div>
-                                {/* After */}
                                 <div className="flex flex-col items-center">
-                                  <span className="text-gray-400 uppercase tracking-wide text-[10px] leading-none mb-0.5">
+                                  <span
+                                    className="uppercase tracking-wide text-[10px] leading-none mb-0.5"
+                                    style={{ color: "var(--text-muted)" }}
+                                  >
                                     After
                                   </span>
-                                  <span className="font-mono font-semibold text-gray-800 bg-white border border-gray-300 rounded px-1.5 py-0.5 whitespace-nowrap shadow-sm">
+                                  <span
+                                    className="font-mono font-semibold rounded px-1.5 py-0.5 whitespace-nowrap"
+                                    style={{
+                                      color: "var(--text-primary)",
+                                      backgroundColor: "var(--bg-surface)",
+                                      border: "1px solid var(--border-color)",
+                                      boxShadow: "var(--shadow-sm)",
+                                    }}
+                                  >
                                     {formatCurrency(transaction.balanceAfter)}
                                   </span>
                                 </div>
@@ -772,7 +899,14 @@ export const WalletPage = () => {
       ) : (
         /* Earnings & Payouts Tab Content */
         <>
-          <div className="mb-4 p-4 rounded-lg bg-blue-50 border border-blue-100 text-sm text-blue-800">
+          <div
+            className="mb-4 p-4 rounded-lg text-sm"
+            style={{
+              backgroundColor: `color-mix(in srgb, var(--color-secondary) 8%, transparent)`,
+              border: `1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent)`,
+              color: 'var(--color-secondary)',
+            }}
+          >
             <strong>Your storefront earnings</strong> are stored securely in
             your account. You can request a payout at any time — even if your
             storefront is inactive or closed.

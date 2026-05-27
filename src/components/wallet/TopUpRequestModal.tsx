@@ -39,8 +39,8 @@ const InfoBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 const SummaryRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div className="flex justify-between text-sm">
-    <span className="text-gray-500">{label}</span>
-    <span className="font-medium text-gray-900">{value}</span>
+    <span style={{ color: "var(--text-secondary)" }}>{label}</span>
+    <span className="font-medium" style={{ color: "var(--text-primary)" }}>{value}</span>
   </div>
 );
 
@@ -53,7 +53,7 @@ const StepProgress: React.FC<{ current: number; steps: string[] }> = ({ current,
           <div
             className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-black transition-all duration-300"
             style={stepNum <= current
-              ? { backgroundColor: 'var(--color-primary-500)', color: '#fff' }
+              ? { backgroundColor: 'var(--color-primary)', color: '#fff' }
               : { backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}
           >
             {stepNum < current ? <FaCheck className="w-3.5 h-3.5" /> : stepNum}
@@ -67,7 +67,7 @@ const StepProgress: React.FC<{ current: number; steps: string[] }> = ({ current,
         </React.Fragment>
       );
     })}
-    <span className="ml-2 text-xs text-white/80 font-semibold whitespace-nowrap">
+    <span className="ml-2 text-xs font-semibold whitespace-nowrap" style={{ color: "color-mix(in srgb, var(--text-inverse) 80%, transparent)" }}>
       {steps[current - 1]}
     </span>
   </div>
@@ -448,7 +448,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
       {/* ── Header ── */}
       <DialogHeader
         className="text-white"
-        style={{ background: 'linear-gradient(to right, var(--color-primary-500), var(--color-primary-700))' }}
+        style={{ background: 'var(--gradient-primary)' }}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -473,7 +473,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
       <DialogBody className="space-y-4">
         {/* Loading state */}
         {checkingPending && (
-          <div className="flex items-center justify-center py-8 gap-3 text-gray-500">
+          <div className="flex items-center justify-center py-8 gap-3" style={{ color: "var(--text-secondary)" }}>
             <Spinner size="lg" color="primary" />
             <span>Checking your account…</span>
           </div>
@@ -500,23 +500,40 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
               <button
                 type="button"
                 onClick={() => setMode('request')}
-                className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1 ${mode === 'request'
-                  ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
-                  : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
-                  }`}
+                className="relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none"
+                style={
+                  mode === 'request'
+                    ? {
+                        borderColor: 'var(--color-secondary)',
+                        backgroundColor: `color-mix(in srgb, var(--color-secondary) 10%, transparent)`,
+                        color: 'var(--color-secondary)',
+                        boxShadow: 'var(--shadow-sm)',
+                      }
+                    : {
+                        borderColor: 'var(--border-color)',
+                        backgroundColor: 'var(--bg-surface-alt)',
+                        color: 'var(--text-secondary)',
+                      }
+                }
               >
                 {mode === 'request' && (
-                  <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-white">
+                  <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--color-secondary)', color: 'var(--text-inverse)' }}>
                     <FaCheck className="h-2 w-2" />
                   </span>
                 )}
-                <div className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${mode === 'request' ? 'bg-blue-100' : 'bg-gray-200'
-                  }`}>
-                  <FaWhatsapp className={`h-4 w-4 ${mode === 'request' ? 'text-blue-600' : 'text-gray-500'}`} />
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+                  style={{
+                    backgroundColor: mode === 'request'
+                      ? `color-mix(in srgb, var(--color-secondary) 20%, transparent)`
+                      : 'var(--border-color)',
+                  }}
+                >
+                  <FaWhatsapp className="h-4 w-4" style={{ color: mode === 'request' ? 'var(--color-secondary)' : 'var(--text-muted)' }} />
                 </div>
                 <div className="text-center leading-tight">
                   <p className="font-semibold">Admin Request</p>
-                  <p className={`mt-0.5 text-xs ${mode === 'request' ? 'text-blue-500' : 'text-gray-400'}`}>Via WhatsApp</p>
+                  <p className="mt-0.5 text-xs" style={{ color: mode === 'request' ? 'var(--color-secondary)' : 'var(--text-muted)' }}>Via WhatsApp</p>
                 </div>
               </button>
 
@@ -525,23 +542,40 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                 <button
                   type="button"
                   onClick={() => { setMode('instant'); setSelectedPaymentMethod('paystack'); }}
-                  className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 ${mode === 'instant' && selectedPaymentMethod === 'paystack'
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
-                    : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
-                    }`}
+                  className="relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none"
+                  style={
+                    mode === 'instant' && selectedPaymentMethod === 'paystack'
+                      ? {
+                          borderColor: 'var(--success)',
+                          backgroundColor: `color-mix(in srgb, var(--success) 10%, transparent)`,
+                          color: 'var(--success)',
+                          boxShadow: 'var(--shadow-sm)',
+                        }
+                      : {
+                          borderColor: 'var(--border-color)',
+                          backgroundColor: 'var(--bg-surface-alt)',
+                          color: 'var(--text-secondary)',
+                        }
+                  }
                 >
                   {mode === 'instant' && selectedPaymentMethod === 'paystack' && (
-                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--success)', color: 'var(--text-inverse)' }}>
                       <FaCheck className="h-2 w-2" />
                     </span>
                   )}
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${mode === 'instant' && selectedPaymentMethod === 'paystack' ? 'bg-emerald-100' : 'bg-gray-200'
-                    }`}>
-                    <FaBolt className={`h-4 w-4 ${mode === 'instant' && selectedPaymentMethod === 'paystack' ? 'text-emerald-600' : 'text-gray-500'}`} />
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+                    style={{
+                      backgroundColor: mode === 'instant' && selectedPaymentMethod === 'paystack'
+                        ? `color-mix(in srgb, var(--success) 20%, transparent)`
+                        : 'var(--border-color)',
+                    }}
+                  >
+                    <FaBolt className="h-4 w-4" style={{ color: mode === 'instant' && selectedPaymentMethod === 'paystack' ? 'var(--success)' : 'var(--text-muted)' }} />
                   </div>
                   <div className="text-center leading-tight">
                     <p className="font-semibold">Instant Pay</p>
-                    <p className={`mt-0.5 text-xs ${mode === 'instant' && selectedPaymentMethod === 'paystack' ? 'text-emerald-500' : 'text-gray-400'}`}>
+                    <p className="mt-0.5 text-xs" style={{ color: mode === 'instant' && selectedPaymentMethod === 'paystack' ? 'var(--success)' : 'var(--text-muted)' }}>
                       Via Paystack
                     </p>
                   </div>
@@ -552,23 +586,40 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                 <button
                   type="button"
                   onClick={() => { setMode('instant'); setSelectedPaymentMethod('mtn'); }}
-                  className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 ${mode === 'instant' && selectedPaymentMethod === 'mtn'
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
-                    : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 hover:border-gray-300'
-                    }`}
+                  className="relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none"
+                  style={
+                    mode === 'instant' && selectedPaymentMethod === 'mtn'
+                      ? {
+                          borderColor: 'var(--success)',
+                          backgroundColor: `color-mix(in srgb, var(--success) 10%, transparent)`,
+                          color: 'var(--success)',
+                          boxShadow: 'var(--shadow-sm)',
+                        }
+                      : {
+                          borderColor: 'var(--border-color)',
+                          backgroundColor: 'var(--bg-surface-alt)',
+                          color: 'var(--text-secondary)',
+                        }
+                  }
                 >
                   {mode === 'instant' && selectedPaymentMethod === 'mtn' && (
-                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--success)', color: 'var(--text-inverse)' }}>
                       <FaCheck className="h-2 w-2" />
                     </span>
                   )}
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${mode === 'instant' && selectedPaymentMethod === 'mtn' ? 'bg-emerald-100' : 'bg-gray-200'
-                    }`}>
-                    <FaMobileAlt className={`h-4 w-4 ${mode === 'instant' && selectedPaymentMethod === 'mtn' ? 'text-emerald-600' : 'text-gray-500'}`} />
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+                    style={{
+                      backgroundColor: mode === 'instant' && selectedPaymentMethod === 'mtn'
+                        ? `color-mix(in srgb, var(--success) 20%, transparent)`
+                        : 'var(--border-color)',
+                    }}
+                  >
+                    <FaMobileAlt className="h-4 w-4" style={{ color: mode === 'instant' && selectedPaymentMethod === 'mtn' ? 'var(--success)' : 'var(--text-muted)' }} />
                   </div>
                   <div className="text-center leading-tight">
                     <p className="font-semibold">Mobile Money</p>
-                    <p className={`mt-0.5 text-xs ${mode === 'instant' && selectedPaymentMethod === 'mtn' ? 'text-emerald-500' : 'text-gray-400'}`}>
+                    <p className="mt-0.5 text-xs" style={{ color: mode === 'instant' && selectedPaymentMethod === 'mtn' ? 'var(--success)' : 'var(--text-muted)' }}>
                       Via MTN MoMo
                     </p>
                   </div>
@@ -610,32 +661,38 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                 />
-                <p className="text-xs text-gray-500">
-                  Enter your Ghana MTN number without spaces. We’ll automatically prefix local numbers with <strong>233</strong> when sending to MTN.
+                <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                  Enter your Ghana MTN number without spaces. We'll automatically prefix local numbers with <strong>233</strong> when sending to MTN.
                 </p>
               </div>
             )}
 
             {mode === 'instant' && collectionFeePreview && (
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm space-y-1.5">
-                <p className="font-medium text-blue-800 text-xs uppercase tracking-wide">Fee breakdown</p>
-                <div className="flex justify-between text-gray-600">
+              <div
+                className="rounded-lg p-3 text-sm space-y-1.5"
+                style={{
+                  backgroundColor: `color-mix(in srgb, var(--color-secondary) 10%, transparent)`,
+                  border: `1px solid color-mix(in srgb, var(--color-secondary) 25%, transparent)`,
+                }}
+              >
+                <p className="font-medium text-xs uppercase tracking-wide" style={{ color: 'var(--color-secondary)' }}>Fee breakdown</p>
+                <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
                   <span>Wallet credited</span>
-                  <span className="font-medium text-green-700">GH₵{collectionFeePreview.netCredit.toFixed(2)}</span>
+                  <span className="font-medium" style={{ color: 'var(--success)' }}>GH₵{collectionFeePreview.netCredit.toFixed(2)}</span>
                 </div>
                 {collectionFeePreview.agentBearsFee ? (
                   <>
-                    <div className="flex justify-between text-orange-600">
+                    <div className="flex justify-between" style={{ color: 'var(--warning)' }}>
                       <span>Processing fee ({collectionFeePreview.feePercent.toFixed(2)}%)</span>
                       <span>+ GH₵{collectionFeePreview.feeAmount.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between font-semibold border-t border-blue-200 pt-1.5">
-                      <span className="text-gray-800">You will be charged</span>
-                      <span className="text-gray-900">GH₵{collectionFeePreview.agentPays.toFixed(2)}</span>
+                    <div className="flex justify-between font-semibold pt-1.5" style={{ borderTop: `1px solid color-mix(in srgb, var(--color-secondary) 25%, transparent)` }}>
+                      <span style={{ color: 'var(--text-primary)' }}>You will be charged</span>
+                      <span style={{ color: 'var(--text-primary)' }}>GH₵{collectionFeePreview.agentPays.toFixed(2)}</span>
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-gray-400 border-t border-blue-200 pt-1.5">Processing fee is covered by the platform — you are charged exactly GH₵{parsedAmount.toFixed(2)}.</p>
+                  <p className="text-xs pt-1.5" style={{ color: 'var(--text-muted)', borderTop: `1px solid color-mix(in srgb, var(--color-secondary) 25%, transparent)` }}>Processing fee is covered by the platform — you are charged exactly GH₵{parsedAmount.toFixed(2)}.</p>
                 )}
               </div>
             )}
@@ -664,38 +721,38 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
         {/* ── Step 2: Confirm ── */}
         {!isBlocked && step === 2 && (
           <div className="space-y-4">
-            <h4 className="font-semibold text-gray-900">Confirm Your {mode === 'instant' ? 'Payment' : 'Request'}</h4>
+            <h4 className="font-semibold" style={{ color: "var(--text-primary)" }}>Confirm Your {mode === 'instant' ? 'Payment' : 'Request'}</h4>
 
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-100">
+            <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: "var(--bg-surface-alt)", border: "1px solid var(--border-color)" }}>
               <SummaryRow label="Amount" value={`GH₵${parsedAmount.toFixed(2)}`} />
               {form.description && <SummaryRow label="Description" value={form.description} />}
               {mode === 'request' ? (
                 <>
                   <SummaryRow label="Method" value="Admin approval" />
-                  <SummaryRow label="Follow-up" value={<span className="flex items-center gap-1"><FaWhatsapp className="text-green-500" /> WhatsApp</span>} />
+                  <SummaryRow label="Follow-up" value={<span className="flex items-center gap-1"><FaWhatsapp style={{ color: "var(--success)" }} /> WhatsApp</span>} />
                 </>
               ) : (
                 <>
                   <SummaryRow label="Payment gateway" value={selectedPaymentMethod === 'mtn' ? 'MTN Mobile Money (MoMo)' : 'Paystack (instant)'} />
                   <SummaryRow
                     label="Wallet credited"
-                    value={<span className="text-green-600 font-semibold">GH₵{parsedAmount.toFixed(2)}</span>}
+                    value={<span className="font-semibold" style={{ color: "var(--success)" }}>GH₵{parsedAmount.toFixed(2)}</span>}
                   />
                   {collectionFeePreview?.agentBearsFee ? (
                     <>
                       <SummaryRow
                         label={`Processing fee (${collectionFeePreview.feePercent.toFixed(2)}%)`}
-                        value={<span className="text-orange-600">+ GH₵{collectionFeePreview.feeAmount.toFixed(2)}</span>}
+                        value={<span style={{ color: "var(--warning)" }}>+ GH₵{collectionFeePreview.feeAmount.toFixed(2)}</span>}
                       />
-                      <div className="border-t border-gray-200 pt-2">
+                      <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "var(--space-2)" }}>
                         <SummaryRow
                           label="Total charged by Paystack"
-                          value={<span className="font-bold text-gray-900">GH₵{collectionFeePreview.agentPays.toFixed(2)}</span>}
+                          value={<span className="font-bold" style={{ color: "var(--text-primary)" }}>GH₵{collectionFeePreview.agentPays.toFixed(2)}</span>}
                         />
                       </div>
                     </>
                   ) : collectionFeePreview ? (
-                    <SummaryRow label="Processing fee" value={<span className="text-gray-400 text-xs">Covered by platform</span>} />
+                    <SummaryRow label="Processing fee" value={<span className="text-xs" style={{ color: "var(--text-muted)" }}>Covered by platform</span>} />
                   ) : null}
                 </>
               )}

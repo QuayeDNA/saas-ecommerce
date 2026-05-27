@@ -201,7 +201,7 @@ export const StorefrontDashboardPage: React.FC = () => {
         </Card>
 
         {/* Tab bar skeleton */}
-        <div className="bg-white rounded-lg border border-gray-200 px-3 sm:px-6 py-3 sm:py-4">
+        <div className="rounded-lg px-3 sm:px-6 py-3 sm:py-4" style={{ border: "1px solid var(--border-color)", backgroundColor: "var(--bg-surface)" }}>
           <div className="flex flex-wrap justify-center gap-2">
             {[...Array(4)].map((_, i) => (
               <Skeleton
@@ -350,7 +350,7 @@ export const StorefrontDashboardPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold truncate" style={{ color: "var(--text-primary)" }}>
                   {storefront.businessName}
                 </h1>
                 <Badge
@@ -371,7 +371,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                       : "Inactive"}
                 </Badge>
               </div>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
                 Your online storefront dashboard
               </p>
             </div>
@@ -443,7 +443,7 @@ export const StorefrontDashboardPage: React.FC = () => {
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         {/* Tab bar */}
-        <div className="bg-white rounded-lg border border-gray-200 px-3 sm:px-6 py-3 sm:py-4 overflow-x-auto flex justify-center">
+        <div className="overflow-x-auto flex justify-center">
           <TabsList className="inline-flex justify-center sm:grid sm:w-full sm:grid-cols-4 sm:justify-items-center gap-1 min-w-max sm:min-w-0">
             {TABS.map((tab) => (
               <TabsTrigger
@@ -517,42 +517,42 @@ export const StorefrontDashboardPage: React.FC = () => {
             >
               <DialogHeader>
                 <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-emerald-600" />
+                  <Info className="w-4 h-4" style={{ color: "var(--success)" }} />
                   <h3 className="text-base font-semibold">Profit vs Earnings Explained</h3>
                 </div>
               </DialogHeader>
-              <DialogBody className="space-y-3 text-sm text-gray-700">
+              <DialogBody className="space-y-3 text-sm" style={{ color: "var(--text-primary)" }}>
                 {analytics && earnings ? (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
-                        <p className="text-xs text-gray-500">Net Profit (All Time)</p>
-                        <p className="text-sm font-bold text-gray-900">{formatCurrency(analytics.totalProfit)}</p>
+                      <div className="rounded-lg px-3 py-2" style={{ border: "1px solid var(--border-color)", backgroundColor: "var(--bg-surface-alt)" }}>
+                        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Net Profit (All Time)</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{formatCurrency(analytics.totalProfit)}</p>
                       </div>
-                      <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
-                        <p className="text-xs text-gray-500">Net Profit (Today)</p>
-                        <p className="text-sm font-bold text-gray-900">{formatCurrency(analytics.todayNetProfit ?? 0)}</p>
+                      <div className="rounded-lg px-3 py-2" style={{ border: "1px solid var(--border-color)", backgroundColor: "var(--bg-surface-alt)" }}>
+                        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Net Profit (Today)</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{formatCurrency(analytics.todayNetProfit ?? 0)}</p>
                       </div>
-                      <div className="rounded-lg border border-green-100 bg-green-50 px-3 py-2">
-                        <p className="text-xs text-green-700">Total Earned (Credited)</p>
-                        <p className="text-sm font-bold text-green-800">{formatCurrency(earnings.totalEarned)}</p>
+                      <div className="rounded-lg px-3 py-2" style={{ border: `1px solid color-mix(in srgb, var(--success) 20%, transparent)`, backgroundColor: `color-mix(in srgb, var(--success) 8%, transparent)` }}>
+                        <p className="text-xs" style={{ color: "var(--success)" }}>Total Earned (Credited)</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--success)" }}>{formatCurrency(earnings.totalEarned)}</p>
                       </div>
-                      <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
-                        <p className="text-xs text-blue-700">Total Withdrawn (Completed)</p>
-                        <p className="text-sm font-bold text-blue-800">{formatCurrency(earnings.totalWithdrawn)}</p>
+                      <div className="rounded-lg px-3 py-2" style={{ border: `1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent)`, backgroundColor: `color-mix(in srgb, var(--color-secondary) 8%, transparent)` }}>
+                        <p className="text-xs" style={{ color: "var(--color-secondary)" }}>Total Withdrawn (Completed)</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--color-secondary)" }}>{formatCurrency(earnings.totalWithdrawn)}</p>
                       </div>
-                      <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 sm:col-span-2">
-                        <p className="text-xs text-emerald-700">Available Earnings</p>
-                        <p className="text-sm font-bold text-emerald-800">{formatCurrency(earnings.availableBalance)}</p>
+                      <div className="rounded-lg px-3 py-2 sm:col-span-2" style={{ border: `1px solid color-mix(in srgb, var(--success) 20%, transparent)`, backgroundColor: `color-mix(in srgb, var(--success) 8%, transparent)` }}>
+                        <p className="text-xs" style={{ color: "var(--success)" }}>Available Earnings</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--success)" }}>{formatCurrency(earnings.availableBalance)}</p>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                       Net Profit tracks completed storefront order markup. Earnings tracks credited ledger balance and payout movements.
                       Available Earnings reflects what can be withdrawn now.
                     </p>
                   </>
                 ) : (
-                  <p className="text-gray-500">Breakdown data is not available yet.</p>
+                  <p style={{ color: "var(--text-secondary)" }}>Breakdown data is not available yet.</p>
                 )}
               </DialogBody>
               <DialogFooter justify="end">
@@ -573,7 +573,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <BarChart2 className="w-4 h-4 text-indigo-500" />
+                      <BarChart2 className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
                       <h3 className="text-base font-semibold">Revenue Breakdown</h3>
                     </div>
                     <Button
@@ -591,7 +591,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                   {analyticsLoading ? (
                     <div className="space-y-2">
                       {[...Array(3)].map((_, i) => (
-                        <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100">
+                        <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: "1px solid var(--border-color)" }}>
                           <Skeleton variant="text" height="0.75rem" width="120px" />
                           <Skeleton variant="text" height="0.75rem" width="90px" />
                         </div>
@@ -599,30 +599,30 @@ export const StorefrontDashboardPage: React.FC = () => {
                     </div>
                   ) : analytics ? (
                     <div className="space-y-0.5">
-                      <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                      <div className="flex items-center justify-between py-2" style={{ borderBottom: "1px solid var(--border-color)" }}>
                         <div className="flex items-center gap-2">
-                          <ArrowUpRight className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                          <span className="text-sm text-gray-600">Gross Revenue</span>
+                          <ArrowUpRight className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--color-secondary)" }} />
+                          <span className="text-sm" style={{ color: "var(--text-secondary)" }}>Gross Revenue</span>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                           {formatCurrency(analytics.totalRevenue)}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                      <div className="flex items-center justify-between py-2" style={{ borderBottom: "1px solid var(--border-color)" }}>
                         <div className="flex items-center gap-2">
-                          <ArrowDownRight className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                          <span className="text-sm text-gray-600">Fulfilment Cost</span>
+                          <ArrowDownRight className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--warning)" }} />
+                          <span className="text-sm" style={{ color: "var(--text-secondary)" }}>Fulfilment Cost</span>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                           − {formatCurrency(analytics.totalFulfilmentCost)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between py-2.5">
                         <div className="flex items-center gap-2">
-                          <TrendingUp className="w-3.5 h-3.5 text-green-600 shrink-0" />
-                          <span className="text-sm font-medium text-gray-800">Net Profit</span>
+                          <TrendingUp className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--success)" }} />
+                          <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Net Profit</span>
                         </div>
-                        <span className="text-sm font-bold text-green-700">
+                        <span className="text-sm font-bold" style={{ color: "var(--success)" }}>
                           {formatCurrency(analytics.totalProfit)}
                         </span>
                       </div>
@@ -631,37 +631,37 @@ export const StorefrontDashboardPage: React.FC = () => {
                       {(analytics.pendingProfit > 0 ||
                         analytics.confirmedProfit > 0 ||
                         analytics.processingProfit > 0) && (
-                          <div className="pt-2 mt-1 border-t border-dashed border-gray-200">
-                            <p className="text-xs text-gray-400 font-medium mb-2 uppercase tracking-wide">
+                          <div className="pt-2 mt-1" style={{ borderTop: "1px dashed var(--border-color)" }}>
+                            <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
                               Pipeline — not yet earned
                             </p>
                             <div className="space-y-1.5">
                               {analytics.pendingProfit > 0 && (
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-amber-600 flex items-center gap-1">
+                                  <span className="text-xs flex items-center gap-1" style={{ color: "var(--warning)" }}>
                                     <Clock className="w-3 h-3" /> Pending orders
                                   </span>
-                                  <span className="text-xs font-semibold text-amber-600">
+                                  <span className="text-xs font-semibold" style={{ color: "var(--warning)" }}>
                                     {formatCurrency(analytics.pendingProfit)}
                                   </span>
                                 </div>
                               )}
                               {analytics.confirmedProfit > 0 && (
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                                  <span className="text-xs flex items-center gap-1" style={{ color: "var(--color-secondary)" }}>
                                     <CheckCircle className="w-3 h-3" /> Confirmed orders
                                   </span>
-                                  <span className="text-xs font-semibold text-blue-600">
+                                  <span className="text-xs font-semibold" style={{ color: "var(--color-secondary)" }}>
                                     {formatCurrency(analytics.confirmedProfit)}
                                   </span>
                                 </div>
                               )}
                               {analytics.processingProfit > 0 && (
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-indigo-600 flex items-center gap-1">
+                                  <span className="text-xs flex items-center gap-1" style={{ color: "var(--color-primary)" }}>
                                     <RefreshCw className="w-3 h-3" /> Processing orders
                                   </span>
-                                  <span className="text-xs font-semibold text-indigo-600">
+                                  <span className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>
                                     {formatCurrency(analytics.processingProfit)}
                                   </span>
                                 </div>
@@ -671,7 +671,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                         )}
                     </div>
                   ) : (
-                    <div className="text-center py-4 text-sm text-gray-400">No data yet</div>
+                    <div className="text-center py-4 text-sm" style={{ color: "var(--text-muted)" }}>No data yet</div>
                   )}
                 </CardBody>
               </Card>
@@ -680,7 +680,7 @@ export const StorefrontDashboardPage: React.FC = () => {
               <Card variant="outlined">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-blue-500" />
+                    <Package className="w-4 h-4" style={{ color: "var(--color-secondary)" }} />
                     <h3 className="text-base font-semibold">Order Status</h3>
                   </div>
                 </CardHeader>
@@ -688,7 +688,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                   {analyticsLoading ? (
                     <div className="grid grid-cols-2 gap-2">
                       {[...Array(6)].map((_, i) => (
-                        <div key={i} className="p-2 bg-gray-100 rounded-lg">
+                        <div key={i} className="p-2 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                           <Skeleton variant="text" height="0.75rem" width="80px" className="mb-2" />
                           <Skeleton variant="text" height="1.1rem" width="70px" />
                         </div>
@@ -696,63 +696,63 @@ export const StorefrontDashboardPage: React.FC = () => {
                     </div>
                   ) : analytics ? (
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
-                        <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                      <div className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: `color-mix(in srgb, var(--success) 8%, transparent)` }}>
+                        <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "var(--success)" }} />
                         <div>
-                          <p className="text-xs text-green-700">Completed</p>
-                          <p className="text-sm font-bold text-green-800">
+                          <p className="text-xs" style={{ color: "var(--success)" }}>Completed</p>
+                          <p className="text-sm font-bold" style={{ color: "var(--success)" }}>
                             {analytics.completedOrders}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
-                        <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: `color-mix(in srgb, var(--color-secondary) 8%, transparent)` }}>
+                        <CheckCircle className="w-4 h-4 shrink-0" style={{ color: "var(--color-secondary)" }} />
                         <div>
-                          <p className="text-xs text-blue-700">Confirmed</p>
-                          <p className="text-sm font-bold text-blue-800">
+                          <p className="text-xs" style={{ color: "var(--color-secondary)" }}>Confirmed</p>
+                          <p className="text-sm font-bold" style={{ color: "var(--color-secondary)" }}>
                             {analytics.confirmedOrders}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-indigo-50 rounded-lg">
-                        <RefreshCw className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <div className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: `color-mix(in srgb, var(--color-primary) 8%, transparent)` }}>
+                        <RefreshCw className="w-4 h-4 shrink-0" style={{ color: "var(--color-primary)" }} />
                         <div>
-                          <p className="text-xs text-indigo-700">Processing</p>
-                          <p className="text-sm font-bold text-indigo-800">
+                          <p className="text-xs" style={{ color: "var(--color-primary)" }}>Processing</p>
+                          <p className="text-sm font-bold" style={{ color: "var(--color-primary)" }}>
                             {analytics.processingOrders}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-lg">
-                        <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                      <div className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: `color-mix(in srgb, var(--warning) 8%, transparent)` }}>
+                        <Clock className="w-4 h-4 shrink-0" style={{ color: "var(--warning)" }} />
                         <div>
-                          <p className="text-xs text-amber-700">Pending</p>
-                          <p className="text-sm font-bold text-amber-800">
+                          <p className="text-xs" style={{ color: "var(--warning)" }}>Pending</p>
+                          <p className="text-sm font-bold" style={{ color: "var(--warning)" }}>
                             {analytics.pendingOrders}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                        <XCircle className="w-4 h-4 text-gray-400 shrink-0" />
+                      <div className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                        <XCircle className="w-4 h-4 shrink-0" style={{ color: "var(--text-muted)" }} />
                         <div>
-                          <p className="text-xs text-gray-500">Cancelled</p>
-                          <p className="text-sm font-bold text-gray-700">
+                          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Cancelled</p>
+                          <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
                             {analytics.cancelledOrders}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
-                        <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                      <div className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: `color-mix(in srgb, var(--error) 8%, transparent)` }}>
+                        <XCircle className="w-4 h-4 shrink-0" style={{ color: "var(--error)" }} />
                         <div>
-                          <p className="text-xs text-red-600">Failed</p>
-                          <p className="text-sm font-bold text-red-700">
+                          <p className="text-xs" style={{ color: "var(--error)" }}>Failed</p>
+                          <p className="text-sm font-bold" style={{ color: "var(--error)" }}>
                             {analytics.failedOrders}
                           </p>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-4 text-sm text-gray-400">No order data</div>
+                    <div className="text-center py-4 text-sm" style={{ color: "var(--text-muted)" }}>No order data</div>
                   )}
                 </CardBody>
               </Card>
@@ -764,7 +764,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
-                      <Wallet className="w-4 h-4 text-green-600" />
+                      <Wallet className="w-4 h-4" style={{ color: "var(--success)" }} />
                       <h3 className="text-base font-semibold">Earnings History</h3>
                     </div>
                     <div className="flex items-center gap-3">
@@ -779,9 +779,9 @@ export const StorefrontDashboardPage: React.FC = () => {
                       >
                         Show all
                       </Button>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
                         Balance:{" "}
-                        <span className="font-semibold text-green-700">
+                        <span className="font-semibold" style={{ color: "var(--success)" }}>
                           {formatCurrency(earnings.availableBalance)}
                         </span>
                       </span>
@@ -793,26 +793,30 @@ export const StorefrontDashboardPage: React.FC = () => {
                     {earnings.recentTransactions.slice(0, 8).map((txn) => (
                       <div
                         key={txn._id}
-                        className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 transition"
+                        className="flex items-center gap-3 py-2 px-2 rounded-lg transition"
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--bg-surface-alt)"}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}
                       >
                         <div
-                          className={`p-1.5 rounded-full shrink-0 ${txn.type === "credit"
-                            ? "bg-green-100"
-                            : "bg-red-100"
-                            }`}
+                          className="p-1.5 rounded-full shrink-0"
+                          style={{
+                            backgroundColor: txn.type === "credit"
+                              ? `color-mix(in srgb, var(--success) 20%, transparent)`
+                              : `color-mix(in srgb, var(--error) 20%, transparent)`,
+                          }}
                         >
                           {txn.type === "credit" ? (
-                            <ArrowUpRight className="w-3.5 h-3.5 text-green-600" />
+                            <ArrowUpRight className="w-3.5 h-3.5" style={{ color: "var(--success)" }} />
                           ) : (
-                            <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />
+                            <ArrowDownRight className="w-3.5 h-3.5" style={{ color: "var(--error)" }} />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-800 truncate">{txn.description}</p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-sm truncate" style={{ color: "var(--text-primary)" }}>{txn.description}</p>
+                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                             {formatRelativeTime(txn.createdAt)}
                             {txn.reference && (
-                              <span className="ml-1.5 font-mono text-gray-300">
+                              <span className="ml-1.5 font-mono" style={{ color: "var(--text-muted)" }}>
                                 · {txn.reference}
                               </span>
                             )}
@@ -820,15 +824,13 @@ export const StorefrontDashboardPage: React.FC = () => {
                         </div>
                         <div className="text-right shrink-0">
                           <p
-                            className={`text-sm font-semibold ${txn.type === "credit"
-                              ? "text-green-700"
-                              : "text-red-600"
-                              }`}
+                            className="text-sm font-semibold"
+                            style={{ color: txn.type === "credit" ? "var(--success)" : "var(--error)" }}
                           >
                             {txn.type === "credit" ? "+" : "−"}
                             {formatCurrency(txn.amount)}
                           </p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                             bal {formatCurrency(txn.balanceAfter)}
                           </p>
                         </div>
@@ -836,7 +838,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                     ))}
                   </div>
                   {earnings.recentTransactions.length > 8 && (
-                    <p className="text-xs text-center text-gray-400 mt-2 pt-2 border-t border-gray-100">
+                    <p className="text-xs text-center mt-2 pt-2" style={{ color: "var(--text-muted)", borderTop: "1px solid var(--border-color)" }}>
                       Showing 8 of {earnings.recentTransactions.length} recent transactions
                     </p>
                   )}
@@ -850,7 +852,7 @@ export const StorefrontDashboardPage: React.FC = () => {
               <Card variant="outlined">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-500" />
+                    <Zap className="w-4 h-4" style={{ color: "var(--warning)" }} />
                     <h3 className="text-base font-semibold">Quick Actions</h3>
                   </div>
                 </CardHeader>
@@ -924,7 +926,10 @@ export const StorefrontDashboardPage: React.FC = () => {
                       <h3 className="text-base font-semibold">Getting Started</h3>
                       <button
                         onClick={toggleChecklist}
-                        className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition"
+                        className="text-xs flex items-center gap-1 transition"
+                        style={{ color: "var(--text-muted)" }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = "var(--text-secondary)"}
+                        onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
                       >
                         <EyeOff className="w-3 h-3" /> Hide
                       </button>
@@ -935,36 +940,40 @@ export const StorefrontDashboardPage: React.FC = () => {
                       <button
                         key={idx}
                         onClick={item.action}
-                        className="flex items-center gap-2 text-sm w-full text-left hover:bg-gray-50 rounded-lg p-1.5 -m-1.5 transition group"
+                        className="flex items-center gap-2 text-sm w-full text-left rounded-lg p-1.5 -m-1.5 transition group"
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--bg-surface-alt)"}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}
                       >
                         {item.done ? (
-                          <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                          <CheckCircle className="w-4 h-4 shrink-0" style={{ color: "var(--success)" }} />
                         ) : (
-                          <Circle className="w-4 h-4 text-gray-300 shrink-0" />
+                          <Circle className="w-4 h-4 shrink-0" style={{ color: "var(--text-muted)" }} />
                         )}
                         <span
-                          className={
-                            item.done ? "text-gray-500 line-through" : "text-gray-700"
-                          }
+                          style={{
+                            color: item.done ? "var(--text-secondary)" : "var(--text-primary)",
+                            textDecoration: item.done ? "line-through" : "none",
+                          }}
                         >
                           {item.label}
                         </span>
                         {!item.done && (
-                          <ChevronRight className="w-3 h-3 text-gray-400 ml-auto opacity-0 group-hover:opacity-100 transition" />
+                          <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition" style={{ color: "var(--text-muted)" }} />
                         )}
                       </button>
                     ))}
-                    <div className="pt-1.5 border-t border-gray-100">
+                    <div className="pt-1.5" style={{ borderTop: "1px solid var(--border-color)" }}>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                           <div
-                            className="h-full bg-green-500 rounded-full transition-all duration-500"
+                            className="h-full rounded-full transition-all duration-500"
                             style={{
                               width: `${(setupChecklist.filter((i) => i.done).length / setupChecklist.length) * 100}%`,
+                              backgroundColor: "var(--success)",
                             }}
                           />
                         </div>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                           {setupChecklist.filter((i) => i.done).length}/{setupChecklist.length}
                         </span>
                       </div>
@@ -977,14 +986,17 @@ export const StorefrontDashboardPage: React.FC = () => {
                   <CardHeader>
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-blue-500" />
+                        <Package className="w-4 h-4" style={{ color: "var(--color-secondary)" }} />
                         <h3 className="text-base font-semibold">Latest Orders</h3>
                       </div>
                       <div className="flex items-center gap-2">
                         {!allChecklistDone && (
                           <button
                             onClick={toggleChecklist}
-                            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition"
+                            className="text-xs flex items-center gap-1 transition"
+                            style={{ color: "var(--text-muted)" }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = "var(--text-secondary)"}
+                            onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
                           >
                             <Eye className="w-3 h-3" /> Show setup
                           </button>
@@ -1006,7 +1018,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                         {[...Array(3)].map((_, i) => (
                           <div
                             key={i}
-                            className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100"
+                            className="flex items-center gap-3 p-2.5 rounded-lg" style={{ border: "1px solid var(--border-color)" }}
                           >
                             <div className="flex-1 min-w-0">
                               <Skeleton variant="text" height="1rem" width="40%" className="mb-2" />
@@ -1022,9 +1034,9 @@ export const StorefrontDashboardPage: React.FC = () => {
                       </div>
                     ) : recentOrders.length === 0 ? (
                       <div className="text-center py-6">
-                        <ShoppingCart className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500">No orders yet</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <ShoppingCart className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--text-muted)" }} />
+                        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>No orders yet</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                           Orders from your store will appear here
                         </p>
                       </div>
@@ -1033,12 +1045,18 @@ export const StorefrontDashboardPage: React.FC = () => {
                         {recentOrders.map((order) => (
                           <div
                             key={order._id}
-                            className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50 transition cursor-pointer"
+                            className="flex items-center gap-3 p-2.5 rounded-lg transition cursor-pointer"
+                            style={{
+                              border: "1px solid var(--border-color)",
+                              hover: { backgroundColor: "var(--bg-surface-alt)" },
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--bg-surface-alt)"}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}
                             onClick={() => setActiveTab("orders")}
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm text-gray-900">
+                                <span className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
                                   #{order.orderNumber}
                                 </span>
                                 <Badge
@@ -1049,10 +1067,10 @@ export const StorefrontDashboardPage: React.FC = () => {
                                   {order.status.replace(/_/g, " ")}
                                 </Badge>
                               </div>
-                              <p className="text-xs text-gray-500 mt-0.5 truncate">
+                              <p className="text-xs mt-0.5 truncate" style={{ color: "var(--text-secondary)" }}>
                                 {order.storefrontData?.customerInfo?.name || "Customer"}
                                 {order.storefrontData?.customerInfo?.ghanaCardNumber && (
-                                  <span className="ml-1 text-blue-600">
+                                  <span style={{ color: "var(--color-secondary)" }}>
                                     • {order.storefrontData.customerInfo.ghanaCardNumber}
                                   </span>
                                 )}
@@ -1071,12 +1089,12 @@ export const StorefrontDashboardPage: React.FC = () => {
                                   : order.total;
                                 return (
                                   <>
-                                    <p className="text-sm font-bold text-gray-900">
+                                    <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
                                       {formatCurrency(displayPrice)}
                                     </p>
-                                    <p className="text-xs text-gray-400">
+                                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                                       {hasMarkup && markup > 0 && (
-                                        <span className="text-gray-300 line-through mr-1">
+                                        <span className="line-through mr-1" style={{ color: "var(--text-muted)" }}>
                                           {formatCurrency(tierCost)}
                                         </span>
                                       )}
@@ -1101,13 +1119,13 @@ export const StorefrontDashboardPage: React.FC = () => {
               <Card variant="outlined">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Store className="w-4 h-4 text-gray-500" />
+                    <Store className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />
                     <h3 className="text-base font-semibold">Store Information</h3>
                   </div>
                 </CardHeader>
                 <CardBody className="space-y-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Status</span>
+                    <span style={{ color: "var(--text-secondary)" }}>Status</span>
                     <Badge
                       colorScheme={
                         suspended ? "error" : storefront.isActive ? "success" : "gray"
@@ -1123,7 +1141,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Approval</span>
+                    <span style={{ color: "var(--text-secondary)" }}>Approval</span>
                     <Badge
                       colorScheme={storefront.isApproved ? "success" : "warning"}
                       size="xs"
@@ -1133,22 +1151,22 @@ export const StorefrontDashboardPage: React.FC = () => {
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Business</span>
-                    <span className="font-medium text-gray-900 truncate ml-2">
+                    <span style={{ color: "var(--text-secondary)" }}>Business</span>
+                    <span className="font-medium truncate ml-2" style={{ color: "var(--text-primary)" }}>
                       {storefront.businessName}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 flex items-center gap-1">
+                    <span className="flex items-center gap-1" style={{ color: "var(--text-secondary)" }}>
                       <Phone className="w-3 h-3" /> Contact
                     </span>
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium" style={{ color: "var(--text-primary)" }}>
                       {storefront.contactInfo?.phone || "—"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Payments</span>
-                    <span className="font-medium text-gray-900">
+                    <span style={{ color: "var(--text-secondary)" }}>Payments</span>
+                    <span className="font-medium" style={{ color: "var(--text-primary)" }}>
                       {activePaymentMethods} active
                     </span>
                   </div>
@@ -1159,7 +1177,7 @@ export const StorefrontDashboardPage: React.FC = () => {
               <Card variant="outlined">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Share2 className="w-4 h-4 text-gray-500" />
+                    <Share2 className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />
                     <h3 className="text-base font-semibold">Share Your Store</h3>
                   </div>
                 </CardHeader>
@@ -1169,7 +1187,8 @@ export const StorefrontDashboardPage: React.FC = () => {
                       <Input
                         value={getStorefrontUrl()}
                         readOnly
-                        className="bg-gray-50 text-sm"
+                        className="text-sm"
+                        style={{ backgroundColor: "var(--bg-surface-alt)" }}
                       />
                     </div>
                     <Button
@@ -1189,7 +1208,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                   </div>
 
                   {/* Share preview */}
-                  <div className="mt-4 border border-gray-200 rounded-lg bg-gray-50 p-4">
+                  <div className="mt-4 rounded-lg p-4" style={{ border: "1px solid var(--border-color)", backgroundColor: "var(--bg-surface-alt)" }}>
                     <div className="flex items-start gap-3">
                       <img
                         src={storefront.branding?.logoUrl || '/android-chrome-192x192.png'}
@@ -1197,20 +1216,20 @@ export const StorefrontDashboardPage: React.FC = () => {
                         className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
                       />
                       <div className="flex-1">
-                        <div className="text-sm font-semibold text-gray-900 line-clamp-2">
+                        <div className="text-sm font-semibold line-clamp-2" style={{ color: "var(--text-primary)" }}>
                           {storefront.displayName || storefront.businessName} | DirectData
                         </div>
-                        <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                        <div className="text-xs mt-1 line-clamp-2" style={{ color: "var(--text-secondary)" }}>
                           {storefront.description || 'Instant data bundles from trusted agents across Ghana.'}
                         </div>
-                        <div className="text-xs text-blue-600 mt-2 truncate">
+                        <div className="text-xs mt-2 truncate" style={{ color: "var(--color-secondary)" }}>
                           {getStorefrontUrl()}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs mt-2" style={{ color: "var(--text-secondary)" }}>
                     Share this link with customers so they can browse and
                     purchase bundles from your store.
                   </p>

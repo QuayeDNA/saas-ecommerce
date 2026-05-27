@@ -696,7 +696,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     return (
       <Card>
         <CardBody>
-          <div className="p-6 bg-[var(--error-lighter)] border border-[var(--error)]/20 rounded-lg">
+          <div className="bg-[var(--error-lighter)] border border-[var(--error)]/20 rounded-lg">
             <p className="text-[var(--error)]">
               Error:{" "}
               {activeTab === "reported"

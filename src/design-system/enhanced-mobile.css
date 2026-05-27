@@ -98,7 +98,7 @@
 /* Enhanced scrollbar styling */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
-  height: 6px;
+  height: 2px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {

@@ -93,6 +93,9 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
     return (saved as ViewMode) || "card";
   });
 
+  const [hoveredViewMode, setHoveredViewMode] = useState<ViewMode | null>(null);
+  const [hoveredListId, setHoveredListId] = useState<string | null>(null);
+
   // Filters
   const [statusFilter, setStatusFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -278,28 +281,37 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+              <h2 className="text-lg sm:text-xl font-bold" style={{ color: "var(--text-primary)" }}>
                 Storefront Orders
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
                 Manage customer orders and payment verification
               </p>
             </div>
             <div className="flex items-center gap-2">
               {/* View mode toggle */}
-              <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+              <div className="flex items-center rounded-lg p-0.5" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                 {([
                   { mode: "card" as ViewMode, icon: LayoutGrid, label: "Cards" },
                   { mode: "list" as ViewMode, icon: List, label: "List" },
                   { mode: "table" as ViewMode, icon: Table2, label: "Table" },
                 ] as const).map(({ mode, icon: Icon, label }) => (
-                  <button
+                    <button
                     key={mode}
                     onClick={() => setViewMode(mode)}
+                    onMouseEnter={() => setHoveredViewMode(mode)}
+                    onMouseLeave={() => setHoveredViewMode(null)}
                     className={`p-1.5 rounded-md transition-all ${viewMode === mode
-                      ? "bg-white shadow-sm text-gray-900"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white shadow-sm"
+                      : ""
                       }`}
+                    style={{
+                      color: viewMode === mode
+                        ? "var(--text-primary)"
+                        : hoveredViewMode === mode
+                          ? "var(--text-primary)"
+                          : "var(--text-muted)",
+                    }}
                     title={`${label} view`}
                   >
                     <Icon className="w-4 h-4" />
@@ -342,7 +354,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
               showSearchButton={true}
               showClearButton={true}
             />
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
               Showing {displayedOrders.length} of {totalOrders} orders
             </p>
           </div>
@@ -373,7 +385,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-gray-900 text-sm">
+                          <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
                             {order.storefrontData?.customerInfo?.name || "N/A"}
                           </p>
                         </div>
@@ -381,19 +393,19 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                       <TableCell>
                         {(order.storefrontData?.items || []).map((item, idx) => (
                           <div key={idx} className="text-sm">
-                            <p className="text-gray-900">{item.bundleName} x{item.quantity}</p>
+                            <p style={{ color: "var(--text-primary)" }}>{item.bundleName} x{item.quantity}</p>
                             {item.customerPhone && (
-                              <p className="text-xs text-gray-400">→ {item.customerPhone}</p>
+                              <p className="text-xs" style={{ color: "var(--text-muted)" }}>→ {item.customerPhone}</p>
                             )}
                           </div>
                         ))}
                         {(!order.storefrontData?.items ||
                           order.storefrontData.items.length === 0) && (
-                            <span className="text-sm text-gray-400">—</span>
+                            <span className="text-sm" style={{ color: "var(--text-muted)" }}>—</span>
                           )}
                       </TableCell>
                       <TableCell>
-                        <span className="font-bold text-gray-900">
+                        <span className="font-bold" style={{ color: "var(--text-primary)" }}>
                           GHS {(order.total || 0).toFixed(2)}
                         </span>
                       </TableCell>
@@ -407,7 +419,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                               .toUpperCase()}
                           </Badge>
                           {order.storefrontData?.paymentMethod?.reference && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                               Ref:{" "}
                               {order.storefrontData.paymentMethod.reference}
                             </p>
@@ -421,7 +433,8 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                                 }
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                                className="inline-flex items-center gap-1 text-xs hover:underline"
+                                style={{ color: "var(--color-secondary)" }}
                               >
                                 <ExternalLink className="w-3 h-3" /> Proof
                               </a>
@@ -439,7 +452,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
                           {formatDate(order.createdAt)}
                         </span>
                       </TableCell>
@@ -510,7 +523,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                     {/* Header */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm font-medium text-gray-900">
+                        <span className="font-mono text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                           #{order.orderNumber || order._id?.slice(-8)}
                         </span>
                         <Badge
@@ -524,7 +537,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                         </Badge>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-gray-900">
+                        <p className="font-bold" style={{ color: "var(--text-primary)" }}>
                           GHS {(order.total || 0).toFixed(2)}
                         </p>
                       </div>
@@ -532,7 +545,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
 
                     {/* Customer */}
                     <div className="space-y-1 mb-3">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                         {order.storefrontData?.customerInfo?.name || "N/A"}
                       </p>
                     </div>
@@ -543,23 +556,23 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                         {order.storefrontData!.items.map((item, idx) => {
                           const itemMarkup = ((item.unitPrice || 0) - (item.tierPrice || 0)) * (item.quantity || 1);
                           return (
-                            <div key={idx} className="text-sm">
+                              <div key={idx} className="text-sm">
                               <div className="flex justify-between">
-                                <span className="text-gray-700">
+                                <span style={{ color: "var(--text-primary)" }}>
                                   {item.bundleName}
                                 </span>
                                 {itemMarkup > 0 ? (
-                                  <span className="text-emerald-600 font-medium">
+                                  <span className="font-medium" style={{ color: "var(--success)" }}>
                                     +GHS {itemMarkup.toFixed(2)}
                                   </span>
                                 ) : (
-                                  <span className="text-gray-500">
+                                  <span style={{ color: "var(--text-muted)" }}>
                                     GHS {(item.totalPrice || 0).toFixed(2)}
                                   </span>
                                 )}
                               </div>
                               {item.customerPhone && (
-                                <p className="text-xs text-gray-400">→ {item.customerPhone}</p>
+                                <p className="text-xs" style={{ color: "var(--text-muted)" }}>→ {item.customerPhone}</p>
                               )}
                             </div>
                           );
@@ -568,7 +581,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                     )}
 
                     {/* Payment + Date */}
-                    <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t">
+                    <div className="flex items-center justify-between text-xs pt-2 border-t" style={{ color: "var(--text-muted)" }}>
                       <div className="flex items-center gap-2">
                         <Badge colorScheme="gray" variant="subtle" size="xs">
                           {(
@@ -586,7 +599,8 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                               }
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                              className="inline-flex items-center gap-1 hover:underline"
+                              style={{ color: "var(--color-secondary)" }}
                               onClick={(e) => e.stopPropagation()}
                             >
                               <Eye className="w-3 h-3" /> Proof
@@ -650,42 +664,51 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
               {displayedOrders.map((order) => (
                 <div
                   key={order._id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer"
+                  style={{
+                    borderColor: "var(--border-color)",
+                    backgroundColor: hoveredListId === order._id ? "var(--bg-surface-alt)" : undefined,
+                  }}
+                  onMouseEnter={() => setHoveredListId(order._id)}
+                  onMouseLeave={() => setHoveredListId(null)}
                   onClick={() => setSelectedOrder(order)}
                 >
                   {/* Status dot */}
                   <div
-                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${order.status === "completed"
-                      ? "bg-green-500"
-                      : order.status === "failed" ||
-                        order.status === "cancelled"
-                        ? "bg-red-500"
-                        : order.status === "pending_payment"
-                          ? "bg-yellow-500"
-                          : order.status === "processing" ||
-                            order.status === "confirmed"
-                            ? "bg-blue-500"
-                            : "bg-gray-400"
-                      }`}
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{
+                      backgroundColor:
+                        order.status === "completed"
+                          ? "var(--success)"
+                          : order.status === "failed" ||
+                            order.status === "cancelled"
+                            ? "var(--error)"
+                            : order.status === "pending_payment"
+                              ? "var(--warning)"
+                              : order.status === "processing" ||
+                                order.status === "confirmed"
+                                ? "var(--color-secondary)"
+                                : "var(--text-muted)",
+                    }}
                   />
 
                   {/* Order number */}
-                  <span className="font-mono text-sm font-medium text-gray-900 shrink-0 w-20">
+                  <span className="font-mono text-sm font-medium shrink-0 w-20" style={{ color: "var(--text-primary)" }}>
                     #{order.orderNumber || order._id?.slice(-8)}
                   </span>
 
                   {/* Customer */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">
+                    <p className="text-sm" style={{ color: "var(--text-primary)" }}>
                       {order.storefrontData?.customerInfo?.name || "N/A"}
                     </p>
-                    <p className="text-xs text-gray-500 sm:hidden">
+                    <p className="text-xs sm:hidden" style={{ color: "var(--text-muted)" }}>
                       {formatDate(order.createdAt)}
                     </p>
                   </div>
 
                   {/* Items count */}
-                  <span className="text-xs text-gray-500 shrink-0 hidden sm:block">
+                  <span className="text-xs shrink-0 hidden sm:block" style={{ color: "var(--text-muted)" }}>
                     {(order.storefrontData?.items || []).length} item
                     {(order.storefrontData?.items || []).length !== 1
                       ? "s"
@@ -693,12 +716,12 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                   </span>
 
                   {/* Amount */}
-                  <span className="font-bold text-sm text-gray-900 shrink-0">
+                  <span className="font-bold text-sm shrink-0" style={{ color: "var(--text-primary)" }}>
                     GHS {(order.total || 0).toFixed(2)}
                   </span>
 
                   {/* Date (hidden on mobile) */}
-                  <span className="text-xs text-gray-500 shrink-0 hidden sm:block w-28 text-right">
+                  <span className="text-xs shrink-0 hidden sm:block w-28 text-right" style={{ color: "var(--text-muted)" }}>
                     {formatDate(order.createdAt)}
                   </span>
 
@@ -741,8 +764,8 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
           {/* Empty state */}
           {displayedOrders.length === 0 && (
             <div className="text-center py-10">
-              <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">
+              <ShoppingBag className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--text-muted)" }} />
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                 {searchTerm || statusFilter
                   ? "No orders match your current filters"
                   : "No orders yet. Orders will appear here when customers make purchases."}
@@ -791,8 +814,8 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
             <DialogBody>
               <div className="space-y-4">
                 {/* Customer */}
-                <div className="p-3 bg-gray-50 rounded-lg text-sm">
-                  <h4 className="font-medium text-gray-900 mb-1.5">Customer</h4>
+                <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <h4 className="font-medium mb-1.5" style={{ color: "var(--text-primary)" }}>Customer</h4>
                   <p className="font-medium">
                     {selectedOrder.storefrontData?.customerInfo?.name || "N/A"}
                   </p>
@@ -801,19 +824,19 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                 {/* Items with recipient phones */}
                 {(selectedOrder.storefrontData?.items || []).length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="font-medium text-sm text-gray-900">
+                    <h4 className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
                       Items
                     </h4>
                     {selectedOrder.storefrontData!.items.map((item, idx) => (
-                      <div key={idx} className="p-2.5 bg-gray-50 rounded-lg text-sm space-y-1">
+                      <div key={idx} className="p-2.5 rounded-lg text-sm space-y-1" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                         <div className="flex justify-between">
-                          <span className="font-medium text-gray-900">{item.bundleName} x{item.quantity}</span>
+                          <span className="font-medium" style={{ color: "var(--text-primary)" }}>{item.bundleName} x{item.quantity}</span>
                           <span className="font-medium">
                             GHS {(item.totalPrice || 0).toFixed(2)}
                           </span>
                         </div>
                         {item.customerPhone && (
-                          <p className="text-xs text-gray-500">📱 Recipient: <span className="font-medium text-gray-700">{item.customerPhone}</span></p>
+                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>📱 Recipient: <span className="font-medium" style={{ color: "var(--text-primary)" }}>{item.customerPhone}</span></p>
                         )}
                       </div>
                     ))}
@@ -828,7 +851,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
 
                 {/* Payment */}
                 <div className="space-y-1.5 text-sm">
-                  <h4 className="font-medium text-gray-900">Payment</h4>
+                  <h4 className="font-medium" style={{ color: "var(--text-primary)" }}>Payment</h4>
                   <Badge colorScheme="gray" variant="subtle">
                     {(
                       selectedOrder.storefrontData?.paymentMethod?.type || ""
@@ -837,7 +860,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                       .toUpperCase()}
                   </Badge>
                   {selectedOrder.storefrontData?.paymentMethod?.reference && (
-                    <p className="text-gray-500">
+                    <p style={{ color: "var(--text-muted)" }}>
                       Ref:{" "}
                       {selectedOrder.storefrontData.paymentMethod.reference}
                     </p>
@@ -851,14 +874,15 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                         }
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                        className="inline-flex items-center gap-1 hover:underline"
+                        style={{ color: "var(--color-secondary)" }}
                       >
                         <Eye className="w-3.5 h-3.5" /> View Payment Proof
                       </a>
                     )}
                 </div>
 
-                <p className="text-xs text-gray-400">
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {formatDate(selectedOrder.createdAt)}
                 </p>
               </div>
@@ -932,8 +956,8 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
           {verificationModal.order && (
             <div className="space-y-4">
               {/* Order summary */}
-              <div className="p-3 sm:p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
-                <h4 className="font-medium text-gray-900">Order Details</h4>
+              <div className="p-3 sm:p-4 rounded-lg space-y-2 text-sm" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                <h4 className="font-medium" style={{ color: "var(--text-primary)" }}>Order Details</h4>
                 <p>
                   <strong>Order:</strong>{" "}
                   {verificationModal.order.orderNumber ||
@@ -983,7 +1007,8 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                      className="inline-flex items-center gap-1 hover:underline"
+                      style={{ color: "var(--color-secondary)" }}
                     >
                       <ExternalLink className="w-3.5 h-3.5" /> View Payment
                       Proof
@@ -994,7 +1019,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                 {(verificationModal.order.storefrontData?.items || [])
                   .length > 0 && (
                     <div className="mt-2 pt-2 border-t space-y-1.5">
-                      <h5 className="font-medium text-gray-900">Items:</h5>
+                      <h5 className="font-medium" style={{ color: "var(--text-primary)" }}>Items:</h5>
                       {verificationModal.order.storefrontData.items.map(
                         (item, idx) => (
                           <div key={idx}>
@@ -1007,7 +1032,7 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
                               </span>
                             </div>
                             {item.customerPhone && (
-                              <p className="text-xs text-gray-500">📱 Recipient: <span className="font-medium text-gray-700">{item.customerPhone}</span></p>
+                              <p className="text-xs" style={{ color: "var(--text-muted)" }}>📱 Recipient: <span className="font-medium" style={{ color: "var(--text-primary)" }}>{item.customerPhone}</span></p>
                             )}
                           </div>
                         ),
