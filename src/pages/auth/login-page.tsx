@@ -93,7 +93,7 @@ export const LoginPage = () => {
         <div className="space-y-2">
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-medium text-[var(--text-secondary)]"
           >
             {FIELD_LABELS.email}
           </label>
@@ -112,7 +112,7 @@ export const LoginPage = () => {
         <div className="space-y-2">
           <label
             htmlFor="password"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-medium text-[var(--text-secondary)]"
           >
             {FIELD_LABELS.password}
           </label>
@@ -129,7 +129,7 @@ export const LoginPage = () => {
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
               onClick={() => setShowPassword(!showPassword)}
               disabled={isSubmitting || authState.isLoading}
             >
@@ -139,19 +139,19 @@ export const LoginPage = () => {
         </div>
 
         <div className="flex items-center justify-between gap-4">
-          <label className="flex items-center gap-2 text-sm text-slate-700">
+          <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
             <input
               id="remember_me"
               name="remember_me"
               type="checkbox"
-              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+              className="h-4 w-4 rounded border-[var(--border-color)] text-primary focus:ring-primary"
               disabled={isSubmitting || authState.isLoading}
             />
             Remember me
           </label>
 
           <Link
-            className="text-sm font-medium text-slate-900 hover:text-slate-700"
+            className="text-sm font-medium text-primary hover:text-[var(--color-primary-hover)]"
             to="/forgot-password"
           >
             Forgot password?
@@ -169,10 +169,10 @@ export const LoginPage = () => {
         </Button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-slate-600">
-        Don’t have an account?{" "}
+      <div className="mt-6 text-center text-sm text-[var(--text-secondary)]">
+        Don't have an account?{" "}
         <Link
-          className="font-semibold text-slate-900 hover:text-slate-700"
+          className="font-semibold text-primary hover:text-[var(--color-primary-hover)]"
           to="/register"
         >
           Create one

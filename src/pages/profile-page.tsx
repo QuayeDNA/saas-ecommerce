@@ -29,7 +29,7 @@ import {
 import { UserPen, Key } from "lucide-react";
 import type { User } from "../types";
 import { isBusinessUser } from "../utils/userTypeHelpers";
-import { ColorSchemeSelector } from "../components/common/color-scheme-selector";
+import { DarkModeToggle } from "../components/common/dark-mode-toggle";
 import pushNotificationService from "../services/pushNotificationService";
 
 export const ProfilePage: React.FC = () => {
@@ -212,7 +212,7 @@ export const ProfilePage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <div className="container mx-auto">
           {/* Header Skeleton */}
           <div className="mb-6 sm:mb-8">
@@ -405,7 +405,7 @@ export const ProfilePage: React.FC = () => {
 
   if (!profileData) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <div className="container mx-auto">
           <Alert status="error" className="mb-4">
             Failed to load profile data. Please try refreshing the page.
@@ -416,8 +416,7 @@ export const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto">
+    <div className="min-h-screen">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -695,7 +694,13 @@ export const ProfilePage: React.FC = () => {
               </h3>
             </CardHeader>
             <CardBody>
-              <ColorSchemeSelector />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900">Dark Mode</p>
+                  <p className="text-sm text-gray-500">Toggle between light and dark theme</p>
+                </div>
+                <DarkModeToggle />
+              </div>
             </CardBody>
           </Card>
 
@@ -1177,7 +1182,13 @@ export const ProfilePage: React.FC = () => {
               </h3>
             </CardHeader>
             <CardBody>
-              <ColorSchemeSelector />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900">Dark Mode</p>
+                  <p className="text-sm text-gray-500">Toggle between light and dark theme</p>
+                </div>
+                <DarkModeToggle />
+              </div>
             </CardBody>
           </Card>
 
@@ -1232,7 +1243,6 @@ export const ProfilePage: React.FC = () => {
           isOpen={isUpdatePinOpen}
           onClose={() => setIsUpdatePinOpen(false)}
         />
-      </div>
     </div>
   );
 };

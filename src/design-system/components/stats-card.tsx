@@ -26,22 +26,22 @@ export const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const sizeClasses = {
     sm: {
-      title: "text-xs font-medium text-gray-300",
-      value: "text-base sm:text-lg font-bold text-white",
+      title: "text-xs font-medium",
+      value: "text-base sm:text-lg font-bold",
       subtitle: "text-xs mt-0.5 sm:mt-1",
       icon: "text-xs sm:text-sm",
       iconContainer: "p-1.5 sm:p-2",
     },
     md: {
-      title: "text-xs sm:text-sm font-medium text-gray-300",
-      value: "text-lg sm:text-xl lg:text-2xl font-bold text-white",
+      title: "text-xs sm:text-sm font-medium",
+      value: "text-lg sm:text-xl lg:text-2xl font-bold",
       subtitle: "text-xs sm:text-sm mt-0.5 sm:mt-1",
       icon: "text-sm sm:text-base lg:text-lg",
       iconContainer: "p-2 sm:p-2.5 lg:p-3",
     },
     lg: {
-      title: "text-sm sm:text-base font-medium text-gray-300",
-      value: "text-xl sm:text-2xl lg:text-3xl font-bold text-white",
+      title: "text-sm sm:text-base font-medium",
+      value: "text-xl sm:text-2xl lg:text-3xl font-bold",
       subtitle: "text-xs sm:text-sm mt-0.5 sm:mt-1",
       icon: "text-base sm:text-lg lg:text-xl",
       iconContainer: "p-2 sm:p-3 lg:p-4",
@@ -52,54 +52,61 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <Card
-      className="transition-colors duration-200 h-full"
-      style={{
-        backgroundColor: "var(--color-primary-500)",
-        borderColor: "var(--color-primary-700)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = "var(--color-primary-600)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = "var(--color-primary-500)";
-      }}
+      className="h-full"
+      style={{ background: "var(--gradient-brand-dark)" }}
     >
-      <CardBody className={`h-full`}>
+      <CardBody className="h-full">
         <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4">
           <div className="flex-1 min-w-0">
-            <p className={`${classes.title} mb-0.5 sm:mb-1 lg:mb-2 truncate`}>
+            <p
+              className={`${classes.title} mb-0.5 sm:mb-1 lg:mb-2 truncate opacity-70`}
+              style={{ color: "var(--text-inverse)" }}
+            >
               {title}
             </p>
-            <p className={`${classes.value} leading-tight`}>{value}</p>
+            <p
+              className={`${classes.value} leading-tight`}
+              style={{ color: "var(--text-inverse)" }}
+            >
+              {value}
+            </p>
             {subtitle && (
               <p
-                className={`${classes.subtitle} mt-0.5 sm:mt-1`}
-                style={{ color: "var(--color-accent-500, #9ca3af)" }}
+                className={`${classes.subtitle}`}
+                style={{ color: "var(--text-inverse)", opacity: 0.5 }}
               >
                 {subtitle}
               </p>
             )}
             {(trend || trendLabel) && (
               <p
-                className={`text-xs sm:text-sm mt-1 flex items-center ${trendUp !== undefined
+                className={`text-xs sm:text-sm mt-1 flex items-center gap-1 ${trendUp !== undefined
                     ? trendUp
-                      ? "text-green-400"
-                      : "text-red-400"
-                    : "text-gray-300"
+                      ? "text-[var(--success)]"
+                      : "text-[var(--error)]"
+                    : ""
                   }`}
               >
-                {trend && <span className="mr-1">{trend}</span>}
+                {trend && <span>{trend}</span>}
                 {trendLabel && (
-                  <span className="text-gray-400">{trendLabel}</span>
+                  <span style={{ color: "var(--text-inverse)", opacity: 0.5 }}>
+                    {trendLabel}
+                  </span>
                 )}
               </p>
             )}
           </div>
           {!iconOnly && (
             <div
-              className={`${classes.iconContainer} bg-white/20 rounded-full flex-shrink-0 hidden sm:flex items-center justify-center`}
+              className={`${classes.iconContainer} rounded-full flex-shrink-0 hidden sm:flex items-center justify-center`}
+              style={{ backgroundColor: "color-mix(in srgb, var(--text-inverse) 20%, transparent)" }}
             >
-              <div className={`${classes.icon} text-white`}>{icon}</div>
+              <div
+                className={`${classes.icon}`}
+                style={{ color: "var(--text-inverse)" }}
+              >
+                {icon}
+              </div>
             </div>
           )}
         </div>

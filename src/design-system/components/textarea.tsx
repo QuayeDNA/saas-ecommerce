@@ -11,35 +11,36 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
             {label}
           </label>
         )}
         <textarea
           ref={ref}
           className={`
-            w-full px-3 py-2 border border-gray-300
+            w-full px-3 py-2 border border-[var(--border-color)]
             rounded-md shadow-sm
-            placeholder-gray-400
+            placeholder-[var(--text-muted)]
             focus:outline-none focus:ring-2 focus:border-transparent
-            disabled:bg-gray-100 disabled:cursor-not-allowed
+            disabled:bg-[var(--bg-surface-alt)] disabled:cursor-not-allowed
+            bg-[var(--bg-surface)] text-[var(--text-primary)]
             ${
               error
-                ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                : "focus:ring-primary-500"
+                ? "border-error focus:ring-error focus:border-error"
+                : "focus:ring-primary"
             }
             ${className}
           `}
           style={
             !error
               ? ({
-                  "--tw-ring-color": "var(--color-primary-500)",
+                  "--tw-ring-color": "var(--color-primary)",
                 } as React.CSSProperties)
               : undefined
           }
           {...props}
         />
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-sm text-error">{error}</p>}
       </div>
     );
   }

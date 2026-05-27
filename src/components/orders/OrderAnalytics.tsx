@@ -85,28 +85,28 @@ const ReceptionCarouselCard: React.FC<{
       value: receptionCounts?.received || 0,
       subtitle: "Confirmed delivery",
       icon: <FaCheckDouble />,
-      color: "text-green-600",
+      color: "text-[var(--success)]",
     },
     {
       title: "Delivery Issues",
       value: receptionCounts?.not_received || 0,
       subtitle: "Reported not received",
       icon: <FaExclamationTriangle />,
-      color: "text-red-600",
+      color: "text-[var(--error)]",
     },
     {
       title: "Under Investigation",
       value: receptionCounts?.checking || 0,
       subtitle: "Being investigated",
       icon: <FaSearch />,
-      color: "text-yellow-600",
+      color: "text-[var(--warning)]",
     },
     {
       title: "Issues Resolved",
       value: receptionCounts?.resolved || 0,
       subtitle: "Successfully resolved",
       icon: <FaCheckCircle />,
-      color: "text-gray-300",
+      color: "text-[var(--success)]",
     },
   ];
 
@@ -122,22 +122,15 @@ const ReceptionCarouselCard: React.FC<{
 
   return (
     <Card
-      className="transition-colors duration-200"
-      style={{
-        backgroundColor: "var(--color-primary-500)",
-        borderColor: "var(--color-primary-700)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = "var(--color-primary-600)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = "var(--color-primary-500)";
-      }}
+      style={{ background: "var(--gradient-brand-dark)" }}
     >
       <CardBody>
         <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4">
           <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm font-medium text-gray-300 mb-0.5 sm:mb-1 lg:mb-2 truncate">
+            <p
+              className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1 lg:mb-2 truncate"
+              style={{ color: "var(--text-inverse)", opacity: 0.6 }}
+            >
               Order Reception Status
             </p>
 
@@ -152,25 +145,29 @@ const ReceptionCarouselCard: React.FC<{
                         receptionItems.length,
                     )
                   }
-                  className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                  className="p-1 rounded-full transition-colors"
+                  style={{ color: "var(--text-inverse)", opacity: 0.7 }}
                 >
-                  <FaChevronLeft className="w-4 h-4 text-white/70" />
+                  <FaChevronLeft className="w-4 h-4" />
                 </button>
 
                 <div className="flex-1 text-center px-4">
                   <div className="flex flex-col items-center space-y-1">
-                    <div className="text-3xl font-bold text-white">
+                    <div
+                      className="text-3xl font-bold"
+                      style={{ color: "var(--text-inverse)" }}
+                    >
                       {formatNumber(currentReceptionItem.value)}
                     </div>
                     <div
                       className="text-lg font-medium"
-                      style={{ color: "var(--color-accent-orange, #d1d5db)" }}
+                      style={{ color: "var(--text-inverse)", opacity: 0.8 }}
                     >
                       {currentReceptionItem.title}
                     </div>
                     <div
                       className="text-sm"
-                      style={{ color: "var(--color-accent-orange, #9ca3af)" }}
+                      style={{ color: "var(--text-inverse)", opacity: 0.6 }}
                     >
                       {currentReceptionItem.subtitle}
                     </div>
@@ -183,9 +180,10 @@ const ReceptionCarouselCard: React.FC<{
                       (prev) => (prev + 1) % receptionItems.length,
                     )
                   }
-                  className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                  className="p-1 rounded-full transition-colors"
+                  style={{ color: "var(--text-inverse)", opacity: 0.7 }}
                 >
-                  <FaChevronRight className="w-4 h-4 text-white/70" />
+                  <FaChevronRight className="w-4 h-4" />
                 </button>
               </div>
 
@@ -195,17 +193,26 @@ const ReceptionCarouselCard: React.FC<{
                   <button
                     key={`reception-${item.title}`}
                     onClick={() => setCarouselIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === carouselIndex ? "bg-white" : "bg-white/30"
-                    }`}
+                    className="w-2 h-2 rounded-full transition-colors"
+                    style={{
+                      backgroundColor: index === carouselIndex
+                        ? "var(--text-inverse)"
+                        : "color-mix(in srgb, var(--text-inverse) 30%, transparent)",
+                    }}
                   />
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="p-2 sm:p-2.5 lg:p-3 bg-white/20 rounded-full flex-shrink-0 hidden sm:flex items-center justify-center">
-            <div className="text-sm sm:text-base lg:text-lg text-white">
+          <div
+            className="p-2 sm:p-2.5 lg:p-3 rounded-full flex-shrink-0 hidden sm:flex items-center justify-center"
+            style={{ backgroundColor: "color-mix(in srgb, var(--text-inverse) 20%, transparent)" }}
+          >
+            <div
+              className="text-sm sm:text-base lg:text-lg"
+              style={{ color: "var(--text-inverse)" }}
+            >
               <FaChartBar />
             </div>
           </div>
@@ -230,7 +237,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
         <CardBody>
           <div className="flex justify-center items-center p-8">
             <Spinner />
-            <span className="ml-3 text-gray-600">Loading analytics...</span>
+            <span className="ml-3 text-[var(--text-muted)]">Loading analytics...</span>
           </div>
         </CardBody>
       </Card>
@@ -241,8 +248,8 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
     return (
       <Card>
         <CardBody>
-          <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800">Error loading analytics: {error}</p>
+          <div className="p-6 bg-[var(--error-lighter)] border border-[var(--error)]/20 rounded-lg">
+            <p className="text-[var(--error)]">Error loading analytics: {error}</p>
           </div>
         </CardBody>
       </Card>
@@ -254,11 +261,11 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
       <Card>
         <CardBody>
           <div className="text-center py-8">
-            <FaChartBar className="h-8 w-8 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <FaChartBar className="h-8 w-8 text-[var(--text-muted)] mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">
               No Analytics Data
             </h3>
-            <p className="text-gray-600">
+            <p className="text-[var(--text-muted)]">
               Analytics data is not available at the moment.
             </p>
           </div>

@@ -54,7 +54,7 @@ export const ForgotPasswordPage = () => {
             required
             placeholder="Phone, email, or agent code"
             fullWidth
-            leftIcon={<FaUser className="text-slate-400" />}
+            leftIcon={<FaUser className="text-[var(--text-muted)]" />}
           />
         </div>
 
@@ -70,7 +70,7 @@ export const ForgotPasswordPage = () => {
             required
             placeholder="Enter your PIN"
             fullWidth
-            leftIcon={<FaKey className="text-slate-400" />}
+            leftIcon={<FaKey className="text-[var(--text-muted)]" />}
           />
         </div>
 
@@ -85,10 +85,10 @@ export const ForgotPasswordPage = () => {
         </Button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-slate-600">
+      <div className="mt-6 text-center text-sm text-[var(--text-secondary)]">
         Remembered your password?{" "}
         <Link
-          className="font-semibold text-slate-900 hover:text-slate-700"
+          className="font-semibold text-primary hover:text-[var(--color-primary-hover)]"
           to="/login"
         >
           Sign in

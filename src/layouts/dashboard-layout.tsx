@@ -70,11 +70,11 @@ export const DashboardLayout = () => {
 
   return (
     <TutorialProvider userRole={userRole}>
-      <div className="flex bg-gray-50 overflow-hidden h-screen">
+      <div className="flex bg-[var(--bg-page)] overflow-hidden h-screen">
         {/* Mobile sidebar overlay */}
         {sidebarOpen && isMobile && (
           <button
-            className="fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ease-in-out lg:hidden border-0"
+            className="fixed inset-0 z-20 bg-[var(--color-navy-dark)]/50 transition-opacity duration-300 ease-in-out lg:hidden border-0"
             onClick={() => setSidebarOpen(false)}
             onKeyDown={(e) => {
               if (e.key === "Escape") setSidebarOpen(false);
@@ -93,7 +93,7 @@ export const DashboardLayout = () => {
 
           {/* Content */}
           <main
-            className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50"
+            className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-[var(--bg-page)]"
           >
             <NavigationLoader delay={150}>
               <Outlet />

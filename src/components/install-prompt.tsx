@@ -113,7 +113,6 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({
           <Button
             onClick={handleInstall}
             variant="primary"
-            useThemeColor
             className="flex-1"
           >
             <Download className="w-4 h-4 mr-2" />

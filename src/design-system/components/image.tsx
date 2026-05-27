@@ -88,7 +88,7 @@ export const Image = forwardRef<HTMLImageElement, ImageProps>(
       <div className={containerClasses}>
         {/* Loading skeleton */}
         {isLoading && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+          <div className="absolute inset-0 bg-[var(--bg-surface-alt)] animate-pulse" />
         )}
         
         {/* Image */}

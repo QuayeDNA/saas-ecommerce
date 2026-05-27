@@ -11,7 +11,7 @@ import {
 } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
 import { bundleService } from "../../services/bundle.service";
-import { FaDollarSign, FaUsers, FaSave, FaTimes } from "react-icons/fa";
+import { FaDollarSign, FaUsers, FaSave, FaTimes, FaTag } from "react-icons/fa";
 
 interface PricingManagementModalProps {
   isOpen: boolean;
@@ -29,7 +29,7 @@ type PricingTiers = Record<string, number | string> & {
   default: number | string;
 };
 
-const userTypeLabels = {
+const userTypeLabels: Record<string, string> = {
   agent: "Agent",
   super_agent: "Super Agent",
   dealer: "Dealer",
@@ -37,20 +37,20 @@ const userTypeLabels = {
   default: "Default Price",
 };
 
-const userTypeDescriptions = {
-  agent: "Regular agents - standard pricing",
-  super_agent: "Senior agents with special pricing",
-  dealer: "Dealers with volume discounts",
-  super_dealer: "High-volume dealers with maximum discounts",
+const userTypeDescriptions: Record<string, string> = {
+  agent: "Regular agents — standard pricing",
+  super_agent: "Senior agents — special pricing",
+  dealer: "Dealers — volume discounts",
+  super_dealer: "High-volume dealers — maximum discounts",
   default: "Fallback price when no specific pricing is set",
 };
 
-const userTypeColors = {
-  agent: "bg-blue-100 text-blue-800",
-  super_agent: "bg-purple-100 text-purple-800",
-  dealer: "bg-green-100 text-green-800",
-  super_dealer: "bg-orange-100 text-orange-800",
-  default: "bg-gray-100 text-gray-800",
+const userTypeColors: Record<string, string> = {
+  agent: "bg-[var(--info)]/10 text-[var(--info)] border-[var(--info)]/20",
+  super_agent: "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20",
+  dealer: "bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20",
+  super_dealer: "bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20",
+  default: "bg-[var(--bg-surface-alt)] text-[var(--text-secondary)] border-[var(--border-color)]",
 };
 
 export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
@@ -95,8 +95,7 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
 
       setPricingTiers(pricing);
       setOriginalPricing(pricing);
-    } catch (error) {
-      console.error("Failed to fetch pricing data:", error);
+    } catch {
       addToast("Failed to load pricing data", "error");
     } finally {
       setLoading(false);
@@ -151,7 +150,6 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
 
       onClose();
     } catch (error) {
-      console.error("Failed to update pricing:", error);
       const errorMessage = (
         error as { response?: { data?: { message?: string } } }
       )?.response?.data?.message;
@@ -202,14 +200,14 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
     <Dialog isOpen={isOpen} onClose={onClose} className="max-w-4xl">
       <DialogHeader>
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <FaDollarSign className="w-5 h-5 text-blue-600" />
+          <div className="p-2 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+            <FaDollarSign className="w-5 h-5" />
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">
               Pricing Management
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[var(--text-muted)] truncate">
               Set user type-specific pricing for "{bundleName}"
             </p>
           </div>
@@ -220,35 +218,38 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Spinner size="lg" />
-            <span className="ml-3 text-gray-600">Loading pricing data...</span>
+            <span className="ml-3 text-sm text-[var(--text-muted)]">Loading pricing data...</span>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Base Price Info */}
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-gray-900">Base Price</h4>
-                  <p className="text-sm text-gray-600">
-                    The original bundle price set during creation
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-semibold text-gray-900">
-                    {formatCurrency(basePrice)}
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] shrink-0">
+                    <FaTag className="text-sm" />
                   </div>
+                  <div>
+                    <h4 className="font-medium text-[var(--text-primary)]">Base Price</h4>
+                    <p className="text-sm text-[var(--text-muted)]">
+                      The original bundle price set during creation
+                    </p>
+                  </div>
+                </div>
+                <div className="text-lg font-bold text-[var(--text-primary)]">
+                  {formatCurrency(basePrice)}
                 </div>
               </div>
             </div>
 
             {/* User Type Pricing */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <FaUsers className="w-5 h-5 text-gray-600" />
-                <h4 className="font-medium text-gray-900">User Type Pricing</h4>
+              <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                <FaUsers className="w-4 h-4" />
+                <h4 className="font-medium">User Type Pricing</h4>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 {Object.entries(userTypeLabels)
                   .filter(([userType]) => userType !== "default")
                   .map(([userType, label]) => {
@@ -258,43 +259,30 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
                     return (
                       <div
                         key={userType}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                        className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 transition-colors"
                       >
                         <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5">
                               <Badge
-                                className={
-                                  userTypeColors[
-                                  userType as keyof typeof userTypeColors
-                                  ]
-                                }
+                                size="sm"
+                                className={userTypeColors[userType] || "bg-gray-100 text-gray-800"}
                               >
                                 {label}
                               </Badge>
                               {discount > 0 && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-green-600 border-green-200"
-                                >
-                                  -{discount}% discount
+                                <Badge variant="outline" colorScheme="success" size="sm">
+                                  -{discount}%
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600">
-                              {
-                                userTypeDescriptions[
-                                userType as keyof typeof userTypeDescriptions
-                                ]
-                              }
+                            <p className="text-xs text-[var(--text-muted)]">
+                              {userTypeDescriptions[userType]}
                             </p>
                           </div>
 
-                          <div className="w-32">
-                            <label
-                              htmlFor={`price-${userType}`}
-                              className="sr-only"
-                            >
+                          <div className="w-32 shrink-0">
+                            <label htmlFor={`price-${userType}`} className="sr-only">
                               Price for {label}
                             </label>
                             <div className="relative">
@@ -313,8 +301,8 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
                                 className="pl-8"
                                 placeholder="0.00"
                               />
-                              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                                <span className="text-sm text-gray-500">₵</span>
+                              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--text-muted)]">
+                                ₵
                               </div>
                             </div>
                           </div>
@@ -325,40 +313,40 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
               </div>
 
               {/* Default Price Row */}
-              <div
-                className="p-4 border border-dashed rounded-xl"
-                style={{ background: "var(--color-control-bg)", borderColor: "var(--color-border)" }}
-              >
+              <div className="rounded-xl border border-dashed border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900">Default Price</h4>
-                    <p className="text-xs text-gray-600">
-                      Base fallback price that is always synced to the bundle base price.
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <Badge size="sm" className={userTypeColors["default"]}>
+                        Default Price
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Base fallback price — always synced to the bundle base price.
                     </p>
                   </div>
-                  <div className="w-32">
+                  <div className="w-32 shrink-0">
                     <Input
                       type="text"
                       disabled
                       value={formatCurrency(basePrice)}
-                      className="w-full"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Pricing Summary */}
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-3">
+              <div className="rounded-lg border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 p-4">
+                <h4 className="font-medium text-[var(--color-primary)] mb-3">
                   Pricing Summary
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
                   {Object.entries(pricingTiers).map(([userType, price]) => (
-                    <div key={userType} className="flex justify-between">
-                      <span className="text-blue-700">
-                        {userTypeLabels[userType as keyof typeof userTypeLabels]}:
+                    <div key={userType} className="flex items-center justify-between gap-2 rounded-md bg-[var(--bg-surface)] px-3 py-2">
+                      <span className="text-[var(--text-secondary)]">
+                        {userTypeLabels[userType]}:
                       </span>
-                      <span className="font-medium text-blue-900">
+                      <span className="font-semibold text-[var(--text-primary)]">
                         {formatCurrency(price)}
                       </span>
                     </div>
@@ -372,20 +360,14 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
 
       <DialogFooter>
         <div className="flex items-center justify-between w-full">
-          <div className="flex gap-2">
+          <div>
             {hasChanges() && (
-              <Button
-                variant="outline"
-                onClick={handleReset}
-                disabled={saving}
-                className="text-gray-600"
-              >
-                <FaTimes className="w-4 h-4 mr-2" />
+              <Button variant="outline" onClick={handleReset} disabled={saving} size="sm">
+                <FaTimes className="mr-1.5" />
                 Reset
               </Button>
             )}
           </div>
-
           <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} disabled={saving}>
               Cancel
@@ -393,18 +375,11 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
             <Button
               onClick={handleSave}
               disabled={saving || !hasChanges()}
-              className="bg-blue-600 hover:bg-blue-700"
             >
               {saving ? (
-                <>
-                  <Spinner size="sm" className="mr-2" />
-                  Saving...
-                </>
+                <><Spinner size="sm" className="mr-2" />Saving...</>
               ) : (
-                <>
-                  <FaSave className="w-4 h-4 mr-2" />
-                  Save Pricing
-                </>
+                <><FaSave className="mr-1.5" />Save Pricing</>
               )}
             </Button>
           </div>

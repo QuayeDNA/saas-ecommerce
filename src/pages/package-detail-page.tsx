@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { ProviderPackageDisplay } from '../components/products/ProviderPackageDisplay';
 
 export const PackageDetailPage = () => {
-  const { packageId } = useParams<{ packageId: string }>();
+  const { packageId, provider } = useParams<{ packageId: string; provider: string }>();
 
   if (!packageId || packageId === "undefined") {
     return (
@@ -12,5 +12,5 @@ export const PackageDetailPage = () => {
     );
   }
 
-  return <ProviderPackageDisplay packageId={packageId} />;
+  return <ProviderPackageDisplay packageId={packageId} provider={provider || ''} />;
 };

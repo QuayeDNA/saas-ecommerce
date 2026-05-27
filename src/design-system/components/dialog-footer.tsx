@@ -18,7 +18,7 @@ export const DialogFooter = forwardRef<HTMLDivElement, DialogFooterProps>(
     return (
       <div
         ref={ref}
-        className={`px-6 py-4 border-t border-gray-200 flex gap-3 ${justifyClasses[justify]} ${className}`}
+        className={`px-6 py-4 border-t border-[var(--border-color)] flex gap-3 ${justifyClasses[justify]} ${className}`}
         {...props}
       >
         {children}

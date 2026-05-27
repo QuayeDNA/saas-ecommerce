@@ -59,7 +59,7 @@ const ToastItem = forwardRef<HTMLDivElement, ToastItemProps>(
       switch (type) {
         case "success":
           return {
-            container: "bg-green-600 border-green-700 text-white",
+            container: "bg-success border-success text-white",
             icon: (
               <svg
                 className="w-6 h-6 text-white"
@@ -76,7 +76,7 @@ const ToastItem = forwardRef<HTMLDivElement, ToastItemProps>(
           };
         case "error":
           return {
-            container: "bg-red-600 border-red-700 text-white",
+            container: "bg-error border-error text-white",
             icon: (
               <svg
                 className="w-6 h-6 text-white"
@@ -93,7 +93,7 @@ const ToastItem = forwardRef<HTMLDivElement, ToastItemProps>(
           };
         case "warning":
           return {
-            container: "bg-yellow-500 border-yellow-700 text-white",
+            container: "bg-warning border-warning text-white",
             icon: (
               <svg
                 className="w-6 h-6 text-white"
@@ -111,7 +111,7 @@ const ToastItem = forwardRef<HTMLDivElement, ToastItemProps>(
         case "info":
         default:
           return {
-            container: "bg-[#142850] border-[#0f1f3a] text-white",
+            container: "bg-info border-info text-white",
             icon: (
               <svg
                 className="w-6 h-6 text-white"

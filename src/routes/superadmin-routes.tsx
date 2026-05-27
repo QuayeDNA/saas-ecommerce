@@ -8,7 +8,6 @@ const SuperAdminDashboard = lazy(() => import("../pages/superadmin/index"));
 // Placeholder lazy imports for other pages
 const UsersPage = lazy(() => import("../pages/superadmin/users"));
 const UserDetailsPage = lazy(() => import("../pages/superadmin/user-details"));
-const ProvidersPage = lazy(() => import("../pages/superadmin/providers"));
 const OrdersPage = lazy(() => import("../pages/superadmin/orders"));
 const WalletTopUpsPage = lazy(
   () => import("../pages/superadmin/wallet-top-ups"),
@@ -79,14 +78,6 @@ const superadminRoutes: RouteObject = {
           element: (
             <Suspense fallback={<PageLoader />}>
               <PackagesPage />
-            </Suspense>
-          ),
-        },
-        {
-          path: "providers",
-          element: (
-            <Suspense fallback={<PageLoader />}>
-              <ProvidersPage />
             </Suspense>
           ),
         },

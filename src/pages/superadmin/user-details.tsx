@@ -803,7 +803,20 @@ export default function SuperAdminUserDetailsPage() {
           </Card>
         )}
 
-        {/* Recent Orders */}
+        {/* User Activity Timeline */}
+        <Card>
+          <CardHeader>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
+              <FaClock className="mr-2 text-blue-600" />
+              Activity Timeline
+            </h3>
+          </CardHeader>
+          <CardBody>
+            <UserActivityTimeline userId={user._id} />
+          </CardBody>
+        </Card>
+
+         {/* Recent Orders */}
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -897,19 +910,6 @@ export default function SuperAdminUserDetailsPage() {
                 </table>
               </div>
             )}
-          </CardBody>
-        </Card>
-
-        {/* User Activity Timeline */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
-              <FaClock className="mr-2 text-blue-600" />
-              Activity Timeline
-            </h3>
-          </CardHeader>
-          <CardBody>
-            <UserActivityTimeline userId={user._id} />
           </CardBody>
         </Card>
 
