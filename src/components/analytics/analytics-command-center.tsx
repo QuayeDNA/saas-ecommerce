@@ -36,6 +36,7 @@ const snapshotToneMap: Record<
     SnapshotTone,
     {
         cardClass: string;
+        cardStyle: React.CSSProperties;
         iconClass: string;
         titleClass: string;
         valueClass: string;
@@ -45,56 +46,62 @@ const snapshotToneMap: Record<
     }
 > = {
     default: {
-        cardClass: "bg-slate-50 border border-slate-200",
-        iconClass: "text-slate-600",
-        titleClass: "text-slate-600",
-        valueClass: "text-slate-900",
-        subtitleClass: "text-slate-600",
+        cardClass: "",
+        cardStyle: { backgroundColor: "var(--bg-surface-alt)", borderColor: "var(--border-color)" },
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        subtitleClass: "",
         subtitleText: "Current level",
         trendIcon: <FaMinus className="text-[10px]" />,
     },
     success: {
-        cardClass: "bg-emerald-50 border border-emerald-200",
-        iconClass: "text-emerald-600",
-        titleClass: "text-emerald-700",
-        valueClass: "text-emerald-950",
-        subtitleClass: "text-emerald-700",
+        cardClass: "",
+        cardStyle: { backgroundColor: "color-mix(in srgb, var(--success) 10%, var(--bg-surface))", borderColor: "color-mix(in srgb, var(--success) 30%, transparent)" },
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        subtitleClass: "",
         subtitleText: "Healthy trend",
         trendIcon: <FaArrowUp className="text-[10px]" />,
     },
     warning: {
-        cardClass: "bg-amber-50 border border-amber-200",
-        iconClass: "text-amber-600",
-        titleClass: "text-amber-700",
-        valueClass: "text-amber-950",
-        subtitleClass: "text-amber-700",
+        cardClass: "",
+        cardStyle: { backgroundColor: "color-mix(in srgb, var(--warning) 10%, var(--bg-surface))", borderColor: "color-mix(in srgb, var(--warning) 30%, transparent)" },
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        subtitleClass: "",
         subtitleText: "Watch closely",
         trendIcon: <FaMinus className="text-[10px]" />,
     },
     error: {
-        cardClass: "bg-rose-50 border border-rose-200",
-        iconClass: "text-rose-600",
-        titleClass: "text-rose-700",
-        valueClass: "text-rose-950",
-        subtitleClass: "text-rose-700",
+        cardClass: "",
+        cardStyle: { backgroundColor: "color-mix(in srgb, var(--error) 10%, var(--bg-surface))", borderColor: "color-mix(in srgb, var(--error) 30%, transparent)" },
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        subtitleClass: "",
         subtitleText: "Needs action",
         trendIcon: <FaArrowDown className="text-[10px]" />,
     },
     info: {
-        cardClass: "bg-blue-50 border border-blue-200",
-        iconClass: "text-blue-600",
-        titleClass: "text-blue-700",
-        valueClass: "text-blue-950",
-        subtitleClass: "text-blue-700",
+        cardClass: "",
+        cardStyle: { backgroundColor: "color-mix(in srgb, var(--info) 10%, var(--bg-surface))", borderColor: "color-mix(in srgb, var(--info) 30%, transparent)" },
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        subtitleClass: "",
         subtitleText: "Reference metric",
         trendIcon: <FaMinus className="text-[10px]" />,
     },
     gray: {
-        cardClass: "bg-slate-100 border border-slate-300",
-        iconClass: "text-slate-600",
-        titleClass: "text-slate-600",
-        valueClass: "text-slate-900",
-        subtitleClass: "text-slate-600",
+        cardClass: "",
+        cardStyle: { backgroundColor: "var(--bg-surface-alt)", borderColor: "var(--border-color-strong)" },
+        iconClass: "",
+        titleClass: "",
+        valueClass: "",
+        subtitleClass: "",
         subtitleText: "Awaiting update",
         trendIcon: <FaMinus className="text-[10px]" />,
     },
@@ -115,13 +122,13 @@ export function AnalyticsCommandCenter({
         <div className="space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-bold text-gray-900">Sales & Operations Analytics</h1>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>Sales & Operations Analytics</h1>
+                    <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
                         Monitor platform performance across revenue, orders, users, and payouts.
                     </p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
                         <span className="inline-flex items-center gap-1.5">
-                            <FaChartLine className="text-gray-500" />
+                            <FaChartLine />
                             Last updated: {generatedAt ? formatDateTime(generatedAt) : "Awaiting data"}
                         </span>
                         {source ? (
@@ -174,6 +181,7 @@ export function AnalyticsCommandCenter({
                                     key={snapshot.label}
                                     variant="outlined"
                                     className={`${tone.cardClass} p-3 sm:p-3.5`}
+                                    style={tone.cardStyle}
                                 >
                                     <CardBody className="pt-0">
                                         <div className="flex items-center gap-3">
@@ -182,13 +190,13 @@ export function AnalyticsCommandCenter({
                                             </div>
 
                                             <div className="min-w-0 flex-1">
-                                                <p className={`text-[10px] uppercase tracking-wide font-medium truncate ${tone.titleClass}`}>
+                                                <p className={`text-[10px] uppercase tracking-wide font-medium truncate ${tone.titleClass}`} style={{ color: "var(--text-secondary)" }}>
                                                     {snapshot.label}
                                                 </p>
-                                                <p className={`text-base sm:text-lg font-bold leading-tight truncate ${tone.valueClass}`}>
+                                                <p className={`text-base sm:text-lg font-bold leading-tight truncate ${tone.valueClass}`} style={{ color: "var(--text-primary)" }}>
                                                     {snapshot.value}
                                                 </p>
-                                                <p className={`mt-0.5 text-[11px] font-medium truncate inline-flex items-center gap-1 ${tone.subtitleClass}`}>
+                                                <p className={`mt-0.5 text-[11px] font-medium truncate inline-flex items-center gap-1 ${tone.subtitleClass}`} style={{ color: "var(--text-secondary)" }}>
                                                     {tone.trendIcon}
                                                     <span>{tone.subtitleText}</span>
                                                 </p>

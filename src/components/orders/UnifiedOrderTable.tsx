@@ -32,23 +32,23 @@ const ReceptionStatusDropdown: React.FC<ReceptionStatusDropdownProps> = ({
     {
       value: "not_received",
       label: "Not Received",
-      color: "bg-red-100 text-red-800",
+      color: "bg-[var(--error-lighter)] text-[var(--error)]",
     },
     {
       value: "checking",
       label: "Checking",
-      color: "bg-yellow-100 text-yellow-800",
+      color: "bg-[var(--warning-lighter)] text-[var(--warning)]",
     },
     {
       value: "resolved",
       label: "Resolved",
-      color: "bg-blue-100 text-blue-800",
+      color: "bg-[var(--color-accent-soft)] text-[var(--color-secondary)]",
     },
   ];
 
   const getReceptionStatusColor = (status: string) => {
     const option = receptionStatusOptions.find((opt) => opt.value === status);
-    return option?.color || "bg-gray-100 text-gray-800";
+    return option?.color || "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]";
   };
 
   const handleStatusChange = (newStatus: string) => {
@@ -70,7 +70,7 @@ const ReceptionStatusDropdown: React.FC<ReceptionStatusDropdownProps> = ({
 
       {isOpen && (
         <div
-          className="absolute z-10 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-200"
+          className="absolute z-10 mt-1 w-32 bg-[var(--bg-surface)] rounded-md shadow-lg border border-[var(--border-color)]"
           style={{ top: "100%", left: "0" }}
         >
           <div className="py-1 flex flex-col">
@@ -78,9 +78,9 @@ const ReceptionStatusDropdown: React.FC<ReceptionStatusDropdownProps> = ({
               <button
                 key={option.value}
                 onClick={() => handleStatusChange(option.value)}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${option.value === currentStatus
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-700"
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-surface-alt)] border-b border-[var(--border-color)] last:border-b-0 ${option.value === currentStatus
+                    ? "bg-[var(--color-accent-soft)] text-[var(--color-secondary)]"
+                    : "text-[var(--text-secondary)]"
                   }`}
               >
                 {option.label}
@@ -155,37 +155,36 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "text-green-600 bg-green-100";
+        return "text-[var(--success)] bg-[var(--success-lighter)]";
       case "processing":
-        return "text-blue-600 bg-blue-100";
+        return "text-[var(--info)] bg-[var(--color-accent-soft)]";
       case "failed":
-        return "text-red-600 bg-red-100";
+        return "text-[var(--error)] bg-[var(--error-lighter)]";
       case "cancelled":
-        return "text-gray-600 bg-gray-100";
+        return "text-[var(--text-muted)] bg-[var(--bg-surface-alt)]";
       case "pending":
-        return "text-yellow-600 bg-yellow-100";
-
+        return "text-[var(--warning)] bg-[var(--warning-lighter)]";
       case "confirmed":
-        return "text-purple-600 bg-purple-100";
+        return "text-[var(--color-secondary)] bg-[var(--color-accent-soft)]";
       default:
-        return "text-gray-600 bg-gray-100";
+        return "text-[var(--text-muted)] bg-[var(--bg-surface-alt)]";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <FaCheck className="text-green-600" />;
+        return <FaCheck className="text-[var(--success)]" />;
       case "processing":
-        return <FaClock className="text-blue-600" />;
+        return <FaClock className="text-[var(--info)]" />;
       case "failed":
-        return <FaTimes className="text-red-600" />;
+        return <FaTimes className="text-[var(--error)]" />;
       case "pending":
-        return <FaClock className="text-yellow-600" />;
+        return <FaClock className="text-[var(--warning)]" />;
       case "confirmed":
-        return <FaCheck className="text-purple-600" />;
+        return <FaCheck className="text-[var(--color-secondary)]" />;
       default:
-        return <FaClock className="text-gray-600" />;
+        return <FaClock className="text-[var(--text-muted)]" />;
     }
   };
 
@@ -370,11 +369,11 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-[var(--bg-surface)] rounded-lg shadow overflow-hidden">
       {/* Desktop-optimized table - minimum lg screen required */}
       <div className="overflow-x-auto min-w-full">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-500">
+          <thead className="bg-[var(--color-primary)]">
             <tr>
               {isAdmin && onSelect && (
                 <th className="px-6 py-3 text-left w-12">
@@ -389,40 +388,40 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                   />
                 </th>
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[200px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-inverse)] uppercase tracking-wider min-w-[200px]">
                 Order
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[150px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-inverse)] uppercase tracking-wider min-w-[150px]">
                 Customer
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[120px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-inverse)] uppercase tracking-wider min-w-[120px]">
                 Network
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[100px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-inverse)] uppercase tracking-wider min-w-[100px]">
                 Total
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[120px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-inverse)] uppercase tracking-wider min-w-[120px]">
                 Status
               </th>
               {isAdmin && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[120px]">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-inverse)] uppercase tracking-wider min-w-[120px]">
                   Reception
                 </th>
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[150px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-inverse)] uppercase tracking-wider min-w-[150px]">
                 Created
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider min-w-[120px]">
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-inverse)] uppercase tracking-wider min-w-[120px]">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-[var(--bg-surface)] divide-y divide-[var(--border-color)]">
             {loading ? (
               <tr>
                 <td colSpan={isAdmin ? 8 : 7} className="px-6 py-4 text-center">
                   <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--color-primary)]"></div>
                     <span className="ml-2">Loading orders...</span>
                   </div>
                 </td>
@@ -431,7 +430,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
               <tr>
                 <td
                   colSpan={isAdmin ? 8 : 7}
-                  className="px-6 py-4 text-center text-gray-500"
+                  className="px-6 py-4 text-center text-[var(--text-muted)]"
                 >
                   No orders found.
                 </td>
@@ -439,7 +438,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
             ) : (
               orders.map((order) => (
                 <React.Fragment key={order._id}>
-                  <tr className="hover:bg-gray-50">
+                  <tr className="hover:bg-[var(--bg-surface-alt)]">
                     {isAdmin && onSelect && (
                       <td className="px-6 py-4">
                         <input
@@ -452,15 +451,15 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                     )}
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-[var(--text-primary)]">
                           {order.orderNumber}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-[var(--color-accent-soft)] text-[var(--color-secondary)]">
                             {order.orderType}
                           </span>
                           {order.bulkData && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-[var(--text-muted)]">
                               {order.bulkData.totalItems} items
                             </span>
                           )}
@@ -468,26 +467,26 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-[var(--text-primary)]">
                         {order.customerInfo?.name || "N/A"}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-[var(--text-muted)]">
                         {order.customerInfo?.phone ||
                           order.items[0]?.customerPhone ||
                           "N/A"}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-[var(--text-primary)]">
                         {getOrderProvider(order)}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-[var(--text-muted)]">
                         {isAfaOrder(order)
                           ? getAfaOrderInfo(order)
                           : getOrderVolume(order)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
+                    <td className="px-6 py-4 text-sm text-[var(--text-primary)]">
                       {formatCurrency(
                         order.orderType === 'storefront' && order.storefrontData?.totalTierCost != null
                           ? order.storefrontData.totalTierCost
@@ -523,7 +522,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
 
                         {canAdminChangeStatus(order) && statusDropdowns.has(order._id!) && (
                           <div
-                            className="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 status-dropdown"
+                            className="absolute z-10 mt-1 w-48 bg-[var(--bg-surface)] rounded-md shadow-lg border border-[var(--border-color)] status-dropdown"
                             style={{ top: "100%", left: "0" }}
                           >
                             <div className="py-1 flex flex-col">
@@ -533,9 +532,9 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                                   onClick={() =>
                                     handleStatusChange(order._id!, option.value)
                                   }
-                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-b-0 ${option.value === order.status
-                                      ? "bg-blue-50 text-blue-700"
-                                      : "text-gray-700"
+                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-surface-alt)] border-b border-[var(--border-color)] last:border-b-0 ${option.value === order.status
+                                      ? "bg-[var(--color-accent-soft)] text-[var(--color-secondary)]"
+                                      : "text-[var(--text-secondary)]"
                                     }`}
                                 >
                                   {option.label}
@@ -557,11 +556,11 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                             onStatusChange={onUpdateReceptionStatus!}
                           />
                         ) : (
-                          <span className="text-xs text-gray-400">N/A</span>
+                          <span className="text-xs text-[var(--text-muted)]">N/A</span>
                         )}
                       </td>
                     )}
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-[var(--text-muted)]">
                       {formatDate(order.createdAt)}
                     </td>
                     <td className="px-6 py-4 text-sm font-medium">
@@ -588,14 +587,14 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                             variant="outline"
                             onClick={() => handleReportClick(order)}
                             title="Report delivery issue"
-                            className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
+                            className="text-[var(--warning)] border-[var(--warning)] hover:bg-[var(--warning-lighter)]"
                           >
                             <FaExclamationTriangle className="w-3 h-3" />
                           </Button>
                         )}
 
                         {order.reported && !isAdmin && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-yellow-700 text-xs border border-yellow-200 bg-yellow-50">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[var(--warning)] text-xs border border-[var(--warning)]/30 bg-[var(--warning-lighter)]">
                             <FaExclamationTriangle className="w-3 h-3" />
                             Reported
                           </span>
@@ -626,27 +625,27 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                       <tr>
                         <td
                           colSpan={isAdmin ? 8 : 7}
-                          className="px-6 py-4 bg-gray-50"
+                          className="px-6 py-4 bg-[var(--bg-surface-alt)]"
                         >
                           <div className="space-y-3">
-                            <h4 className="text-sm font-medium text-gray-900">
+                            <h4 className="text-sm font-medium text-[var(--text-primary)]">
                               Order Items
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {order.items.map((item) => (
                                 <div
                                   key={item._id}
-                                  className="bg-white rounded-lg p-3 border border-gray-200"
+                                  className="bg-[var(--bg-surface)] rounded-lg p-3 border border-[var(--border-color)]"
                                 >
                                   <div className="flex justify-between items-start">
                                     <div>
-                                      <h5 className="text-sm font-medium text-gray-900">
+                                      <h5 className="text-sm font-medium text-[var(--text-primary)]">
                                         {item.packageDetails?.name || "Bundle"}
                                       </h5>
-                                      <p className="text-xs text-gray-500">
+                                      <p className="text-xs text-[var(--text-muted)]">
                                         {item.customerPhone}
                                       </p>
-                                      <p className="text-xs text-gray-500">
+                                      <p className="text-xs text-[var(--text-muted)]">
                                         {item.bundleSize?.value}
                                         {item.bundleSize?.unit}
                                       </p>

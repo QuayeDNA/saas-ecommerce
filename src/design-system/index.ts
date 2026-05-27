@@ -52,4 +52,4 @@ export { Testimonial, Avatar } from "./components/testimonial";
 
 // Export theme provider and types
 export { ThemeProvider } from "../contexts/theme-context";
-export type { ThemeColor } from "../contexts/theme-context-value";
+export type { Theme } from "../contexts/theme-context-value";

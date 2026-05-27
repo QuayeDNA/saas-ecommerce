@@ -10,7 +10,7 @@ export const ReferralDashboardPage = () => {
   const { addToast } = useToast();
   const [dashboard, setDashboard] = useState<ReferralDashboard | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [tree, setTree] = useState<ReferralTreeNode | null>(null);
+  const [tree, setTree] = useState<ReferralTreeNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<"weekly" | "monthly" | "all">("monthly");
   const [treeDepth] = useState(3);
@@ -64,7 +64,7 @@ export const ReferralDashboardPage = () => {
   if (loading) return <div className="p-6">Loading referral dashboard...</div>;
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-7xl">
       <h1 className="text-2xl font-bold">Referral Program</h1>
 
       {/* Referral Code Card */}

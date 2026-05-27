@@ -19,7 +19,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
       size = "md",
       closeOnOverlay = true,
       className = "",
-      overlayClassName = "bg-black/50",
+      overlayClassName = "bg-[var(--color-navy-dark)]/50",
     },
     ref
   ) => {
@@ -66,7 +66,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
         <div
           ref={ref}
           className={[
-            "relative w-full bg-white rounded-lg shadow-xl",
+            "relative w-full bg-[var(--bg-surface)] rounded-lg shadow-xl",
             "max-h-[90vh] flex flex-col overflow-hidden",
             "transform transition-all",
             sizeClasses[size],

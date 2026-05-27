@@ -1,4 +1,3 @@
-// src/components/common/SearchAndFilter.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import { Button, Input, Select, Card, CardBody } from '../../design-system';
@@ -13,17 +12,14 @@ export interface FilterOption {
 }
 
 export interface SearchAndFilterProps {
-  // Search
   searchTerm: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
 
-  // Search Configuration
-  debounceDelay?: number; // Delay in ms before triggering search (default: 500)
-  minSearchLength?: number; // Minimum characters before triggering search (default: 0)
-  enableAutoSearch?: boolean; // Whether to auto-search on typing (default: true)
+  debounceDelay?: number;
+  minSearchLength?: number;
+  enableAutoSearch?: boolean;
 
-  // Filters
   filters: {
     [key: string]: {
       value: string;
@@ -34,7 +30,6 @@ export interface SearchAndFilterProps {
   };
   onFilterChange: (filterKey: string, value: string) => void;
 
-  // Date Range
   dateRange?: {
     startDate: string;
     endDate: string;
@@ -42,20 +37,16 @@ export interface SearchAndFilterProps {
   onDateRangeChange?: (startDate: string, endDate: string) => void;
   showDateRange?: boolean;
 
-  // Actions
   onSearch: (e: React.FormEvent) => void;
   onClearFilters: () => void;
 
-  // UI Options
   showSearchButton?: boolean;
   showClearButton?: boolean;
   showFilterToggle?: boolean;
   className?: string;
 
-  // Loading state
   isLoading?: boolean;
 
-  // Custom actions
   customActions?: React.ReactNode;
 }
 
@@ -83,7 +74,6 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [immediateSearchTerm, setImmediateSearchTerm] = useState(searchTerm);
 
-  // Debounced search function
   const debouncedSearch = useDebounce((...args: unknown[]) => {
     const value = args[0] as string;
     if (value.length >= minSearchLength || value === '') {
@@ -91,15 +81,12 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     }
   }, debounceDelay);
 
-  // Update immediate search term when prop changes (for external updates)
   useEffect(() => {
     setImmediateSearchTerm(searchTerm);
   }, [searchTerm]);
 
-  // Cleanup pending debounce on unmount
   useEffect(() => () => debouncedSearch.cleanup(), [debouncedSearch]);
 
-  // Handle immediate input changes
   const handleSearchInputChange = useCallback((value: string) => {
     setImmediateSearchTerm(value);
     if (enableAutoSearch) {
@@ -107,12 +94,9 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
     }
   }, [enableAutoSearch, debouncedSearch]);
 
-  // Handle immediate search (for search button or enter key)
   const handleImmediateSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    // Cancel any pending debounced search
     debouncedSearch.cleanup();
-    // Trigger immediate search
     onSearchChange(immediateSearchTerm);
     onSearch(e);
   }, [immediateSearchTerm, onSearchChange, onSearch, debouncedSearch]);
@@ -140,7 +124,6 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
       const newEndDate = field === 'endDate' ? value : dateRange.endDate;
       onDateRangeChange(newStartDate, newEndDate);
 
-      // Auto-search when both dates are set or when clearing dates
       if ((newStartDate && newEndDate) || (!newStartDate && !newEndDate)) {
         setTimeout(() => {
           const fakeEvent = { preventDefault: () => { } } as React.FormEvent;
@@ -151,24 +134,21 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
   };
 
   return (
-    <Card className={className}>
+    <Card className={className} variant="outlined">
       <CardBody>
-        {/* Search and Actions Row */}
         <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search Input */}
           <form onSubmit={handleImmediateSearch} className="flex-1">
             <Input
               type="text"
               placeholder={searchPlaceholder}
               value={immediateSearchTerm}
               onChange={(e) => handleSearchInputChange(e.target.value)}
-              leftIcon={<FaSearch className="text-gray-400" />}
+              leftIcon={<FaSearch className="text-[var(--text-muted)]" />}
               disabled={isLoading}
             />
           </form>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-sm:flex-wrap">
             {showSearchButton && (
               <Button
                 onClick={handleImmediateSearch}
@@ -208,9 +188,8 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
           </div>
         </div>
 
-        {/* Filters Section */}
         {(Object.keys(filters).length > 0 || showDateRange) && (
-          <div className={`mt-4 pt-4 border-t border-gray-200 ${showMobileFilters ? 'block' : 'hidden'} sm:block`}>
+          <div className={`mt-4 pt-4 border-t border-[var(--border-color)] ${showMobileFilters ? 'block' : 'hidden'} sm:block`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {Object.entries(filters).map(([filterKey, filter]) => (
                 <div key={filterKey}>
@@ -231,7 +210,6 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 </div>
               ))}
 
-              {/* Date Range Picker */}
               {showDateRange && (
                 <>
                   <div>
@@ -258,19 +236,19 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
           </div>
         )}
 
-        {/* Active Filters Display */}
         {(hasActiveFilters || hasSearchTerm || hasImmediateSearchTerm) && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
             <div className="flex flex-wrap gap-2">
               {(hasSearchTerm || hasImmediateSearchTerm) && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
-                  Search: "{hasSearchTerm ? searchTerm : immediateSearchTerm}"
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                  <span>Search: "{hasSearchTerm ? searchTerm : immediateSearchTerm}"</span>
                   <button
                     onClick={() => {
                       setImmediateSearchTerm('');
                       onSearchChange('');
                     }}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
+                    className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]"
+                    aria-label="Clear search"
                   >
                     <FaTimes className="text-xs" />
                   </button>
@@ -281,11 +259,12 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 if (filter.value) {
                   const selectedOption = filter.options.find(opt => opt.value === filter.value);
                   return (
-                    <span key={filterKey} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
-                      {filter.label}: {selectedOption?.label}
+                    <span key={filterKey} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-[var(--bg-surface-alt)] text-[var(--text-primary)]">
+                      <span>{filter.label}: {selectedOption?.label}</span>
                       <button
                         onClick={() => onFilterChange(filterKey, '')}
-                        className="ml-2 text-gray-600 hover:text-gray-800"
+                        className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        aria-label={`Clear ${filter.label} filter`}
                       >
                         <FaTimes className="text-xs" />
                       </button>
@@ -295,13 +274,13 @@ export const SearchAndFilter: React.FC<SearchAndFilterProps> = ({
                 return null;
               })}
 
-              {/* Date Range Active Filter */}
               {showDateRange && dateRange && (dateRange.startDate || dateRange.endDate) && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
-                  Date: {dateRange.startDate || 'Start'} - {dateRange.endDate || 'End'}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-[var(--success)]/10 text-[var(--success)]">
+                  <span>Date: {dateRange.startDate || 'Start'} - {dateRange.endDate || 'End'}</span>
                   <button
                     onClick={() => onDateRangeChange?.('', '')}
-                    className="ml-2 text-green-600 hover:text-green-800"
+                    className="text-[var(--success)] hover:text-[var(--success)]"
+                    aria-label="Clear date range"
                   >
                     <FaTimes className="text-xs" />
                   </button>

@@ -78,6 +78,8 @@ export interface FeeSettings {
     mobile_money: number;
     bank_account: number;
   };
+  /** Referral commission rate – percentage of order value credited to referrers */
+  commissionRatePercent: number;
 }
 
 export interface PasswordResetRequest {

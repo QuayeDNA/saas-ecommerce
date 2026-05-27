@@ -1,4 +1,4 @@
-export type CommissionStatus = "pending" | "paid" | "cancelled";
+export type CommissionStatus = "pending" | "paid" | "cancelled" | "credited";
 
 export interface Commission {
   _id: string;
@@ -14,6 +14,15 @@ export interface Commission {
   updatedAt: string;
 }
 
+export interface BackendPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 export interface CommissionBalanceResponse {
   success: boolean;
   data: {
@@ -24,12 +33,10 @@ export interface CommissionBalanceResponse {
 
 export interface CommissionStats {
   totalCommissions: number;
-  paidCommissions: number;
-  pendingCommissions: number;
-  withdrawnCommissions: number;
-  averageCommission: number;
-  dailyAverage: number;
-  currentBalance: number;
+  totalEarned: number;
+  totalPending: number;
+  pendingCount: number;
+  creditedCount: number;
 }
 
 export interface CommissionStatsResponse {
@@ -39,45 +46,40 @@ export interface CommissionStatsResponse {
 
 export interface CommissionListResponse {
   success: boolean;
-  data: Commission[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
+  data: {
+    commissions: Commission[];
+    pagination: BackendPagination;
   };
 }
 
 export interface WithdrawResponse {
   success: boolean;
+  message: string;
   data: {
-    transaction: {
-      _id: string;
-      amount: number;
-      type: string;
-      description: string;
-      metadata: {
-        type: string;
-        commissionIds: string[];
-      };
-    };
-    newBalance: number;
+    amount: number;
+    commissionBalance: number;
+    walletBalance: number;
   };
+}
+
+export interface Withdrawal {
+  _id: string;
+  user: string;
+  type: string;
+  amount: number;
+  balanceAfter: number;
+  description: string;
+  metadata: {
+    type: string;
+    commissionIds?: string[];
+  };
+  createdAt: string;
 }
 
 export interface WithdrawalHistoryResponse {
   success: boolean;
-  data: Array<{
-    _id: string;
-    user: string;
-    type: string;
-    amount: number;
-    balanceAfter: number;
-    description: string;
-    metadata: {
-      type: string;
-      commissionIds?: string[];
-    };
-    createdAt: string;
-  }>;
+  data: {
+    withdrawals: Withdrawal[];
+    pagination: BackendPagination;
+  };
 }

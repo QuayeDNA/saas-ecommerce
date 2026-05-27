@@ -48,10 +48,8 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
   useEffect(() => {
     if (open) {
       if (initialData) {
-        // Ensure providerId is a string when editing
         let providerIdValue: string | undefined = initialData.providerId;
         if (typeof initialData.providerId === 'object' && initialData.providerId !== null) {
-          // If it's a populated object, extract the _id
           const providerObj = initialData.providerId as { _id?: string; id?: string };
           if (providerObj._id) {
             providerIdValue = providerObj._id;
@@ -61,7 +59,7 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
             providerIdValue = '';
           }
         }
-        
+
         setFormData({
           ...initialData,
           providerId: String(providerIdValue || '')
@@ -83,25 +81,22 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
     setError(null);
 
     try {
-      // Validate required fields
       if (!formData.name?.trim()) {
         throw new Error('Bundle name is required');
       }
-      
-      // Only validate data volume for non-AFA bundles
+
       if (!isAfaBundle) {
         if (!formData.dataVolume || formData.dataVolume <= 0) {
           throw new Error('Data volume must be greater than 0');
         }
-        
-        // Validate validity - allow 'unlimited' or numbers > 0
+
         if (formData.validityUnit === 'unlimited') {
           formData.validity = 'unlimited';
         } else if (!formData.validity || (typeof formData.validity === 'number' && formData.validity <= 0)) {
           throw new Error('Validity must be greater than 0');
         }
       }
-      
+
       if (!formData.price || formData.price < 0) {
         throw new Error('Price must be 0 or greater');
       }
@@ -121,25 +116,35 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
 
   if (!open) return null;
 
+  const inputClass = "w-full px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all";
+  const labelClass = "block text-sm font-medium text-[var(--text-secondary)] mb-1.5";
+  const sectionTitleClass = "text-base font-semibold text-[var(--text-primary)]";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
+      <div className="rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4 border border-[var(--border-color)] bg-[var(--bg-surface)]">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <FaCube className="text-blue-600 text-xl" />
-              <h2 className="text-xl font-bold text-gray-900">
-                {initialData ? 'Edit Bundle' : 'Create Bundle'}
-                {isAfaBundle && <span className="text-blue-600 ml-2">(AFA Registration)</span>}
-              </h2>
+              <div className="p-2.5 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                <FaCube className="text-lg" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-[var(--text-primary)]">
+                  {initialData ? 'Edit Bundle' : 'Create Bundle'}
+                </h2>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  {isAfaBundle ? 'AFA Registration Service' : 'Data Bundle Configuration'}
+                </p>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-surface-alt)] hover:text-[var(--text-primary)] transition-colors"
               disabled={loading}
             >
-              <FaTimes className="text-xl" />
+              <FaTimes />
             </button>
           </div>
 
@@ -147,19 +152,17 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-800 text-sm">{error}</p>
+              <div className="rounded-lg border border-[var(--error)]/20 bg-[var(--error)]/5 p-4">
+                <p className="text-sm font-medium text-[var(--error)]">{error}</p>
               </div>
             )}
 
             {/* Basic Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
-              
+              <h3 className={sectionTitleClass}>Basic Information</h3>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bundle Name *
-                </label>
+                <label className={labelClass}>Bundle Name *</label>
                 <Input
                   type="text"
                   value={formData.name || ''}
@@ -171,27 +174,23 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
+                <label className={labelClass}>Description</label>
                 <textarea
                   value={formData.description || ''}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Enter bundle description"
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className={`${inputClass} resize-none`}
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
+                <label className={labelClass}>Category</label>
                 <select
                   value={formData.category || 'custom'}
                   onChange={(e) => handleInputChange('category', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={inputClass}
                   disabled={loading}
                 >
                   <option value="daily">Daily</option>
@@ -203,16 +202,13 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
               </div>
             </div>
 
-            {/* Data Configuration - Only show for non-AFA bundles */}
+            {/* Data Configuration */}
             {!isAfaBundle && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Data Configuration</h3>
-                
+                <h3 className={sectionTitleClass}>Data Configuration</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Data Volume *
-                    </label>
+                    <label className={labelClass}>Data Volume *</label>
                     <Input
                       type="number"
                       value={formData.dataVolume || ''}
@@ -224,15 +220,12 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
                       disabled={loading}
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Data Unit
-                    </label>
+                    <label className={labelClass}>Data Unit</label>
                     <select
                       value={formData.dataUnit || 'MB'}
                       onChange={(e) => handleInputChange('dataUnit', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       disabled={loading}
                     >
                       <option value="MB">MB</option>
@@ -244,16 +237,13 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
               </div>
             )}
 
-            {/* Validity Configuration - Only show for non-AFA bundles */}
+            {/* Validity Configuration */}
             {!isAfaBundle && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Validity Configuration</h3>
-                
+                <h3 className={sectionTitleClass}>Validity Configuration</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Validity Duration *
-                    </label>
+                    <label className={labelClass}>Validity Duration *</label>
                     <Input
                       type="number"
                       value={formData.validityUnit === 'unlimited' ? '' : (formData.validity || '')}
@@ -264,11 +254,8 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
                       disabled={loading || formData.validityUnit === 'unlimited'}
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Validity Unit
-                    </label>
+                    <label className={labelClass}>Validity Unit</label>
                     <select
                       value={formData.validityUnit || 'days'}
                       onChange={(e) => {
@@ -280,7 +267,7 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
                           handleInputChange('validity', 1);
                         }
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClass}
                       disabled={loading}
                     >
                       <option value="hours">Hours</option>
@@ -296,13 +283,10 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
 
             {/* Pricing */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Pricing</h3>
-              
+              <h3 className={sectionTitleClass}>Pricing</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price *
-                  </label>
+                  <label className={labelClass}>Price *</label>
                   <Input
                     type="number"
                     value={formData.price || ''}
@@ -314,11 +298,8 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
                     disabled={loading}
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Currency
-                  </label>
+                  <label className={labelClass}>Currency</label>
                   <Input
                     type="text"
                     value={formData.currency || 'GHS'}
@@ -331,96 +312,73 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
             </div>
 
             {/* Status */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Status</h3>
-              
-              <div className="flex items-center">
+            <div className="space-y-3">
+              <h3 className={sectionTitleClass}>Status</h3>
+              <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
-                  id="isActive"
                   checked={formData.isActive || false}
                   onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 rounded border-[var(--border-color)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                   disabled={loading}
                 />
-                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-                  Active Bundle
-                </label>
-              </div>
+                <span className="text-sm text-[var(--text-primary)]">Active Bundle</span>
+              </label>
             </div>
 
             {/* AFA-Specific Fields */}
             {isAfaBundle && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">AFA Registration Requirements</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Configure the requirements for this AFA registration service. This is not a data bundle but a registration service.
+                <h3 className={sectionTitleClass}>AFA Registration Requirements</h3>
+                <p className="text-sm text-[var(--text-muted)]">
+                  Configure the requirements for this AFA registration service.
                 </p>
-                
-                <div className="flex items-center">
+
+                <label className="flex items-center gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
-                    id="requiresGhanaCard"
                     checked={formData.requiresGhanaCard || false}
                     onChange={(e) => handleInputChange('requiresGhanaCard', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 rounded border-[var(--border-color)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                     disabled={loading}
                   />
-                  <label htmlFor="requiresGhanaCard" className="ml-2 block text-sm text-gray-900">
+                  <span className="text-sm text-[var(--text-primary)]">
                     Require Ghana Card Number for registration
-                  </label>
-                </div>
-                
+                  </span>
+                </label>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Additional Registration Requirements
-                  </label>
+                  <label className={labelClass}>Additional Registration Requirements</label>
                   <textarea
                     value={(formData.afaRequirements || []).join('\n')}
                     onChange={(e) => handleInputChange('afaRequirements', e.target.value.split('\n').filter(req => req.trim()))}
-                    placeholder="Enter additional requirements for AFA registration (one per line)&#10;Example:&#10;- Valid ID card&#10;- Proof of address&#10;- Business registration certificate"
+                    placeholder="Enter additional requirements (one per line)"
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className={`${inputClass} resize-none`}
                     disabled={loading}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    List any additional documents or information required for this AFA registration (one per line)
+                  <p className="text-xs text-[var(--text-muted)] mt-1">
+                    List any additional documents or information required (one per line)
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Package and Provider Info (Read-only) */}
+            {/* Package and Provider Info */}
             {(packageId || providerId) && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Package Information</h3>
-                
+                <h3 className={sectionTitleClass}>Package Information</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {packageId && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Package ID
-                      </label>
-                      <Input
-                        type="text"
-                        value={packageId}
-                        disabled
-                        className="bg-gray-50"
-                      />
+                      <label className={labelClass}>Package ID</label>
+                      <Input type="text" value={packageId} disabled className="bg-[var(--bg-surface-alt)]" />
                     </div>
                   )}
-                  
                   {providerId && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Provider
-                      </label>
-                      <Input
-                        type="text"
-                        value={providerId}
-                        disabled
-                        className="bg-gray-50"
-                      />
+                      <label className={labelClass}>Provider</label>
+                      <Input type="text" value={providerId} disabled className="bg-[var(--bg-surface-alt)]" />
                     </div>
                   )}
                 </div>
@@ -428,22 +386,14 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
             )}
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={loading}
-              >
+            <div className="flex justify-end gap-3 pt-5 border-t border-[var(--border-color)]">
+              <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="flex items-center gap-2"
-              >
-                <FaSave className="text-sm" />
-                {loading ? 'Saving...' : (initialData ? 'Update Bundle' : 'Create Bundle')}
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : (
+                  <><FaSave className="mr-1.5" />{initialData ? 'Update Bundle' : 'Create Bundle'}</>
+                )}
               </Button>
             </div>
           </form>
@@ -451,4 +401,4 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
       </div>
     </div>
   );
-}; 
+};

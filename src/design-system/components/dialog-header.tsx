@@ -10,7 +10,7 @@ export const DialogHeader = forwardRef<HTMLDivElement, DialogHeaderProps>(
     return (
       <div
         ref={ref}
-        className={`px-6 py-4 border-b border-gray-200 ${className}`}
+        className={`px-6 py-4 border-b border-[var(--border-color)] ${className}`}
         {...props}
       >
         {children}

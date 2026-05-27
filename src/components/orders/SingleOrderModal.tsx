@@ -45,7 +45,8 @@ interface SingleOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  bundle: Bundle; // Must be fetched using ProviderPackageDisplay or direct bundleService
+  bundle: Bundle;
+  provider?: string;
 }
 
 export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
@@ -53,6 +54,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   onClose,
   onSuccess,
   bundle,
+  provider,
 }) => {
   const { createSingleOrder, loading } = useOrder();
   const { siteStatus } = useSiteStatus();
@@ -84,9 +86,13 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
     useState<CreateSingleOrderData | null>(null);
 
   // Get provider colors for branding
-  const providerColors = getProviderColors(
-    bundle.provider?.toString() || "MTN"
-  );
+  const providerCode = provider
+    || (typeof bundle.provider === "object" && bundle.provider?.code)
+    || (typeof bundle.providerId === "object" && bundle.providerId !== null && "code" in bundle.providerId
+      ? (bundle.providerId as { code: string }).code
+      : undefined)
+    || "MTN";
+  const providerColors = getProviderColors(providerCode);
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -326,14 +332,14 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
   return (
     <Dialog isOpen={isOpen} onClose={onClose} size="md">
       <DialogHeader className="flex items-start justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">
           {showSummary ? "Order Summary" : "Order Bundle"}
         </h2>
         <Button
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600"
+          className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
         >
           <FaTimes size={20} />
         </Button>
@@ -344,18 +350,25 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
           // Order Form
           <div className="space-y-4">
             {/* Bundle Info */}
-            <Card>
+            <Card className="overflow-hidden">
+              <div
+                className="h-1 w-full"
+                style={{ backgroundColor: providerColors.primary }}
+              />
               <CardBody>
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{bundle.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {bundle.description}
-                    </p>
+                    <h3 className="font-medium text-[var(--text-primary)]">{bundle.name}</h3>
+                    {bundle.description && (
+                      <p className="text-sm text-[var(--text-secondary)] mt-1">
+                        {bundle.description}
+                      </p>
+                    )}
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0 ml-3">
+                    <div className="text-xs text-[var(--text-secondary)]">Price</div>
                     <div
-                      className="text-lg font-bold"
+                      className="text-lg font-bold mt-0.5"
                       style={{ color: providerColors.primary }}
                     >
                       {formatCurrency(
@@ -366,22 +379,18 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <FaWifi className="text-blue-500" />
-                    <span>
-                      {bundle.dataVolume} {bundle.dataUnit}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FaClock className="text-green-500" />
-                    <span>
-                      {bundle.validity === "unlimited" &&
-                        bundle.validityUnit === "unlimited"
-                        ? "Unlimited"
-                        : `${bundle.validity} ${bundle.validityUnit}`}
-                    </span>
-                  </div>
+                <div className="flex flex-wrap gap-3 text-sm">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-surface-alt)] text-[var(--text-primary)]">
+                    <FaWifi className="text-[var(--info)]" />
+                    {bundle.dataVolume} {bundle.dataUnit}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-surface-alt)] text-[var(--text-primary)]">
+                    <FaClock className="text-[var(--success)]" />
+                    {bundle.validity === "unlimited" &&
+                      bundle.validityUnit === "unlimited"
+                      ? "Unlimited"
+                      : `${bundle.validity} ${bundle.validityUnit}`}
+                  </span>
                 </div>
               </CardBody>
             </Card>
@@ -390,7 +399,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
             <div>
               <label
                 htmlFor="Phone Number"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-[var(--text-secondary)] mb-2"
               >
                 Customer Phone Number
               </label>
@@ -399,7 +408,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
                 value={customerPhone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
                 placeholder="Enter 10-digit phone number"
-                leftIcon={<FaPhone className="text-gray-400" />}
+                leftIcon={<FaPhone className="text-[var(--text-muted)]" />}
                 isInvalid={!!phoneError}
                 errorText={phoneError}
               />
@@ -433,37 +442,41 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
           // Order Summary
           <div className="space-y-4">
             {/* Bundle Summary */}
-            <Card>
+            <Card className="overflow-hidden">
+              <div
+                className="h-1 w-full"
+                style={{ backgroundColor: providerColors.primary }}
+              />
               <CardBody>
-                <h3 className="font-medium text-gray-900 mb-3">
+                <h3 className="font-medium text-[var(--text-primary)] mb-4">
                   Bundle Details
                 </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Bundle:</span>
-                    <span className="font-medium">
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center py-1 border-b border-[var(--border-color)] last:border-b-0">
+                    <span className="text-[var(--text-secondary)]">Bundle</span>
+                    <span className="font-medium text-[var(--text-primary)]">
                       {orderSummary?.bundle.name}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Data:</span>
-                    <span className="font-medium">
+                  <div className="flex justify-between items-center py-1 border-b border-[var(--border-color)] last:border-b-0">
+                    <span className="text-[var(--text-secondary)]">Data</span>
+                    <span className="font-medium text-[var(--text-primary)]">
                       {orderSummary?.bundle.dataVolume}{" "}
                       {orderSummary?.bundle.dataUnit}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Validity:</span>
-                    <span className="font-medium">
+                  <div className="flex justify-between items-center py-1 border-b border-[var(--border-color)] last:border-b-0">
+                    <span className="text-[var(--text-secondary)]">Validity</span>
+                    <span className="font-medium text-[var(--text-primary)]">
                       {orderSummary?.bundle.validityUnit === "unlimited"
                         ? "Unlimited"
                         : `${orderSummary?.bundle.validity} ${orderSummary?.bundle.validityUnit}`}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Price:</span>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-[var(--text-secondary)]">Price</span>
                     <span
-                      className="font-bold"
+                      className="font-bold text-base"
                       style={{ color: providerColors.primary }}
                     >
                       {orderSummary?.bundle.currency}{" "}
@@ -475,23 +488,32 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
             </Card>
 
             {/* Customer Info */}
-            <Card>
+            <Card className="overflow-hidden">
+              <div
+                className="h-1 w-full"
+                style={{ backgroundColor: providerColors.primary }}
+              />
               <CardBody>
-                <h3 className="font-medium text-gray-900 mb-3">
+                <h3 className="font-medium text-[var(--text-primary)] mb-3">
                   Customer Information
                 </h3>
-                <div className="flex items-center gap-2 text-sm">
-                  <FaPhone className="text-blue-500" />
-                  <span>{orderSummary?.customerPhone}</span>
+                <div className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
+                  <div className="w-8 h-8 rounded-full bg-[var(--bg-surface-alt)] flex items-center justify-center">
+                    <FaPhone className="text-[var(--info)] text-sm" />
+                  </div>
+                  <span className="font-medium">{orderSummary?.customerPhone}</span>
                 </div>
               </CardBody>
             </Card>
 
             {/* Total */}
-            <div className="border-t pt-4">
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total Amount:</span>
-                <span style={{ color: providerColors.primary }}>
+            <div className="rounded-lg bg-[var(--bg-surface-alt)] p-4">
+              <div className="flex justify-between items-center text-base font-bold text-[var(--text-primary)]">
+                <span>Total Amount</span>
+                <span
+                  className="text-lg"
+                  style={{ color: providerColors.primary }}
+                >
                   {orderSummary?.bundle.currency} {orderSummary?.totalPrice}
                 </span>
               </div>

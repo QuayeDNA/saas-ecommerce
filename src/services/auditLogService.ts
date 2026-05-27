@@ -4,6 +4,9 @@ import type {
   AuditLogFilters,
   AuditLogResponse,
   AuditLogStats,
+  DayFilter,
+  UserActivityLog,
+  UserActivityLogResponse,
 } from "../types/auditLog";
 
 type BackendAuditLog = Omit<AuditLog, "userId" | "user"> & {
@@ -131,6 +134,27 @@ export const auditLogService = {
     return {
       success: response.data.success,
       logs: (response.data.logs ?? []).map(normalizeAuditLog),
+      pagination: response.data.pagination,
+    };
+  },
+
+  async getUserActivitySimplified(
+    userId: string,
+    dayFilter: DayFilter = "today",
+    page = 1,
+    limit = 50,
+  ): Promise<UserActivityLogResponse> {
+    const response = await apiClient.get<{
+      success: boolean;
+      logs: UserActivityLog[];
+      pagination: UserActivityLogResponse["pagination"];
+    }>(`${AUDIT_LOG_BASE_URL}/user/${userId}`, {
+      params: { page, limit, dayFilter },
+    });
+
+    return {
+      success: response.data.success,
+      logs: response.data.logs ?? [],
       pagination: response.data.pagination,
     };
   },
