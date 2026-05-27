@@ -28,7 +28,7 @@ export const ReferralDashboardPage = () => {
         const [dash, board, referralTree] = await Promise.all([
           referralService.getDashboard(),
           referralService.getLeaderboard(timeframe),
-          referralService.getReferralTree(treeDepth),
+          referralService.getReferralTree(treeDepth, { fullName: authState.user?.fullName, phone: authState.user?.phone }),
         ]);
         setDashboard(dash);
         setLeaderboard(board);

@@ -30,11 +30,31 @@ class ReferralService {
     return response.data.data;
   }
 
-  async getReferralTree(depth = 3): Promise<ReferralTreeNode[]> {
+  async getReferralTree(
+    depth = 3,
+    userInfo?: { fullName?: string; phone?: string }
+  ): Promise<ReferralTreeNode[]> {
     const response = await apiClient.get<ReferralTreeResponse>(
       `/api/referrals/tree?depth=${depth}`
     );
-    return Array.isArray(response.data.data) ? response.data.data : [];
+    const treeData = Array.isArray(response.data.data) ? response.data.data : [];
+    if (!userInfo || treeData.length === 0) {
+      return treeData;
+    }
+
+    return [
+      {
+        user: {
+          _id: "self",
+          fullName: userInfo.fullName || "You",
+          email: "",
+          phone: userInfo.phone || "",
+          referralCode: "",
+          createdAt: "",
+        },
+        children: treeData,
+      },
+    ];
   }
 
   async getAdminStats(): Promise<ReferralAdminStats> {

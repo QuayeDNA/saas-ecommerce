@@ -395,11 +395,11 @@ class AuthService {
   }
 
   /**
-   * Send OTP to phone for registration verification
+   * Send OTP to phone or email for registration verification
    */
-  async sendOtp(phone: string, email: string): Promise<{ success: boolean; message: string }> {
+  async sendOtp(phone: string, email: string, channel?: "email" | "phone"): Promise<{ success: boolean; message: string; channel?: "email" | "phone"; maskedContact?: string }> {
     try {
-      const response = await publicApiClient.post("/api/auth/send-otp", { phone, email });
+      const response = await publicApiClient.post("/api/auth/send-otp", { phone, email, channel });
       return response.data;
     } catch (err: unknown) {
       const { message } = this.extractErrorMessage(err, "Failed to send OTP");

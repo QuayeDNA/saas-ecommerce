@@ -24,7 +24,7 @@ import {
 import type { Package, Bundle, Provider } from "../../types/package";
 
 export interface ProviderPackageDisplayProps {
-  provider: string; // provider code (e.g., 'MTN')
+  provider?: string; // provider code (e.g., 'MTN') — optional when packageId is provided
   category?: string; // optional category/tag
   packageSlug?: string; // optional stable package slug for route-specific pages
   packageId?: string; // optional specific package id
@@ -172,7 +172,7 @@ export const ProviderPackageDisplay: React.FC<ProviderPackageDisplayProps> = ({
   }, [packages, category]);
 
   // Provider display (for color, etc.) — prefer providerData derived from bundles, fallback to prop
-  const effectiveProvider = providerData?.code || provider;
+  const effectiveProvider = providerData?.code || provider || "";
   const providerColors = getProviderColors(effectiveProvider);
 
   // Search and filter configuration

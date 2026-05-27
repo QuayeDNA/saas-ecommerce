@@ -23,13 +23,17 @@ import type { Commission, CommissionStats, WithdrawResponse } from "../../types/
 import type { Withdrawal } from "../../types/commission";
 import type { ReferralDashboard, ReferralTreeNode } from "../../types/referral";
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return "";
   const d = new Date(dateString);
+  if (isNaN(d.getTime())) return "";
   return d.toLocaleDateString("en-GH", { day: "2-digit", month: "short", year: "numeric" });
 };
 
-const formatTime = (dateString: string) => {
+const formatTime = (dateString: string | null | undefined) => {
+  if (!dateString) return "";
   const d = new Date(dateString);
+  if (isNaN(d.getTime())) return "";
   return d.toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit" });
 };
 
@@ -95,7 +99,7 @@ export const CommissionPage = () => {
 
   const [dashboard, setDashboard] = useState<ReferralDashboard | null>(null);
   const [tree, setTree] = useState<ReferralTreeNode[]>([]);
-  const [_treeLoading, setTreeLoading] = useState(false);
+  
   const treeFetchedRef = useRef(false);
   const [copied, setCopied] = useState(false);
   const [shareDropdownOpen, setShareDropdownOpen] = useState(false);
@@ -145,8 +149,7 @@ export const CommissionPage = () => {
   useEffect(() => {
     if (activeTab === "tree" && !treeFetchedRef.current) {
       treeFetchedRef.current = true;
-      setTreeLoading(true);
-      referralService.getReferralTree().then(setTree).catch(() => {}).finally(() => setTreeLoading(false));
+      referralService.getReferralTree().then(setTree).catch(() => {});
     }
   }, [activeTab]);
 
