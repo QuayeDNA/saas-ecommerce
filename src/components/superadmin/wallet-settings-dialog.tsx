@@ -85,39 +85,39 @@ export const WalletSettingsDialog: React.FC<WalletSettingsDialogProps> = ({
       key: "agent" as const,
       label: "Agent",
       icon: "👤",
-      color: "bg-green-100",
+      accentVar: "--success",
     },
     {
       key: "super_agent" as const,
       label: "Super Agent",
       icon: "⭐",
-      color: "bg-yellow-100",
+      accentVar: "--warning",
     },
     {
       key: "dealer" as const,
       label: "Dealer",
       icon: "🏪",
-      color: "bg-blue-100",
+      accentVar: "--color-primary",
     },
     {
       key: "super_dealer" as const,
       label: "Super Dealer",
       icon: "👑",
-      color: "bg-purple-100",
+      accentVar: "--color-secondary",
     },
     {
       key: "default" as const,
       label: "Default",
       icon: "⚙️",
-      color: "bg-gray-100",
+      accentVar: "--text-muted",
     },
   ];
 
   return (
     <Dialog isOpen={isOpen} onClose={handleClose} size="lg">
       <DialogHeader>
-        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <span className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+        <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 10%, transparent)' }}>
             💰
           </span>
           Wallet Configuration
@@ -127,21 +127,21 @@ export const WalletSettingsDialog: React.FC<WalletSettingsDialogProps> = ({
       <Form onSubmit={handleSubmit}>
         <DialogBody>
           <div className="space-y-6">
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-medium text-green-900 mb-2">
+            <div className="p-4 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 5%, transparent)' }}>
+              <h3 className="font-medium mb-2" style={{ color: 'var(--success)' }}>
                 Minimum Top-up Amounts
               </h3>
-              <p className="text-sm text-green-700">
+              <p className="text-sm" style={{ color: 'var(--success)' }}>
                 Set the minimum amounts users can top-up their wallets with for
                 each user type.
               </p>
             </div>
 
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">
+            <div className="p-4 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 5%, transparent)' }}>
+              <h3 className="font-medium mb-2" style={{ color: 'var(--color-primary)' }}>
                 Paystack Minimum
               </h3>
-              <p className="text-sm text-blue-700 mb-2">
+              <p className="text-sm mb-2" style={{ color: 'var(--color-primary)' }}>
                 Global minimum amount (GH₵) that applies when customers top up
                 instantly via Paystack. Leave zero to disable.
               </p>
@@ -158,26 +158,28 @@ export const WalletSettingsDialog: React.FC<WalletSettingsDialogProps> = ({
                     }))
                   }
                   placeholder="0.00"
-                  leftIcon={<span className="text-gray-500">₵</span>}
+                  leftIcon={<span style={{ color: 'var(--text-secondary)' }}>₵</span>}
                 />
               </FormField>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {userTypes.map(({ key, label, icon, color }) => (
+              {userTypes.map(({ key, label, icon, accentVar }) => (
                 <div
                   key={key}
-                  className="p-4 border border-gray-200 rounded-lg"
+                  className="p-4 border rounded-lg"
+                  style={{ borderColor: 'var(--border-color)' }}
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div
-                      className={`w-8 h-8 ${color} rounded-lg flex items-center justify-center`}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: `color-mix(in srgb, var(${accentVar}) 10%, transparent)` }}
                     >
                       {icon}
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900">{label}</h4>
-                      <p className="text-sm text-gray-600">
+                      <h4 className="font-medium" style={{ color: 'var(--text-primary)' }}>{label}</h4>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                         Minimum top-up amount
                       </p>
                     </div>
@@ -190,21 +192,21 @@ export const WalletSettingsDialog: React.FC<WalletSettingsDialogProps> = ({
                       value={formData.minimumTopUpAmounts[key]}
                       onChange={(e) => handleAmountChange(key, e.target.value)}
                       placeholder="0.00"
-                      leftIcon={<span className="text-gray-500">₵</span>}
+                      leftIcon={<span style={{ color: 'var(--text-secondary)' }}>₵</span>}
                     />
                   </FormField>
                 </div>
               ))}
             </div>
 
-            <div className="bg-yellow-50 p-4 rounded-lg">
+            <div className="p-4 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 5%, transparent)' }}>
               <div className="flex items-start gap-3">
-                <span className="text-yellow-600 mt-0.5">⚠️</span>
+                <span style={{ color: 'var(--warning)' }}>⚠️</span>
                 <div>
-                  <h4 className="font-medium text-yellow-900">
+                  <h4 className="font-medium" style={{ color: 'var(--warning)' }}>
                     Important Notes
                   </h4>
-                  <ul className="text-sm text-yellow-800 mt-1 space-y-1">
+                  <ul className="text-sm mt-1 space-y-1" style={{ color: 'var(--warning)' }}>
                     <li>
                       • Changes will take effect immediately for new top-up
                       requests

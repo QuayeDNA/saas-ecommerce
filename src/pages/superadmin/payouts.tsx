@@ -30,16 +30,16 @@ const STATUS_OPTIONS = [
 ];
 
 function renderPayoutDestination(destination: PayoutRequestItem['destination']) {
-  if (!destination) return <span className="text-xs text-gray-500">—</span>;
+  if (!destination) return <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>—</span>;
 
   if (destination.type === 'mobile_money') {
     const provider = destination.mobileProvider ? `${destination.mobileProvider} · ` : '';
     const number = destination.phoneNumber || '—';
     const name = destination.accountName || destination.recipientName;
     return (
-      <div className="text-xs text-gray-600">
+      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
         <div>{provider}{number}</div>
-        {name ? <div className="text-gray-500">{name}</div> : null}
+        {name ? <div style={{ color: 'var(--text-muted)' }}>{name}</div> : null}
       </div>
     );
   }
@@ -48,9 +48,9 @@ function renderPayoutDestination(destination: PayoutRequestItem['destination']) 
   const bank = destination.bankCode ? ` (${destination.bankCode})` : '';
   const name = destination.accountName || destination.recipientName;
   return (
-    <div className="text-xs text-gray-600">
+    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
       <div>{account}{bank}</div>
-      {name ? <div className="text-gray-500">{name}</div> : null}
+      {name ? <div style={{ color: 'var(--text-muted)' }}>{name}</div> : null}
     </div>
   );
 }
@@ -160,8 +160,8 @@ export default function SuperAdminPayoutsPage() {
     <div className="max-w-6xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold">Payout Requests</h1>
-          <p className="text-sm text-gray-500 mt-1">Review and process agent payout requests</p>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Payout Requests</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Review and process agent payout requests</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={statusFilter} onChange={(v: string) => { setStatusFilter(v); setPage(1); }} options={STATUS_OPTIONS} />
@@ -195,21 +195,21 @@ export default function SuperAdminPayoutsPage() {
                     <TableRow key={p._id}>
                       <TableCell className="whitespace-nowrap text-xs">
                         {new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        <div className="text-gray-400">{new Date(p.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div style={{ color: 'var(--text-muted)' }}>{new Date(p.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
                       </TableCell>
                       <TableCell className="min-w-[200px]">
                         {typeof p.user === 'object' ? (
                           <div>
-                            <div className="font-medium">{(p.user as { fullName?: string }).fullName}</div>
-                            <div className="text-xs text-gray-500">{(p.user as { email?: string }).email}</div>
+                            <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{(p.user as { fullName?: string }).fullName}</div>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{(p.user as { email?: string }).email}</div>
                           </div>
                         ) : String(p.user)}
                       </TableCell>
                       <TableCell className="font-medium">GH₵ {p.amount.toFixed(2)}</TableCell>
-                      <TableCell className="text-xs text-orange-600">
+                      <TableCell className="text-xs" style={{ color: 'var(--warning)' }}>
                         {p.transferFee != null ? `GH₵ ${p.transferFee.toFixed(2)}` : '—'}
                       </TableCell>
-                      <TableCell className="font-medium text-green-600">
+                      <TableCell className="font-medium" style={{ color: 'var(--success)' }}>
                         {p.netAmount != null ? `GH₵ ${p.netAmount.toFixed(2)}` : '—'}
                       </TableCell>
                       <TableCell className="text-xs truncate max-w-[240px]">
@@ -234,10 +234,10 @@ export default function SuperAdminPayoutsPage() {
                             </div>
                           )}
                           {p.status === 'processing' && (
-                            <span className="text-xs text-blue-500">Awaiting…</span>
+                            <span className="text-xs" style={{ color: 'var(--color-primary)' }}>Awaiting…</span>
                           )}
                           {!['pending', 'approved', 'processing'].includes(p.status) && (
-                            <span className="text-xs text-gray-500">{p.paystackTransfer?.transferReference || '—'}</span>
+                            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{p.paystackTransfer?.transferReference || '—'}</span>
                           )}
                         </div>
                       </TableCell>
@@ -245,7 +245,7 @@ export default function SuperAdminPayoutsPage() {
                   ))}
                   {payouts.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-sm text-gray-500 py-8">No payouts found</TableCell>
+                      <TableCell colSpan={8} className="text-center text-sm py-8" style={{ color: 'var(--text-secondary)' }}>No payouts found</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -254,7 +254,7 @@ export default function SuperAdminPayoutsPage() {
           )}
 
           <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-gray-500">Showing {payouts.length} of {total} results</div>
+            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Showing {payouts.length} of {total} results</div>
             <Pagination currentPage={page} itemsPerPage={limit} totalItems={total} totalPages={Math.ceil(total / limit)} onPageChange={(p: number) => setPage(p)} />
           </div>
         </CardBody>

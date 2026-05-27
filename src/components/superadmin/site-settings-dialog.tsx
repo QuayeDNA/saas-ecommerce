@@ -59,8 +59,8 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
   return (
     <Dialog isOpen={isOpen} onClose={handleClose} size="lg">
       <DialogHeader>
-        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+        <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' }}>
             🌐
           </span>
           Site Management Settings
@@ -70,19 +70,16 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
       <Form onSubmit={handleSubmit}>
         <DialogBody>
           <div className="space-y-6">
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--bg-surface-alt)' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium text-gray-900">Site Status</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <h3 className="font-medium" style={{ color: 'var(--text-primary)' }}>Site Status</h3>
+                  <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                     Control whether the site is open for public access
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span
-                    className={`text-sm font-medium ${formData.isSiteOpen ? "text-green-600" : "text-red-600"
-                      }`}
-                  >
+                  <span className="text-sm font-medium" style={{ color: formData.isSiteOpen ? 'var(--success)' : 'var(--error)' }}>
                     {formData.isSiteOpen ? "Open" : "Closed"}
                   </span>
                   <button
@@ -93,8 +90,8 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
                         isSiteOpen: !prev.isSiteOpen,
                       }))
                     }
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.isSiteOpen ? "bg-green-600" : "bg-gray-200"
-                      }`}
+                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                    style={{ backgroundColor: formData.isSiteOpen ? 'var(--success)' : 'var(--border-color)' }}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isSiteOpen ? "translate-x-6" : "translate-x-1"
@@ -132,12 +129,12 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
                 className="w-full"
               />
 
-              <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+              <div className="flex items-center justify-between p-3 rounded-lg border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
                 <div>
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                     Show welcome icon
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                     Toggle whether the welcome message includes an icon.
                   </p>
                 </div>
@@ -153,7 +150,9 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
                       }))
                     }
                   />
-                  <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-600 relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
+                  <div className="w-10 h-5 rounded-full peer relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"
+                    style={{ backgroundColor: formData.showGreetingIcon ? 'var(--color-primary)' : 'var(--border-color)' }}
+                  ></div>
                 </label>
               </div>
             </div>
@@ -171,7 +170,7 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
               rows={4}
               className="w-full"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
               This message will be shown to users when the site is closed for
               maintenance.
             </p>

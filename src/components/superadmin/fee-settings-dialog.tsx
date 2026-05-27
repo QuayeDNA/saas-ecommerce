@@ -22,23 +22,28 @@ import { walletService } from "../../services/wallet-service";
 interface SectionProps {
   title: string;
   icon: string;
-  iconBg: string;
-  panelBg: string;
-  panelBorder: string;
+  accentVar: string;
   children: React.ReactNode;
 }
 
 const Section: React.FC<SectionProps> = ({
-  title, icon, iconBg, panelBg, panelBorder, children,
+  title, icon, accentVar, children,
 }) => (
   <div>
     <div className="flex items-center gap-2 mb-3">
-      <span className={`w-7 h-7 ${iconBg} rounded-lg flex items-center justify-center text-base`}>
+      <span className="w-7 h-7 rounded-lg flex items-center justify-center text-base"
+        style={{ backgroundColor: `color-mix(in srgb, var(${accentVar}) 10%, transparent)` }}
+      >
         {icon}
       </span>
-      <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+      <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
     </div>
-    <div className={`${panelBg} ${panelBorder} border rounded-xl p-4 space-y-4`}>
+    <div className="border rounded-xl p-4 space-y-4"
+      style={{
+        backgroundColor: `color-mix(in srgb, var(${accentVar}) 5%, transparent)`,
+        borderColor: `color-mix(in srgb, var(${accentVar}) 20%, transparent)`,
+      }}
+    >
       {children}
     </div>
   </div>
@@ -46,12 +51,12 @@ const Section: React.FC<SectionProps> = ({
 
 // ─── Preview stat cell ────────────────────────────────────────────────────────
 
-const PreviewCell: React.FC<{ label: string; value: string; valueClass?: string }> = ({
-  label, value, valueClass = "text-gray-900",
+const PreviewCell: React.FC<{ label: string; value: string; valueColor?: string }> = ({
+  label, value, valueColor,
 }) => (
   <div className="text-center">
-    <div className="text-xs text-gray-500 mb-0.5">{label}</div>
-    <div className={`text-sm font-bold ${valueClass}`}>{value}</div>
+    <div className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>{label}</div>
+    <div className="text-sm font-bold" style={{ color: valueColor || 'var(--text-primary)' }}>{value}</div>
   </div>
 );
 
@@ -207,8 +212,8 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
   return (
     <Dialog isOpen={isOpen} onClose={handleClose} size="lg">
       <DialogHeader>
-        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+        <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' }}>
             💳
           </span>
           Fee &amp; Payout Configuration
@@ -217,7 +222,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
 
       {loadingSettings ? (
         <DialogBody>
-          <div className="py-8 text-center text-gray-500">
+          <div className="py-8 text-center" style={{ color: 'var(--text-secondary)' }}>
             Loading fee settings…
           </div>
         </DialogBody>
@@ -230,9 +235,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
               <Section
                 title="Storefront Collection Fees"
                 icon="🛒"
-                iconBg="bg-blue-100"
-                panelBg="bg-blue-50"
-                panelBorder="border-blue-200"
+                accentVar="--color-primary"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="Paystack collection fee (%)">
@@ -251,7 +254,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       }
                       helperText="Paystack's fee — currently 1.95% in Ghana"
                       rightIcon={
-                        <span className="text-xs font-medium text-gray-500">%</span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>%</span>
                       }
                     />
                   </FormField>
@@ -271,7 +274,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       }
                       helperText="Your additional fee on top of Paystack"
                       rightIcon={
-                        <span className="text-xs font-medium text-gray-500">%</span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>%</span>
                       }
                     />
                   </FormField>
@@ -300,15 +303,15 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                 </FormField>
 
                 {/* Collection fee preview */}
-                <div className="bg-white border border-blue-200 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-blue-900 mb-2">
+                <div className="rounded-lg p-3" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)' }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-primary)' }}>
                     Preview — GH₵ {sampleBase.toFixed(2)} order
                   </p>
                   <div className="grid grid-cols-3 gap-3">
                     <PreviewCell
                       label="Total fee"
                       value={`${totalCollectionFeePercent.toFixed(2)}%`}
-                      valueClass="text-blue-700"
+                      valueColor="var(--color-primary)"
                     />
                     <PreviewCell
                       label="Customer pays"
@@ -317,7 +320,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                     <PreviewCell
                       label="Fee amount"
                       value={`GH₵ ${sampleFee.toFixed(2)}`}
-                      valueClass="text-orange-600"
+                      valueColor="var(--warning)"
                     />
                   </div>
                 </div>
@@ -327,11 +330,9 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
               <Section
                 title="Wallet Top-Up Fees"
                 icon="💰"
-                iconBg="bg-violet-100"
-                panelBg="bg-violet-50"
-                panelBorder="border-violet-200"
+                accentVar="--color-secondary"
               >
-                <p className="text-xs text-gray-500 -mt-1">
+                <p className="text-xs -mt-1" style={{ color: 'var(--text-secondary)' }}>
                   Applied when agents top up their wallet via Paystack. Independent of storefront fees.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -349,7 +350,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                         }))
                       }
                       helperText="Paystack's fee — currently 1.95% in Ghana"
-                      rightIcon={<span className="text-xs font-medium text-gray-500">%</span>}
+                      rightIcon={<span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>%</span>}
                     />
                   </FormField>
 
@@ -367,7 +368,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                         }))
                       }
                       helperText="Your additional fee on top of Paystack"
-                      rightIcon={<span className="text-xs font-medium text-gray-500">%</span>}
+                      rightIcon={<span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>%</span>}
                     />
                   </FormField>
                 </div>
@@ -389,15 +390,15 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                 </FormField>
 
                 {/* Wallet top-up fee preview */}
-                <div className="bg-white border border-violet-200 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-violet-900 mb-2">
+                <div className="rounded-lg p-3" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid color-mix(in srgb, var(--color-secondary) 20%, transparent)' }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-secondary)' }}>
                     Preview — GH₵ {sampleWalletBase.toFixed(2)} wallet top-up
                   </p>
                   <div className="grid grid-cols-3 gap-3">
                     <PreviewCell
                       label="Total fee"
                       value={`${totalWalletTopUpFeePercent.toFixed(2)}%`}
-                      valueClass="text-violet-700"
+                      valueColor="var(--color-secondary)"
                     />
                     <PreviewCell
                       label="Agent charged"
@@ -406,7 +407,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                     <PreviewCell
                       label="Fee amount"
                       value={`GH₵ ${sampleWalletFee.toFixed(2)}`}
-                      valueClass="text-orange-600"
+                      valueColor="var(--warning)"
                     />
                   </div>
                 </div>
@@ -416,11 +417,9 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
               <Section
                 title="Referral Commission"
                 icon="🤝"
-                iconBg="bg-amber-100"
-                panelBg="bg-amber-50"
-                panelBorder="border-amber-200"
+                accentVar="--warning"
               >
-                <p className="text-xs text-gray-500 -mt-1">
+                <p className="text-xs -mt-1" style={{ color: 'var(--text-secondary)' }}>
                   Percentage of each order amount credited to the referring agent as commission.
                 </p>
                 <FormField label="Commission rate (%)">
@@ -437,24 +436,24 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       }))
                     }
                     helperText="Applied to qualifying orders from referred users"
-                    rightIcon={<span className="text-xs font-medium text-gray-500">%</span>}
+                    rightIcon={<span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>%</span>}
                   />
                 </FormField>
                 {/* Preview */}
-                <div className="bg-white border border-amber-200 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-amber-900 mb-2">
+                <div className="rounded-lg p-3" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid color-mix(in srgb, var(--warning) 20%, transparent)' }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--warning)' }}>
                     Preview — GH₵ 100 order
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <PreviewCell
                       label="Commission rate"
                       value={`${formData.commissionRatePercent}%`}
-                      valueClass="text-amber-700"
+                      valueColor="var(--warning)"
                     />
                     <PreviewCell
                       label="Referrer earns"
                       value={`GH₵ ${(100 * formData.commissionRatePercent / 100).toFixed(2)}`}
-                      valueClass="text-green-700"
+                      valueColor="var(--success)"
                     />
                   </div>
                 </div>
@@ -464,9 +463,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
               <Section
                 title="Payout Transfer Fees"
                 icon="💸"
-                iconBg="bg-green-100"
-                panelBg="bg-green-50"
-                panelBorder="border-green-200"
+                accentVar="--success"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="Mobile Money flat fee">
@@ -488,7 +485,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       }
                       helperText="Paystack charges GH₵ 1.00 per MoMo transfer"
                       leftIcon={
-                        <span className="text-xs font-medium text-gray-500">GH₵</span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>GH₵</span>
                       }
                     />
                   </FormField>
@@ -512,7 +509,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       }
                       helperText="Paystack charges GH₵ 8.00 per bank transfer"
                       leftIcon={
-                        <span className="text-xs font-medium text-gray-500">GH₵</span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>GH₵</span>
                       }
                     />
                   </FormField>
@@ -534,7 +531,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                     }
                     helperText="Percentage the platform earns on each withdrawal, charged on top of Paystack's flat fee"
                     rightIcon={
-                      <span className="text-xs font-medium text-gray-500">%</span>
+                      <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>%</span>
                     }
                   />
                 </FormField>
@@ -562,30 +559,30 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                 </FormField>
 
                 {/* Payout fee preview */}
-                <div className="bg-white border border-green-200 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-green-900 mb-2">
+                <div className="rounded-lg p-3" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid color-mix(in srgb, var(--success) 20%, transparent)' }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--success)' }}>
                     Preview — GH₵ {samplePayout.toFixed(2)} MoMo withdrawal
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <PreviewCell
                       label="Paystack fee"
                       value={`GH₵ ${paystackMomoFee.toFixed(2)}`}
-                      valueClass="text-gray-700"
+                      valueColor="var(--text-secondary)"
                     />
                     <PreviewCell
                       label="Platform fee"
                       value={`GH₵ ${platformPayoutFee.toFixed(2)}`}
-                      valueClass="text-blue-700"
+                      valueColor="var(--color-primary)"
                     />
                     <PreviewCell
                       label="Total fees"
                       value={`GH₵ ${totalPayoutFee.toFixed(2)}`}
-                      valueClass="text-orange-600"
+                      valueColor="var(--warning)"
                     />
                     <PreviewCell
                       label="Agent receives"
                       value={`GH₵ ${agentReceives.toFixed(2)}`}
-                      valueClass="text-green-700"
+                      valueColor="var(--success)"
                     />
                   </div>
                 </div>
@@ -595,11 +592,9 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
               <Section
                 title="Minimum Payout Amounts"
                 icon="🔒"
-                iconBg="bg-orange-100"
-                panelBg="bg-orange-50"
-                panelBorder="border-orange-200"
+                accentVar="--warning"
               >
-                <p className="text-xs text-gray-500 -mt-1">
+                <p className="text-xs -mt-1" style={{ color: 'var(--text-secondary)' }}>
                   The lowest amount an agent can request per destination type. Requests below this are rejected.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -620,7 +615,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       }
                       helperText="Min amount for MoMo withdrawals"
                       leftIcon={
-                        <span className="text-xs font-medium text-gray-500">GH₵</span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>GH₵</span>
                       }
                     />
                   </FormField>
@@ -642,7 +637,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       }
                       helperText="Min amount for bank transfers"
                       leftIcon={
-                        <span className="text-xs font-medium text-gray-500">GH₵</span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>GH₵</span>
                       }
                     />
                   </FormField>
@@ -653,9 +648,7 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
               <Section
                 title="Automatic Payout"
                 icon="⚡"
-                iconBg="bg-purple-100"
-                panelBg="bg-purple-50"
-                panelBorder="border-purple-200"
+                accentVar="--color-secondary"
               >
                 <FormField label="Payout mode">
                   <Select
@@ -682,9 +675,16 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                 </FormField>
 
                 <div
-                  className={`flex items-start gap-3 rounded-lg px-3 py-2.5 border text-sm ${
-                    formData.autoPayoutEnabled ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-white border-gray-200 text-gray-600"
-                  }`}
+                  className="flex items-start gap-3 rounded-lg px-3 py-2.5 border text-sm"
+                  style={formData.autoPayoutEnabled ? {
+                    backgroundColor: 'color-mix(in srgb, var(--warning) 10%, transparent)',
+                    borderColor: 'color-mix(in srgb, var(--warning) 30%, transparent)',
+                    color: 'var(--warning)',
+                  } : {
+                    backgroundColor: 'var(--bg-surface)',
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-secondary)',
+                  }}
                 >
                   <span className="mt-0.5 flex-shrink-0">
                     {formData.autoPayoutEnabled ? "⚠️" : "ℹ️"}

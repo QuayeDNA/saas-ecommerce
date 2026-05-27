@@ -92,9 +92,9 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
   return (
     <Dialog isOpen={isOpen} onClose={handleClose} size="xl">
       <DialogHeader>
-        <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-            <Key className="w-4 h-4 text-orange-600" />
+        <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 10%, transparent)' }}>
+            <Key className="w-4 h-4" style={{ color: 'var(--warning)' }} />
           </span>
           API Configuration
         </h2>
@@ -103,8 +103,8 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
       <Form onSubmit={handleSubmit}>
         <DialogBody>
           <div className="space-y-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">API Endpoint</h3>
+            <div className="p-4 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 5%, transparent)' }}>
+              <h3 className="font-medium mb-2" style={{ color: 'var(--color-primary)' }}>API Endpoint</h3>
               <Input
                 value={formData.apiEndpoint}
                 onChange={(e) =>
@@ -119,18 +119,18 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-medium text-gray-900">Provider API Keys</h3>
+              <h3 className="font-medium" style={{ color: 'var(--text-primary)' }}>Provider API Keys</h3>
 
               <div className="grid grid-cols-1 gap-4">
                 {/* MTN API Key */}
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border rounded-lg" style={{ borderColor: 'var(--border-color)' }}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
                       <Smartphone className="w-4 h-4 text-yellow-600" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900">MTN API Key</h4>
-                      <p className="text-sm text-gray-600">
+                      <h4 className="font-medium" style={{ color: 'var(--text-primary)' }}>MTN API Key</h4>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                         For MTN data services
                       </p>
                     </div>
@@ -150,7 +150,10 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       rightIcon={
                         <button
                           type="button"
-                          className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                          className="transition-colors focus:outline-none"
+                          style={{ color: 'var(--text-muted)' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
                           aria-label={showKeys.mtn ? 'Hide MTN key' : 'Reveal MTN key'}
                           onClick={() => toggleKeyVisibility('mtn')}
                         >
@@ -162,16 +165,16 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                 </div>
 
                 {/* Telecel API Key */}
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border rounded-lg" style={{ borderColor: 'var(--border-color)' }}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                       <Smartphone className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900">
+                      <h4 className="font-medium" style={{ color: 'var(--text-primary)' }}>
                         Telecel API Key
                       </h4>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                         For Telecel data services
                       </p>
                     </div>
@@ -191,7 +194,10 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       rightIcon={
                         <button
                           type="button"
-                          className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                          className="transition-colors focus:outline-none"
+                          style={{ color: 'var(--text-muted)' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
                           aria-label={showKeys.telecel ? 'Hide Telecel key' : 'Reveal Telecel key'}
                           onClick={() => toggleKeyVisibility('telecel')}
                         >
@@ -203,16 +209,16 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                 </div>
 
                 {/* AirtelTigo API Key */}
-                <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="p-4 border rounded-lg" style={{ borderColor: 'var(--border-color)' }}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
                       <Smartphone className="w-4 h-4 text-red-600" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900">
+                      <h4 className="font-medium" style={{ color: 'var(--text-primary)' }}>
                         AirtelTigo API Key
                       </h4>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                         For AirtelTigo data services
                       </p>
                     </div>
@@ -232,7 +238,10 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       rightIcon={
                         <button
                           type="button"
-                          className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                          className="transition-colors focus:outline-none"
+                          style={{ color: 'var(--text-muted)' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
                           aria-label={showKeys.airtelTigo ? 'Hide AirtelTigo key' : 'Reveal AirtelTigo key'}
                           onClick={() => toggleKeyVisibility('airtelTigo')}
                         >
@@ -245,14 +254,14 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
               </div>
             </div>
             <div className="space-y-4">
-              <h3 className="font-medium text-gray-900">Paystack (Payment Gateway)</h3>
+              <h3 className="font-medium" style={{ color: 'var(--text-primary)' }}>Paystack (Payment Gateway)</h3>
 
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border rounded-lg" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><CreditCard className="w-4 h-4 text-green-600" /></div>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 10%, transparent)' }}><CreditCard className="w-4 h-4" style={{ color: 'var(--success)' }} /></div>
                   <div>
-                    <h4 className="font-medium text-gray-900">Paystack</h4>
-                    <p className="text-sm text-gray-600">Enable Paystack and configure test/live keys</p>
+                    <h4 className="font-medium" style={{ color: 'var(--text-primary)' }}>Paystack</h4>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Enable Paystack and configure test/live keys</p>
                   </div>
                 </div>
 
@@ -262,7 +271,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       checked={formData.paystackEnabled || false}
                       onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackEnabled: checked }))}
                     />
-                    <span className="text-sm text-gray-700">Enable Paystack (global)</span>
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>Enable Paystack (global)</span>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -271,7 +280,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackWalletTopUpEnabled: checked }))}
                       isDisabled={!formData.paystackEnabled}
                     />
-                    <span className={`text-sm ${formData.paystackEnabled ? 'text-gray-700' : 'text-gray-400'}`}>
+                    <span className="text-sm" style={{ color: formData.paystackEnabled ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                       Allow Paystack for wallet top-ups
                     </span>
                   </div>
@@ -281,7 +290,7 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       checked={formData.mtnWalletTopUpEnabled || false}
                       onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, mtnWalletTopUpEnabled: checked }))}
                     />
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
                       Allow MTN MoMo wallet top-ups
                     </span>
                   </div>
@@ -292,48 +301,48 @@ export const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
                       onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, paystackStorefrontEnabled: checked }))}
                       isDisabled={!formData.paystackEnabled}
                     />
-                    <span className={`text-sm ${formData.paystackEnabled ? 'text-gray-700' : 'text-gray-400'}`}>
+                    <span className="text-sm" style={{ color: formData.paystackEnabled ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                       Allow Paystack for storefront orders
                     </span>
                   </div>
 
-                  <div className="p-4 bg-yellow-50 rounded-lg">
-                    <div className="font-medium text-yellow-900">Paystack key configuration</div>
-                    <div className="text-xs text-yellow-700 mt-1">
+                  <div className="p-4 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 5%, transparent)' }}>
+                    <div className="font-medium" style={{ color: 'var(--warning)' }}>Paystack key configuration</div>
+                    <div className="text-xs mt-1" style={{ color: 'var(--warning)' }}>
                       Paystack keys are loaded from environment variables on the server. To change keys, update your environment (e.g. <code>.env</code>) and restart the backend.
                     </div>
 
                     <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="p-3 bg-white rounded border">
-                        <div className="text-xs text-gray-500">Live public key</div>
+                      <div className="p-3 rounded border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+                        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Live public key</div>
                         <div className="mt-1 flex items-center justify-between gap-3">
                           <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{formData.paystackLivePublicKey ? formatMasked(formData.paystackLivePublicKey) : 'Not configured'}</div>
                           <Badge colorScheme={formData.paystackLivePublicKey ? 'success' : 'error'}>{formData.paystackLivePublicKey ? 'Configured' : 'Missing'}</Badge>
                         </div>
                       </div>
 
-                      <div className="p-3 bg-white rounded border">
-                        <div className="text-xs text-gray-500">Live secret key</div>
+                      <div className="p-3 rounded border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+                        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Live secret key</div>
                         <div className="mt-1 flex items-center justify-between gap-3">
-                          <div className="text-sm text-gray-700">{currentSettings.paystackLiveSecretExists ? 'Configured' : 'Missing'}</div>
+                          <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{currentSettings.paystackLiveSecretExists ? 'Configured' : 'Missing'}</div>
                           <Badge colorScheme={currentSettings.paystackLiveSecretExists ? 'success' : 'error'}>{currentSettings.paystackLiveSecretExists ? 'Configured' : 'Missing'}</Badge>
                         </div>
                       </div>
 
                       {import.meta.env.DEV && (
                         <>
-                          <div className="p-3 bg-white rounded border">
-                            <div className="text-xs text-gray-500">Test public key</div>
+                          <div className="p-3 rounded border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Test public key</div>
                             <div className="mt-1 flex items-center justify-between gap-3">
                               <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto">{formData.paystackTestPublicKey ? formatMasked(formData.paystackTestPublicKey) : 'Not configured'}</div>
                               <Badge colorScheme={formData.paystackTestPublicKey ? 'success' : 'error'}>{formData.paystackTestPublicKey ? 'Configured' : 'Missing'}</Badge>
                             </div>
                           </div>
 
-                          <div className="p-3 bg-white rounded border">
-                            <div className="text-xs text-gray-500">Test secret key</div>
+                          <div className="p-3 rounded border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+                            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Test secret key</div>
                             <div className="mt-1 flex items-center justify-between gap-3">
-                              <div className="text-sm text-gray-700">{currentSettings.paystackTestSecretExists ? 'Configured' : 'Missing'}</div>
+                              <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{currentSettings.paystackTestSecretExists ? 'Configured' : 'Missing'}</div>
                               <Badge colorScheme={currentSettings.paystackTestSecretExists ? 'success' : 'error'}>{currentSettings.paystackTestSecretExists ? 'Configured' : 'Missing'}</Badge>
                             </div>
                           </div>
