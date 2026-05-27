@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Smartphone, Check } from "lucide-react";
+import { ChevronLeft, Check, Zap } from "lucide-react";
 import { Card, CardBody, CardHeader, Container } from "../design-system";
 import { BryteLinksSvgLogoCompact } from "../components/common/BryteLinksSvgLogo";
 import { FaUsers, FaWhatsapp } from "react-icons/fa";
@@ -201,16 +201,17 @@ export const AuthLayout = ({
   footer,
 }: AuthLayoutProps) => {
   return (
-    <div className="min-h-screen bg-slate-950/5 flex flex-col">
+    <div className="h-screen bg-[var(--bg-page)] flex flex-col overflow-hidden">
       {/* Inject float keyframes */}
       <style>{floatKeyframes}</style>
 
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-slate-100">
+      {/* ── FIXED HEADER ── */}
+      <header className="flex-shrink-0 bg-gradient-to-br from-[var(--color-navy-dark)] via-[var(--color-navy)] to-[var(--color-navy-dark)] text-[var(--text-inverse)]">
         <Container className="py-4 sm:py-6">
           <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-6">
             <Link
               to={backLink ?? "/home"}
-              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold text-slate-100 transition hover:bg-white/10"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold text-[var(--text-inverse)] transition hover:bg-white/10"
             >
               <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="hidden sm:inline">{backLabel}</span>
@@ -232,20 +233,21 @@ export const AuthLayout = ({
             </div>
           </div>
         </Container>
-      </div>
+      </header>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-6 sm:py-10 sm:px-6">
-        <div className="w-full max-w-6xl">
+      {/* ── CENTERED CONTENT ── */}
+      <main className="flex-1 min-h-0 flex items-center justify-center px-4 py-6 sm:py-10 sm:px-6">
+        <div className="w-full max-w-6xl max-h-full flex flex-col">
           <Card
-            className="overflow-hidden shadow-2xl bg-slate-50 border-0 sm:border"
+            className="rounded-xl shadow-2xl bg-[var(--bg-surface)] border-0 sm:border sm:border-[var(--border-color)] flex flex-col min-h-0 overflow-hidden [&>div]:flex [&>div]:flex-col [&>div]:min-h-0 [&>div]:overflow-hidden"
             variant="elevated"
             noPadding
           >
-            <div className="grid gap-0 lg:gap-6 lg:grid-cols-[1.1fr_0.9fr] bg-white">
+            <div className="flex-1 min-h-0 lg:grid lg:grid-cols-[1.1fr_0.9fr]">
 
-              {/* ── LEFT COLUMN ── */}
-              <div className="hidden lg:flex items-center justify-center bg-slate-900 px-8 py-14 relative overflow-hidden">
-                {/* Subtle radial glow behind the card */}
+              {/* ── LEFT COLUMN (desktop only) ── */}
+              <div className="hidden lg:flex items-center justify-center bg-[var(--color-navy-dark)] relative overflow-hidden">
+                {/* Subtle radial glow */}
                 <div
                   aria-hidden="true"
                   style={{
@@ -257,50 +259,15 @@ export const AuthLayout = ({
                   }}
                 />
 
-                <div className="relative flex flex-col items-center max-w-xs w-full">
+                <div className="relative flex flex-col items-center max-w-xs w-full px-8 py-14">
                   {/* Floating network logos */}
                   {NETWORKS.map((n) => (
                     <NetworkLogo key={n.name} {...n} />
                   ))}
 
-                  {/* Central glass card */}
-                  <div
-                    style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.09)",
-                      borderRadius: "20px",
-                      padding: "2.5rem 2rem",
-                      margin: "68px 0 84px",
-                      width: "100%",
-                      backdropFilter: "blur(8px)",
-                    }}
-                  >
                     {/* Icon */}
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 12,
-                        background: "rgba(255,255,255,0.08)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        margin: "0 auto 1.25rem",
-                      }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#facc15"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                      </svg>
+                    <div className="mx-auto mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
+                      <Zap className="text-yellow-400" size={20} />
                     </div>
 
                     <p className="text-center text-[10px] uppercase tracking-[0.2em] text-white/40 font-medium mb-4">
@@ -310,27 +277,23 @@ export const AuthLayout = ({
                     <PitchCarousel />
                   </div>
                 </div>
-              </div>
 
-              {/* ── RIGHT COLUMN ── */}
-              <div className="px-4 py-6 sm:px-10 sm:py-10">
-                <CardHeader className="px-0 pb-4 border-b border-slate-200/70">
+              {/* ── RIGHT COLUMN (scrollable) ── */}
+              <div className="overflow-y-auto px-4 py-6 sm:px-10 sm:py-10">
+                <CardHeader className="px-0 pb-4 border-b border-[var(--border-color)]">
                   <div className="flex flex-col gap-2 sm:gap-3">
-                    <div className="flex items-center gap-2.5 sm:gap-3 text-slate-700">
-                      <div className="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-slate-900 text-white">
-                        <Smartphone className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </div>
+                    <div className="flex items-center gap-2.5 sm:gap-3 text-[var(--text-secondary)]">
                       <div>
                         <p className="text-[10px] sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.24em] text-[var(--text-muted)] font-medium">
                           User Portal
                         </p>
-                        <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 leading-tight">
+                        <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)] leading-tight">
                           {title}
                         </h1>
                       </div>
                     </div>
                     {subtitle ? (
-                      <p className="max-w-2xl text-xs sm:text-sm leading-relaxed sm:leading-6 text-slate-600">
+                      <p className="max-w-2xl text-xs sm:text-sm leading-relaxed sm:leading-6 text-[var(--text-secondary)]">
                         {subtitle}
                       </p>
                     ) : null}
@@ -351,8 +314,8 @@ export const AuthLayout = ({
                           <div
                             className={`flex h-7 w-7 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full text-[10px] sm:text-xs font-bold transition-all duration-300 ${
                               isActive
-                                ? "bg-slate-900 text-white"
-                                : "bg-slate-100 text-slate-400"
+                                ? "bg-[var(--color-navy-dark)] text-[var(--text-inverse)]"
+                                : "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]"
                             }`}
                           >
                             {isComplete ? (
@@ -364,7 +327,7 @@ export const AuthLayout = ({
                           {stepIndex < steps.length && (
                             <div
                               className={`flex-1 h-1 mx-2 sm:mx-3 rounded-full transition-all duration-300 ${
-                                isComplete ? "bg-slate-900" : "bg-slate-100"
+                                isComplete ? "bg-[var(--color-navy-dark)]" : "bg-[var(--bg-surface-alt)]"
                               }`}
                             />
                           )}
@@ -372,10 +335,10 @@ export const AuthLayout = ({
                       );
                     })}
                     <div className="ml-3 sm:ml-4 flex-col hidden sm:flex">
-                      <span className="text-[0.65rem] sm:text-[0.72rem] uppercase tracking-[0.2em] sm:tracking-[0.24em] text-slate-400">
+                      <span className="text-[0.65rem] sm:text-[0.72rem] uppercase tracking-[0.2em] sm:tracking-[0.24em] text-[var(--text-muted)]">
                         Step {activeStep}
                       </span>
-                      <span className="text-xs sm:text-sm font-semibold text-slate-900 whitespace-nowrap">
+                      <span className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] whitespace-nowrap">
                         {steps[activeStep - 1]}
                       </span>
                     </div>
@@ -387,13 +350,13 @@ export const AuthLayout = ({
                 </CardBody>
 
                 {footer ? (
-                  <div className="mt-5 sm:mt-6 border-t border-slate-200/80 pt-5 sm:pt-6">
+                  <div className="mt-5 sm:mt-6 border-t border-[var(--border-color)] pt-5 sm:pt-6">
                     {footer}
                   </div>
                 ) : null}
 
-                <div className="text-center pt-5 sm:pt-6 mt-6 sm:mt-8 border-t border-gray-100">
-                  <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 flex items-center justify-center gap-1.5 font-medium">
+                <div className="text-center pt-5 sm:pt-6 mt-6 sm:mt-8 border-t border-[var(--border-color)]">
+                  <p className="text-xs sm:text-sm text-[var(--text-muted)] mb-3 sm:mb-4 flex items-center justify-center gap-1.5 font-medium">
                     Need help? Reach out to support.
                   </p>
                   <div className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-2">
@@ -401,18 +364,18 @@ export const AuthLayout = ({
                       href="https://wa.me/233548983019?text=Hello%20support%2C%20I%20need%20help%20with%20my%20account"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                      className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-alt)] px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-color-strong)] hover:bg-[var(--bg-surface)]"
                     >
-                      <FaWhatsapp className="text-green-600 text-base sm:text-lg" />
+                      <FaWhatsapp className="text-success text-base sm:text-lg" />
                       <span>Contact Support</span>
                     </a>
                     <a
                       href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                      className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-alt)] px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-color-strong)] hover:bg-[var(--bg-surface)]"
                     >
-                      <FaUsers className="text-sky-500 text-base sm:text-lg" />
+                      <FaUsers className="text-[var(--color-secondary)] text-base sm:text-lg" />
                       <span>Join Community</span>
                     </a>
                   </div>
@@ -421,7 +384,7 @@ export const AuthLayout = ({
             </div>
           </Card>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
