@@ -549,6 +549,20 @@ export default function SuperAdminSettingsPage() {
                   </div>
                 </div>
               </Card>
+
+              <Card>
+                <SectionHeader title="Referral Commission Rate" subtitle="Percentage of order value credited to referring agents" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-amber-50 rounded-lg">
+                  <div>
+                    <div className="text-sm font-medium text-amber-900">Current rate</div>
+                    <div className="text-xs text-amber-700 mt-1">Configurable via Fee Settings dialog</div>
+                  </div>
+                  <div className="sm:text-right">
+                    <div className="text-xl sm:text-2xl font-bold text-amber-900">{feeSettings?.commissionRatePercent ?? 5}%</div>
+                    <div className="text-xs text-amber-700">GH₵ {((feeSettings?.commissionRatePercent ?? 5) * 100 / 100).toFixed(2)} per GH₵ 100 order</div>
+                  </div>
+                </div>
+              </Card>
             </div>
           )}
 

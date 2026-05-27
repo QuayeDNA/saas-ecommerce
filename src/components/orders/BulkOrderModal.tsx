@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import {
   FaTimes,
   FaWifi,
-  FaClock,
   FaCheckCircle,
   FaFileUpload,
   FaDownload,

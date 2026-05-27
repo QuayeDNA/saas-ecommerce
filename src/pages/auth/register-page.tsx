@@ -102,7 +102,6 @@ export const RegisterPage = () => {
     });
 
   // OTP state
-  const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
   const [otpSending, setOtpSending] = useState(false);
@@ -229,7 +228,6 @@ export const RegisterPage = () => {
     setOtpError(null);
     try {
       await authService.sendOtp(formData.phone, formData.email);
-      setOtpSent(true);
       setResendCooldown(60);
       addToast("OTP sent to your phone", "success");
     } catch (err: unknown) {

@@ -7,9 +7,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks";
 import { Button, Input, Alert } from "../../design-system";
-import { FaUser, FaLock, FaKey } from "react-icons/fa";
+import { FaUser, FaKey } from "react-icons/fa";
 import { AuthLayout } from "../../layouts/auth-layout";
-import { FIELD_LABELS } from "../../constants/auth";
 
 export const ForgotPasswordPage = () => {
   const { authState, forgotPassword } = useAuth();

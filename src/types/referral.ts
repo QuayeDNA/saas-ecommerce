@@ -1,17 +1,12 @@
 export interface ReferralDashboard {
-  totalReferrals: number;
-  activeReferrals: number;
-  totalEarnedFromReferrals: number;
   referralCode: string;
-  recentReferrals: Array<{
-    _id: string;
-    fullName: string;
-    phone: string;
-    createdAt: string;
-    totalSpent: number;
-  }>;
-  commissionBalance: number;
+  shareLink: string;
+  totalReferred: number;
+  activeReferred: number;
+  totalCommissionsEarned: number;
   pendingCommissions: number;
+  commissionBalance: number;
+  walletBalance: number;
 }
 
 export interface ReferralDashboardResponse {
@@ -20,10 +15,13 @@ export interface ReferralDashboardResponse {
 }
 
 export interface LeaderboardEntry {
+  referrerId: string;
   fullName: string;
-  referralCount: number;
-  commissionEarned: number;
-  rank: number;
+  referralCode: string;
+  commissionsEarned: number;
+  totalOrders: number;
+  totalReferred: number;
+  batchCount: number;
 }
 
 export interface LeaderboardResponse {
@@ -31,35 +29,34 @@ export interface LeaderboardResponse {
   data: LeaderboardEntry[];
 }
 
-export interface ReferralTreeNode {
-  userId: string;
+export interface ReferralTreeUser {
+  _id: string;
   fullName: string;
+  email: string;
   phone: string;
-  level: number;
+  referralCode: string;
   createdAt: string;
+}
+
+export interface ReferralTreeNode {
+  user: ReferralTreeUser;
   children: ReferralTreeNode[];
 }
 
 export interface ReferralTreeResponse {
   success: boolean;
-  data: ReferralTreeNode;
+  data: ReferralTreeNode[];
 }
 
 export interface ReferralAdminStats {
-  totalReferrals: number;
-  activeParticipants: number;
-  totalCommissionPaid: number;
-  totalCommissionPending: number;
-  averageReferralsPerUser: number;
-  topReferrer: {
-    fullName: string;
-    referralCount: number;
-    commissionEarned: number;
-  } | null;
-  dailySignups: Array<{
-    date: string;
-    count: number;
-  }>;
+  totalReferrers: number;
+  activeReferrers: number;
+  totalCommissionsPaid: number;
+  totalOrdersFromReferrals: number;
+  totalBatches: number;
+  totalReferred: number;
+  referredWithOrders: number;
+  referralConversionRate: number;
 }
 
 export interface ReferralAdminStatsResponse {
@@ -67,19 +64,42 @@ export interface ReferralAdminStatsResponse {
   data: ReferralAdminStats;
 }
 
+export interface BackendPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 export interface ReferralAdminUser {
   _id: string;
   fullName: string;
-  phone: string;
   email: string;
+  phone: string;
   referralCode: string;
-  referralCount: number;
-  totalEarned: number;
-  userType: string;
+  referredBy?: {
+    _id: string;
+    fullName: string;
+    email: string;
+    referralCode: string;
+  } | null;
+  status: string;
   createdAt: string;
+  walletBalance: number;
+  commissionBalance: number;
+  commissionStats: {
+    totalEarned: number;
+    totalOrders: number;
+    batchCount: number;
+  };
 }
 
 export interface ReferralAdminUsersResponse {
   success: boolean;
-  data: ReferralAdminUser[];
+  data: {
+    users: ReferralAdminUser[];
+    pagination: BackendPagination;
+  };
 }

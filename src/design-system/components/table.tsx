@@ -3,6 +3,7 @@ import type { ReactNode, HTMLAttributes, TableHTMLAttributes, TdHTMLAttributes, 
 
 type TableVariant = "simple" | "striped" | "bordered";
 type TableSize = "sm" | "md" | "lg";
+type SortDirection = "asc" | "desc";
 
 interface TableProps extends TableHTMLAttributes<HTMLTableElement> {
   children: ReactNode;
@@ -15,12 +16,18 @@ interface TableProps extends TableHTMLAttributes<HTMLTableElement> {
 
 const sizeClasses = { sm: "text-xs", md: "text-sm", lg: "text-base" };
 
+const variantClasses = {
+  simple: "",
+  striped: "[&_tbody_tr:nth-child(odd)]:bg-[var(--bg-surface-alt)]",
+  bordered: "border border-[var(--border-color)]",
+};
+
 export const Table = forwardRef<HTMLTableElement, TableProps>(
   ({ children, variant = "simple", size = "md", fullWidth = true, stickyHeader = false, className = "", ...props }, ref) => {
-    const variantClass = variant === "bordered" ? "border border-[var(--border-color)]" : "";
     const tableClasses = [
       "table-auto border-collapse",
       sizeClasses[size],
+      variantClasses[variant],
       fullWidth ? "w-full" : "",
       stickyHeader ? "[&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10" : "",
       className,
@@ -46,7 +53,13 @@ export const TableHeader = forwardRef<HTMLTableSectionElement, HTMLAttributes<HT
 );
 TableHeader.displayName = "TableHeader";
 
-export const TableHeaderCell = forwardRef<HTMLTableCellElement, ThHTMLAttributes<HTMLTableCellElement>>(
+interface TableHeaderCellProps extends ThHTMLAttributes<HTMLTableCellElement> {
+  sortable?: boolean;
+  sortDirection?: SortDirection | null;
+  onSort?: () => void;
+}
+
+export const TableHeaderCell = forwardRef<HTMLTableCellElement, TableHeaderCellProps>(
   ({ children, className = "", ...props }, ref) => (
     <th ref={ref} className={`px-4 py-3 text-left font-semibold text-[var(--text-primary)] border-b border-[var(--border-color)] ${className}`} {...props}>
       {children}

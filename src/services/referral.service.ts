@@ -10,6 +10,7 @@ import type {
   ReferralAdminStats,
   ReferralAdminUsersResponse,
   ReferralAdminUser,
+  BackendPagination,
 } from "../types/referral";
 
 class ReferralService {
@@ -29,13 +30,11 @@ class ReferralService {
     return response.data.data;
   }
 
-  async getReferralTree(depth = 3): Promise<ReferralTreeNode | null> {
+  async getReferralTree(depth = 3): Promise<ReferralTreeNode[]> {
     const response = await apiClient.get<ReferralTreeResponse>(
       `/api/referrals/tree?depth=${depth}`
     );
-    const raw: unknown = response.data.data;
-    if (!raw || (Array.isArray(raw) && raw.length === 0)) return null;
-    return raw as ReferralTreeNode;
+    return Array.isArray(response.data.data) ? response.data.data : [];
   }
 
   async getAdminStats(): Promise<ReferralAdminStats> {
@@ -45,11 +44,17 @@ class ReferralService {
     return response.data.data;
   }
 
-  async getAdminUsers(): Promise<ReferralAdminUser[]> {
+  async getAdminUsers(): Promise<{
+    users: ReferralAdminUser[];
+    pagination: BackendPagination;
+  }> {
     const response = await apiClient.get<ReferralAdminUsersResponse>(
       "/api/referrals/admin/users"
     );
-    return response.data.data;
+    return {
+      users: Array.isArray(response.data.data.users) ? response.data.data.users : [],
+      pagination: response.data.data.pagination,
+    };
   }
 }
 

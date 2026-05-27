@@ -210,7 +210,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
           </Button>
           <Button
             type="submit"
-            colorScheme="primary"
+            colorScheme="default"
             disabled={isLoading}
             isLoading={isLoading}
           >

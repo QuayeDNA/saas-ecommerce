@@ -973,7 +973,7 @@ export default function StoresPage() {
                       <div className="hidden lg:block">
                         <Table variant="simple" size="md">
                           <TableHeader>
-                            <TableRow isHoverable={false}>
+                            <TableRow>
                               <TableHeaderCell>Store</TableHeaderCell>
                               <TableHeaderCell>Agent</TableHeaderCell>
                               <TableHeaderCell>Status</TableHeaderCell>

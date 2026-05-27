@@ -9,8 +9,6 @@ import { useAuth } from "../../hooks";
 import { useState, useEffect } from "react";
 import { Button, Alert } from "../../design-system";
 import {
-  FaCheckCircle,
-  FaExclamationTriangle,
   FaSpinner,
 } from "react-icons/fa";
 import { AuthLayout } from "../../layouts/auth-layout";

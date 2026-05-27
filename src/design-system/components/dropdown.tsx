@@ -48,15 +48,6 @@ const sizeClasses = {
   option: { xs: "text-xs px-2 py-1", sm: "text-sm px-3 py-2", md: "text-sm px-4 py-2", lg: "text-base px-4 py-3" },
 };
 
-function getAccentColor(scheme: DropdownColorScheme): string {
-  if (scheme === "default") return "var(--color-secondary)";
-  const map: Record<string, string> = {
-    success: "var(--success)", error: "var(--error)",
-    warning: "var(--warning)", info: "var(--info)", gray: "#6b7280",
-  };
-  return map[scheme] || "var(--color-secondary)";
-}
-
 export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
   (
     {
@@ -129,7 +120,6 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
     };
 
     const selectedOption = options.find((opt) => opt.value === value);
-    const accent = getAccentColor("default");
 
     const triggerClasses = [
       "relative flex items-center justify-between w-full",

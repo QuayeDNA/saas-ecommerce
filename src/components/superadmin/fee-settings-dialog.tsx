@@ -74,6 +74,7 @@ const DEFAULT_FEE_SETTINGS: FeeSettings = {
   platformPayoutFeePercent: 0,
   autoPayoutEnabled: false,
   minimumPayoutAmounts: { mobile_money: 1.0, bank_account: 50.0 },
+  commissionRatePercent: 5,
 };
 
 const mergeWithDefaults = (data: Partial<FeeSettings>): FeeSettings => ({
@@ -406,6 +407,54 @@ export const FeeSettingsDialog: React.FC<FeeSettingsDialogProps> = ({
                       label="Fee amount"
                       value={`GH₵ ${sampleWalletFee.toFixed(2)}`}
                       valueClass="text-orange-600"
+                    />
+                  </div>
+                </div>
+              </Section>
+
+              {/* ── Referral Commission Rate ─────────────────────────────── */}
+              <Section
+                title="Referral Commission"
+                icon="🤝"
+                iconBg="bg-amber-100"
+                panelBg="bg-amber-50"
+                panelBorder="border-amber-200"
+              >
+                <p className="text-xs text-gray-500 -mt-1">
+                  Percentage of each order amount credited to the referring agent as commission.
+                </p>
+                <FormField label="Commission rate (%)">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={String(formData.commissionRatePercent)}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        commissionRatePercent: parseFloat(e.target.value) || 0,
+                      }))
+                    }
+                    helperText="Applied to qualifying orders from referred users"
+                    rightIcon={<span className="text-xs font-medium text-gray-500">%</span>}
+                  />
+                </FormField>
+                {/* Preview */}
+                <div className="bg-white border border-amber-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-amber-900 mb-2">
+                    Preview — GH₵ 100 order
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <PreviewCell
+                      label="Commission rate"
+                      value={`${formData.commissionRatePercent}%`}
+                      valueClass="text-amber-700"
+                    />
+                    <PreviewCell
+                      label="Referrer earns"
+                      value={`GH₵ ${(100 * formData.commissionRatePercent / 100).toFixed(2)}`}
+                      valueClass="text-green-700"
                     />
                   </div>
                 </div>
