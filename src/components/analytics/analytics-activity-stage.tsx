@@ -170,7 +170,7 @@ export function AnalyticsActivityStage({
 
     const currentRows = useMemo<PerformerRow[]>(() => {
         if (performanceMode === "storefronts") {
-            return rankedTopStorefronts.map((storefront) => ({
+            return rankedTopStorefronts.filter(Boolean).map((storefront) => ({
                 id: storefront.storefrontId,
                 primary: storefront.storefrontName,
                 secondary: storefront.agentName

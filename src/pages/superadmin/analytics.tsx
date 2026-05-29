@@ -372,8 +372,8 @@ export default function SuperAdminAnalyticsPage() {
               performanceData?.agents || data.topPerformers?.agents || []
             }
             topStorefronts={
-              performanceData?.agents?.flatMap(a => a.storefronts) ||
-              data.topPerformers?.agents?.flatMap(a => a.storefronts) ||
+              performanceData?.storefronts ||
+              data.topPerformers?.storefronts ||
               []
             }
             performanceTimeframe={performanceTimeframe}

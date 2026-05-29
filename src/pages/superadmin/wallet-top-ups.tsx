@@ -25,13 +25,9 @@ import {
   Badge,
   Pagination,
   Skeleton,
-  Table,
-  TableHeader,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
+  StatsGrid,
 } from "../../design-system";
+import type { StatCardProps } from "../../design-system/components/stats-card";
 import { Modal } from "../../design-system/components/modal";
 import { SearchAndFilter } from "../../components/common/SearchAndFilter";
 import type { WalletTransaction, WalletAnalytics } from "../../types/wallet";
@@ -105,23 +101,39 @@ function WalletTransactionModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={isCredit ? "Credit Wallet" : "Debit Wallet"}>
-      <div className={`rounded-lg p-3 mb-4 flex items-center gap-3 ${isCredit ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${isCredit ? "bg-green-500" : "bg-red-500"}`}>
+      <div
+        className="rounded-lg p-3 mb-4 flex items-center gap-3"
+        style={{
+          backgroundColor: `color-mix(in srgb, ${isCredit ? "var(--success)" : "var(--error)"} 12%, transparent)`,
+          border: `1px solid color-mix(in srgb, ${isCredit ? "var(--success)" : "var(--error)"} 30%, transparent)`,
+        }}
+      >
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+          style={{ background: isCredit ? "var(--success)" : "var(--error)" }}
+        >
           {user.fullName.charAt(0)}
         </div>
         <div className="min-w-0">
-          <p className="font-medium text-sm text-gray-900 truncate">{user.fullName}</p>
-          <p className="text-xs text-gray-500 truncate">{user.email}</p>
-          {user.agentCode && <p className="text-xs text-blue-600 font-mono">{user.agentCode}</p>}
+          <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>{user.fullName}</p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{user.email}</p>
+          {user.agentCode && <p className="text-xs font-mono" style={{ color: "var(--color-primary)" }}>{user.agentCode}</p>}
         </div>
         <div className="ml-auto text-right flex-shrink-0">
-          <p className="text-xs text-gray-500">Balance</p>
-          <p className="font-semibold text-sm text-gray-900">{fmt(user.walletBalance || 0)}</p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Balance</p>
+          <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{fmt(user.walletBalance || 0)}</p>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-700">
+        <div
+          className="mb-4 p-3 rounded-lg flex items-center gap-2 text-sm"
+          style={{
+            backgroundColor: `color-mix(in srgb, var(--error) 12%, transparent)`,
+            border: `1px solid color-mix(in srgb, var(--error) 30%, transparent)`,
+            color: "var(--error)",
+          }}
+        >
           <FaExclamationTriangle className="flex-shrink-0" />
           {error}
         </div>
@@ -346,152 +358,196 @@ export default function WalletTopUpsPage() {
   };
 
   // ---------------------------------------------------------------------------
+  // Stat card data
+  // ---------------------------------------------------------------------------
+
+  const statCards: StatCardProps[] = useMemo(() => {
+    if (!analytics) return [];
+    return [
+      {
+        title: "Total Users",
+        value: analytics.users.total,
+        subtitle: `${analytics.users.withBalance} with balance`,
+        icon: <FaUsers />,
+        size: "sm",
+      },
+      {
+        title: "Total Balance",
+        value: fmt(analytics.balance.total),
+        subtitle: `Avg ${fmt(analytics.balance.average)}`,
+        icon: <FaChartBar />,
+        size: "sm",
+      },
+      {
+        title: "Credits",
+        value: analytics.transactions.credits.count,
+        subtitle: analytics.transactions.credits.total > 0 ? fmt(analytics.transactions.credits.total) : "No credits yet",
+        icon: <FaArrowUp />,
+        size: "sm",
+      },
+      {
+        title: "Pending Requests",
+        value: pendingRequests.length,
+        subtitle: pendingRequests.length > 0 ? "Needs attention" : "All clear",
+        icon: <FaClock />,
+        size: "sm",
+      },
+    ];
+  }, [analytics, pendingRequests]);
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-4 sm:space-y-6 pb-8">
       {/* ── Page header ─────────────────────────────────────────────────────── */}
-      <div
-        className="rounded-2xl p-4 sm:p-6 text-white shadow-xl"
-        style={{ background: 'linear-gradient(to right, var(--color-primary-500), var(--color-primary-700))' }}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-white/20 rounded-xl">
-              <FaWallet className="text-xl sm:text-2xl" />
+      <Card noPadding>
+        <div
+          className="px-4 py-5 sm:px-6 sm:py-6 text-white"
+          style={{ background: "var(--gradient-brand-dark)" }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl" style={{ backgroundColor: "color-mix(in srgb, white 20%, transparent)" }}>
+                <FaWallet className="text-xl sm:text-2xl" />
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold">Wallet Management</h1>
+                <p className="text-xs sm:text-sm mt-0.5" style={{ color: "color-mix(in srgb, white 70%, transparent)" }}>
+                  Credit or debit agent wallets &middot; review pending top-up requests
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold">Wallet Management</h1>
-              <p className="text-xs sm:text-sm text-white/70 mt-0.5">
-                Credit or debit agent wallets · review pending top-up requests
-              </p>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-start sm:self-center border-white/40 text-white hover:bg-white/10"
+              onClick={() => {
+                void fetchUsers(pagination.page);
+                void fetchAnalytics();
+                void fetchPendingRequests();
+              }}
+            >
+              <FaSync className="mr-1.5" />
+              Refresh
+            </Button>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="self-start sm:self-auto border-white/40 text-white hover:bg-white/10"
-            onClick={() => {
-              void fetchUsers(pagination.page);
-              void fetchAnalytics();
-              void fetchPendingRequests();
-            }}
-          >
-            <FaSync className="mr-1.5" />
-            Refresh
-          </Button>
         </div>
+      </Card>
 
-        {/* ── Inline analytics strip ──────────────────────────────────────── */}
-        {analytics ? (
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {[
-              {
-                label: "Total Users",
-                value: analytics.users.total,
-                sub: `${analytics.users.withBalance} with balance`,
-                icon: <FaUsers />,
-                colorClass: "bg-slate-700/20 border border-slate-600/20",
-                raw: true,
-              },
-              {
-                label: "Total Balance",
-                value: fmt(analytics.balance.total),
-                sub: `Avg ${fmt(analytics.balance.average)}`,
-                icon: <FaChartBar />,
-                colorClass: "bg-blue-500/20 border border-blue-400/30",
-                raw: false,
-              },
-              {
-                label: "Credits",
-                value: analytics.transactions.credits.count,
-                sub: fmt(analytics.transactions.credits.total),
-                icon: <FaArrowUp />,
-                colorClass: "bg-green-500/30 border border-green-400/30",
-                raw: true,
-              },
-              {
-                label: "Pending Requests",
-                value: pendingRequests.length,
-                sub: pendingRequests.length > 0 ? "Needs attention" : "All clear",
-                icon: <FaClock />,
-                colorClass: pendingRequests.length > 0 ? "bg-yellow-500/30 border border-yellow-400/30" : "bg-white/15 border border-slate-200",
-                raw: true,
-              },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className={`rounded-lg px-3 py-2.5 flex items-center gap-2 ${stat.colorClass}`}
-              >
-                <span className="text-white/70 text-sm flex-shrink-0">{stat.icon}</span>
-                <div className="min-w-0">
-                  <p className="text-white/70 text-[10px] font-medium uppercase tracking-wide truncate">{stat.label}</p>
-                  <p className="text-white font-bold text-sm sm:text-base leading-tight truncate">{stat.value}</p>
-                  <p className="text-blue-100/80 text-[10px] truncate">{stat.sub}</p>
+      {/* ── Stat cards ──────────────────────────────────────────────────────── */}
+      {analytics ? (
+        <StatsGrid stats={statCards} columns={4} gap="sm" />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardBody>
+                <div className="space-y-2">
+                  <Skeleton height="0.625rem" width="60%" />
+                  <Skeleton height="1.25rem" width="80%" />
+                  <Skeleton height="0.625rem" width="50%" />
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white/15 rounded-lg px-3 py-2.5">
-                <Skeleton height="0.625rem" width="60%" className="mb-1 opacity-50" />
-                <Skeleton height="1.25rem" width="80%" className="mb-1 opacity-60" />
-                <Skeleton height="0.625rem" width="50%" className="opacity-40" />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {/* ── Pending top-up requests banner ──────────────────────────────────── */}
+      {/* ── Pending top-up requests ─────────────────────────────────────────── */}
       {pendingRequests.length > 0 && (
-        <Card variant="outlined" className="border-yellow-300 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl shadow-sm">
-          <CardHeader className="pb-3">
+        <Card
+          variant="outlined"
+          className="rounded-xl"
+          style={{
+            borderColor: `color-mix(in srgb, var(--warning) 50%, transparent)`,
+          }}
+        >
+          <CardHeader
+            className="px-3 sm:px-4 pt-3 sm:pt-4 pb-0"
+            style={{ borderBottom: "none" }}
+          >
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-3 flex-1">
-                <div className="p-2 bg-yellow-100 rounded-xl border border-yellow-200">
-                  <FaClock className="text-yellow-600 text-sm" />
+                <div
+                  className="p-2 rounded-xl"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, var(--warning) 15%, transparent)`,
+                    border: `1px solid color-mix(in srgb, var(--warning) 30%, transparent)`,
+                  }}
+                >
+                  <FaClock style={{ color: "var(--warning)" }} />
                 </div>
                 <div>
-                  <span className="font-semibold text-sm text-yellow-900">Pending Top-up Requests</span>
-                  <p className="text-xs text-yellow-700 mt-0.5">
+                  <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                    Pending Top-up Requests
+                  </span>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                     These requests need your approval before funds are credited.
                   </p>
                 </div>
               </div>
-              <Badge colorScheme="warning" className="bg-yellow-100 text-yellow-800 border-yellow-300 rounded-lg px-2 py-1">
+              <Badge
+                colorScheme="warning"
+                className="rounded-lg px-2 py-1"
+              >
                 {pendingRequests.length} pending
               </Badge>
             </div>
           </CardHeader>
-          <CardBody className="pt-0">
+          <CardBody className="px-3 sm:px-4 pb-3 sm:pb-4">
             {/* Mobile card view */}
             <div className="sm:hidden space-y-2">
               {pendingRequests.map((req) => {
                 const u = typeof req.user === "object" ? req.user : null;
                 return (
-                  <div key={req._id} className="bg-white rounded-xl border border-yellow-200 p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div
+                    key={req._id}
+                    className="rounded-xl p-4 border shadow-sm"
+                    style={{
+                      backgroundColor: "var(--bg-surface)",
+                      borderColor: `color-mix(in srgb, var(--warning) 25%, transparent)`,
+                    }}
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-sm text-gray-900">{u?.fullName ?? "Unknown"}</p>
-                        {u?.agentCode && <p className="text-xs text-blue-600 font-mono mt-0.5">{u.agentCode}</p>}
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                          {u?.fullName ?? "Unknown"}
+                        </p>
+                        {u?.agentCode && (
+                          <p className="text-xs font-mono mt-0.5" style={{ color: "var(--color-primary)" }}>
+                            {u.agentCode}
+                          </p>
+                        )}
+                        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                           {new Date(req.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                         </p>
-                        {req.description && <p className="text-xs text-gray-600 mt-1 line-clamp-2 bg-gray-50 rounded-lg p-2 border">{req.description}</p>}
+                        {req.description && (
+                          <p
+                            className="text-xs mt-1 line-clamp-2 rounded-lg p-2 border"
+                            style={{
+                              color: "var(--text-secondary)",
+                              backgroundColor: "var(--bg-surface-alt)",
+                              borderColor: "var(--border-color)",
+                            }}
+                          >
+                            {req.description}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-base font-bold text-green-600 whitespace-nowrap">{fmt(req.amount)}</p>
-                        <p className="text-xs text-green-500 font-medium">Top-up</p>
+                        <p className="text-base font-bold whitespace-nowrap" style={{ color: "var(--success)" }}>
+                          {fmt(req.amount)}
+                        </p>
+                        <p className="text-xs font-medium" style={{ color: "var(--success)" }}>Top-up</p>
                       </div>
                     </div>
                     <div className="flex gap-2 mt-3">
                       <Button
                         size="xs"
-                        className="flex-1 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-sm"
+                        className="flex-1 rounded-lg shadow-sm text-white border-0"
+                        style={{ background: "var(--success)" }}
                         onClick={() => handleProcessRequest(req._id, true)}
                         isLoading={processingId === req._id}
                         disabled={!!processingId}
@@ -500,8 +556,8 @@ export default function WalletTopUpsPage() {
                       </Button>
                       <Button
                         size="xs"
-                        variant="danger"
-                        className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm"
+                        className="flex-1 rounded-lg shadow-sm text-white border-0"
+                        style={{ background: "var(--error)" }}
                         onClick={() => handleProcessRequest(req._id, false)}
                         isLoading={processingId === req._id}
                         disabled={!!processingId}
@@ -516,45 +572,71 @@ export default function WalletTopUpsPage() {
 
             {/* Desktop table view */}
             <div className="hidden sm:block overflow-x-auto -mx-4 sm:mx-0 mt-2">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHeaderCell>Agent</TableHeaderCell>
-                    <TableHeaderCell>Amount</TableHeaderCell>
-                    <TableHeaderCell className="hidden md:table-cell">Note</TableHeaderCell>
-                    <TableHeaderCell className="hidden lg:table-cell">Requested</TableHeaderCell>
-                    <TableHeaderCell>Actions</TableHeaderCell>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: `color-mix(in srgb, var(--warning) 20%, transparent)` }}>
+                    <th className="text-left font-semibold py-2.5 px-3" style={{ color: "var(--text-primary)" }}>Agent</th>
+                    <th className="text-left font-semibold py-2.5 px-3" style={{ color: "var(--text-primary)" }}>Amount</th>
+                    <th className="hidden md:table-cell text-left font-semibold py-2.5 px-3" style={{ color: "var(--text-primary)" }}>Note</th>
+                    <th className="hidden lg:table-cell text-left font-semibold py-2.5 px-3" style={{ color: "var(--text-primary)" }}>Requested</th>
+                    <th className="text-left font-semibold py-2.5 px-3" style={{ color: "var(--text-primary)" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
                   {pendingRequests.map((req) => {
                     const u = typeof req.user === "object" ? req.user : null;
                     return (
-                      <TableRow key={req._id} className="bg-white hover:bg-yellow-50/50">
-                        <TableCell>
+                      <tr
+                        key={req._id}
+                        className="border-b transition-colors"
+                        style={{
+                          borderColor: `color-mix(in srgb, var(--warning) 10%, transparent)`,
+                          backgroundColor: "transparent",
+                        }}
+                      >
+                        <td className="py-2.5 px-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-yellow-100 border border-yellow-200 flex items-center justify-center text-yellow-700 text-xs font-bold flex-shrink-0">
+                            <div
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                              style={{
+                                backgroundColor: `color-mix(in srgb, var(--warning) 20%, transparent)`,
+                                border: `1px solid color-mix(in srgb, var(--warning) 30%, transparent)`,
+                                color: "var(--warning)",
+                              }}
+                            >
                               {(u?.fullName ?? "?").charAt(0)}
                             </div>
                             <div className="min-w-0">
-                              <div className="font-medium text-sm">{u?.fullName ?? "Unknown"}</div>
-                              <div className="text-xs text-gray-400 font-mono">{u?.agentCode ?? u?._id ?? ""}</div>
+                              <div className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
+                                {u?.fullName ?? "Unknown"}
+                              </div>
+                              <div className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+                                {u?.agentCode ?? u?._id ?? ""}
+                              </div>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="font-bold text-green-600 whitespace-nowrap text-sm">
-                          {fmt(req.amount)}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm text-gray-600 max-w-[200px] truncate">
-                          {req.description || "—"}
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell text-xs text-gray-500 whitespace-nowrap">
-                          {new Date(req.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                        </TableCell>
-                        <TableCell>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="font-bold whitespace-nowrap text-sm" style={{ color: "var(--success)" }}>
+                            {fmt(req.amount)}
+                          </span>
+                        </td>
+                        <td className="hidden md:table-cell py-2.5 px-3">
+                          <span className="text-sm max-w-[200px] truncate block" style={{ color: "var(--text-secondary)" }}>
+                            {req.description || "\u2014"}
+                          </span>
+                        </td>
+                        <td className="hidden lg:table-cell py-2.5 px-3">
+                          <span className="text-xs whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                            {new Date(req.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
                           <div className="flex gap-2">
                             <Button
                               size="xs"
+                              className="text-white border-0"
+                              style={{ background: "var(--success)" }}
                               onClick={() => handleProcessRequest(req._id, true)}
                               isLoading={processingId === req._id}
                               disabled={!!processingId}
@@ -563,7 +645,8 @@ export default function WalletTopUpsPage() {
                             </Button>
                             <Button
                               size="xs"
-                              variant="danger"
+                              className="text-white border-0"
+                              style={{ background: "var(--error)" }}
                               onClick={() => handleProcessRequest(req._id, false)}
                               isLoading={processingId === req._id}
                               disabled={!!processingId}
@@ -571,12 +654,12 @@ export default function WalletTopUpsPage() {
                               <FaTimes className="mr-1" /> Reject
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     );
                   })}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             </div>
           </CardBody>
         </Card>
@@ -589,7 +672,7 @@ export default function WalletTopUpsPage() {
           setSearchTerm(v);
           setPagination((p) => ({ ...p, page: 1 }));
         }}
-        searchPlaceholder="Search by name, email or agent code…"
+        searchPlaceholder="Search by name, email or agent code\u2026"
         filters={{
           userType: { value: userTypeFilter, options: USER_TYPE_OPTIONS, label: "User Type" },
           status: { value: statusFilter, options: STATUS_OPTIONS, label: "Status" },
@@ -603,9 +686,9 @@ export default function WalletTopUpsPage() {
 
       {/* ── Results count ───────────────────────────────────────────────────── */}
       {!loading && (
-        <p className="text-xs text-gray-500 px-1">
+        <p className="text-xs px-1" style={{ color: "var(--text-muted)" }}>
           {pagination.total > 0
-            ? `Showing ${(pagination.page - 1) * pagination.limit + 1}–${Math.min(
+            ? `Showing ${(pagination.page - 1) * pagination.limit + 1}\u2013${Math.min(
               pagination.page * pagination.limit,
               pagination.total
             )} of ${pagination.total} users`
@@ -614,11 +697,15 @@ export default function WalletTopUpsPage() {
       )}
 
       {/* ── Users list ──────────────────────────────────────────────────────── */}
-      <Card noPadding className="bg-gradient-to-r from-primary-500 to-primary-700 text-white overflow-hidden rounded-xl shadow-lg">
+      <Card noPadding className="overflow-hidden rounded-xl" style={{ background: "var(--gradient-brand-dark)" }}>
         {loading ? (
           <div className="p-4 space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 border border-white/20 rounded-lg">
+              <div
+                key={i}
+                className="flex items-center gap-3 p-3 rounded-lg"
+                style={{ border: "1px solid color-mix(in srgb, white 20%, transparent)" }}
+              >
                 <Skeleton variant="circular" width={40} height={40} />
                 <div className="flex-1 space-y-1.5">
                   <Skeleton height="0.875rem" width="45%" />
@@ -633,18 +720,23 @@ export default function WalletTopUpsPage() {
             ))}
           </div>
         ) : users.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-white/60">
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
-              <FaUsers className="text-2xl text-white/60" />
+          <div className="flex flex-col items-center justify-center py-16 gap-3 px-4">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: "color-mix(in srgb, white 20%, transparent)" }}
+            >
+              <FaUsers className="text-2xl" style={{ color: "color-mix(in srgb, white 60%, transparent)" }} />
             </div>
             <div className="text-center">
-              <p className="font-medium text-white/80">No users found</p>
-              <p className="text-sm mt-0.5">
+              <p className="font-medium" style={{ color: "color-mix(in srgb, white 80%, transparent)" }}>
+                No users found
+              </p>
+              <p className="text-sm mt-0.5" style={{ color: "color-mix(in srgb, white 60%, transparent)" }}>
                 {hasFilters ? "Try adjusting your filters." : "No users in the system yet."}
               </p>
             </div>
             {hasFilters && (
-              <Button variant="outline" size="sm" onClick={handleClearFilters}>
+              <Button variant="outline" size="sm" className="border-white/40 text-white hover:bg-white/10" onClick={handleClearFilters}>
                 Clear filters
               </Button>
             )}
@@ -652,16 +744,20 @@ export default function WalletTopUpsPage() {
         ) : (
           <>
             {/* Mobile card view */}
-            <div className="sm:hidden divide-y divide-white/20">
+            <div className="sm:hidden divide-y" style={{ borderColor: "color-mix(in srgb, white 20%, transparent)" }}>
               {users.map((user) => (
-                <div key={user._id} className="p-4 hover:bg-white/5 transition-colors rounded-lg mx-2 first:mt-2 last:mb-2">
+                <div
+                  key={user._id}
+                  className="p-4 transition-colors"
+                  style={{ borderColor: "color-mix(in srgb, white 12%, transparent)" }}
+                >
                   <div className="flex items-start gap-3">
-
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg bg-primary-900"
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg"
+                            style={{ background: "var(--gradient-brand-dark)" }}
                           >
                             {user.fullName.charAt(0)}{user.fullName.split(" ")[1]?.charAt(0) ?? ""}
                           </div>
@@ -674,20 +770,33 @@ export default function WalletTopUpsPage() {
                           {user.status}
                         </Badge>
                       </div>
-                      <p className="text-xs text-white/70 truncate">{user.email}</p>
+                      <p className="text-xs truncate" style={{ color: "color-mix(in srgb, white 70%, transparent)" }}>
+                        {user.email}
+                      </p>
                       {user.agentCode && (
-                        <p className="text-xs text-blue-200 font-mono mt-0.5">{user.agentCode}</p>
+                        <p className="text-xs font-mono mt-0.5" style={{ color: "var(--color-primary-hover)" }}>
+                          {user.agentCode}
+                        </p>
                       )}
                       <div className="mt-3 flex items-center justify-between gap-2">
-                        <div className="bg-white/15 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
-                          <p className="text-[10px] text-white/80 uppercase tracking-wide">Balance</p>
+                        <div
+                          className="rounded-xl px-3 py-2"
+                          style={{
+                            backgroundColor: "color-mix(in srgb, white 15%, transparent)",
+                            border: "1px solid color-mix(in srgb, white 20%, transparent)",
+                            backdropFilter: "blur(4px)",
+                          }}
+                        >
+                          <p className="text-[10px] uppercase tracking-wide" style={{ color: "color-mix(in srgb, white 80%, transparent)" }}>
+                            Balance
+                          </p>
                           <p className="font-bold text-sm text-white">{fmt(user.walletBalance || 0)}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button
                             size="xs"
-                            variant="success"
-                            className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg"
+                            className="text-white border-0 shadow-lg"
+                            style={{ background: "var(--success)" }}
                             onClick={() => {
                               setSelectedUser(user);
                               setTransactionModal({ isOpen: true, mode: "credit" });
@@ -697,8 +806,8 @@ export default function WalletTopUpsPage() {
                           </Button>
                           <Button
                             size="xs"
-                            variant="danger"
-                            className="bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-lg"
+                            className="text-white border-0 shadow-lg"
+                            style={{ background: "var(--error)" }}
                             onClick={() => {
                               setSelectedUser(user);
                               setTransactionModal({ isOpen: true, mode: "debit" });
@@ -716,60 +825,68 @@ export default function WalletTopUpsPage() {
 
             {/* Desktop table view */}
             <div className="hidden sm:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHeaderCell>User</TableHeaderCell>
-                    <TableHeaderCell>Type</TableHeaderCell>
-                    <TableHeaderCell className="hidden md:table-cell">Status</TableHeaderCell>
-                    <TableHeaderCell>Balance</TableHeaderCell>
-                    <TableHeaderCell>Actions</TableHeaderCell>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: "color-mix(in srgb, white 20%, transparent)" }}>
+                    <th className="text-left font-semibold py-3 px-4 text-white">User</th>
+                    <th className="text-left font-semibold py-3 px-4 text-white">Type</th>
+                    <th className="hidden md:table-cell text-left font-semibold py-3 px-4 text-white">Status</th>
+                    <th className="text-left font-semibold py-3 px-4 text-white">Balance</th>
+                    <th className="text-left font-semibold py-3 px-4 text-white">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
                   {users.map((user) => (
-                    <TableRow key={user._id} className="hover:bg-white/10 transition-colors">
-                      <TableCell>
+                    <tr
+                      key={user._id}
+                      className="transition-colors hover:bg-white/5"
+                      style={{ borderBottom: "1px solid color-mix(in srgb, white 12%, transparent)" }}
+                    >
+                      <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                            style={{ background: 'linear-gradient(to bottom right, var(--color-primary-400), var(--color-primary-700))' }}
+                            style={{ background: "var(--gradient-brand-dark)" }}
                           >
                             {user.fullName.charAt(0)}{user.fullName.split(" ")[1]?.charAt(0) ?? ""}
                           </div>
                           <div className="min-w-0">
                             <div className="font-semibold text-sm text-white truncate">{user.fullName}</div>
-                            <div className="text-xs text-white/70 truncate">{user.email}</div>
+                            <div className="text-xs truncate" style={{ color: "color-mix(in srgb, white 70%, transparent)" }}>
+                              {user.email}
+                            </div>
                             {user.agentCode && (
-                              <div className="text-xs text-blue-300 font-mono">{user.agentCode}</div>
+                              <div className="text-xs font-mono" style={{ color: "var(--color-primary-hover)" }}>
+                                {user.agentCode}
+                              </div>
                             )}
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
+                      </td>
+                      <td className="py-3 px-4">
                         <Badge colorScheme={userTypeBadgeColor(user.userType)}>
                           {user.userType.replace(/_/g, " ")}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
+                      </td>
+                      <td className="hidden md:table-cell py-3 px-4">
                         <Badge colorScheme={statusBadgeColor(user.status)}>
                           {user.status}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
+                      </td>
+                      <td className="py-3 px-4">
                         <div>
                           <p className="font-bold text-sm text-white whitespace-nowrap">{fmt(user.walletBalance || 0)}</p>
                           {(user.walletBalance ?? 0) === 0 && (
-                            <p className="text-[10px] text-red-200">Zero balance</p>
+                            <p className="text-[10px]" style={{ color: "var(--error)" }}>Zero balance</p>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
+                      </td>
+                      <td className="py-3 px-4">
                         <div className="flex gap-2">
                           <Button
                             size="xs"
-                            variant="success"
-                            className="bg-green-500 hover:bg-green-600 text-white border-green-400 shadow-lg rounded-lg"
+                            className="text-white border-0 shadow-lg rounded-lg"
+                            style={{ background: "var(--success)" }}
                             onClick={() => {
                               setSelectedUser(user);
                               setTransactionModal({ isOpen: true, mode: "credit" });
@@ -780,8 +897,8 @@ export default function WalletTopUpsPage() {
                           </Button>
                           <Button
                             size="xs"
-                            variant="danger"
-                            className="bg-red-500 hover:bg-red-600 text-white border-red-400 shadow-lg rounded-lg"
+                            className="text-white border-0 shadow-lg rounded-lg"
+                            style={{ background: "var(--error)" }}
                             onClick={() => {
                               setSelectedUser(user);
                               setTransactionModal({ isOpen: true, mode: "debit" });
@@ -791,17 +908,17 @@ export default function WalletTopUpsPage() {
                             <span>Debit</span>
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             </div>
           </>
         )}
 
         {pagination.pages > 1 && !loading && (
-          <div className="border-t border-white/20 px-4 py-3">
+          <div className="border-t px-4 py-3" style={{ borderColor: "color-mix(in srgb, white 20%, transparent)" }}>
             <Pagination
               currentPage={pagination.page}
               totalPages={pagination.pages}

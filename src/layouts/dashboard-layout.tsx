@@ -4,8 +4,6 @@
  * Features:
  * - Responsive sidebar that collapses on mobile
  * - Modern header with user profile and notifications
- * - Smooth animations and transitions
- * - Support for guided tour
  * - Mobile-first design with touch-friendly controls
  */
 
@@ -14,11 +12,8 @@ import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "../components/sidebar";
 import { Header } from "../components/header";
 import { NavigationLoader } from "../components/navigation-loader";
-import { TutorialProvider } from "../contexts/TutorialContext";
-import { TutorialPlayer } from "../components/tutorials/tutorial-player";
-import { TutorialLauncher } from "../components/tutorials/tutorial-launcher";
-import { TutorialAutoTrigger } from "../components/tutorials/tutorial-auto-trigger";
 import { AnnouncementBanner } from "../components/announcements/announcement-banner";
+import { GlobalFab } from "../components/common/GlobalFab";
 import { useAuth } from "../hooks";
 
 export const DashboardLayout = () => {
@@ -69,46 +64,42 @@ export const DashboardLayout = () => {
   };
 
   return (
-    <TutorialProvider userRole={userRole}>
-      <div className="flex bg-[var(--bg-page)] overflow-hidden h-screen">
-        {/* Mobile sidebar overlay */}
-        {sidebarOpen && isMobile && (
-          <button
-            className="fixed inset-0 z-20 bg-[var(--color-navy-dark)]/50 transition-opacity duration-300 ease-in-out lg:hidden border-0"
-            onClick={() => setSidebarOpen(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") setSidebarOpen(false);
-            }}
-            aria-label="Close sidebar overlay"
-          />
-        )}
+    <div className="flex bg-[var(--bg-page)] overflow-hidden h-screen">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && isMobile && (
+        <button
+          className="fixed inset-0 z-20 bg-[var(--color-navy-dark)]/50 transition-opacity duration-300 ease-in-out lg:hidden border-0"
+          onClick={() => setSidebarOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setSidebarOpen(false);
+          }}
+          aria-label="Close sidebar overlay"
+        />
+      )}
 
-        {/* Sidebar component */}
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* Sidebar component */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        {/* Main Content */}
-        <div className="flex flex-col flex-1 w-full transition-all duration-300">
-          {/* Header - gets the toggleSidebar function */}
-          <Header onMenuClick={toggleSidebar} />
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 w-full transition-all duration-300">
+        {/* Header - gets the toggleSidebar function */}
+        <Header onMenuClick={toggleSidebar} />
 
-          {/* Content */}
-          <main
-            className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-[var(--bg-page)]"
-          >
-            <NavigationLoader delay={150}>
-              <Outlet />
-            </NavigationLoader>
-          </main>
-        </div>
-
-        {/* Tutorial system */}
-        <TutorialPlayer />
-        <TutorialAutoTrigger />
-        <TutorialLauncher />
-
-        {/* Announcement Banner (urgent/high priority) */}
-        <AnnouncementBanner />
+        {/* Content */}
+        <main
+          className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-[var(--bg-page)]"
+        >
+          <NavigationLoader delay={150}>
+            <Outlet />
+          </NavigationLoader>
+        </main>
       </div>
-    </TutorialProvider>
+
+      {/* Global support FAB */}
+      <GlobalFab />
+
+      {/* Announcement Banner (urgent/high priority) */}
+      <AnnouncementBanner />
+    </div>
   );
 };
