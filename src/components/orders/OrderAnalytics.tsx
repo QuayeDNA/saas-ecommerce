@@ -427,7 +427,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
-      <StatsGrid stats={getStatsCards()} columns={4} gap="md" />
+      <StatsGrid stats={getStatsCards()} columns={4} gap="xs" />
 
       {/* Reception Status Carousel - Only for Admins */}
       {isAdmin && analyticsData?.receptionCounts && (

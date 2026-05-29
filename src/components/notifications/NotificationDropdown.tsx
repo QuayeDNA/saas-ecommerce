@@ -164,20 +164,17 @@ export const NotificationDropdown: React.FC = () => {
           variant="ghost"
           size="sm"
           onClick={() => setIsOpen(!isOpen)}
-          className="relative p-2 hover:bg-[var(--bg-surface-alt)] transition-colors duration-200"
+          className="relative p-2 hover:bg-white/15 active:bg-white/20 transition-all duration-200 rounded-full"
           aria-label="Notifications"
           aria-expanded={isOpen}
           aria-haspopup="true"
+          style={{ color: unreadCount > 0 ? 'var(--text-inverse)' : 'color-mix(in srgb, var(--text-inverse) 65%, transparent)' }}
         >
-          <FaBell className="w-5 h-5 text-[var(--text-primary)]" />
+          <FaBell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <Badge
-              colorScheme="error"
-              size="sm"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs font-medium animate-pulse"
-            >
+            <span className="absolute -top-0.5 -right-0.5 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-[var(--color-primary)] px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-[var(--bg-header)]">
               {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
+            </span>
           )}
         </Button>
 

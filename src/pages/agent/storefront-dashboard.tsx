@@ -463,7 +463,7 @@ export const StorefrontDashboardPage: React.FC = () => {
           <div className="space-y-4 sm:space-y-6">
             {/* ── Analytics Stats ─────────────────────────────────────────── */}
             {/* Row 1: primary KPIs — 2 cols mobile / 5 cols desktop */}
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <StatCard
                 title="Gross Revenue"
                 value={analyticsLoading ? "—" : formatCurrency(analytics?.totalRevenue ?? 0)}

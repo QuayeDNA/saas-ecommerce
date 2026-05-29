@@ -8,7 +8,7 @@ const SuperAdminDashboard = lazy(() => import("../pages/superadmin/index"));
 // Placeholder lazy imports for other pages
 const UsersPage = lazy(() => import("../pages/superadmin/users"));
 const UserDetailsPage = lazy(() => import("../pages/superadmin/user-details"));
-const OrdersPage = lazy(() => import("../pages/superadmin/orders"));
+const OrdersPage = lazy(() => import("../pages/orders"));
 const WalletTopUpsPage = lazy(
   () => import("../pages/superadmin/wallet-top-ups"),
 );

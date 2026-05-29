@@ -16,7 +16,6 @@ import { ThemeProvider } from "./design-system";
 import { ToastProvider } from "./design-system/components/toast";
 import { PageLoader } from "./components/page-loader";
 import { SiteStatusProvider } from "./contexts/site-status-context";
-import { AnnouncementProvider } from "./contexts/AnnouncementContext";
 import { MaintenanceBanner } from "./components/maintenance-banner";
 
 const StoreLandingPage = lazy(() => import("./pages/public/store-landing-page"));
@@ -32,7 +31,6 @@ export default function StoreOnlyApp() {
         <ThemeProvider>
             <ToastProvider>
                 <SiteStatusProvider>
-                    <AnnouncementProvider isPublic={true}>
                         <MaintenanceBanner />
                         <Routes>
                             {/* Root: customdomain.com/ → landing + discovery page */}
@@ -63,7 +61,6 @@ export default function StoreOnlyApp() {
                                 }
                             />
                         </Routes>
-                    </AnnouncementProvider>
                 </SiteStatusProvider>
             </ToastProvider>
         </ThemeProvider>

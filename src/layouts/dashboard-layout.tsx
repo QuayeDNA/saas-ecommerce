@@ -18,7 +18,7 @@ import { TutorialProvider } from "../contexts/TutorialContext";
 import { TutorialPlayer } from "../components/tutorials/tutorial-player";
 import { TutorialLauncher } from "../components/tutorials/tutorial-launcher";
 import { TutorialAutoTrigger } from "../components/tutorials/tutorial-auto-trigger";
-import { AnnouncementPopupHandler } from "../components/announcements/announcement-popup-handler";
+import { AnnouncementBanner } from "../components/announcements/announcement-banner";
 import { useAuth } from "../hooks";
 
 export const DashboardLayout = () => {
@@ -106,8 +106,8 @@ export const DashboardLayout = () => {
         <TutorialAutoTrigger />
         <TutorialLauncher />
 
-        {/* Announcement Popup Handler */}
-        <AnnouncementPopupHandler />
+        {/* Announcement Banner (urgent/high priority) */}
+        <AnnouncementBanner />
       </div>
     </TutorialProvider>
   );

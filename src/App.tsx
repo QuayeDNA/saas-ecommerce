@@ -9,7 +9,8 @@ import { StorefrontSessionProvider } from "./contexts/storefront-session-context
 import { NetworkStatusIndicator } from "./components/network-status-indicator";
 import { MaintenanceBanner } from "./components/maintenance-banner";
 import { InstallPrompt } from "./components/install-prompt";
-import { AnnouncementPopupHandler } from "./components/announcements/announcement-popup-handler";
+import { AnnouncementBanner } from "./components/announcements/announcement-banner";
+import { AnnouncementWatcher } from "./components/announcements/announcement-watcher";
 import PushNotificationInitializer from "./components/PushNotificationInitializer";
 import { useLocation, useNavigate } from "react-router-dom";
 import ImpersonationService from "./utils/impersonation";
@@ -74,7 +75,8 @@ function App() {
                 <div className="flex-1">{routeElement}</div>
                 <NetworkStatusIndicator />
                 <InstallPrompt />
-                <AnnouncementPopupHandler />
+                <AnnouncementBanner />
+                <AnnouncementWatcher />
               </div>
             </AppProvider>
           </ToastProvider>

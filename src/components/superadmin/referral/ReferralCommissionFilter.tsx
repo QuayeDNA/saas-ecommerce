@@ -14,11 +14,12 @@ export const ReferralCommissionFilter = ({ value, onChange }: ReferralCommission
         key={filter}
         type="button"
         onClick={() => onChange(filter)}
-        className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-          value === filter
-            ? "bg-[var(--color-secondary)] text-white border-[var(--color-secondary)]"
-            : "bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--color-secondary)]"
-        }`}
+        className="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors"
+        style={{
+          background: value === filter ? "var(--color-secondary)" : "var(--bg-surface)",
+          color: value === filter ? "white" : "var(--text-secondary)",
+          borderColor: value === filter ? "var(--color-secondary)" : "var(--border-color)",
+        }}
       >
         {filter === "all" ? "All" : filter.charAt(0).toUpperCase() + filter.slice(1)}
       </button>

@@ -14,16 +14,13 @@ import {
 import { getProviderColors } from '../../utils/provider-colors';
 import storefrontService from '../../services/storefront.service';
 import { walletService } from '../../services/wallet-service';
-import announcementService from '../../services/announcement.service';
-import { websocketService } from '../../services/websocket.service';
 import { useToast } from '../../design-system/components/toast';
 import { useSiteStatus } from '../../contexts/site-status-context';
-import AnnouncementPopupHandler from '../../components/announcements/announcement-popup-handler';
+import { usePublicAnnouncements } from '../../hooks/usePublicAnnouncements';
 import type {
     PublicBundle, PublicStorefront, PublicOrderData,
     PublicOrderResult, StorefrontBranding, TrackedOrder,
 } from '../../services/storefront.service';
-import type { Announcement } from '../../types/announcement';
 import {
     FaCircleCheck, FaTriangleExclamation, FaIdCard,
     FaArrowRight, FaArrowLeft, FaPhone, FaEnvelope,
@@ -1094,12 +1091,12 @@ const PublicStore: React.FC = () => {
     const [showTrackDrawer, setShowTrackDrawer] = useState(false);
 
     // ── Public announcements (for storefront customers) ─────────────────────────
-    const [publicAnnouncements, setPublicAnnouncements] = useState<Announcement[]>([]);
-    const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(new Set());
-    const [viewedPublicAnnouncements, setViewedPublicAnnouncements] = useState<Set<string>>(new Set());
-
-    const storeViewedKey = businessName ? `public_announcements_viewed_${businessName}` : null;
-    const storeDismissedKey = businessName ? `public_announcements_dismissed_${businessName}` : null;
+    const viewedKey = businessName ? `public_announcements_viewed_${businessName}` : '';
+    const dismissedKey = businessName ? `public_announcements_dismissed_${businessName}` : '';
+    const {
+        active: activeAnnouncements,
+        dismiss: dismissAnnouncement,
+    } = usePublicAnnouncements({ businessName: businessName || '', viewedKey, dismissedKey });
 
     // ==========================================================================
     // Data fetching
@@ -1128,97 +1125,7 @@ const PublicStore: React.FC = () => {
         return () => { document.title = 'DirectData'; };
     }, [storeData]);
 
-    // Public announcement persistence
-    const viewedKey = businessName ? `public_announcements_viewed_${businessName}` : null;
-    const dismissedKey = businessName ? `public_announcements_dismissed_${businessName}` : null;
-
-    const markPublicAnnouncementViewed = useCallback((id: string) => {
-        if (!viewedKey) return;
-        setViewedPublicAnnouncements((prev) => {
-            const next = new Set(prev);
-            next.add(id);
-            try {
-                localStorage.setItem(viewedKey, JSON.stringify(Array.from(next)));
-            } catch {
-                // ignore storage errors
-            }
-            return next;
-        });
-    }, [viewedKey]);
-
-    const dismissPublicAnnouncement = useCallback((id: string) => {
-        if (!dismissedKey) return;
-        setDismissedAnnouncements((prev) => {
-            const next = new Set(prev);
-            next.add(id);
-            try {
-                localStorage.setItem(dismissedKey, JSON.stringify(Array.from(next)));
-            } catch {
-                // ignore storage errors
-            }
-            return next;
-        });
-    }, [dismissedKey]);
-
-    // Public announcements for storefront customers
-    useEffect(() => {
-        if (!businessName) return;
-
-        if (viewedKey) {
-            const storedViewed = localStorage.getItem(viewedKey);
-            if (storedViewed) {
-                try {
-                    const parsed: string[] = JSON.parse(storedViewed);
-                    setViewedPublicAnnouncements(new Set(parsed));
-                } catch {
-                    // ignore
-                }
-            }
-        }
-
-        if (dismissedKey) {
-            const storedDismissed = localStorage.getItem(dismissedKey);
-            if (storedDismissed) {
-                try {
-                    const parsed: string[] = JSON.parse(storedDismissed);
-                    setDismissedAnnouncements(new Set(parsed));
-                } catch {
-                    // ignore
-                }
-            }
-        }
-
-        const fetchAnnouncements = async () => {
-            try {
-                const announcements = await announcementService.getPublicActiveAnnouncements(businessName);
-                setPublicAnnouncements(announcements);
-            } catch (err) {
-                // ignore errors for guests
-                console.warn("Failed to load public announcements", err);
-            }
-        };
-
-        fetchAnnouncements();
-
-        // Connect to WS so announcements can be pushed in realtime
-        websocketService.connect(`public:${businessName}`);
-        const handleAnnouncement = (data: unknown) => {
-            const announcement = data as Announcement;
-            if (!announcement || !announcement._id) return;
-            setPublicAnnouncements((prev) => {
-                const exists = prev.some((a) => a._id === announcement._id);
-                if (exists) {
-                    return prev.map((a) => (a._id === announcement._id ? announcement : a));
-                }
-                return [announcement, ...prev];
-            });
-        };
-        websocketService.on("announcement", handleAnnouncement);
-
-        return () => {
-            websocketService.off("announcement", handleAnnouncement);
-        };
-    }, [businessName, viewedKey, dismissedKey, storeViewedKey, storeDismissedKey]);
+    // Public announcements for storefront customers — handled by usePublicAnnouncements hook
 
     // Paystack popup message listener
     useEffect(() => {
@@ -1621,9 +1528,7 @@ const PublicStore: React.FC = () => {
     // ==========================================================================
 
     const renderToolbar = () => {
-        const publicAnnouncement = publicAnnouncements.find(
-            (a) => !dismissedAnnouncements.has(a._id)
-        );
+        const publicAnnouncement = activeAnnouncements[0];
 
         return (
             <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b shadow-sm" style={{ borderColor: 'var(--border-color)' }}>
@@ -1636,7 +1541,7 @@ const PublicStore: React.FC = () => {
                             </div>
                             <button
                                 type="button"
-                                onClick={() => dismissPublicAnnouncement(publicAnnouncement._id)}
+                                onClick={() => dismissAnnouncement(publicAnnouncement._id)}
                                 className="text-xs font-semibold"
                             >
                                 Dismiss
@@ -2462,14 +2367,6 @@ const PublicStore: React.FC = () => {
             {/* SECURITY: marks this browser session as storefront-only so that
            system routes (/login, /register, etc.) are blocked for this tab */}
             {businessName && <StorefrontEntryMarker businessName={businessName} />}
-
-            <AnnouncementPopupHandler
-                announcements={publicAnnouncements.filter(
-                    (a) => !dismissedAnnouncements.has(a._id) && !viewedPublicAnnouncements.has(a._id)
-                )}
-                onMarkAsViewed={markPublicAnnouncementViewed}
-                onMarkAsAcknowledged={markPublicAnnouncementViewed}
-            />
 
             {storefrontsClosed && (
                 <Dialog

@@ -51,7 +51,7 @@ interface TabsListProps {
 export function TabsList({ children, className = "" }: TabsListProps) {
   return (
     <div
-      className={`inline-flex h-10 items-center justify-center rounded-lg bg-[var(--bg-surface-alt)] p-1 text-[var(--text-secondary)] ${className}`}
+      className={`flex w-full overflow-x-auto flex-nowrap scroll-smooth h-10 items-center justify-center rounded-lg bg-[var(--bg-surface-alt)] p-1 text-[var(--text-secondary)] ${className}`}
       role="tablist"
     >
       {children}

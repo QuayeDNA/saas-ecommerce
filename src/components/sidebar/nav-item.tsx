@@ -20,7 +20,7 @@ export const NavItem = memo(function NavItem({
   isActive,
   isExpanded,
   hasActiveChild,
-  checkActive,
+  checkActive,F
   onToggle,
   onClose,
 }: NavItemProps) {

@@ -93,11 +93,7 @@ const PackageManagementPage = lazy(() =>
     default: module.default,
   })),
 );
-const OrderManagementPage = lazy(() =>
-  import("../pages/orders-page").then((module) => ({
-    default: module.OrderManagementPage,
-  })),
-);
+const OrderManagementPage = lazy(() => import("../pages/orders"));
 const AfaRegistrationPage = lazy(() =>
   import("../pages/afa-registration-page").then((module) => ({
     default: module.AfaRegistrationPage,
@@ -127,11 +123,7 @@ const StorefrontDashboardPage = lazy(() =>
 // =============================================================================
 // LAZY LOADED COMPONENTS - COMMISSION & REFERRAL PAGES
 // =============================================================================
-const CommissionPage = lazy(() =>
-  import("../pages/agent/commission-page").then((module) => ({
-    default: module.CommissionPage,
-  })),
-);
+const CommissionPage = lazy(() => import("../pages/agent/commissions"));
 
 // =============================================================================
 // LAZY LOADED COMPONENTS - PACKAGE SPECIFIC PAGES

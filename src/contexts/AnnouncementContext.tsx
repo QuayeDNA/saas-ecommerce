@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-import React, { createContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useEffect, useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import type {
   Announcement,
@@ -15,164 +14,117 @@ const AnnouncementContext = createContext<AnnouncementContextValue | undefined>(
 
 interface AnnouncementProviderProps {
   children: ReactNode;
-  isPublic?: boolean;
-  storefront?: string;
 }
 
 export const AnnouncementProvider: React.FC<AnnouncementProviderProps> = ({
   children,
-  isPublic = false,
-  storefront,
 }) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // For public contexts, skip auth entirely
-  const authState = isPublic ? { user: null } : useAuth().authState;
+  const { authState } = useAuth();
   const user = authState.user;
 
-  // Fetch active announcements for the user
-  const fetchActiveAnnouncements = useCallback(async () => {
-    if (!user && !isPublic) return;
+  const unreadCount = announcements.filter((a) => !a.hasViewed).length;
 
+  const fetchActiveAnnouncements = useCallback(async () => {
+    if (!user) return;
     try {
       setLoading(true);
       setError(null);
-      const data = isPublic
-        ? await announcementService.getPublicActiveAnnouncements(storefront)
-        : await announcementService.getMyActiveAnnouncements();
+      const data = await announcementService.getMyActiveAnnouncements();
       setAnnouncements(data);
-
-      // Calculate unread count
-      const unread = data.filter((a) => !a.hasViewed).length;
-      setUnreadCount(unread);
     } catch (err) {
-      console.error("Error fetching active announcements:", err);
       const error = err as Error;
       setError(error.message || "Failed to fetch announcements");
     } finally {
       setLoading(false);
     }
-  }, [user, isPublic, storefront]);
-
-  // Fetch unread announcements
-  const fetchUnreadAnnouncements = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await announcementService.getMyUnreadAnnouncements();
-      setUnreadCount(data.length);
-    } catch (err) {
-      console.error("Error fetching unread announcements:", err);
-      const error = err as Error;
-      setError(error.message || "Failed to fetch unread announcements");
-    } finally {
-      setLoading(false);
-    }
   }, [user]);
 
-  // Mark announcement as viewed
   const markAsViewed = useCallback(async (announcementId: string) => {
     try {
       await announcementService.markAsViewed(announcementId);
-
-      // Update local state
       setAnnouncements((prev) =>
         prev.map((a) =>
           a._id === announcementId ? { ...a, hasViewed: true } : a
         )
       );
-
-      // Decrease unread count
-      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
-      console.error("Error marking announcement as viewed:", err);
       const error = err as Error;
       setError(error.message || "Failed to mark as viewed");
     }
   }, []);
 
-  // Mark announcement as acknowledged
   const markAsAcknowledged = useCallback(async (announcementId: string) => {
     try {
       await announcementService.markAsAcknowledged(announcementId);
-
-      // Update local state
       setAnnouncements((prev) =>
         prev.map((a) =>
           a._id === announcementId ? { ...a, hasAcknowledged: true } : a
         )
       );
     } catch (err) {
-      console.error("Error marking announcement as acknowledged:", err);
       const error = err as Error;
       setError(error.message || "Failed to mark as acknowledged");
     }
   }, []);
 
-  // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Initial fetch when user logs in
   useEffect(() => {
     if (user) {
       fetchActiveAnnouncements();
     } else {
       setAnnouncements([]);
-      setUnreadCount(0);
     }
   }, [user, fetchActiveAnnouncements]);
 
-  // Listen for WebSocket announcement events
   useEffect(() => {
     if (!user) return;
-
     const handleAnnouncement = (data: unknown) => {
       const newAnnouncement = data as Announcement;
-      // Add the new announcement to the list if not already present
       setAnnouncements((prev) => {
         const exists = prev.some((a) => a._id === newAnnouncement._id);
         if (exists) {
-          // Update existing announcement
           return prev.map((a) =>
             a._id === newAnnouncement._id ? newAnnouncement : a
           );
-        } else {
-          // Add new announcement
-          return [newAnnouncement, ...prev];
         }
+        return [newAnnouncement, ...prev];
       });
-
-      // Update unread count if not viewed
-      if (!newAnnouncement.hasViewed) {
-        setUnreadCount((prev) => prev + 1);
-      }
     };
-
     websocketService.on("announcement", handleAnnouncement);
-
     return () => {
       websocketService.off("announcement", handleAnnouncement);
     };
   }, [user]);
 
-  const value: AnnouncementContextValue = {
-    announcements,
-    unreadCount,
-    loading,
-    error,
-    fetchActiveAnnouncements,
-    fetchUnreadAnnouncements,
-    markAsViewed,
-    markAsAcknowledged,
-    clearError,
-  };
+  const value = useMemo<AnnouncementContextValue>(
+    () => ({
+      announcements,
+      unreadCount,
+      loading,
+      error,
+      fetchActiveAnnouncements,
+      fetchUnreadAnnouncements: fetchActiveAnnouncements,
+      markAsViewed,
+      markAsAcknowledged,
+      clearError,
+    }),
+    [
+      announcements,
+      unreadCount,
+      loading,
+      error,
+      fetchActiveAnnouncements,
+      markAsViewed,
+      markAsAcknowledged,
+      clearError,
+    ]
+  );
 
   return (
     <AnnouncementContext.Provider value={value}>
