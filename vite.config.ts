@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -20,10 +19,10 @@ export default defineConfig({
         "logo-512.png",
       ],
       manifest: {
-        name: "DirectData — Instant Data Bundles",
-        short_name: "DirectData",
+        name: "BryteLinks — Telecom Solutions Platform",
+        short_name: "BryteLinks",
         description:
-          "A modern storefront for buying data bundles from trusted agents across Ghana.",
+          "A modern telecom solutions platform for buying airtime, data bundles, and managing vending operations across Ghana.",
         theme_color: "#142850",
         background_color: "#142850",
         display: "standalone",
@@ -60,7 +59,7 @@ export default defineConfig({
             purpose: "any maskable",
           },
         ],
-        categories: ["business", "finance", "utilities"],
+        categories: ["business", "telecom", "utilities"],
         shortcuts: [
           {
             name: "Dashboard",
@@ -82,7 +81,6 @@ export default defineConfig({
           },
         ],
       },
-      // Use injectManifest so your custom sw.ts is used as-is
       strategies: "injectManifest",
       srcDir: "src",
       filename: "sw.ts",
@@ -90,7 +88,7 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
       },
       devOptions: {
-        enabled: false, // keep SW off in dev to avoid stale cache headaches
+        enabled: false,
       },
     }),
   ],
@@ -134,11 +132,11 @@ export default defineConfig({
   },
 
   server: {
-    host: true, // expose on LAN so you can test on a real phone
+    port: 5173,
+    host: true,
     hmr: true,
     open: true,
     proxy: {
-      // Forward /api calls to the Express backend (plain HTTP, no SSL)
       "/api": {
         target: "http://localhost:5050",
         changeOrigin: true,
