@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { commissionService } from "../../../services/commission.service";
 import { referralService } from "../../../services/referral.service";
 import { FaWallet, FaShareAlt } from "react-icons/fa";
-import { Card, CardBody } from "../../../design-system/components/card";
-import { Badge } from "../../../design-system/components/badge";
 import { Spinner } from "../../../design-system/components/spinner";
 import {
   Tabs, TabsList, TabsTrigger, TabsContent,
@@ -137,7 +135,7 @@ export const CommissionPage = () => {
         </TabsList>
 
         <TabsContent value="commission" className="space-y-4 pt-4">
-          {stats && <StatsGrid stats={commissionStatCards} columns={stats ? 3 : 1} gap="md" />}
+          {stats && <StatsGrid stats={commissionStatCards} columns={2} gap="xs" />}
 
           <WithdrawForm
             balance={balance}

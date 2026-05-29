@@ -1,6 +1,5 @@
 import { FaCalendarCheck, FaPlay } from "react-icons/fa";
 import { Card, CardBody, Button, Alert, StatsGrid } from "../../../design-system";
-import type { StatCardProps } from "../../../design-system/components/stats-card";
 import { FaCheckCircle, FaExclamationTriangle, FaUsers, FaUserSlash, FaCalendar } from "react-icons/fa";
 
 interface BatchResult {

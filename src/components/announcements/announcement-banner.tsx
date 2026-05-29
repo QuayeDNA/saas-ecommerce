@@ -1,6 +1,5 @@
 import React from "react";
 import { X, AlertTriangle, AlertCircle, Info, Wrench, CheckCircle } from "lucide-react";
-import type { Announcement } from "../../types/announcement";
 import { useAnnouncements } from "../../hooks/useAnnouncements";
 import { Button } from "../../design-system/components/button";
 

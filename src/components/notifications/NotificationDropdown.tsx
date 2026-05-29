@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { FaBell, FaCheck, FaTimes, FaSpinner, FaExternalLinkAlt, FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import { Button, Badge } from '../../design-system';
+import { Button } from '../../design-system';
 import { useNavigate } from 'react-router-dom';
 import { NotificationManagementModal } from './NotificationManagementModal';
 
