@@ -2,6 +2,7 @@ import React from "react";
 import { FaExclamationTriangle, FaWhatsapp } from "react-icons/fa";
 import { Button, Alert } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
+import { CONTACTS } from "../../config/contacts";
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -87,7 +88,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
 
     if (isIOS) {
       // For iOS, use WhatsApp URL scheme first, then fallback to web.whatsapp.com
-      const phoneNumber = "+233548983019";
+      const phoneNumber = CONTACTS.support.phone;
       const encodedMessage = encodeURIComponent(message);
 
       // Try WhatsApp app first
@@ -114,9 +115,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       document.body.removeChild(link);
     } else {
       // For Android and desktop, use the standard wa.me URL
-      whatsappUrl = `https://wa.me/+233548983019?text=${encodeURIComponent(
-        message
-      )}`;
+      whatsappUrl = CONTACTS.support.waLinkWithMsg(message);
       window.open(whatsappUrl, "_blank");
     }
   };

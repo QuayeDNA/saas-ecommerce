@@ -22,6 +22,7 @@ import {
   Input,
   Alert,
 } from "../design-system";
+import { CONTACTS } from "../config/contacts";
 import {
   FaArrowLeft,
   FaEnvelope,
@@ -179,7 +180,7 @@ export const SupportPage: React.FC = () => {
             {/* Quick contact options */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-8">
               <a
-                href="https://wa.me/+233548983019"
+                href={CONTACTS.support.waLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"
@@ -190,7 +191,7 @@ export const SupportPage: React.FC = () => {
               </a>
 
               <a
-                href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
+                href={CONTACTS.community.waGroupLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center transition-all hover:-translate-y-1"

@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Check, Zap } from "lucide-react";
+import { ChevronLeft, Check, X, Zap } from "lucide-react";
 import { Card, CardBody, CardHeader, Container } from "../design-system";
 import { BryteLinksSvgLogoCompact } from "../components/common/BryteLinksSvgLogo";
 import { FaUsers, FaWhatsapp } from "react-icons/fa";
+import { CONTACTS } from "../config/contacts";
 
 interface AuthLayoutProps {
   title: string;
@@ -70,6 +71,14 @@ const floatKeyframes = `
 @keyframes floatC {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-16px); }
+}
+@keyframes fabPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
+  50% { box-shadow: 0 0 0 18px rgba(37, 211, 102, 0); }
+}
+@keyframes fabItemIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 `;
 
@@ -200,6 +209,7 @@ export const AuthLayout = ({
   activeStep = 1,
   footer,
 }: AuthLayoutProps) => {
+  const [fabOpen, setFabOpen] = useState(false);
   return (
     <div className="h-screen bg-[var(--bg-page)] flex flex-col overflow-hidden">
       {/* Inject float keyframes */}
@@ -236,7 +246,7 @@ export const AuthLayout = ({
       </header>
 
       {/* ── CENTERED CONTENT ── */}
-      <main className="flex-1 min-h-0 flex items-center justify-center px-4 py-6 sm:py-10 sm:px-6">
+      <main className="flex-1 min-h-0 flex lg:items-center items-stretch justify-center px-4 py-6 sm:py-10 sm:px-6">
         <div className="w-full max-w-6xl max-h-full flex flex-col">
           <Card
             className="rounded-xl shadow-2xl bg-[var(--bg-surface)] border-0 sm:border sm:border-[var(--border-color)] flex flex-col min-h-0 overflow-hidden [&>div]:flex [&>div]:flex-col [&>div]:min-h-0 [&>div]:overflow-hidden"
@@ -355,36 +365,86 @@ export const AuthLayout = ({
                   </div>
                 ) : null}
 
-                <div className="text-center pt-5 sm:pt-6 mt-6 sm:mt-8 border-t border-[var(--border-color)]">
-                  <p className="text-xs sm:text-sm text-[var(--text-muted)] mb-3 sm:mb-4 flex items-center justify-center gap-1.5 font-medium">
-                    Need help? Reach out to support.
-                  </p>
-                  <div className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-2">
-                    <a
-                      href="https://wa.me/233548983019?text=Hello%20support%2C%20I%20need%20help%20with%20my%20account"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-alt)] px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-color-strong)] hover:bg-[var(--bg-surface)]"
-                    >
-                      <FaWhatsapp className="text-success text-base sm:text-lg" />
-                      <span>Contact Support</span>
-                    </a>
-                    <a
-                      href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-alt)] px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--border-color-strong)] hover:bg-[var(--bg-surface)]"
-                    >
-                      <FaUsers className="text-[var(--color-secondary)] text-base sm:text-lg" />
-                      <span>Join Community</span>
-                    </a>
-                  </div>
-                </div>
               </div>
             </div>
           </Card>
         </div>
       </main>
+
+      {/* ── PULSING FAB ── */}
+      {fabOpen && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setFabOpen(false)}
+        />
+      )}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        {/* Community */}
+        <div
+          style={{
+            animation: fabOpen
+              ? "fabItemIn 0.2s ease-out forwards"
+              : "none",
+            opacity: fabOpen ? 1 : 0,
+            transform: fabOpen ? "translateY(0) scale(1)" : "translateY(8px) scale(0.9)",
+            pointerEvents: fabOpen ? "auto" : "none",
+          }}
+          className="transition-all duration-200"
+        >
+          <a
+            href={CONTACTS.community.waGroupLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setFabOpen(false)}
+            className="flex items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-2.5 shadow-lg text-sm font-semibold text-[var(--text-secondary)] transition-all hover:bg-[var(--bg-surface-alt)] hover:border-[var(--border-color-strong)]"
+          >
+            <FaUsers className="text-[var(--color-secondary)]" />
+            <span>Community</span>
+          </a>
+        </div>
+
+        {/* Support */}
+        <div
+          style={{
+            animation: fabOpen
+              ? "fabItemIn 0.2s ease-out forwards 0.07s"
+              : "none",
+            opacity: fabOpen ? 1 : 0,
+            transform: fabOpen ? "translateY(0) scale(1)" : "translateY(8px) scale(0.9)",
+            pointerEvents: fabOpen ? "auto" : "none",
+          }}
+          className="transition-all duration-200"
+        >
+          <a
+            href={CONTACTS.support.waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setFabOpen(false)}
+            className="flex items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-2.5 shadow-lg text-sm font-semibold text-[var(--text-secondary)] transition-all hover:bg-[var(--bg-surface-alt)] hover:border-[var(--border-color-strong)]"
+          >
+            <FaWhatsapp className="text-success" />
+            <span>Support</span>
+          </a>
+        </div>
+
+        <button
+          onClick={() => setFabOpen((prev) => !prev)}
+          className="flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-transform active:scale-90"
+          style={{
+            background: "linear-gradient(135deg, #25D366, #128C7E)",
+            animation: fabOpen
+              ? "none"
+              : "fabPulse 2s ease-in-out infinite",
+          }}
+          aria-label={fabOpen ? "Close menu" : "Get help"}
+        >
+          {fabOpen ? (
+            <X className="h-6 w-6 text-white" />
+          ) : (
+            <FaWhatsapp className="h-6 w-6 text-white" />
+          )}
+        </button>
+      </div>
     </div>
   );
 };

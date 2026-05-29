@@ -10,6 +10,7 @@ import { walletService } from '../../services/wallet-service';
 import { AuthContext } from '../../contexts/AuthContext';
 import { canHaveWallet } from '../../utils/userTypeHelpers';
 import { normalizeGhanaPhoneNumber, isValidGhanaPhoneNumber } from '../../utils/phone-utils';
+import { CONTACTS } from '../../config/contacts';
 import type { MomoInitiateResponse, MomoVerifyResponse } from '../../types/wallet';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -434,7 +435,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
 
   const openWhatsApp = () => {
     const msg = `Hi, I need a wallet top-up of GH₵${parsedAmount}. Please process my request.`;
-    window.open(`https://wa.me/+233548983019?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(CONTACTS.support.waLinkWithMsg(msg), '_blank');
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────

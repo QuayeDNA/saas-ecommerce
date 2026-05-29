@@ -31,6 +31,7 @@ import type { User } from "../types";
 import { isBusinessUser } from "../utils/userTypeHelpers";
 import { DarkModeToggle } from "../components/common/dark-mode-toggle";
 import pushNotificationService from "../services/pushNotificationService";
+import { CONTACTS } from "../config/contacts";
 
 export const ProfilePage: React.FC = () => {
   const { authState, logout } = useAuth();
@@ -865,20 +866,20 @@ export const ProfilePage: React.FC = () => {
                   Need help? Contact support
                 </p>
                 <a
-                  href="https://wa.me/+233548983019"
+                  href={CONTACTS.support.waLink}
                   target="_blank"
                   rel="noreferrer"
                   className="font-medium transition-colors"
                   style={{ color: "var(--color-secondary)" }}
                 >
-                  +233 54 898 3019
+                  {CONTACTS.support.phone}
                 </a>
               </div>
 
               <div className="rounded-lg p-4" style={{ backgroundColor: `color-mix(in srgb, var(--success) 8%, transparent)` }}>
                 <p className="text-sm mb-2" style={{ color: "var(--text-secondary)" }}>Join our community</p>
                 <a
-                  href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
+                  href={CONTACTS.community.waGroupLink}
                   target="_blank"
                   rel="noreferrer"
                   className="font-medium transition-colors"
@@ -1231,20 +1232,20 @@ export const ProfilePage: React.FC = () => {
                   Need help? Contact support
                 </p>
                 <a
-                  href="https://wa.me/+233548983019"
+                  href={CONTACTS.support.waLink}
                   target="_blank"
                   rel="noreferrer"
                   className="font-medium transition-colors"
                   style={{ color: "var(--color-secondary)" }}
                 >
-                  +233 54 898 3019
+                  {CONTACTS.support.phone}
                 </a>
               </div>
 
               <div className="rounded-lg p-4" style={{ backgroundColor: `color-mix(in srgb, var(--success) 8%, transparent)` }}>
                 <p className="text-sm mb-2" style={{ color: "var(--text-secondary)" }}>Join our community</p>
                 <a
-                  href="https://chat.whatsapp.com/EstSwEm3q9Z4sS42Ed5N8u?mode=ac_t"
+                  href={CONTACTS.community.waGroupLink}
                   target="_blank"
                   rel="noreferrer"
                   className="font-medium transition-colors"
