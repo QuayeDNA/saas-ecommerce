@@ -22,8 +22,6 @@ export const DashboardLayout = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const location = useLocation();
 
-  const userRole = (authState.user?.userType ?? "agent") as string;
-
   // Handle window resize to detect mobile/desktop view
   useEffect(() => {
     const handleResize = () => {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, MessageCircle } from "lucide-react";
+import { X } from "lucide-react";
 import { FaUsers, FaWhatsapp } from "react-icons/fa";
 import { CONTACTS } from "../../config/contacts";
 
