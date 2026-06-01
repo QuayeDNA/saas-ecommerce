@@ -243,7 +243,7 @@ export const AuthLayout = ({
             variant="elevated"
             noPadding
           >
-            <div className="flex-1 min-h-0 lg:grid lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-[1.1fr_0.9fr]">
 
               {/* ── LEFT COLUMN (desktop only) ── */}
               <div className="hidden lg:flex items-center justify-center bg-[var(--color-navy-dark)] relative overflow-hidden">
