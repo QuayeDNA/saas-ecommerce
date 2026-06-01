@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "env": {
-    "VITE_API_URL": "https://saas-ecommerce-backend.onrender.com"
+    "VITE_API_URL": "https://brytelinks-backend.onrender.com"
   },
   "redirects": [
     {
@@ -21,7 +21,7 @@
   "rewrites": [
     {
       "source": "/store/:path*",
-      "destination": "/index.html"
+      "destination": "/api/og?path=store/$1"
     },
     {
       "source": "/",

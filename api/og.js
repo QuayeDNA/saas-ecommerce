@@ -123,8 +123,14 @@ function getRequestContext(req) {
   const rawPath = String(req.query.path || "").replace(/^\/+/, "");
   const pathname = rawPath ? `/${rawPath}` : "/";
   const isStorefrontHost = /(^|\.)directdata\.shop$/i.test(host);
-  const businessName =
-    isStorefrontHost && rawPath && !rawPath.includes("/") ? rawPath : null;
+
+  let businessName = null;
+  const storeMatch = rawPath.match(/^store\/([^/]+)/);
+  if (storeMatch) {
+    businessName = storeMatch[1];
+  } else if (isStorefrontHost && rawPath && !rawPath.includes("/")) {
+    businessName = rawPath;
+  }
 
   return {
     host,
@@ -147,20 +153,7 @@ export default async function handler(req, res) {
 
     let meta;
     let ogContext = "platform";
-    if (!context.isStorefrontHost) {
-      meta = {
-        ...BRYTELINKS_META,
-        image: toAbsoluteUrl(BRYTELINKS_META.image, context.origin),
-        url: context.fullUrl,
-      };
-    } else if (!context.businessName) {
-      ogContext = "storefront-root";
-      meta = {
-        ...DIRECTDATA_DEFAULT_META,
-        image: toAbsoluteUrl(DIRECTDATA_DEFAULT_META.image, context.origin),
-        url: context.fullUrl,
-      };
-    } else {
+    if (context.businessName) {
       ogContext = "storefront-agent";
       meta = await resolveStoreMeta(
         apiBase,
@@ -168,6 +161,19 @@ export default async function handler(req, res) {
         context.origin,
         context.fullUrl,
       );
+    } else if (context.isStorefrontHost) {
+      ogContext = "storefront-root";
+      meta = {
+        ...DIRECTDATA_DEFAULT_META,
+        image: toAbsoluteUrl(DIRECTDATA_DEFAULT_META.image, context.origin),
+        url: context.fullUrl,
+      };
+    } else {
+      meta = {
+        ...BRYTELINKS_META,
+        image: toAbsoluteUrl(BRYTELINKS_META.image, context.origin),
+        url: context.fullUrl,
+      };
     }
 
     const indexUrl = `${context.origin}/index.html`;

@@ -53,11 +53,14 @@ async function loadPaystackScript(): Promise<void> {
 
 // ─── OG Meta Helpers (store-level sharing) ───────────────────────────────────
 
-function setOGMetaTag(property: string, content: string) {
-    let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null;
+function setOGMetaTag(attr: string, content: string) {
+    let el = document.querySelector(`meta[property="${attr}"]`) as HTMLMetaElement | null;
+    if (!el) {
+        el = document.querySelector(`meta[name="${attr}"]`) as HTMLMetaElement | null;
+    }
     if (!el) {
         el = document.createElement('meta');
-        el.setAttribute('property', property);
+        el.setAttribute('property', attr);
         document.head.appendChild(el);
     }
     el.setAttribute('content', content);
