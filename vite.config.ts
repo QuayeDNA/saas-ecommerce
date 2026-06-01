@@ -123,6 +123,7 @@ export default defineConfig({
           forms: ["react-hook-form", "@hookform/resolvers", "zod"],
           http: ["axios", "js-cookie"],
           query: ["@tanstack/react-query"],
+          charts: ["chart.js", "react-chartjs-2"],
         },
         entryFileNames: "assets/[name]-[hash].js",
         chunkFileNames: "assets/[name]-[hash].js",
