@@ -394,31 +394,32 @@ class AuthService {
     }
   }
 
-  /**
-   * Send OTP to phone or email for registration verification
-   */
-  async sendOtp(phone: string, email: string, channel?: "email" | "phone"): Promise<{ success: boolean; message: string; channel?: "email" | "phone"; maskedContact?: string }> {
-    try {
-      const response = await publicApiClient.post("/api/auth/send-otp", { phone, email, channel });
-      return response.data;
-    } catch (err: unknown) {
-      const { message } = this.extractErrorMessage(err, "Failed to send OTP");
-      this.throwServiceError(message);
-    }
-  }
+  // /**
+//  * Send OTP to phone or email for registration verification
+//  * OTP disabled - re-enable when SMS is ready
+//  */
+  // async sendOtp(phone: string, email: string, channel?: "email" | "phone"): Promise<{ success: boolean; message: string; channel?: "email" | "phone"; maskedContact?: string }> {
+  //   try {
+  //     const response = await publicApiClient.post("/api/auth/send-otp", { phone, email, channel });
+  //     return response.data;
+  //   } catch (err: unknown) {
+  //     const { message } = this.extractErrorMessage(err, "Failed to send OTP");
+  //     this.throwServiceError(message);
+  //   }
+  // }
 
-  /**
-   * Verify OTP code
-   */
-  async verifyOtp(phone: string, code: string): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await publicApiClient.post("/api/auth/verify-otp", { phone, code });
-      return response.data;
-    } catch (err: unknown) {
-      const { message } = this.extractErrorMessage(err, "Invalid or expired OTP");
-      this.throwServiceError(message);
-    }
-  }
+  // /**
+  //  * Verify OTP code
+  //  */
+  // async verifyOtp(phone: string, code: string): Promise<{ success: boolean; message: string }> {
+  //   try {
+  //     const response = await publicApiClient.post("/api/auth/verify-otp", { phone, code });
+  //     return response.data;
+  //   } catch (err: unknown) {
+  //     const { message } = this.extractErrorMessage(err, "Invalid or expired OTP");
+  //     this.throwServiceError(message);
+  //   }
+  // }
 
   /**
    * Request password reset

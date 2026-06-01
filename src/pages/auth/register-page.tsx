@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   FaUser,
@@ -14,9 +14,7 @@ import {
   FaLock,
   FaCheckCircle,
   FaCheck,
-  FaShareAlt,
-  FaMobileAlt,
-  FaClock,
+  FaShareAlt
 } from "react-icons/fa";
 import {
   Button,
@@ -30,7 +28,6 @@ import {
 import { useAuth } from "../../hooks";
 import { useSiteStatus } from "../../contexts/site-status-context";
 import { useToast } from "../../design-system/components/toast";
-import { authService } from "../../services/auth.service";
 import type { RegisterAgentData } from "../../services/auth.service";
 import { AuthLayout } from "../../layouts/auth-layout";
 import {
@@ -67,8 +64,9 @@ interface FieldErrors {
   referralCode?: string;
 }
 
-const SMS_COMING_SOON_MESSAGE =
-  "SMS verification coming soon";
+// OTP disabled - re-enable when SMS is ready
+// const SMS_COMING_SOON_MESSAGE =
+//   "SMS verification coming soon";
 
 export const RegisterPage = () => {
   const { registerAgent } = useAuth();
@@ -84,7 +82,8 @@ export const RegisterPage = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
-  const [selectedChannel, setSelectedChannel] = useState<"email" | "phone">("email");
+  // OTP disabled - re-enable when SMS is ready
+  // const [selectedChannel, setSelectedChannel] = useState<"email" | "phone">("email");
 
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
@@ -105,16 +104,16 @@ export const RegisterPage = () => {
       match: false,
     });
 
-  // OTP state
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [maskedContact, setMaskedContact] = useState("");
-  const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
-  const [otpSending, setOtpSending] = useState(false);
-  const [otpVerifying, setOtpVerifying] = useState(false);
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  // OTP state - disabled, re-enable when SMS is ready
+  // const [otpSent, setOtpSent] = useState(false);
+  // const [otpVerified, setOtpVerified] = useState(false);
+  // const [maskedContact, setMaskedContact] = useState("");
+  // const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
+  // const [otpSending, setOtpSending] = useState(false);
+  // const [otpVerifying, setOtpVerifying] = useState(false);
+  // const [otpError, setOtpError] = useState<string | null>(null);
+  // const [resendCooldown, setResendCooldown] = useState(0);
+  // const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [searchParams] = useSearchParams();
 
@@ -129,14 +128,14 @@ export const RegisterPage = () => {
     }
   }, [searchParams]);
 
-  // Resend cooldown timer
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setResendCooldown((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
+  // Resend cooldown timer - OTP disabled
+  // useEffect(() => {
+  //   if (resendCooldown <= 0) return;
+  //   const timer = setInterval(() => {
+  //     setResendCooldown((prev) => prev - 1);
+  //   }, 1000);
+  //   return () => clearInterval(timer);
+  // }, [resendCooldown]);
 
   const validateField = (
     field: keyof FormData,
@@ -232,65 +231,64 @@ export const RegisterPage = () => {
       );
     }
 
-    if (currentStep === 3) {
-      return otpVerified;
-    }
+    // OTP step disabled - re-enable when SMS is ready
+    // if (currentStep === 3) {
+    //   return otpVerified;
+    // }
 
     return Object.values(passwordValidation).every(Boolean);
   };
 
-  // Send OTP when moving to step 3
-  const handleSendOtp = useCallback(async () => {
-    setOtpSending(true);
-    setOtpError(null);
-    try {
-      const result = await authService.sendOtp(formData.phone, formData.email, selectedChannel);
-      setOtpSent(true);
-      setResendCooldown(60);
-      const channel = result.channel || selectedChannel;
-      setMaskedContact(result.maskedContact || "");
-      addToast(
-        channel === "email"
-          ? `Verification code sent to your email`
-          : "OTP sent to your phone",
-        "success",
-      );
-    } catch (err: unknown) {
-      const error = err as { message?: string };
-      const message = error?.message || "Failed to send OTP";
-      setOtpError(message);
-      addToast(message, "error");
-    } finally {
-      setOtpSending(false);
-    }
-  }, [formData.phone, formData.email, selectedChannel, addToast]);
+  // OTP handlers disabled - re-enable when SMS is ready
+  // const handleSendOtp = useCallback(async () => {
+  //   setOtpSending(true);
+  //   setOtpError(null);
+  //   try {
+  //     const result = await authService.sendOtp(formData.phone, formData.email, selectedChannel);
+  //     setOtpSent(true);
+  //     setResendCooldown(60);
+  //     const channel = result.channel || selectedChannel;
+  //     setMaskedContact(result.maskedContact || "");
+  //     addToast(
+  //       channel === "email"
+  //         ? `Verification code sent to your email`
+  //         : "OTP sent to your phone",
+  //       "success",
+  //     );
+  //   } catch (err: unknown) {
+  //     const error = err as { message?: string };
+  //     const message = error?.message || "Failed to send OTP";
+  //     setOtpError(message);
+  //     addToast(message, "error");
+  //   } finally {
+  //     setOtpSending(false);
+  //   }
+  // }, [formData.phone, formData.email, selectedChannel, addToast]);
 
-  // Verify OTP
-  const handleVerifyOtp = async () => {
-    const code = otpCode.join("");
-    if (code.length !== 6) {
-      setOtpError("Please enter the complete 6-digit code");
-      return;
-    }
-    setOtpVerifying(true);
-    setOtpError(null);
-    try {
-      await authService.verifyOtp(formData.phone, code);
-      setOtpVerified(true);
-      addToast("Phone verified successfully", "success");
-    } catch (err: unknown) {
-      const error = err as { message?: string };
-      setOtpError(error?.message || "Invalid or expired OTP code");
-    } finally {
-      setOtpVerifying(false);
-    }
-  };
+  // const handleVerifyOtp = async () => {
+  //   const code = otpCode.join("");
+  //   if (code.length !== 6) {
+  //     setOtpError("Please enter the complete 6-digit code");
+  //     return;
+  //   }
+  //   setOtpVerifying(true);
+  //   setOtpError(null);
+  //   try {
+  //     await authService.verifyOtp(formData.phone, code);
+  //     setOtpVerified(true);
+  //     addToast("Phone verified successfully", "success");
+  //   } catch (err: unknown) {
+  //     const error = err as { message?: string };
+  //     setOtpError(error?.message || "Invalid or expired OTP code");
+  //   } finally {
+  //     setOtpVerifying(false);
+  //   }
+  // };
 
-  // Resend OTP
-  const handleResendOtp = async () => {
-    if (resendCooldown > 0) return;
-    await handleSendOtp();
-  };
+  // const handleResendOtp = async () => {
+  //   if (resendCooldown > 0) return;
+  //   await handleSendOtp();
+  // };
 
   const nextStep = async () => {
     if (!validateCurrentStep()) return;
@@ -303,48 +301,48 @@ export const RegisterPage = () => {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      if (currentStep === 3) {
-        setOtpSent(false);
-        setOtpVerified(false);
-        setOtpCode(["", "", "", "", "", ""]);
-        setOtpError(null);
-      }
+      // OTP state reset disabled - re-enable when SMS is ready
+      // if (currentStep === 3) {
+      //   setOtpSent(false);
+      //   setOtpVerified(false);
+      //   setOtpCode(["", "", "", "", "", ""]);
+      //   setOtpError(null);
+      // }
       setCurrentStep(currentStep - 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  // Handle OTP digit input
-  const handleOtpDigitChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otpCode];
-    newOtp[index] = value.slice(-1);
-    setOtpCode(newOtp);
-    setOtpError(null);
+  // OTP input handlers disabled - re-enable when SMS is ready
+  // const handleOtpDigitChange = (index: number, value: string) => {
+  //   if (!/^\d*$/.test(value)) return;
+  //   const newOtp = [...otpCode];
+  //   newOtp[index] = value.slice(-1);
+  //   setOtpCode(newOtp);
+  //   setOtpError(null);
+  //   if (value && index < 5) {
+  //     otpInputRefs.current[index + 1]?.focus();
+  //   }
+  // };
 
-    if (value && index < 5) {
-      otpInputRefs.current[index + 1]?.focus();
-    }
-  };
+  // const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+  //   if (e.key === "Backspace" && !otpCode[index] && index > 0) {
+  //     otpInputRefs.current[index - 1]?.focus();
+  //   }
+  // };
 
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !otpCode[index] && index > 0) {
-      otpInputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    const newOtp = [...otpCode];
-    for (let i = 0; i < pasted.length; i++) {
-      newOtp[i] = pasted[i];
-    }
-    setOtpCode(newOtp);
-    if (pasted.length === 6) {
-      otpInputRefs.current[5]?.focus();
-    }
-  };
+  // const handleOtpPaste = (e: React.ClipboardEvent) => {
+  //   e.preventDefault();
+  //   const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+  //   const newOtp = [...otpCode];
+  //   for (let i = 0; i < pasted.length; i++) {
+  //     newOtp[i] = pasted[i];
+  //   }
+  //   setOtpCode(newOtp);
+  //   if (pasted.length === 6) {
+  //     otpInputRefs.current[5]?.focus();
+  //   }
+  // };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -406,11 +404,12 @@ export const RegisterPage = () => {
     return { strength: 0, label: "Very Weak", color: "bg-slate-300" };
   })();
 
-  const maskPhone = (phone: string) => {
-    if (phone.length < 8) return phone;
-    const visible = phone.slice(0, 3) + "***" + phone.slice(-3);
-    return visible;
-  };
+  // OTP helper disabled - re-enable when SMS is ready
+  // const maskPhone = (phone: string) => {
+  //   if (phone.length < 8) return phone;
+  //   const visible = phone.slice(0, 3) + "***" + phone.slice(-3);
+  //   return visible;
+  // };
 
   return (
     <AuthLayout
@@ -504,196 +503,14 @@ export const RegisterPage = () => {
           </div>
         )}
 
-        {currentStep === 3 && (
+        {/* OTP step disabled - re-enable when SMS is ready */}
+        {/* {currentStep === 3 && (
           <div className="space-y-6">
-            {otpError && (
-              <Alert status="error" variant="left-accent" className="mb-2">
-                <div className="flex items-start gap-2">
-                  <FaExclamationTriangle className="mt-0.5 text-red-600 flex-shrink-0" />
-                  <span>{otpError}</span>
-                </div>
-              </Alert>
-            )}
-
-            {!otpSent && !otpVerified && (
-              <div className="space-y-5">
-                <label className="block text-sm font-semibold text-slate-800">
-                  Choose how to receive your code
-                </label>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedChannel("email")}
-                    className={`flex-1 flex items-center gap-4 rounded-xl border-2 p-5 transition-all text-left ${
-                      selectedChannel === "email"
-                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 flex-shrink-0 ${
-                      selectedChannel === "email"
-                        ? "border-blue-500 bg-blue-500"
-                        : "border-slate-300"
-                    }`}>
-                      {selectedChannel === "email" && (
-                        <div className="h-2.5 w-2.5 rounded-full bg-white" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <FaEnvelope className={`text-xl flex-shrink-0 ${selectedChannel === "email" ? "text-blue-600" : "text-slate-400"}`} />
-                      <div className="min-w-0">
-                        <p className={`text-sm font-semibold ${selectedChannel === "email" ? "text-blue-700" : "text-slate-700"}`}>
-                          Email
-                        </p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {formData.email}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled
-                    aria-disabled={true}
-                    className="flex-1 flex items-center gap-4 rounded-xl border-2 border-slate-200 bg-slate-50 p-5 text-left opacity-50 cursor-not-allowed"
-                    title={SMS_COMING_SOON_MESSAGE}
-                    aria-label="Phone verification via SMS coming soon"
-                  >
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-slate-300 bg-slate-100 flex-shrink-0">
-                    </div>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <FaMobileAlt className="text-xl text-slate-300 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-400">
-                          Phone (SMS)
-                        </p>
-                        <p className="text-xs text-slate-300 truncate">
-                          {formData.phone} &middot; Coming soon
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="primary"
-                  onClick={handleSendOtp}
-                  className="w-full"
-                  isLoading={otpSending}
-                  disabled={otpSending}
-                >
-                  {otpSending ? "Sending..." : "Send Verification Code"}
-                </Button>
-              </div>
-            )}
-
-            {(otpSent || otpVerified) && (
-              <>
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                    {otpVerified ? (
-                      <FaCheckCircle className="h-7 w-7" />
-                    ) : selectedChannel === "email" ? (
-                      <FaEnvelope className="h-7 w-7" />
-                    ) : (
-                      <FaMobileAlt className="h-7 w-7" />
-                    )}
-                  </div>
-                  <p className="text-lg font-semibold text-slate-900">
-                    {otpVerified
-                      ? `${selectedChannel === "email" ? "Email" : "Phone"} Verified`
-                      : `Verify your ${selectedChannel === "email" ? "email" : "phone number"}`}
-                  </p>
-                  <p className="mt-1.5 text-sm text-slate-600">
-                    {otpVerified
-                      ? (maskedContact || (selectedChannel === "email" ? formData.email : maskPhone(formData.phone)))
-                      : `We sent a code to ${maskedContact || (selectedChannel === "email" ? formData.email : maskPhone(formData.phone))}`}
-                  </p>
-
-                  {selectedChannel === "phone" && !otpVerified && (
-                    <p className="mt-2 text-xs text-amber-600">
-                      {`${SMS_COMING_SOON_MESSAGE}. Switch to email to receive your code.`}
-                    </p>
-                  )}
-                </div>
-
-                {!otpVerified && (
-                  <>
-                    <div className="space-y-3">
-                      <label className="block text-sm font-medium text-slate-700">
-                        Enter verification code
-                      </label>
-                      <div
-                        className="flex justify-center gap-2 sm:gap-3"
-                        onPaste={handleOtpPaste}
-                      >
-                        {otpCode.map((digit, index) => (
-                          <input
-                            key={index}
-                            ref={(el) => { otpInputRefs.current[index] = el; }}
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={1}
-                            value={digit}
-                            onChange={(e) => handleOtpDigitChange(index, e.target.value)}
-                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                            className="h-12 w-10 sm:h-14 sm:w-12 rounded-xl border-2 border-slate-300 text-center text-lg font-bold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
-                            autoFocus={index === 0}
-                            aria-label={`Digit ${index + 1}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                      <Button
-                        type="button"
-                        variant="primary"
-                        onClick={handleVerifyOtp}
-                        disabled={otpCode.join("").length !== 6 || otpVerifying}
-                        className="w-full"
-                        isLoading={otpVerifying}
-                      >
-                        {otpVerifying ? "Verifying..." : "Verify Code"}
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={handleResendOtp}
-                        disabled={resendCooldown > 0 || otpSending}
-                        className="w-full text-sm"
-                      >
-                        {resendCooldown > 0 ? (
-                          <span className="flex items-center justify-center gap-2 text-slate-500">
-                            <FaClock className="h-3 w-3" />
-                            Resend in {resendCooldown}s
-                          </span>
-                        ) : (
-                          "Resend code"
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-
-                {otpVerified && (
-                  <div className="rounded-xl border-2 border-green-200 bg-green-50 p-5 text-center">
-                    <FaCheckCircle className="mx-auto mb-2 h-6 w-6 text-green-600" />
-                    <p className="font-semibold text-green-800">{selectedChannel === "email" ? "Email" : "Phone"} verified</p>
-                    <p className="text-sm text-green-600 mt-1">
-                      You can now proceed to set up your account security.
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
+            OTP UI goes here
           </div>
-        )}
+        )} */}
 
-        {currentStep === 4 && (
+        {currentStep === 3 && (
           <div className="space-y-5">
             <Input
               label="Referral Code (optional)"
@@ -833,16 +650,12 @@ export const RegisterPage = () => {
               variant="primary"
               onClick={nextStep}
               disabled={
-                !validateCurrentStep() ||
-                (currentStep === 2 && otpSending)
+                !validateCurrentStep()
               }
               className="flex-1"
-              isLoading={currentStep === 2 && otpSending}
             >
-              {currentStep === 2 && otpSending
-                ? "Sending Code..."
-                : "Next"}
-              {currentStep !== 2 && <FaArrowRight className="ml-2" />}
+              Next
+              <FaArrowRight className="ml-2" />
             </Button>
           ) : (
             <Button
