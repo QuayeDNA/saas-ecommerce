@@ -31,6 +31,7 @@ import {
 } from 'react-icons/fa6';
 import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
 import { StorefrontEntryMarker } from '../../contexts/storefront-session-context';
+import AdBanner from '../../components/ads/ad-banner';
 
 // =============================================================================
 // Types
@@ -1642,9 +1643,12 @@ const PublicStore: React.FC = () => {
             return <EmptyBundles searchTerm={searchTerm} onClear={() => { setSearchTerm(''); setSelectedProvider('all'); }} />;
         }
 
-        const renderPackageBundles = (bundles: PublicBundle[]) => (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {bundles.map(b => (
+        const AD_INTERVAL = 8;
+
+        const renderPackageBundles = (bundles: PublicBundle[]) => {
+            const items: React.ReactNode[] = [];
+            bundles.forEach((b, idx) => {
+                items.push(
                     <BundleCard
                         key={b._id}
                         bundle={b}
@@ -1652,9 +1656,21 @@ const PublicStore: React.FC = () => {
                         disabled={ordersClosed}
                         onBuy={openOrderDialog}
                     />
-                ))}
-            </div>
-        );
+                );
+                if ((idx + 1) % AD_INTERVAL === 0 && idx + 1 < bundles.length) {
+                    items.push(
+                        <div key={`ad-${idx}`} className="col-span-2 sm:col-span-3 lg:col-span-4">
+                            <AdBanner adSlot="YOUR_AD_SLOT_ID_C" adFormat="rectangle" />
+                        </div>
+                    );
+                }
+            });
+            return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {items}
+                </div>
+            );
+        };
 
         // Prefer structured providers data from backend
         if (Array.isArray(storeData.providers) && storeData.providers.length > 0) {
@@ -2417,8 +2433,18 @@ const PublicStore: React.FC = () => {
                     </div>
                 )}
 
+                {/* Ad Position B — between featured carousel and bundle grid */}
+                <div className="max-w-5xl mx-auto px-4 py-3">
+                    <AdBanner adSlot="YOUR_AD_SLOT_ID_B" adFormat="horizontal" />
+                </div>
+
                 {renderBundleSections()}
             </main>
+
+            {/* Ad Position D — above footer */}
+            <div className="max-w-5xl mx-auto px-4 pb-2 pt-2">
+                <AdBanner adSlot="YOUR_AD_SLOT_ID_D" adFormat="horizontal" />
+            </div>
 
             {renderFooter()}
 

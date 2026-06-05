@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storefrontService } from '../../services/storefront.service';
+import AdBanner from '../../components/ads/ad-banner';
 
 const PLATFORM_NAME = import.meta.env.VITE_STORE_PLATFORM_NAME ?? 'DirectData';
 const OG_DESCRIPTION =
@@ -175,6 +176,12 @@ export default function StoreLandingPage() {
           animation: ddFadeUp .5s ease .4s both;
         }
 
+        .dd-ad-wrap {
+          max-width: 320px;
+          margin: 0 auto 32px;
+          animation: ddFadeUp .5s ease .35s both;
+        }
+
         .dd-btn {
           display: inline-flex;
           align-items: center;
@@ -244,6 +251,10 @@ export default function StoreLandingPage() {
           <span className="dd-chip">MTN</span>
           <span className="dd-chip">Vodafone</span>
           <span className="dd-chip">AirtelTigo</span>
+        </div>
+
+        <div className="dd-ad-wrap">
+          <AdBanner adSlot="YOUR_AD_SLOT_ID_LANDING" adFormat="horizontal" />
         </div>
 
         <div className="dd-btn-wrap">
