@@ -17,7 +17,6 @@ import {
   Testimonial,
   Avatar,
   StatsGrid,
-  type StatCardProps,
 } from "../design-system";
 import {
   BryteLinksSvgLogoCompact,
@@ -53,6 +52,7 @@ import {
   MousePointerClick,
   Gauge,
 } from "lucide-react";
+import type { StatCardProps } from "../design-system/components/stats-card";
 
 /* ------------------------------------------------------------------ */
 /*  Static data                                                        */
