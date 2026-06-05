@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Check, Zap } from "lucide-react";
+import { ChevronLeft, Check, Zap, Globe } from "lucide-react";
 import { Card, CardBody, CardHeader, Container } from "../design-system";
 import { BryteLinksSvgLogoCompact } from "../components/common/BryteLinksSvgLogo";
 import { GlobalFab } from "../components/common/GlobalFab";
@@ -20,20 +20,20 @@ interface AuthLayoutProps {
 const NETWORKS = [
   {
     name: "MTN",
-    src: "https://www.mtn.co.ug/wp-content/uploads/sites/7/2023/12/MTN_2022_Logo_SolidBG_Yellow_RGB.jpg?resize=1024,1024",
+    color: "var(--warning)",
     position: "top-left",
   },
   {
     name: "Telecel",
-    src: "https://tse2.mm.bing.net/th/id/OIP._V9CkKDi23oI4p9VRjvu9wHaHa?cb=thfvnextfalcon&rs=1&pid=ImgDetMain&o=7&rm=3",
+    color: "var(--error)",
     position: "top-right",
   },
   {
-    name: "AT",
-    src: "https://recharge-prd.asset.akeneo.cloud/product_assets/media/recharge_com_airteltigo_product_card.png",
+    name: "AirtelTigo",
+    color: "var(--color-secondary)",
     position: "bottom-center",
   },
-];
+] as const;
 
 const SLIDES = [
   {
@@ -56,7 +56,7 @@ const SLIDES = [
     heading: "Grow Your Business",
     sub: "Tools built for agents ready to scale beyond their first sale.",
   },
-];
+] as const;
 
 const floatKeyframes = `
 @keyframes floatA {
@@ -75,11 +75,11 @@ const floatKeyframes = `
 
 function NetworkLogo({
   name,
-  src,
+  color,
   position,
 }: {
   name: string;
-  src: string;
+  color: string;
   position: string;
 }) {
   const positionClasses: Record<string, string> = {
@@ -106,15 +106,23 @@ function NetworkLogo({
       className={`${positionClasses[position]} z-10 flex flex-col items-center`}
       style={animationStyle[position]}
     >
-      <div className="h-14 w-14 lg:h-16 lg:w-16 rounded-xl overflow-hidden border-2 border-white/10 shadow-xl shadow-black/40">
-        <img
-          src={src}
-          alt={name}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+      <div
+        className="h-14 w-14 lg:h-16 lg:w-16 rounded-xl flex items-center justify-center font-bold text-sm lg:text-base shadow-xl"
+        style={{
+          background: `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 60%, black))`,
+          color: "var(--text-inverse)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+        }}
+      >
+        <Globe className="w-6 h-6 lg:w-7 lg:h-7" />
       </div>
-      <p className="mt-1.5 text-[10px] font-medium tracking-widest text-white/40 uppercase">
+      <p
+        className="mt-1.5 text-[10px] font-semibold tracking-widest uppercase"
+        style={{
+          color:
+            "color-mix(in srgb, var(--text-inverse) 50%, transparent)",
+        }}
+      >
         {name}
       </p>
     </div>
@@ -157,16 +165,24 @@ function PitchCarousel() {
     <div className="text-center">
       <div className="h-full flex flex-col items-center justify-center overflow-hidden">
         <div style={slideStyle}>
-          <h2 className="text-xl lg:text-2xl font-semibold text-white leading-tight mb-1.5">
+          <h2
+            className="text-xl lg:text-2xl font-semibold leading-tight mb-1.5"
+            style={{ color: "var(--text-inverse)" }}
+          >
             {SLIDES[current].heading}
           </h2>
-          <p className="text-sm text-white/50 leading-relaxed max-w-[240px] mx-auto">
+          <p
+            className="text-sm leading-relaxed max-w-[240px] mx-auto"
+            style={{
+              color:
+                "color-mix(in srgb, var(--text-inverse) 55%, transparent)",
+            }}
+          >
             {SLIDES[current].sub}
           </p>
         </div>
       </div>
 
-      {/* Dots */}
       <div className="flex items-center justify-center gap-1.5 mt-5">
         {SLIDES.map((_, i) => (
           <button
@@ -179,8 +195,10 @@ function PitchCarousel() {
             style={{
               height: "4px",
               width: i === current ? "20px" : "6px",
-              background:
-                i === current ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.2)",
+              backgroundColor:
+                i === current
+                  ? "var(--text-inverse)"
+                  : "color-mix(in srgb, var(--text-inverse) 25%, transparent)",
             }}
             aria-label={`Go to slide ${i + 1}`}
           />
@@ -202,16 +220,27 @@ export const AuthLayout = ({
 }: AuthLayoutProps) => {
   return (
     <div className="h-screen bg-[var(--bg-page)] flex flex-col overflow-hidden">
-      {/* Inject float keyframes */}
       <style>{floatKeyframes}</style>
 
       {/* ── FIXED HEADER ── */}
-      <header className="flex-shrink-0 bg-gradient-to-br from-[var(--color-navy-dark)] via-[var(--color-navy)] to-[var(--color-navy-dark)] text-[var(--text-inverse)]">
+      <header
+        className="flex-shrink-0"
+        style={{
+          background: "var(--gradient-brand-dark)",
+          color: "var(--text-inverse)",
+        }}
+      >
         <Container className="py-4 sm:py-6">
           <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-6">
             <Link
               to={backLink ?? "/home"}
-              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold text-[var(--text-inverse)] transition hover:bg-white/10"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full px-3 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold transition-all duration-200 hover:bg-white/10"
+              style={{
+                color: "var(--text-inverse)",
+                border: "1px solid color-mix(in srgb, var(--text-inverse) 15%, transparent)",
+                backgroundColor:
+                  "color-mix(in srgb, var(--text-inverse) 5%, transparent)",
+              }}
             >
               <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="hidden sm:inline">{backLabel}</span>
@@ -223,10 +252,19 @@ export const AuthLayout = ({
                 <BryteLinksSvgLogoCompact width="100%" height="100%" />
               </div>
               <div className="text-left">
-                <p className="text-xs sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.24em] text-[var(--text-primary)] font-medium">
+                <p
+                  className="text-xs sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.24em] font-medium"
+                  style={{ color: "var(--text-inverse)" }}
+                >
                   BryteLinks
                 </p>
-                <p className="text-xs sm:text-sm text-[var(--text-muted)]">
+                <p
+                  className="text-xs sm:text-sm"
+                  style={{
+                    color:
+                      "color-mix(in srgb, var(--text-inverse) 55%, transparent)",
+                  }}
+                >
                   Data Solutions
                 </p>
               </div>
@@ -236,47 +274,67 @@ export const AuthLayout = ({
       </header>
 
       {/* ── CENTERED CONTENT ── */}
-      <main className="flex-1 min-h-0 flex lg:items-center items-stretch justify-center px-4 py-6 sm:py-10 sm:px-6">
+      <main className="flex-1 min-h-0 flex items-center justify-center px-4 py-6 sm:py-10 sm:px-6">
         <div className="w-full max-w-6xl max-h-full flex flex-col">
           <Card
-            className="rounded-xl shadow-2xl bg-[var(--bg-surface)] border-0 sm:border sm:border-[var(--border-color)] flex flex-col min-h-0 overflow-hidden [&>div]:flex [&>div]:flex-col [&>div]:min-h-0 [&>div]:overflow-hidden"
+            className="rounded-xl flex flex-col min-h-0 overflow-hidden [&>div]:flex [&>div]:flex-col [&>div]:min-h-0 [&>div]:overflow-hidden"
             variant="elevated"
             noPadding
+            style={{
+              boxShadow:
+                "0 8px 32px color-mix(in srgb, var(--color-navy-dark) 15%, transparent), 0 2px 8px color-mix(in srgb, var(--color-navy-dark) 8%, transparent)",
+              border: "1px solid var(--border-color)",
+            }}
           >
             <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-[1.1fr_0.9fr]">
 
               {/* ── LEFT COLUMN (desktop only) ── */}
-              <div className="hidden lg:flex items-center justify-center bg-[var(--color-navy-dark)] relative overflow-hidden">
-                {/* Subtle radial glow */}
+              <div
+                className="hidden lg:flex items-center justify-center relative overflow-hidden"
+                style={{
+                  background: "var(--gradient-brand-dark)",
+                }}
+              >
                 <div
                   aria-hidden="true"
+                  className="absolute inset-0 pointer-events-none"
                   style={{
-                    position: "absolute",
-                    inset: 0,
                     background:
-                      "radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 70%)",
-                    pointerEvents: "none",
+                      "radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--color-accent) 10%, transparent) 0%, transparent 70%)",
                   }}
                 />
 
                 <div className="relative flex flex-col items-center max-w-xs w-full px-8 py-14">
-                  {/* Floating network logos */}
                   {NETWORKS.map((n) => (
                     <NetworkLogo key={n.name} {...n} />
                   ))}
 
-                    {/* Icon */}
-                    <div className="mx-auto mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
-                      <Zap className="text-yellow-400" size={20} />
-                    </div>
-
-                    <p className="text-center text-[10px] uppercase tracking-[0.2em] text-white/40 font-medium mb-4">
-                      All networks. One platform.
-                    </p>
-
-                    <PitchCarousel />
+                  <div
+                    className="mx-auto mb-5 flex h-11 w-11 items-center justify-center rounded-xl"
+                    style={{
+                      backgroundColor:
+                        "color-mix(in srgb, var(--text-inverse) 10%, transparent)",
+                    }}
+                  >
+                    <Zap
+                      size={20}
+                      style={{ color: "var(--warning)" }}
+                    />
                   </div>
+
+                  <p
+                    className="text-center text-[10px] uppercase tracking-[0.2em] font-medium mb-4"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--text-inverse) 45%, transparent)",
+                    }}
+                  >
+                    All networks. One platform.
+                  </p>
+
+                  <PitchCarousel />
                 </div>
+              </div>
 
               {/* ── RIGHT COLUMN (scrollable) ── */}
               <div className="overflow-y-auto px-4 py-6 sm:px-10 sm:py-10">
@@ -314,9 +372,14 @@ export const AuthLayout = ({
                           <div
                             className={`flex h-7 w-7 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full text-[10px] sm:text-xs font-bold transition-all duration-300 ${
                               isActive
-                                ? "bg-[var(--color-navy-dark)] text-[var(--text-inverse)]"
-                                : "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]"
+                                ? "text-[var(--text-inverse)]"
+                                : "text-[var(--text-muted)]"
                             }`}
+                            style={{
+                              backgroundColor: isActive
+                                ? "var(--color-navy-dark)"
+                                : "var(--bg-surface-alt)",
+                            }}
                           >
                             {isComplete ? (
                               <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -326,9 +389,12 @@ export const AuthLayout = ({
                           </div>
                           {stepIndex < steps.length && (
                             <div
-                              className={`flex-1 h-1 mx-2 sm:mx-3 rounded-full transition-all duration-300 ${
-                                isComplete ? "bg-[var(--color-navy-dark)]" : "bg-[var(--bg-surface-alt)]"
-                              }`}
+                              className={`flex-1 h-1 mx-2 sm:mx-3 rounded-full transition-all duration-300`}
+                              style={{
+                                backgroundColor: isComplete
+                                  ? "var(--color-navy-dark)"
+                                  : "var(--bg-surface-alt)",
+                              }}
                             />
                           )}
                         </div>
