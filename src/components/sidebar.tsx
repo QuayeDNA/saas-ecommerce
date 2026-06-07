@@ -20,7 +20,7 @@ import { packageService } from "../services/package.service";
 import { BryteLinksSvgIcon } from "./common/BryteLinksSvgLogo";
 import { NavItem } from "./sidebar/nav-item";
 import { getNavSections, isAgent } from "./sidebar/nav-config";
-import type { NavItem as NavItemConfig, NavSection } from "./sidebar/nav-config";
+import type { NavItem as NavItemConfig } from "./sidebar/nav-config";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
