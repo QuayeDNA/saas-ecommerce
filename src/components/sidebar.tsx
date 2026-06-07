@@ -19,8 +19,8 @@ import { useAuth } from "../hooks/use-auth";
 import { packageService } from "../services/package.service";
 import { BryteLinksSvgIcon } from "./common/BryteLinksSvgLogo";
 import { NavItem } from "./sidebar/nav-item";
-import { getNavItems, isAgent } from "./sidebar/nav-config";
-import type { NavItem as NavItemConfig } from "./sidebar/nav-config";
+import { getNavSections, isAgent } from "./sidebar/nav-config";
+import type { NavItem as NavItemConfig, NavSection } from "./sidebar/nav-config";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -114,8 +114,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     return () => { cancelled = true; };
   }, [authState.user?.userType]);
 
-  const navItems = useMemo(
-    () => getNavItems(authState.user?.userType, packageNavItems, packagesLoading),
+  const navSections = useMemo(
+    () => getNavSections(authState.user?.userType, packageNavItems, packagesLoading),
     [authState.user?.userType, packageNavItems, packagesLoading],
   );
 
@@ -260,28 +260,33 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           aria-label="Navigation menu"
           className="sb-scrollbar flex flex-1 flex-col overflow-y-auto py-3"
         >
-          <p className="mb-1 px-5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--sb-text-muted)]">
-            Menu
-          </p>
-
           {packagesLoading ? (
             <NavSkeleton />
           ) : (
-            <ul role="list" className="flex flex-col gap-0.5 px-2">
-              {navItems.map((item) => (
-                <NavItem
-                  key={item.path}
-                  item={item}
-                  level={0}
-                  isActive={isActivePath(item.path)}
-                  isExpanded={expandedItems.has(item.path)}
-                  hasActiveChild={hasActiveChild(item)}
-                  checkActive={isActivePath}
-                  onToggle={toggleExpanded}
-                  onClose={onClose}
-                />
+            <div className="flex flex-col gap-4 px-2">
+              {navSections.map((section) => (
+                <div key={section.label}>
+                  <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--sb-text-muted)]">
+                    {section.label}
+                  </p>
+                  <ul role="list" className="flex flex-col gap-0.5">
+                    {section.items.map((item) => (
+                      <NavItem
+                        key={item.path}
+                        item={item}
+                        level={0}
+                        isActive={isActivePath(item.path)}
+                        isExpanded={expandedItems.has(item.path)}
+                        hasActiveChild={hasActiveChild(item)}
+                        checkActive={isActivePath}
+                        onToggle={toggleExpanded}
+                        onClose={onClose}
+                      />
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </nav>
 
