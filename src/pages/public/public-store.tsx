@@ -61,7 +61,13 @@ import {
   FaEye,
   FaEyeSlash,
 } from "react-icons/fa6";
-import { FaWhatsapp, FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
+import {
+  FaWhatsapp,
+  FaFacebook,
+  FaInstagram,
+  FaTwitter,
+  FaBuilding,
+} from "react-icons/fa";
 import { StorefrontEntryMarker } from "../../contexts/storefront-session-context";
 import AdBanner from "../../components/ads/ad-banner";
 
@@ -684,11 +690,13 @@ const BundleCard = memo(
     selected,
     onBuy,
     disabled,
+    logoUrl,
   }: {
     bundle: PublicBundle;
     selected: boolean;
     onBuy: (b: PublicBundle) => void;
     disabled?: boolean;
+    logoUrl?: string;
   }) => {
     const pc = getProviderColors(bundle.provider);
     const isAfa = bundle.provider?.toUpperCase() === "AFA";
@@ -699,10 +707,12 @@ const BundleCard = memo(
         onClick={disabled ? undefined : () => onBuy(bundle)}
         className={`group relative rounded-2xl overflow-hidden transition-all duration-300 select-none ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:scale-[1.04] hover:-translate-y-1 active:scale-[0.97]"}`}
         style={{
-          background: `linear-gradient(145deg, ${pc.primary}, ${pc.secondary})`,
+          backgroundColor: pc.primary,
+          color: pc.text,
           boxShadow: selected
             ? `0 0 0 3px #fff, 0 0 0 5px ${pc.primary}, 0 16px 40px ${pc.primary}55`
             : `0 6px 20px ${pc.primary}40`,
+          border: `1px solid ${pc.secondary}33`,
         }}
         role="button"
         tabIndex={disabled ? -1 : 0}
@@ -711,10 +721,7 @@ const BundleCard = memo(
         aria-disabled={disabled}
       >
         {/* Top shimmer edge */}
-        <div className="absolute inset-x-0 top-0 h-px bg-white/40" />
-        {/* Background circle decoration */}
-        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 pointer-events-none" />
-
+        <div className="absolute inset-x-0 top-0 h-px bg-white/30" />
         {/* Selected indicator */}
         {selected && (
           <div
@@ -725,15 +732,31 @@ const BundleCard = memo(
           </div>
         )}
 
-        <div
-          className="relative p-4 space-y-3"
-          style={{ color: "var(--text-inverse)" }}
-        >
-          {/* Provider + AFA badge */}
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-75">
-              {bundle.providerName}
-            </span>
+        <div className="relative p-4 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={`${bundle.providerName || bundle.provider} logo`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <FaBuilding className="w-5 h-5 text-white/85" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-black uppercase tracking-[0.2em] opacity-80 truncate">
+                  {bundle.providerName || bundle.provider}
+                </div>
+                {bundle.packageName && (
+                  <div className="text-xs opacity-80 truncate">
+                    {bundle.packageName}
+                  </div>
+                )}
+              </div>
+            </div>
             {isAfa && bundle.requiresGhanaCard && (
               <span className="text-[9px] bg-white/20 rounded-full px-1.5 py-0.5 font-semibold flex items-center gap-0.5">
                 <FaIdCard className="w-2 h-2" /> ID
@@ -749,11 +772,11 @@ const BundleCard = memo(
                   <span className="text-4xl font-black tracking-tight">
                     {bundle.dataVolume}
                   </span>
-                  <span className="text-xl font-bold ml-1 opacity-80">
+                  <span className="text-xl font-bold ml-1 opacity-90">
                     {bundle.dataUnit}
                   </span>
                 </div>
-                <div className="text-xs opacity-60 mt-0.5 truncate font-medium">
+                <div className="text-xs opacity-80 mt-1 font-medium line-clamp-2">
                   {bundle.name}
                 </div>
               </>
@@ -765,19 +788,16 @@ const BundleCard = memo(
           </div>
 
           {/* Validity pill */}
-          <div className="inline-flex items-center gap-1.5 bg-white/15 rounded-full px-2.5 py-1 text-[11px] font-semibold">
-            <FaWifi className="w-2.5 h-2.5 opacity-75" />
+          <div className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-2.5 py-1 text-[11px] font-semibold">
+            <FaWifi className="w-2.5 h-2.5 opacity-80" />
             {fmtValidity(bundle.validity, bundle.validityUnit)}
           </div>
 
           {/* Bottom: price + buy CTA */}
           <div className="flex items-center justify-between border-t border-white/15 pt-3">
             <span className="text-xl font-extrabold">{fmt(bundle.price)}</span>
-            <div
-              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black shadow transition-all group-hover:shadow-lg"
-              style={{ color: pc.primary }}
-            >
-              <FaBagShopping className="w-3 h-3" /> Buy
+            <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs text-white font-black shadow transition-all group-hover:shadow-lg">
+              <FaBagShopping className="w-5 h-5" /> Buy
             </div>
           </div>
         </div>
@@ -1797,6 +1817,14 @@ const PublicStore: React.FC = () => {
     }));
   }, [storeData]);
 
+  const getProviderLogoUrl = useCallback(
+    (providerCode?: string) => {
+      if (!providerCode) return undefined;
+      return getLogoUrl(providers.find((p) => p.code === providerCode)?.logo);
+    },
+    [providers],
+  );
+
   const groupedBundles = useMemo(() => {
     if (!storeData) return new Map<string, Map<string, PublicBundle[]>>();
     let filtered = storeData.bundles;
@@ -2486,13 +2514,17 @@ const PublicStore: React.FC = () => {
 
     const AD_INTERVAL = 8;
 
-    const renderPackageBundles = (bundles: PublicBundle[]) => {
+    const renderPackageBundles = (
+      bundles: PublicBundle[],
+      providerLogoUrl?: string,
+    ) => {
       const items: React.ReactNode[] = [];
       bundles.forEach((b, idx) => {
         items.push(
           <BundleCard
             key={b._id}
             bundle={b}
+            logoUrl={providerLogoUrl ?? getProviderLogoUrl(b.provider)}
             selected={activeOrder?.bundle._id === b._id}
             disabled={ordersClosed}
             onBuy={openOrderDialog}
@@ -2592,7 +2624,11 @@ const PublicStore: React.FC = () => {
                             onToggle={() => togglePackage(key)}
                             color={pc.primary}
                           />
-                          {!collapsed && renderPackageBundles(pkg.bundles)}
+                          {!collapsed &&
+                            renderPackageBundles(
+                              pkg.bundles,
+                              getLogoUrl(prov.logo),
+                            )}
                         </div>
                       );
                     })}
@@ -2655,7 +2691,11 @@ const PublicStore: React.FC = () => {
                         onToggle={() => togglePackage(key)}
                         color={pc.primary}
                       />
-                      {!collapsed && renderPackageBundles(bundles)}
+                      {!collapsed &&
+                        renderPackageBundles(
+                          bundles,
+                          getProviderLogoUrl(provCode),
+                        )}
                     </div>
                   );
                 })}

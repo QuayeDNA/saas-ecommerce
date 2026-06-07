@@ -57,7 +57,7 @@ type BundleCardComponent = React.NamedExoticComponent<BundleCardProps> & {
     percent: number;
     originalPrice: string;
   }>;
-  OutOfStock: React.NamedExoticComponent<unknown>;
+  OutOfStock: React.NamedExoticComponent<object>;
   InfoColumn: React.NamedExoticComponent<{
     value: string;
     label: string;
@@ -66,7 +66,7 @@ type BundleCardComponent = React.NamedExoticComponent<BundleCardProps> & {
     children?: ReactNode;
     className?: string;
   }>;
-  Skeleton: React.NamedExoticComponent<unknown>;
+  Skeleton: React.NamedExoticComponent<object>;
 };
 
 function BundleCardBase({
