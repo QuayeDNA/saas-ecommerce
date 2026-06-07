@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaTrophy, FaTh, FaList, FaUser, FaMoneyBillWave, FaBox, FaUsers, FaLayerGroup } from "react-icons/fa";
+import { FaTrophy, FaTh, FaList, FaUser } from "react-icons/fa";
 import type { LeaderboardEntry } from "../../../types/referral";
 import { Card, CardBody, Badge, Spinner, Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from "../../../design-system";
 

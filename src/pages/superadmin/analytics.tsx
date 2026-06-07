@@ -17,7 +17,6 @@ import {
 } from "../../components/analytics";
 import { Alert } from "../../design-system";
 import { useSuperAdminAnalytics } from "../../hooks/use-analytics";
-import type { AnalyticsData } from "../../services/analytics.service";
 import {
   FaMoneyBillWave,
   FaShoppingCart,
