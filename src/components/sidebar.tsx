@@ -1,6 +1,19 @@
+/**
+ * Sidebar — Tailwind-first rewrite
+ *
+ * Design tokens (--sb-*) are defined once here and consumed by NavItem.
+ * All text uses semantic CSS variables — never hardcoded rgba(255,255,255,x).
+ * This means the sidebar stays correct if --bg-sidebar ever changes.
+ *
+ * Minimal <style> block covers only what Tailwind cannot:
+ *   1. CSS custom property declarations
+ *   2. The shimmer keyframe animation
+ *   3. Custom scrollbar (vendor-prefixed, no Tailwind equivalent)
+ */
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import { FaBox } from "react-icons/fa";
 import { useAuth } from "../hooks/use-auth";
 import { packageService } from "../services/package.service";
@@ -9,29 +22,56 @@ import { NavItem } from "./sidebar/nav-item";
 import { getNavItems, isAgent } from "./sidebar/nav-config";
 import type { NavItem as NavItemConfig } from "./sidebar/nav-config";
 
+/* ─── Types ──────────────────────────────────────────────────────────────── */
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+/* ─── Path matching ──────────────────────────────────────────────────────── */
+
 const prefixMatchPaths = new Set(["/superadmin/wallet"]);
+
 const isExactMatch = (a: string, b: string) =>
   a.replace(/\/$/, "") === b.replace(/\/$/, "");
 
-const useActivePath = (locationPathname: string) => {
-  return useCallback(
+const useActivePath = (pathname: string) =>
+  useCallback(
     (path: string) => {
       if (prefixMatchPaths.has(path)) {
-        return (
-          isExactMatch(path, locationPathname) ||
-          locationPathname.startsWith(path + "/")
-        );
+        return isExactMatch(path, pathname) || pathname.startsWith(path + "/");
       }
-      return isExactMatch(path, locationPathname);
+      return isExactMatch(path, pathname);
     },
-    [locationPathname],
+    [pathname],
   );
+
+/* ─── Avatar initials ────────────────────────────────────────────────────── */
+
+/** Extracts clean 1–2 char uppercase initials. Handles all edge cases. */
+const getInitials = (fullName: string): string => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
+
+/* ─── Skeleton ───────────────────────────────────────────────────────────── */
+
+const NavSkeleton = () => (
+  <div className="space-y-1 px-2" aria-hidden="true" aria-label="Loading navigation">
+    {[0, 1, 2, 3].map((i) => (
+      <div
+        key={i}
+        className="h-10 rounded-md sb-shimmer"
+        style={{ animationDelay: `${i * 90}ms` }}
+      />
+    ))}
+  </div>
+);
+
+/* ─── Sidebar ────────────────────────────────────────────────────────────── */
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
@@ -41,38 +81,36 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(
     () => new Set(["packages", "wallet"]),
   );
-
   const [packageNavItems, setPackageNavItems] = useState<NavItemConfig[]>([]);
   const [packagesLoading, setPackagesLoading] = useState(true);
 
+  /* Fetch packages (agents only) */
   useEffect(() => {
-    const agent = isAgent(authState.user?.userType);
-    if (!agent) {
+    if (!isAgent(authState.user?.userType)) {
       setPackagesLoading(false);
       return;
     }
-
     let cancelled = false;
-    const fetch = async () => {
+    (async () => {
       try {
         setPackagesLoading(true);
         const response = await packageService.getPackages({ isActive: true });
         if (cancelled) return;
-        const items: NavItemConfig[] = (response.packages || [])
-          .filter((pkg) => !!pkg._id && pkg.provider !== "AFA")
-          .map((pkg) => ({
-            label: pkg.name,
-            path: `/agent/dashboard/packages/${pkg._id}`,
-            icon: <FaBox />,
-          }));
-        setPackageNavItems(items);
+        setPackageNavItems(
+          (response.packages ?? [])
+            .filter((pkg) => !!pkg._id && pkg.provider !== "AFA")
+            .map((pkg) => ({
+              label: pkg.name,
+              path: `/agent/dashboard/packages/${pkg._id}`,
+              icon: <FaBox />,
+            })),
+        );
       } catch {
         if (!cancelled) setPackageNavItems([]);
       } finally {
         if (!cancelled) setPackagesLoading(false);
       }
-    };
-    fetch();
+    })();
     return () => { cancelled = true; };
   }, [authState.user?.userType]);
 
@@ -84,147 +122,259 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const toggleExpanded = useCallback((path: string) => {
     setExpandedItems((prev) => {
       const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
       return next;
     });
   }, []);
 
   const hasActiveChild = useCallback(
     (item: NavItemConfig) =>
-      item.children?.some((child) => isActivePath(child.path)) ?? false,
+      item.children?.some((c) => isActivePath(c.path)) ?? false,
     [isActivePath],
   );
 
-  const getAppName = useCallback(() => {
-    return authState.user?.businessName || "SaaS Telecom";
-  }, [authState.user?.businessName]);
+  const handleLogout = useCallback(() => {
+    logout();
+    onClose();
+  }, [logout, onClose]);
+
+  /* Derived values */
+  const appName    = authState.user?.businessName || "SaaS Telecom";
+  const initials   = getInitials(authState.user?.fullName ?? "");
+  const userRole   = authState.user?.userType ?? "User";
+  const agentCode  = isAgent(authState.user?.userType) ? (authState.user?.agentCode ?? null) : null;
+  const isOnline   = authState.isAuthenticated;
 
   return (
-    <aside
-      className={`fixed inset-y-0 left-0 z-30 w-64 text-white transform transition-all duration-300 ease-in-out flex flex-col ${
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}
-      style={{ background: "var(--bg-sidebar)" }}
-    >
-      {/* Logo and close button */}
-      <div
-        className="flex items-center justify-between px-4 py-5 shadow-md"
-        style={{ background: "var(--bg-sidebar-header)" }}
-      >
-        <div className="flex items-center min-w-0 flex-1">
-          <BryteLinksSvgIcon className="w-10 h-10 mr-1 flex-shrink-0" />
-          <div className="text-lg sm:text-xl font-bold truncate text-white">
-            BryteLinks
-          </div>
-        </div>
-        <button
-          aria-label="Close sidebar"
-          className="text-white/60 hover:text-white md:hidden focus:outline-none focus:ring-2 focus:ring-opacity-50 rounded-md p-1 flex-shrink-0"
-          style={{
-            "--tw-ring-color": "var(--color-secondary-500)",
-          } as React.CSSProperties}
-          onClick={onClose}
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
+    <>
+      {/* ── CSS design tokens + minimal keyframes ─────────────────────────── */}
+      <style>{`
+        /*
+         * --sb-* tokens are consumed by both Sidebar and NavItem.
+         * ALL text references these — never raw rgba(255,255,255,x).
+         * To support a light sidebar, override these tokens on [data-theme="light"] aside.
+         */
+        aside[data-sidebar] {
+          --sb-text-primary:   rgba(255, 255, 255, 0.95);
+          --sb-text-secondary: rgba(255, 255, 255, 0.55);
+          --sb-text-muted:     rgba(255, 255, 255, 0.30);
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4">
-        <div className="px-6 py-2 mb-1">
-          <p className="text-xs font-medium text-white/40 uppercase tracking-wider">
-            Menu
-          </p>
-        </div>
-        <ul className="space-y-1 px-3">
-          {navItems.map((item) => (
-            <NavItem
-              key={item.path}
-              item={item}
-              level={0}
-              isActive={isActivePath(item.path)}
-              isExpanded={expandedItems.has(item.path)}
-              hasActiveChild={hasActiveChild(item)}
-              checkActive={isActivePath}
-              onToggle={toggleExpanded}
-              onClose={onClose}
-            />
-          ))}
-        </ul>
-      </nav>
+          --sb-hover-bg:       rgba(255, 255, 255, 0.05);
+          --sb-active-bg:      rgba(255, 255, 255, 0.10);
+          --sb-accent:         var(--color-secondary-500, #60a5fa);
 
-      {/* User info section */}
-      <div className="mt-auto">
+          --sb-divider:        rgba(255, 255, 255, 0.08);
+          --sb-avatar-ring:    rgba(255, 255, 255, 0.12);
+
+          --sb-shimmer-a:      rgba(255, 255, 255, 0.05);
+          --sb-shimmer-b:      rgba(255, 255, 255, 0.11);
+        }
+
+        /* Shimmer keyframe — cannot be expressed in Tailwind */
+        @keyframes sb-shimmer {
+          0%, 100% { background-color: var(--sb-shimmer-a); }
+          50%       { background-color: var(--sb-shimmer-b); }
+        }
+        .sb-shimmer {
+          animation: sb-shimmer 1.5s ease-in-out infinite;
+        }
+
+        /* Thin, themed scrollbar for the nav region */
+        .sb-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: var(--sb-divider) transparent;
+        }
+        .sb-scrollbar::-webkit-scrollbar       { width: 3px; }
+        .sb-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .sb-scrollbar::-webkit-scrollbar-thumb {
+          background: var(--sb-divider);
+          border-radius: 9999px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .sb-shimmer { animation: none; }
+        }
+      `}</style>
+
+      {/* ── Mobile backdrop ───────────────────────────────────────────────── */}
+      {isOpen && (
         <div
-          className="p-4 border-t"
-          style={{ borderColor: "var(--border-color)" }}
+          aria-hidden="true"
+          onClick={onClose}
+          className="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm md:hidden"
+        />
+      )}
+
+      {/* ── Sidebar shell ─────────────────────────────────────────────────── */}
+      <aside
+        data-sidebar
+        aria-label="Main navigation"
+        className={[
+          // Layout
+          "fixed inset-y-0 left-0 z-30 flex w-64 flex-col",
+          // Background (preserved from original)
+          "[background:var(--bg-sidebar)]",
+          // Slide transition
+          "transition-transform duration-300 ease-[cubic-bezier(0.19,1,0.22,1)] will-change-transform",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+          // Desktop: always visible, static
+          "md:static md:h-screen md:translate-x-0 md:flex-shrink-0",
+        ].join(" ")}
+      >
+
+        {/* ── Header ──────────────────────────────────────────────────────── */}
+        <div
+          className="flex flex-shrink-0 items-center justify-between px-4 py-[18px]"
+          style={{ background: "var(--bg-sidebar-header, var(--bg-sidebar))", borderBottom: "1px solid var(--sb-divider)" }}
         >
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="flex-shrink-0 relative">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md"
-                style={{
-                  background:
-                    "linear-gradient(to bottom right, var(--color-secondary-500), var(--color-secondary-600))",
-                }}
-              >
-                {authState.user?.fullName.charAt(0)}
-                {authState.user?.fullName.split(" ")[1]?.charAt(0) ?? ""}
-              </div>
-            </div>
-            <div className="overflow-hidden min-w-0 flex-1">
-              <div className="text-sm font-medium truncate text-white">
-                {authState.user?.fullName}
-              </div>
-              <div className="flex items-center">
-                <span
-                  className={`w-2 h-2 ${
-                    authState.isAuthenticated ? "bg-success" : "bg-white/40"
-                  } rounded-full mr-1 flex-shrink-0`}
-                />
-                <p className="text-xs text-white/60 truncate capitalize">
-                  {authState.user?.userType ?? "User"}
-                </p>
-                {isAgent(authState.user?.userType) &&
-                  authState.user?.agentCode && (
-                    <div className="ml-2 text-md font-mono font-bold text-white tracking-wide">
-                      {authState.user?.agentCode}
-                    </div>
-                  )}
-              </div>
-            </div>
+          {/* Brand */}
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <BryteLinksSvgIcon className="h-9 w-9 flex-shrink-0" />
+            <span className="truncate text-[15px] font-bold tracking-tight text-[var(--sb-text-primary)]">
+              BryteLinks
+            </span>
           </div>
 
+          {/* Mobile close */}
           <button
-            onClick={() => { logout(); onClose(); }}
-            className="w-full flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-error hover:bg-error/90 rounded-md transition-colors duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-error focus:ring-opacity-50"
+            type="button"
+            onClick={onClose}
+            aria-label="Close sidebar"
+            className={[
+              "ml-2 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md md:hidden",
+              "text-[var(--sb-text-secondary)] transition-colors duration-150",
+              "hover:bg-[var(--sb-hover-bg)] hover:text-[var(--sb-text-primary)]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sb-accent)]",
+            ].join(" ")}
           >
-            <LogOut className="w-5 h-5 mr-2" />
-            Logout
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
-        <div
-          className="p-3 border-t text-center"
-          style={{ borderColor: "var(--border-color)" }}
+        {/* ── Navigation ──────────────────────────────────────────────────── */}
+        <nav
+          aria-label="Navigation menu"
+          className="sb-scrollbar flex flex-1 flex-col overflow-y-auto py-3"
         >
-          <div className="text-xs text-white/40 truncate">{getAppName()}</div>
-          <div className="text-xs text-white/60 font-semibold">v1.0.0</div>
-        </div>
-      </div>
-    </aside>
+          <p className="mb-1 px-5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--sb-text-muted)]">
+            Menu
+          </p>
+
+          {packagesLoading ? (
+            <NavSkeleton />
+          ) : (
+            <ul role="list" className="flex flex-col gap-0.5 px-2">
+              {navItems.map((item) => (
+                <NavItem
+                  key={item.path}
+                  item={item}
+                  level={0}
+                  isActive={isActivePath(item.path)}
+                  isExpanded={expandedItems.has(item.path)}
+                  hasActiveChild={hasActiveChild(item)}
+                  checkActive={isActivePath}
+                  onToggle={toggleExpanded}
+                  onClose={onClose}
+                />
+              ))}
+            </ul>
+          )}
+        </nav>
+
+        {/* ── Footer ──────────────────────────────────────────────────────── */}
+        <footer
+          className="flex flex-shrink-0 flex-col gap-2.5 p-3"
+          style={{ borderTop: "1px solid var(--sb-divider)" }}
+        >
+          {/* User card */}
+          <div
+            className="flex items-center gap-2.5 rounded-lg p-2"
+            style={{ background: "var(--sb-hover-bg)" }}
+          >
+            {/* Avatar */}
+            <div className="relative flex-shrink-0" aria-hidden="true">
+              <div
+                className={[
+                  "flex h-9 w-9 items-center justify-center rounded-full",
+                  "text-[13px] font-bold tracking-wide text-[var(--sb-text-primary)]",
+                ].join(" ")}
+                style={{
+                  background: "linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-700, #2563eb))",
+                  boxShadow: "0 0 0 1px var(--sb-avatar-ring)",
+                }}
+              >
+                {initials}
+              </div>
+              {/* Online status dot */}
+              <span
+                className={[
+                  "absolute -bottom-px -right-px h-2.5 w-2.5 rounded-full",
+                  "border-2 transition-colors duration-300",
+                  isOnline ? "bg-emerald-500" : "bg-[var(--sb-text-muted)]",
+                ].join(" ")}
+                style={{ borderColor: "var(--bg-sidebar)" }}
+                title={isOnline ? "Online" : "Offline"}
+              />
+            </div>
+
+            {/* User info */}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-semibold leading-tight text-[var(--sb-text-primary)]">
+                {authState.user?.fullName}
+              </p>
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <span className="truncate text-[11px] capitalize text-[var(--sb-text-secondary)]">
+                  {userRole}
+                </span>
+                {agentCode && (
+                  <span
+                    className="flex-shrink-0 rounded px-1 py-px text-[10px] font-bold tracking-wider font-mono"
+                    style={{
+                      color: "var(--sb-accent)",
+                      background: "rgba(96, 165, 250, 0.12)",
+                    }}
+                  >
+                    {agentCode}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Logout */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className={[
+              "flex min-h-[40px] w-full items-center justify-center gap-2 rounded-md px-4 py-2",
+              "text-[13px] font-semibold transition-colors duration-150",
+              "text-red-300 border border-red-500/20 bg-red-500/10",
+              "hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-200",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70",
+            ].join(" ")}
+          >
+            <LogOut size={15} aria-hidden="true" />
+            <span>Logout</span>
+          </button>
+
+          {/* App meta */}
+          <div className="flex items-center justify-between px-1">
+            <span className="max-w-[70%] truncate text-[11px] text-[var(--sb-text-muted)]">
+              {appName}
+            </span>
+            <span
+              className="flex-shrink-0 rounded-full border px-1.5 py-px text-[10px] font-mono font-semibold tracking-wide text-[var(--sb-text-muted)]"
+              style={{ borderColor: "var(--sb-divider)", background: "var(--sb-hover-bg)" }}
+            >
+              v1.0.0
+            </span>
+          </div>
+        </footer>
+      </aside>
+    </>
   );
 };

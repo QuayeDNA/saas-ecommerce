@@ -1,7 +1,9 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Check } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { NavItem as NavItemConfig } from "./nav-config";
+
+/* ─── Types ────────────────────────────────────────────────────────────────── */
 
 interface NavItemProps {
   item: NavItemConfig;
@@ -14,6 +16,50 @@ interface NavItemProps {
   onClose: () => void;
 }
 
+/* ─── Shared row classes ────────────────────────────────────────────────────
+ *
+ * Why CSS variables here instead of Tailwind color utilities?
+ * Tailwind utilities like `text-white/60` compile to `rgba(255,255,255,0.6)`
+ * at build time and are STATIC. If the sidebar background changes between
+ * light/dark modes, those hardcoded values produce invisible or clashing text.
+ *
+ * Using `text-[var(--sb-text-primary)]` makes the text respond to whatever
+ * the sidebar token is set to — no color shifting, ever.
+ *
+ * The tokens themselves are defined once in Sidebar.tsx.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+const baseRow =
+  "group relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium " +
+  "transition-colors duration-150 " +
+  // default text — semantic token, not hardcoded
+  "text-[var(--sb-text-secondary)] " +
+  // hover — bg + text lift
+  "hover:bg-[var(--sb-hover-bg)] hover:text-[var(--sb-text-primary)] " +
+  // focus ring
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sb-accent)] focus-visible:ring-offset-0";
+
+const activeRow =
+  // background pill + inset left bar via box-shadow (can't do inset bar in Tailwind alone)
+  "bg-[var(--sb-active-bg)] text-[var(--sb-text-primary)] shadow-[inset_3px_0_0_var(--sb-accent)] " +
+  // keep hover from overriding active background
+  "hover:bg-[var(--sb-active-bg)]";
+
+const iconBase = "flex-shrink-0 text-base leading-none transition-colors duration-150";
+const iconActive = "text-[var(--sb-text-primary)]";
+const iconInactive = "text-[var(--sb-text-secondary)] group-hover:text-[var(--sb-text-primary)]";
+
+/* ─── Active indicator dot ──────────────────────────────────────────────── */
+
+const ActiveDot = () => (
+  <span
+    aria-hidden="true"
+    className="ml-auto h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--sb-accent)]"
+  />
+);
+
+/* ─── NavItem ───────────────────────────────────────────────────────────── */
+
 export const NavItem = memo(function NavItem({
   item,
   level,
@@ -25,43 +71,50 @@ export const NavItem = memo(function NavItem({
   onClose,
 }: NavItemProps) {
   const hasChildren = !!item.children?.length;
-  const active = isActive || hasActiveChild;
 
-  const sharedClasses =
-    `flex items-center px-3 py-3 rounded-md text-sm transition-all duration-200 ` +
-    `${active ? "text-white shadow-md" : "text-white/60 hover:text-white"} ` +
-    `hover:bg-[var(--color-primary-hover)] ${level > 0 ? "ml-6" : ""}`;
-
+  /* Parent group (has children) */
   if (hasChildren) {
+    const parentActive = hasActiveChild;
+
     return (
       <li>
         <button
+          type="button"
           onClick={() => onToggle(item.path)}
-          className={sharedClasses}
-          style={{
-            backgroundColor: hasActiveChild
-              ? "var(--color-secondary-500)"
-              : "transparent",
-          }}
+          aria-expanded={isExpanded}
+          className={[
+            baseRow,
+            parentActive ? activeRow : "",
+            level > 0 ? "pl-8" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
-          <div className="flex items-center min-w-0 flex-1">
-            <span
-              className={`mr-3 flex-shrink-0 text-white ${level > 0 ? "text-xs" : ""}`}
-            >
-              {item.icon}
-            </span>
-            <span className="font-medium truncate">{item.label}</span>
-          </div>
-          <span
-            className={`flex-shrink-0 transition-transform duration-200 ${
-              isExpanded ? "rotate-90" : ""
-            }`}
-          >
-            <ChevronRight size={12} />
+          {/* Icon */}
+          <span className={[iconBase, parentActive ? iconActive : iconInactive].join(" ")}>
+            {item.icon}
           </span>
+
+          {/* Label */}
+          <span className="flex-1 truncate text-left">{item.label}</span>
+
+          {/* Chevron */}
+          <ChevronRight
+            size={13}
+            aria-hidden="true"
+            className={[
+              "flex-shrink-0 transition-transform duration-200",
+              isExpanded ? "rotate-90" : "",
+              parentActive
+                ? "text-[var(--sb-text-primary)]"
+                : "text-[var(--sb-text-muted)] group-hover:text-[var(--sb-text-secondary)]",
+            ].join(" ")}
+          />
         </button>
+
+        {/* Children */}
         {isExpanded && (
-          <ul className="mt-1 space-y-1">
+          <ul className="mt-0.5 space-y-0.5" role="list">
             {item.children!.map((child) => (
               <NavItem
                 key={child.path}
@@ -81,33 +134,31 @@ export const NavItem = memo(function NavItem({
     );
   }
 
+  /* Leaf item (link) */
   return (
     <li>
       <Link
         to={item.path}
         onClick={onClose}
-        className={sharedClasses}
-        style={{
-          backgroundColor: isActive
-            ? "var(--color-secondary-700)"
-            : "transparent",
-        }}
+        aria-current={isActive ? "page" : undefined}
+        className={[
+          baseRow,
+          isActive ? activeRow : "",
+          level > 0 ? "pl-8 text-xs" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
-        <span
-          className={`mr-3 flex-shrink-0 ${
-            isActive ? "text-white" : "text-white/90"
-          } ${level > 0 ? "text-xs" : ""}`}
-        >
+        {/* Icon */}
+        <span className={[iconBase, isActive ? iconActive : iconInactive].join(" ")}>
           {item.icon}
         </span>
-        <span className={`font-medium truncate ${level > 0 ? "text-sm" : ""}`}>
-          {item.label}
-        </span>
-        {isActive && (
-          <span className="ml-auto flex-shrink-0">
-            <Check className="w-5 h-5" />
-          </span>
-        )}
+
+        {/* Label */}
+        <span className="flex-1 truncate">{item.label}</span>
+
+        {/* Active indicator */}
+        {isActive && <ActiveDot />}
       </Link>
     </li>
   );
