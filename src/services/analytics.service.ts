@@ -288,6 +288,12 @@ export interface AgentAnalyticsData {
       createdAt: string;
     }>;
   };
+  commissions: {
+    commissionBalance: number;
+    totalEarned: number;
+    totalWithdrawn: number;
+    creditedCount: number;
+  };
   charts: {
     labels: string[];
     orders: number[];
@@ -314,19 +320,6 @@ export interface ChartData {
     confirmed?: number;
     partiallyCompleted?: number;
   };
-}
-
-export interface CentralizedAnalyticsResponse {
-  actor: {
-    userId: string;
-    userType: string;
-    tenantId: string;
-  };
-  timeframe: string;
-  scope: string;
-  generatedAt: string;
-  source: string;
-  data: AnalyticsData | AgentAnalyticsData | Record<string, unknown>;
 }
 
 export interface RealtimeMetrics {
@@ -373,16 +366,6 @@ class AnalyticsService {
 
   async getRealtimeMetrics(): Promise<RealtimeMetrics> {
     const response = await apiClient.get("/api/analytics/realtime");
-    return response.data.data;
-  }
-
-  async getCentralizedAnalytics(
-    timeframe: string = "30d",
-    scope: string = "all",
-  ): Promise<CentralizedAnalyticsResponse> {
-    const response = await apiClient.get("/api/analytics/centralized", {
-      params: { timeframe, scope },
-    });
     return response.data.data;
   }
 }

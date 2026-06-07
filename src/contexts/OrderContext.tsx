@@ -10,12 +10,10 @@ import type {
   Order,
   OrderFilters,
   OrderPagination,
-  OrderAnalytics,
   CreateSingleOrderData,
   CreateBulkOrderData,
 } from "../types/order";
 import { orderService } from "../services/order.service";
-import { analyticsService } from "../services/analytics.service";
 import { useAuth } from "../hooks/use-auth";
 import { apiClient } from "../utils/api-client";
 
@@ -54,13 +52,6 @@ interface OrderContextType {
     pages: number;
     limit: number;
   };
-  analytics: OrderAnalytics | null;
-  monthlyRevenue: {
-    monthlyRevenue: number;
-    orderCount: number;
-    month: string;
-  } | null;
-
   // Actions
   fetchOrders: (
     filters?: OrderFilters,
@@ -108,50 +99,7 @@ interface OrderContextType {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     order: any;
   }>;
-  fetchAnalytics: (timeframe?: string) => Promise<void>;
-  getAnalytics: (timeframe?: string) => Promise<OrderAnalytics>;
-  getAgentAnalytics: (timeframe?: string) => Promise<{
-    orders: {
-      total: number;
-      completed: number;
-      pending: number;
-      processing: number;
-      confirmed: number;
-      failed: number;
-      cancelled: number;
-      partiallyCompleted: number;
-      successRate: number;
-      todayCounts: {
-        total: number;
-        completed: number;
-        pending: number;
-        processing: number;
-        confirmed: number;
-        failed: number;
-        cancelled: number;
-        partiallyCompleted: number;
-      };
-    };
-    revenue: {
-      total: number;
-      today: number;
-      thisMonth: number;
-      orderCount: number;
-      averageOrderValue: number;
-    };
-    wallet: {
-      balance: number;
-    };
-    charts: {
-      labels: string[];
-      orders: number[];
-      revenue: number[];
-      completedOrders: number[];
-    };
-    timeframe: string;
-    generatedAt: string;
-  }>;
-  fetchMonthlyRevenue: () => Promise<void>;
+
   setFilters: (filters: OrderFilters) => void;
   clearError: () => void;
   isInitialized: boolean;
@@ -187,13 +135,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     limit: 50,
   });
   const [filters, setFilters] = useState<OrderFilters>({});
-  const [analytics, setAnalytics] = useState<OrderAnalytics | null>(null);
-  const [monthlyRevenue, setMonthlyRevenue] = useState<{
-    monthlyRevenue: number;
-    orderCount: number;
-    month: string;
-  } | null>(null);
-
   // Reported orders state
   const [reportedOrders, setReportedOrders] = useState<Order[]>([]);
   const [reportedLoading, setReportedLoading] = useState(false);
@@ -541,64 +482,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     [fetchOrders, filters]
   );
 
-  const fetchAnalytics = useCallback(async (timeframe = "30d") => {
-    try {
-      const analyticsData = await orderService.getAnalytics(timeframe);
-      setAnalytics(analyticsData);
-    } catch (err: unknown) {
-      const message = extractErrorMessage(err, "Failed to fetch analytics");
-      setError(message);
-      // Toast notification removed - handled by component
-    }
-  }, []);
-
-  const getAnalytics = useCallback(async (timeframe = "30d") => {
-    try {
-      const analytics = await orderService.getAnalytics(timeframe);
-      return analytics;
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to fetch analytics");
-        // Toast notification removed - handled by component
-        throw err;
-      } else {
-        setError("Failed to fetch analytics");
-        // Toast notification removed - handled by component
-        throw err;
-      }
-    }
-  }, []);
-
-  const getAgentAnalytics = useCallback(async (timeframe = "30d") => {
-    try {
-      const analytics = await analyticsService.getAgentAnalytics(timeframe);
-      return analytics;
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to fetch agent analytics");
-        // Toast notification removed - handled by component
-        throw err;
-      } else {
-        setError("Failed to fetch agent analytics");
-        // Toast notification removed - handled by component
-        throw err;
-      }
-    }
-  }, []);
-
-  const fetchMonthlyRevenue = useCallback(async () => {
-    try {
-      const data = await orderService.getMonthlyRevenue();
-      setMonthlyRevenue(data);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to fetch monthly revenue");
-      } else {
-        setError("Failed to fetch monthly revenue");
-      }
-    }
-  }, []);
-
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -615,8 +498,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       reportedLoading,
       reportedError,
       reportedPagination,
-      analytics,
-      monthlyRevenue,
       fetchOrders,
       fetchReportedOrders,
       createSingleOrder,
@@ -632,10 +513,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       updateReceptionStatus,
       processDraftOrders,
       processSingleDraftOrder,
-      fetchAnalytics,
-      getAnalytics,
-      getAgentAnalytics,
-      fetchMonthlyRevenue,
       setFilters,
       clearError,
       isInitialized,
@@ -651,8 +528,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       reportedLoading,
       reportedError,
       reportedPagination,
-      analytics,
-      monthlyRevenue,
       fetchOrders,
       fetchReportedOrders,
       createSingleOrder,
@@ -666,10 +541,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       updateReceptionStatus,
       processDraftOrders,
       processSingleDraftOrder,
-      fetchAnalytics,
-      getAnalytics,
-      getAgentAnalytics,
-      fetchMonthlyRevenue,
       setFilters,
       clearError,
       isInitialized,
@@ -699,8 +570,6 @@ export const useOrder = () => {
       reportedLoading: false,
       reportedError: null,
       reportedPagination: { total: 0, page: 1, pages: 0, limit: 20 },
-      analytics: null,
-      monthlyRevenue: null,
       fetchOrders: async () => {},
       fetchReportedOrders: async () => {},
       createSingleOrder: async () => {},
@@ -723,29 +592,6 @@ export const useOrder = () => {
         totalAmount: 0,
         order: null,
       }),
-      fetchAnalytics: async () => {},
-      getAnalytics: async () => ({
-        totalOrders: 0,
-        completedOrders: 0,
-        totalRevenue: 0,
-        bulkOrders: 0,
-        completionRate: 0,
-        timeframe: "30d",
-      }),
-      getAgentAnalytics: async () => ({
-        users: { referredUsers: 0, totalReferredUsers: 0, activeReferredUsers: 0, conversionRate: 0 },
-        orders: {
-          total: 0, completed: 0, pending: 0, processing: 0, confirmed: 0,
-          failed: 0, cancelled: 0, partiallyCompleted: 0, successRate: 0,
-          todayCounts: { total: 0, completed: 0, pending: 0, processing: 0, confirmed: 0, failed: 0, cancelled: 0, partiallyCompleted: 0 },
-        },
-        revenue: { total: 0, today: 0, thisMonth: 0, orderCount: 0, averageOrderValue: 0 },
-        wallet: { balance: 0, totalCredits: 0, totalDebits: 0, transactionCount: 0, subscriptionStatus: "inactive", recentTransactions: [] },
-        charts: { labels: [], orders: [], revenue: [], completedOrders: [] },
-        timeframe: "30d",
-        generatedAt: new Date().toISOString(),
-      }),
-      fetchMonthlyRevenue: async () => {},
       setFilters: () => {},
       clearError: () => {},
       isInitialized: false,

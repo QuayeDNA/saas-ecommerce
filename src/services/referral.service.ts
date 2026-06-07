@@ -24,7 +24,7 @@ class ReferralService {
   }
 
   async getLeaderboard(
-    timeframe: "weekly" | "monthly" | "all" = "monthly"
+    timeframe: "this-week" | "this-month" | "all-time" = "all-time"
   ): Promise<LeaderboardEntry[]> {
     const response = await apiClient.get<LeaderboardResponse>(
       `/api/referrals/leaderboard?timeframe=${timeframe}`
@@ -66,12 +66,14 @@ class ReferralService {
     return response.data.data;
   }
 
-  async getAdminUsers(): Promise<{
+  async getAdminUsers(
+    page = 1, limit = 20
+  ): Promise<{
     users: ReferralAdminUser[];
     pagination: BackendPagination;
   }> {
     const response = await apiClient.get<ReferralAdminUsersResponse>(
-      "/api/referrals/admin/users"
+      `/api/referrals/admin/users?page=${page}&limit=${limit}`
     );
     return {
       users: Array.isArray(response.data.data.users) ? response.data.data.users : [],

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { commissionService } from "../../../services/commission.service";
 import { referralService } from "../../../services/referral.service";
+import { useAgentAnalytics, useInvalidateAnalytics } from "../../../hooks/use-analytics";
 import { FaWallet, FaShareAlt } from "react-icons/fa";
 import { Spinner } from "../../../design-system/components/spinner";
 import {
@@ -8,56 +9,73 @@ import {
 } from "../../../design-system/components/tabs";
 import { StatsGrid } from "../../../design-system/components/stats-card";
 import type { StatCardProps } from "../../../design-system/components/stats-card";
+import { Button } from "../../../design-system/components/button";
+import { useToast } from "../../../design-system/components/toast";
 import { ReferralBanner } from "./referral-banner";
-import { ReferralStats } from "./referral-stats";
 import { WithdrawForm } from "./withdraw-form";
 import { CommissionHistory } from "./commission-history";
 import { WithdrawalHistory } from "./withdrawal-history";
 import { ReferralTree } from "./referral-tree";
-import type { Commission, CommissionStats, WithdrawResponse, Withdrawal } from "../../../types/commission";
-import type { ReferralDashboard, ReferralTreeNode } from "../../../types/referral";
+import type { Commission, Withdrawal } from "../../../types/commission";
+import type { ReferralTreeNode } from "../../../types/referral";
 
 export const CommissionPage = () => {
-  const [balance, setBalance] = useState<number>(0);
-  const [stats, setStats] = useState<CommissionStats | null>(null);
+  const [balance, setBalance] = useState(0);
+  const [referralCode, setReferralCode] = useState("");
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
-  const [withdrawResult, setWithdrawResult] = useState<WithdrawResponse["data"] | null>(null);
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("commission");
+  const { showToast } = useToast();
 
-  const [dashboard, setDashboard] = useState<ReferralDashboard | null>(null);
+  const { data: analytics, isLoading: analyticsLoading } = useAgentAnalytics();
+  const { invalidateAgent } = useInvalidateAnalytics();
+
   const [tree, setTree] = useState<ReferralTreeNode[]>([]);
   const treeFetchedRef = useRef(false);
 
-  const fetchAll = async () => {
-    setLoading(true);
+  const [nonAnalyticsLoaded, setNonAnalyticsLoaded] = useState(false);
+
+  const fetchNonAnalytics = async () => {
     try {
-      const [bal, stat, comms, wds, dash] = await Promise.all([
-        commissionService.getBalance(),
-        commissionService.getStats(),
+      const [dash, comms, wds] = await Promise.all([
+        referralService.getDashboard(),
         commissionService.getCommissions(),
         commissionService.getWithdrawalHistory(),
-        referralService.getDashboard(),
       ]);
-      setBalance(bal);
-      setStats(stat);
+      setReferralCode(dash.referralCode);
       setCommissions(comms);
       setWithdrawals(wds);
-      setDashboard(dash);
     } catch (err) {
       console.error("Failed to load data", err);
     } finally {
-      setLoading(false);
+      setNonAnalyticsLoaded(true);
     }
   };
 
   useEffect(() => {
-    fetchAll();
+    fetchNonAnalytics();
   }, []);
+
+  useEffect(() => {
+    if (!analyticsLoading && nonAnalyticsLoaded) {
+      setLoading(false);
+    }
+  }, [analyticsLoading, nonAnalyticsLoaded]);
+
+  // Sync analytics into local balance on first load
+  useEffect(() => {
+    if (analytics?.commissions?.commissionBalance != null && balance === 0) {
+      setBalance(analytics.commissions.commissionBalance);
+    }
+  }, [analytics, balance]);
+
+  const totalEarned = analytics?.commissions?.totalEarned ?? 0;
+  const totalWithdrawn = analytics?.commissions?.totalWithdrawn ?? 0;
+  const creditedCount = analytics?.commissions?.creditedCount ?? 0;
 
   useEffect(() => {
     if (activeTab === "tree" && !treeFetchedRef.current) {
@@ -66,22 +84,20 @@ export const CommissionPage = () => {
     }
   }, [activeTab]);
 
-  const handleWithdraw = async () => {
-    const amount = parseFloat(withdrawAmount);
-    if (isNaN(amount) || amount <= 0) return;
-
+  const handleWithdraw = async (amount: number) => {
     setWithdrawing(true);
-    setWithdrawResult(null);
     setWithdrawError(null);
     try {
       const result = await commissionService.withdraw(amount);
-      setWithdrawResult(result);
       setBalance(result.commissionBalance);
-      setWithdrawAmount("");
-      fetchAll();
+      setWithdrawDialogOpen(false);
+      showToast(`Withdrawal of GHS ${amount.toFixed(2)} successful!`, "success");
+      invalidateAgent();
+      fetchNonAnalytics();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
-      setWithdrawError(error?.response?.data?.message || error?.message || "Withdrawal failed");
+      const message = error?.response?.data?.message || error?.message || "Withdrawal failed";
+      setWithdrawError(message);
     } finally {
       setWithdrawing(false);
     }
@@ -100,14 +116,9 @@ export const CommissionPage = () => {
 
   const commissionStatCards: StatCardProps[] = [
     { title: "Available Balance", value: `GHS ${balance.toFixed(2)}`, subtitle: "Ready to withdraw", icon: <FaWallet />, size: "md" },
+    { title: "Total Earned", value: `GHS ${totalEarned.toFixed(2)}`, subtitle: `${creditedCount} batches credited`, icon: <FaWallet />, size: "md" },
+    { title: "Total Withdrawn", value: `GHS ${totalWithdrawn.toFixed(2)}`, subtitle: "Cumulative withdrawals", icon: <FaWallet />, size: "md" },
   ];
-
-  if (stats) {
-    commissionStatCards.push(
-      { title: "Total Earned", value: `GHS ${(stats.totalCommissions || 0).toFixed(2)}`, subtitle: `${stats.creditedCount || 0} credited · ${stats.pendingCount || 0} pending`, icon: <FaWallet />, size: "md" },
-      { title: "Daily Average", value: `GHS ${(stats.totalEarned || 0).toFixed(2)}`, subtitle: "Total credited", icon: <FaWallet />, size: "md" },
-    );
-  }
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto">
@@ -118,11 +129,7 @@ export const CommissionPage = () => {
         </div>
       </div>
 
-      {dashboard?.referralCode && (
-        <ReferralBanner referralCode={dashboard.referralCode} />
-      )}
-
-      {dashboard && <ReferralStats dashboard={dashboard} />}
+      {referralCode && <ReferralBanner referralCode={referralCode} />}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -135,16 +142,25 @@ export const CommissionPage = () => {
         </TabsList>
 
         <TabsContent value="commission" className="space-y-4 pt-4">
-          {stats && <StatsGrid stats={commissionStatCards} columns={2} gap="xs" />}
+          <StatsGrid stats={commissionStatCards} columns={3} gap="xs" />
+
+          <div className="flex justify-end">
+            <Button
+              variant="primary"
+              onClick={() => setWithdrawDialogOpen(true)}
+              leftIcon={<FaWallet className="w-4 h-4" />}
+            >
+              Withdraw
+            </Button>
+          </div>
 
           <WithdrawForm
+            isOpen={withdrawDialogOpen}
             balance={balance}
-            withdrawAmount={withdrawAmount}
             withdrawing={withdrawing}
-            withdrawError={withdrawError}
-            withdrawResult={withdrawResult}
-            onAmountChange={setWithdrawAmount}
-            onWithdraw={handleWithdraw}
+            error={withdrawError}
+            onClose={() => { setWithdrawDialogOpen(false); setWithdrawError(null); }}
+            onSubmit={handleWithdraw}
           />
 
           <CommissionHistory commissions={commissions} />

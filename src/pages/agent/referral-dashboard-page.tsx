@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { referralService } from "../../services/referral.service";
-import type { ReferralDashboard, LeaderboardEntry, ReferralTreeNode } from "../../types/referral";
+import type { ReferralDashboard, LeaderboardEntry } from "../../types/referral";
 import { useAuth } from "../../hooks";
-import { FaCopy, FaShareAlt, FaWhatsapp, FaSms, FaCheck, FaUsers, FaMoneyBillWave, FaLink, FaTrophy } from "react-icons/fa";
+import { FaCopy, FaWhatsapp, FaSms, FaCheck, FaUsers, FaMoneyBillWave, FaLink, FaTrophy } from "react-icons/fa";
 import { useToast } from "../../design-system/components/toast";
 
 export const ReferralDashboardPage = () => {
@@ -10,10 +10,8 @@ export const ReferralDashboardPage = () => {
   const { addToast } = useToast();
   const [dashboard, setDashboard] = useState<ReferralDashboard | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [tree, setTree] = useState<ReferralTreeNode[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState<"weekly" | "monthly" | "all">("monthly");
-  const [treeDepth] = useState(3);
+  const [timeframe, setTimeframe] = useState<"this-week" | "this-month" | "all-time">("all-time");
   const [copied, setCopied] = useState(false);
 
   const referralCode = dashboard?.referralCode || authState.user?.agentCode || "";
@@ -25,14 +23,12 @@ export const ReferralDashboardPage = () => {
     const fetch = async () => {
       setLoading(true);
       try {
-        const [dash, board, referralTree] = await Promise.all([
+        const [dash, board] = await Promise.all([
           referralService.getDashboard(),
           referralService.getLeaderboard(timeframe),
-          referralService.getReferralTree(treeDepth, { fullName: authState.user?.fullName, phone: authState.user?.phone }),
         ]);
         setDashboard(dash);
         setLeaderboard(board);
-        setTree(referralTree);
       } catch (err) {
         console.error("Failed to load referral data", err);
       } finally {
@@ -40,7 +36,7 @@ export const ReferralDashboardPage = () => {
       }
     };
     fetch();
-  }, [timeframe, treeDepth]);
+  }, [timeframe]);
 
   const copyToClipboard = useCallback(async (text: string) => {
     try {
@@ -126,49 +122,42 @@ export const ReferralDashboardPage = () => {
         </div>
       )}
 
-      {/* Raw JSON sections for future UI work */}
-      <details className="rounded-xl border border-slate-200 bg-white">
-        <summary className="flex items-center gap-2 p-4 cursor-pointer font-medium text-slate-700 hover:bg-slate-50">
-          <FaShareAlt /> Raw API Data
-        </summary>
-        <div className="p-4 border-t border-slate-100 space-y-4">
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Dashboard Data</h2>
-            <pre className="bg-gray-100 p-4 rounded overflow-auto text-sm">
-              {JSON.stringify(dashboard, null, 2)}
-            </pre>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Leaderboard ({timeframe})</h2>
-            <div className="flex gap-2 mb-2">
-              {(["weekly", "monthly", "all"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTimeframe(t)}
-                  className={`px-3 py-1 rounded text-sm ${
-                    timeframe === t
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-700"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            <pre className="bg-gray-100 p-4 rounded overflow-auto text-sm">
-              {JSON.stringify(leaderboard, null, 2)}
-            </pre>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Referral Tree</h2>
-            <pre className="bg-gray-100 p-4 rounded overflow-auto text-sm">
-              {JSON.stringify(tree, null, 2)}
-            </pre>
-          </section>
+      {/* Leaderboard */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+          <FaTrophy className="text-amber-500" /> Leaderboard
+        </h2>
+        <div className="flex gap-2 mb-3">
+          {(["this-week", "this-month", "all-time"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTimeframe(t)}
+              className={`px-3 py-1 rounded text-sm ${
+                timeframe === t
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
         </div>
-      </details>
+        {leaderboard.length === 0 ? (
+          <p className="text-sm text-gray-500">No data yet</p>
+        ) : (
+          <div className="space-y-2">
+            {leaderboard.map((entry, i) => (
+              <div key={entry.referrerId} className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-gray-400 w-6">{i + 1}.</span>
+                  <span className="text-sm font-medium">{entry.fullName}</span>
+                </div>
+                <span className="text-sm font-semibold text-emerald-600">GHS {entry.commissionsEarned.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

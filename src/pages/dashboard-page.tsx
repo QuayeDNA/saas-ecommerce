@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useWallet } from "../hooks";
-import { useOrder } from "../contexts/OrderContext";
+import { useAgentAnalytics } from "../hooks/use-analytics";
 import { useProvider } from "../hooks/use-provider";
 import { useSiteStatus } from "../contexts/site-status-context";
 import { orderService } from "../services/order.service";
@@ -70,7 +70,6 @@ ChartJS.register(
 
 export const DashboardPage = () => {
   const { getTransactionHistory } = useWallet();
-  const { getAgentAnalytics } = useOrder();
   const { providers } = useProvider();
   const { siteStatus } = useSiteStatus();
 
@@ -78,46 +77,60 @@ export const DashboardPage = () => {
   const [recentTransactions, setRecentTransactions] = useState<
     WalletTransaction[]
   >([]);
-  const [analyticsData, setAnalyticsData] = useState({
-    orders: {
-      total: 0,
-      completed: 0,
-      pending: 0,
-      processing: 0,
-      confirmed: 0,
-      failed: 0,
-      cancelled: 0,
-      partiallyCompleted: 0,
-      successRate: 0,
-      todayCounts: {
-        total: 0,
-        completed: 0,
-        pending: 0,
-        processing: 0,
-        confirmed: 0,
-        failed: 0,
-        cancelled: 0,
-        partiallyCompleted: 0,
-      },
-    },
-    revenue: {
-      total: 0,
-      today: 0,
-      orderCount: 0,
-      averageOrderValue: 0,
-    },
-    wallet: {
-      balance: 0,
-    },
-    charts: {
-      labels: [] as string[],
-      orders: [] as number[],
-      revenue: [] as number[],
-      completedOrders: [] as number[],
-    },
-  });
   const [loading, setLoading] = useState(true);
-  const [analyticsTimeframe, setAnalyticsTimeframe] = useState("7d"); // default to Weekly
+  const [analyticsTimeframe, setAnalyticsTimeframe] = useState("7d");
+
+  const {
+    data: agentAnalytics,
+    isLoading: analyticsLoading,
+  } = useAgentAnalytics(analyticsTimeframe);
+
+  const analyticsData = useMemo(() => {
+    if (!agentAnalytics) {
+      return {
+        orders: { total: 0, completed: 0, pending: 0, processing: 0, confirmed: 0, failed: 0, cancelled: 0, partiallyCompleted: 0, successRate: 0, todayCounts: { total: 0, completed: 0, pending: 0, processing: 0, confirmed: 0, failed: 0, cancelled: 0, partiallyCompleted: 0 } },
+        revenue: { total: 0, today: 0, orderCount: 0, averageOrderValue: 0 },
+        wallet: { balance: 0 },
+        charts: { labels: [] as string[], orders: [] as number[], revenue: [] as number[], completedOrders: [] as number[] },
+      };
+    }
+    return {
+      orders: {
+        total: agentAnalytics.orders?.total || 0,
+        completed: agentAnalytics.orders?.completed || 0,
+        pending: agentAnalytics.orders?.pending || 0,
+        processing: agentAnalytics.orders?.processing || 0,
+        confirmed: agentAnalytics.orders?.confirmed || 0,
+        failed: agentAnalytics.orders?.failed || 0,
+        cancelled: agentAnalytics.orders?.cancelled || 0,
+        partiallyCompleted: agentAnalytics.orders?.partiallyCompleted || 0,
+        successRate: agentAnalytics.orders?.successRate || 0,
+        todayCounts: {
+          total: agentAnalytics.orders?.todayCounts?.total || 0,
+          completed: agentAnalytics.orders?.todayCounts?.completed || 0,
+          pending: agentAnalytics.orders?.todayCounts?.pending || 0,
+          processing: agentAnalytics.orders?.todayCounts?.processing || 0,
+          confirmed: agentAnalytics.orders?.todayCounts?.confirmed || 0,
+          failed: agentAnalytics.orders?.todayCounts?.failed || 0,
+          cancelled: agentAnalytics.orders?.todayCounts?.cancelled || 0,
+          partiallyCompleted: agentAnalytics.orders?.todayCounts?.partiallyCompleted || 0,
+        },
+      },
+      revenue: {
+        total: agentAnalytics.revenue?.total || 0,
+        today: agentAnalytics.revenue?.today || 0,
+        orderCount: agentAnalytics.revenue?.orderCount || 0,
+        averageOrderValue: agentAnalytics.revenue?.averageOrderValue || 0,
+      },
+      wallet: { balance: agentAnalytics.wallet?.balance || 0 },
+      charts: {
+        labels: agentAnalytics.charts?.labels || [],
+        orders: agentAnalytics.charts?.orders || [],
+        revenue: agentAnalytics.charts?.revenue || [],
+        completedOrders: agentAnalytics.charts?.completedOrders || [],
+      },
+    };
+  }, [agentAnalytics]);
   const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
   const [showSiteMessage, setShowSiteMessage] = useState(true);
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
@@ -207,153 +220,24 @@ export const DashboardPage = () => {
     return type === "credit" ? "success" : "error";
   };
 
-  // Load dashboard data
+  // Load dashboard data (transactions only)
   useEffect(() => {
-    const loadDashboardData = async () => {
+    const loadTransactions = async () => {
       try {
         setLoading(true);
-
-        // Load recent transactions (last 5)
         const transactionData = await getTransactionHistory(1, 5);
         if (transactionData) {
           setRecentTransactions(transactionData.transactions);
         }
-
-        // Load agent analytics
-        try {
-          const analytics = await getAgentAnalytics(analyticsTimeframe);
-          if (analytics) {
-            // Use the AgentAnalyticsData shape directly from the backend
-            const data = analytics as {
-              orders: {
-                total: number;
-                completed: number;
-                pending: number;
-                processing: number;
-                confirmed: number;
-                failed: number;
-                cancelled: number;
-                partiallyCompleted: number;
-                successRate: number;
-                todayCounts: {
-                  total: number;
-                  completed: number;
-                  pending: number;
-                  processing: number;
-                  confirmed: number;
-                  failed: number;
-                  cancelled: number;
-                  partiallyCompleted: number;
-                };
-              };
-              revenue: {
-                total: number;
-                today: number;
-                thisMonth: number;
-                orderCount: number;
-                averageOrderValue: number;
-              };
-              wallet: {
-                balance: number;
-              };
-              charts: {
-                labels: string[];
-                orders: number[];
-                revenue: number[];
-                completedOrders: number[];
-              };
-            };
-
-            setAnalyticsData({
-              orders: {
-                total: data.orders?.total || 0,
-                completed: data.orders?.completed || 0,
-                pending: data.orders?.pending || 0,
-                processing: data.orders?.processing || 0,
-                confirmed: data.orders?.confirmed || 0,
-                failed: data.orders?.failed || 0,
-                cancelled: data.orders?.cancelled || 0,
-                partiallyCompleted: data.orders?.partiallyCompleted || 0,
-                successRate: data.orders?.successRate || 0,
-                todayCounts: {
-                  total: data.orders?.todayCounts?.total || 0,
-                  completed: data.orders?.todayCounts?.completed || 0,
-                  pending: data.orders?.todayCounts?.pending || 0,
-                  processing: data.orders?.todayCounts?.processing || 0,
-                  confirmed: data.orders?.todayCounts?.confirmed || 0,
-                  failed: data.orders?.todayCounts?.failed || 0,
-                  cancelled: data.orders?.todayCounts?.cancelled || 0,
-                  partiallyCompleted:
-                    data.orders?.todayCounts?.partiallyCompleted || 0,
-                },
-              },
-              revenue: {
-                total: data.revenue?.total || 0,
-                today: data.revenue?.today || 0,
-                orderCount: data.revenue?.orderCount || 0,
-                averageOrderValue: data.revenue?.averageOrderValue || 0,
-              },
-              wallet: {
-                balance: data.wallet?.balance || 0,
-              },
-              charts: {
-                labels: data.charts?.labels || [],
-                orders: data.charts?.orders || [],
-                revenue: data.charts?.revenue || [],
-                completedOrders: data.charts?.completedOrders || [],
-              },
-            });
-          }
-        } catch (analyticsError) {
-          console.error("Analytics error:", analyticsError);
-          // Set default values if analytics fails
-          setAnalyticsData({
-            orders: {
-              total: 0,
-              completed: 0,
-              pending: 0,
-              processing: 0,
-              confirmed: 0,
-              failed: 0,
-              cancelled: 0,
-              partiallyCompleted: 0,
-              successRate: 0,
-              todayCounts: {
-                total: 0,
-                completed: 0,
-                pending: 0,
-                processing: 0,
-                confirmed: 0,
-                failed: 0,
-                cancelled: 0,
-                partiallyCompleted: 0,
-              },
-            },
-            revenue: {
-              total: 0,
-              today: 0,
-              orderCount: 0,
-              averageOrderValue: 0,
-            },
-            wallet: { balance: 0 },
-            charts: {
-              labels: [],
-              orders: [],
-              revenue: [],
-              completedOrders: [],
-            },
-          });
-        }
-      } catch (error) {
-        console.error("Dashboard data loading error:", error);
-        // Failed to load dashboard data
+      } catch (err) {
+        console.error("Failed to load transactions:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadDashboardData();
-  }, [getTransactionHistory, getAgentAnalytics, analyticsTimeframe]);
+    loadTransactions();
+  }, [getTransactionHistory]);
 
   // Fetch active (pending/processing/confirmed) orders
   useEffect(() => {
@@ -444,82 +328,47 @@ export const DashboardPage = () => {
     }
   };
 
-  // Generate dynamic labels based on timeframe
-  const generateDynamicLabels = () => {
-    switch (analyticsTimeframe) {
-      case "1d": {
-        // Hours: 0, 1, 2, ..., 23
-        return Array.from({ length: 24 }, (_, i) => `${i}:00`);
-      }
-      case "7d": {
-        // Days of week: Mon, Tue, Wed, Thu, Fri, Sat, Sun
-        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-        const today = new Date();
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Monday
-
-        return days.map((day, idx) => {
-          const date = new Date(startOfWeek);
-          date.setDate(startOfWeek.getDate() + idx);
-          const dayNum = date.getDate();
-          return `${day} ${dayNum}`;
-        });
-      }
-      case "30d": {
-        // Every 2nd day: 1, 3, 5, 7, ..., 29
-        return Array.from({ length: 15 }, (_, i) => `Day ${i * 2 + 1}`);
-      }
-      case "365d": {
-        // Months of year
-        return [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-      }
-      default:
-        return [];
-    }
-  };
-
-  // Prepare sales chart data - Bar chart with dynamic labels
-  const prepareSalesChartData = () => {
-    const dynamicLabels = generateDynamicLabels();
+  // Prepare sales chart data - uses backend labels directly
+  const salesChartData = useMemo(() => {
+    const labels = analyticsData.charts.labels || [];
     const revenueData = analyticsData.charts.revenue || [];
 
-    // Ensure data matches label count, pad with 0s if needed
-    const paddedRevenueData = Array(dynamicLabels.length).fill(0);
-    revenueData.forEach((value, idx) => {
-      if (idx < paddedRevenueData.length) {
-        paddedRevenueData[idx] = value;
+    if (labels.length === 0) {
+      return { labels: [], datasets: [] };
+    }
+
+    const formatLabel = (label: string) => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(label)) {
+        const d = new Date(label + "T00:00:00");
+        return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
       }
-    });
+      if (/^\d{4}-\d{2}$/.test(label)) {
+        const d = new Date(label + "-01T00:00:00");
+        return d.toLocaleDateString("en-GB", { month: "short", year: "2-digit" });
+      }
+      return label;
+    };
 
     return {
-      labels: dynamicLabels,
+      labels: labels.map(formatLabel),
       datasets: [
         {
           label: "Revenue (GHS)",
-          data: paddedRevenueData,
-          backgroundColor: "var(--success)",
-          borderColor: "var(--success)",
+          data: revenueData,
+          backgroundColor: labels.map((_, i) => {
+            const colors = ["#10b981", "#34d399", "#6ee7b7", "#059669", "#047857", "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899", "#f43f5e", "#f97316", "#eab308", "#84cc16"];
+            return colors[i % colors.length];
+          }),
+          borderColor: labels.map((_, i) => {
+            const colors = ["#059669", "#10b981", "#34d399", "#047857", "#065f46", "#2563eb", "#4f46e5", "#7c3aed", "#9333ea", "#c026d3", "#db2777", "#e11d48", "#ea580c", "#ca8a04", "#65a30d"];
+            return colors[i % colors.length];
+          }),
           borderWidth: 1.5,
           borderRadius: 4,
         },
       ],
     };
-  };
-
-  const salesChartData = prepareSalesChartData();
+  }, [analyticsData.charts.labels, analyticsData.charts.revenue]);
 
   const salesChartOptions = {
     responsive: true,
@@ -556,7 +405,7 @@ export const DashboardPage = () => {
   };
 
   // Prepare order analytics chart data - Order completion trends
-  const prepareOrderAnalyticsChartData = () => {
+  const orderAnalyticsChartData = useMemo(() => {
     const labels = ["Total Orders", "Completed", "Pending"];
     const data = [
       analyticsData.orders.total,
@@ -570,23 +419,13 @@ export const DashboardPage = () => {
         {
           label: "Orders",
           data,
-          backgroundColor: [
-            "var(--color-primary)",
-            "var(--success)",
-            "var(--warning)",
-          ],
-          borderColor: [
-            "var(--color-primary)",
-            "var(--success)",
-            "var(--warning)",
-          ],
+          backgroundColor: ["#3b82f6", "#10b981", "#f59e0b"],
+          borderColor: ["#2563eb", "#059669", "#d97706"],
           borderWidth: 1,
         },
       ],
     };
-  };
-
-  const orderAnalyticsChartData = prepareOrderAnalyticsChartData();
+  }, [analyticsData.orders.total, analyticsData.orders.completed, analyticsData.orders.pending]);
 
   const orderAnalyticsChartOptions = {
     responsive: true,
@@ -609,6 +448,11 @@ export const DashboardPage = () => {
         beginAtZero: true,
         ticks: {
           stepSize: 1,
+        },
+      },
+      x: {
+        grid: {
+          display: false,
         },
       },
     },
@@ -896,7 +740,7 @@ export const DashboardPage = () => {
           </div>
         </CardHeader>
         <CardBody>
-          {loading ? (
+          {(loading || analyticsLoading) ? (
             <div className="flex justify-center items-center h-40 sm:h-48">
               <Spinner />
             </div>
@@ -944,7 +788,7 @@ export const DashboardPage = () => {
           </div>
         </CardHeader>
         <CardBody>
-          {loading ? (
+          {(loading || analyticsLoading) ? (
             <div className="flex justify-center items-center h-40 sm:h-48">
               <Spinner />
             </div>

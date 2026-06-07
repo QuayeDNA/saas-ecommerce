@@ -16,7 +16,7 @@ import {
   ReferralCommissionsTab,
   ReferralWithdrawalsTab,
 } from "../../components/superadmin/referral";
-import type { ReferralAdminStats, ReferralAdminUser } from "../../types/referral";
+import type { ReferralAdminStats, ReferralAdminUser, LeaderboardEntry } from "../../types/referral";
 import type { Commission } from "../../types/commission";
 import type { Withdrawal } from "../../types/commission";
 
@@ -36,6 +36,8 @@ export const ReferralManagement = () => {
 
   const [adminStats, setAdminStats] = useState<ReferralAdminStats | null>(null);
   const [adminUsers, setAdminUsers] = useState<ReferralAdminUser[]>([]);
+  const [usersPagination, setUsersPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
+  const [usersPage, setUsersPage] = useState(1);
   const [commissionRate, setCommissionRate] = useState(5);
 
   const [commissions, setCommissions] = useState<Commission[]>([]);
@@ -44,6 +46,12 @@ export const ReferralManagement = () => {
   const [commissionsPage, setCommissionsPage] = useState(1);
 
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [withdrawalsPagination, setWithdrawalsPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
+  const [withdrawalsPage, setWithdrawalsPage] = useState(1);
+
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardTimeframe, setLeaderboardTimeframe] = useState("all-time");
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
@@ -73,11 +81,18 @@ export const ReferralManagement = () => {
     }
   }, [addToast]);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (page: number) => {
     setUsersLoading(true);
     try {
-      const result = await referralService.getAdminUsers();
+      const result = await referralService.getAdminUsers(page);
       setAdminUsers(result.users);
+      const bp = result.pagination;
+      setUsersPagination({
+        page: bp?.page ?? page,
+        limit: bp?.limit ?? 20,
+        total: bp?.total ?? 0,
+        pages: bp?.totalPages ?? 0,
+      });
     } catch {
       setAdminUsers([]);
     } finally {
@@ -99,15 +114,28 @@ export const ReferralManagement = () => {
     }
   }, []);
 
-  const fetchWithdrawals = useCallback(async () => {
+  const fetchWithdrawals = useCallback(async (page: number) => {
     setWithdrawalsLoading(true);
     try {
-      const wds = await commissionService.getWithdrawalHistory();
-      setWithdrawals(Array.isArray(wds) ? wds : []);
+      const result = await commissionService.getWithdrawalHistoryPaginated(page);
+      setWithdrawals(result.withdrawals);
+      setWithdrawalsPagination(result.pagination);
     } catch {
       setWithdrawals([]);
     } finally {
       setWithdrawalsLoading(false);
+    }
+  }, []);
+
+  const fetchLeaderboard = useCallback(async (timeframe: string) => {
+    setLeaderboardLoading(true);
+    try {
+      const result = await referralService.getLeaderboard(timeframe as "this-week" | "this-month" | "all-time");
+      setLeaderboard(result);
+    } catch {
+      setLeaderboard([]);
+    } finally {
+      setLeaderboardLoading(false);
     }
   }, []);
 
@@ -116,16 +144,20 @@ export const ReferralManagement = () => {
   }, [fetchMainData]);
 
   useEffect(() => {
-    if (activeTab === "users") fetchUsers();
-  }, [activeTab, fetchUsers]);
+    if (activeTab === "overview") fetchLeaderboard(leaderboardTimeframe);
+  }, [activeTab, leaderboardTimeframe, fetchLeaderboard]);
+
+  useEffect(() => {
+    if (activeTab === "users") fetchUsers(usersPage);
+  }, [activeTab, usersPage, fetchUsers]);
 
   useEffect(() => {
     if (activeTab === "commissions") fetchCommissions(commissionsPage, commissionsFilter);
   }, [activeTab, commissionsPage, commissionsFilter, fetchCommissions]);
 
   useEffect(() => {
-    if (activeTab === "withdrawals") fetchWithdrawals();
-  }, [activeTab, fetchWithdrawals]);
+    if (activeTab === "withdrawals") fetchWithdrawals(withdrawalsPage);
+  }, [activeTab, withdrawalsPage, fetchWithdrawals]);
 
   const handleProcessDaily = async () => {
     setProcessing(true);
@@ -188,11 +220,20 @@ export const ReferralManagement = () => {
             processing={processing}
             batchResult={batchResult}
             onProcessBatch={handleProcessDaily}
+            leaderboard={leaderboard}
+            leaderboardLoading={leaderboardLoading}
+            leaderboardTimeframe={leaderboardTimeframe}
+            onLeaderboardTimeframeChange={setLeaderboardTimeframe}
           />
         </TabsContent>
 
         <TabsContent value="users">
-          <ReferralUsersTab users={adminUsers} loading={usersLoading} />
+          <ReferralUsersTab
+            users={adminUsers}
+            pagination={usersPagination}
+            loading={usersLoading}
+            onPageChange={setUsersPage}
+          />
         </TabsContent>
 
         <TabsContent value="commissions">
@@ -207,7 +248,12 @@ export const ReferralManagement = () => {
         </TabsContent>
 
         <TabsContent value="withdrawals">
-          <ReferralWithdrawalsTab withdrawals={withdrawals} loading={withdrawalsLoading} />
+          <ReferralWithdrawalsTab
+            withdrawals={withdrawals}
+            pagination={withdrawalsPagination}
+            loading={withdrawalsLoading}
+            onPageChange={setWithdrawalsPage}
+          />
         </TabsContent>
       </Tabs>
     </div>

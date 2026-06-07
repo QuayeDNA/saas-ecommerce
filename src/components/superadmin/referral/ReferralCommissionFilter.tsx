@@ -8,13 +8,13 @@ interface ReferralCommissionFilterProps {
 const FILTERS: CommissionStatusFilter[] = ["all", "pending", "credited", "cancelled"];
 
 export const ReferralCommissionFilter = ({ value, onChange }: ReferralCommissionFilterProps) => (
-  <div className="flex gap-1.5">
+  <div className="flex gap-1 flex-wrap">
     {FILTERS.map((filter) => (
       <button
         key={filter}
         type="button"
         onClick={() => onChange(filter)}
-        className="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors"
+        className="px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors"
         style={{
           background: value === filter ? "var(--color-secondary)" : "var(--bg-surface)",
           color: value === filter ? "white" : "var(--text-secondary)",

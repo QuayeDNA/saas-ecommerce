@@ -79,7 +79,7 @@ export const CommissionHistory = ({ commissions }: CommissionHistoryProps) => {
                 </div>
                 <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>GHS {c.amount.toFixed(2)}</p>
                 <div className="flex gap-4 mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
-                  <span>{c.commissionRate}% rate</span>
+                  <span>{c.rate}% rate</span>
                   <span>{c.ordersCount || 0} orders</span>
                   <span>{c.qualifiedUsersCount || 0} users</span>
                 </div>
@@ -106,7 +106,7 @@ export const CommissionHistory = ({ commissions }: CommissionHistoryProps) => {
                       <p className="text-sm whitespace-nowrap">{formatDate(c.date)}</p>
                     </TableCell>
                     <TableCell className="font-semibold">GHS {c.amount.toFixed(2)}</TableCell>
-                    <TableCell>{c.commissionRate}%</TableCell>
+                    <TableCell>{c.rate}%</TableCell>
                     <TableCell>{c.ordersCount || 0}</TableCell>
                     <TableCell>{c.qualifiedUsersCount || 0}</TableCell>
                     <TableCell><CommissionStatusBadge status={c.status} /></TableCell>

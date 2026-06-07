@@ -10,11 +10,11 @@ import type {
 } from "../types/commission";
 
 class CommissionService {
-  async getBalance(): Promise<number> {
+  async getBalance(): Promise<{ commissionBalance: number; walletBalance: number }> {
     const response = await apiClient.get<CommissionBalanceResponse>(
       "/api/commissions/balance"
     );
-    return response.data.data.commissionBalance;
+    return response.data.data;
   }
 
   async getStats(): Promise<CommissionStats> {
@@ -88,6 +88,27 @@ class CommissionService {
     );
     const withdrawals = response.data.data?.withdrawals;
     return Array.isArray(withdrawals) ? withdrawals : [];
+  }
+
+  async getWithdrawalHistoryPaginated(
+    page = 1, limit = 20
+  ): Promise<{
+    withdrawals: Withdrawal[];
+    pagination: { page: number; limit: number; total: number; pages: number };
+  }> {
+    const response = await apiClient.get<WithdrawalHistoryResponse>(
+      `/api/commissions/withdrawals?page=${page}&limit=${limit}`
+    );
+    const bp = response.data.data.pagination;
+    return {
+      withdrawals: Array.isArray(response.data.data.withdrawals) ? response.data.data.withdrawals : [],
+      pagination: {
+        page: bp?.page ?? 1,
+        limit: bp?.limit ?? limit,
+        total: bp?.total ?? 0,
+        pages: bp?.totalPages ?? 0,
+      },
+    };
   }
 
   async processDailyBatch(): Promise<{

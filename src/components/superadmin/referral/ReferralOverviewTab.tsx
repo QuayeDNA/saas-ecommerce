@@ -1,7 +1,7 @@
 import { FaUsers, FaUserTie, FaMoneyBillWave, FaUserPlus, FaBox, FaChartLine, FaLayerGroup, FaPercent } from "react-icons/fa";
-import type { ReferralAdminStats } from "../../../types/referral";
-import { formatCurrency } from "../../../utils/pricingHelpers";
+import type { ReferralAdminStats, LeaderboardEntry } from "../../../types/referral";
 import { ReferralBatchProcessor } from "./ReferralBatchProcessor";
+import { ReferralLeaderboard } from "./ReferralLeaderboard";
 import { StatsGrid, Spinner } from "../../../design-system";
 import type { StatCardProps } from "../../../design-system/components/stats-card";
 
@@ -12,10 +12,15 @@ interface ReferralOverviewTabProps {
   processing: boolean;
   batchResult: { success: boolean; message: string; data?: { processed: number; skipped: number; message: string; date: string } } | null;
   onProcessBatch: () => void;
+  leaderboard: LeaderboardEntry[];
+  leaderboardLoading: boolean;
+  leaderboardTimeframe: string;
+  onLeaderboardTimeframeChange: (tf: string) => void;
 }
 
 export const ReferralOverviewTab = ({
   adminStats, commissionRate, loading, processing, batchResult, onProcessBatch,
+  leaderboard, leaderboardLoading, leaderboardTimeframe, onLeaderboardTimeframeChange,
 }: ReferralOverviewTabProps) => {
   if (loading) {
     return (
@@ -28,7 +33,7 @@ export const ReferralOverviewTab = ({
   const primaryStats: StatCardProps[] = adminStats ? [
     { title: "Total Referrers", value: adminStats.totalReferrers, icon: <FaUsers /> },
     { title: "Active Referrers", value: adminStats.activeReferrers, icon: <FaUserTie /> },
-    { title: "Commission Paid", value: formatCurrency(adminStats.totalCommissionsPaid || 0), subtitle: "All time", icon: <FaMoneyBillWave /> },
+    { title: "Commission Paid", value: `GHS ${(adminStats.totalCommissionsPaid || 0).toFixed(2)}`, subtitle: "All time", icon: <FaMoneyBillWave /> },
     { title: "Total Referred", value: adminStats.totalReferred, icon: <FaUserPlus /> },
   ] : [];
 
@@ -63,6 +68,13 @@ export const ReferralOverviewTab = ({
           </div>
         </div>
       )}
+
+      <ReferralLeaderboard
+        data={leaderboard}
+        loading={leaderboardLoading}
+        timeframe={leaderboardTimeframe}
+        onTimeframeChange={onLeaderboardTimeframeChange}
+      />
 
       <ReferralBatchProcessor
         processing={processing}
