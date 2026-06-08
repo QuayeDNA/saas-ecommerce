@@ -3,6 +3,8 @@ export type UserType =
   | "super_agent"
   | "dealer"
   | "super_dealer"
+  | "elite_dealer"
+  | "master_dealer"
   | "subscriber"
   | "super_admin"
   | "admin";

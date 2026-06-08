@@ -215,6 +215,10 @@ export default function SuperAdminUsersPage() {
         return <FaStore style={{ color: "var(--success)" }} />;
       case "super_dealer":
         return <FaStore style={{ color: "var(--warning)" }} />;
+      case "elite_dealer":
+        return <FaStore style={{ color: "var(--color-primary)" }} />;
+      case "master_dealer":
+        return <FaStore style={{ color: "var(--error)" }} />;
       case "super_admin":
         return <FaShieldAlt style={{ color: "var(--error)" }} />;
       default:
@@ -223,20 +227,17 @@ export default function SuperAdminUsersPage() {
   };
 
   const getUserTypeLabel = (userType: string) => {
-    switch (userType) {
-      case "agent":
-        return "Agent";
-      case "super_agent":
-        return "Super Agent";
-      case "dealer":
-        return "Dealer";
-      case "super_dealer":
-        return "Super Dealer";
-      case "super_admin":
-        return "Super Admin";
-      default:
-        return "User";
-    }
+    // Import from centralized source - keep local wrapper for backward compat
+    const labels: Record<string, string> = {
+      agent: "Agent",
+      super_agent: "Super Agent",
+      dealer: "Dealer",
+      super_dealer: "Super Dealer",
+      elite_dealer: "Elite Dealer",
+      master_dealer: "Master Dealer",
+      super_admin: "Super Admin",
+    };
+    return labels[userType] || "User";
   };
 
   const formatDate = (date: string) => {
@@ -298,6 +299,20 @@ export default function SuperAdminUsersPage() {
     {
       key: "superDealers",
       label: "Super Dealers",
+      icon: <FaUserCog className="text-white text-sm sm:text-lg lg:text-xl" />,
+      color: "gray",
+      bgColor: "surface-alt",
+    },
+    {
+      key: "eliteDealers",
+      label: "Elite Dealers",
+      icon: <FaUserCog className="text-white text-sm sm:text-lg lg:text-xl" />,
+      color: "gray",
+      bgColor: "surface-alt",
+    },
+    {
+      key: "masterDealers",
+      label: "Master Dealers",
       icon: <FaUserCog className="text-white text-sm sm:text-lg lg:text-xl" />,
       color: "gray",
       bgColor: "surface-alt",

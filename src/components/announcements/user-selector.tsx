@@ -1,20 +1,12 @@
 import React from "react";
 import { CheckSquare, Square } from "lucide-react";
 import type { TargetAudience } from "../../types/announcement";
+import { ANNOUNCEMENT_TARGET_TYPES } from "../../utils/userTypeHelpers";
 
 interface UserTypeSelectorProps {
   selectedTypes: TargetAudience[];
   onSelectionChange: (types: TargetAudience[]) => void;
 }
-
-const USER_TYPES: { value: TargetAudience; label: string }[] = [
-  { value: "agent", label: "Agents" },
-  { value: "super_agent", label: "Super Agents" },
-  { value: "dealer", label: "Dealers" },
-  { value: "super_dealer", label: "Super Dealers" },
-  { value: "admin", label: "Admins" },
-  { value: "public", label: "Public (Storefront Customers)" },
-];
 
 export const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
   selectedTypes,
@@ -29,7 +21,7 @@ export const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
   };
 
   const selectAll = () => {
-    onSelectionChange(USER_TYPES.map((t) => t.value));
+    onSelectionChange(ANNOUNCEMENT_TARGET_TYPES.map((t) => t.value as TargetAudience));
   };
 
   const deselectAll = () => {
@@ -62,8 +54,8 @@ export const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-        {USER_TYPES.map((type) => {
-          const isSelected = selectedTypes.includes(type.value);
+        {ANNOUNCEMENT_TARGET_TYPES.map((type) => {
+          const isSelected = selectedTypes.includes(type.value as TargetAudience);
           return (
             <div
               key={type.value}
@@ -72,7 +64,7 @@ export const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
                   ? "border-[var(--color-primary)] bg-[var(--color-accent-soft)]"
                   : "border-[var(--border-color)] hover:border-[var(--border-color-strong)] hover:bg-[var(--bg-surface-alt)]"
               }`}
-              onClick={() => toggleType(type.value)}
+              onClick={() => toggleType(type.value as TargetAudience)}
             >
               <div className="flex-shrink-0">
                 {isSelected ? (

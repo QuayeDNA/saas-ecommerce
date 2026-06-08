@@ -2,7 +2,7 @@
  * GlobalFab — draggable, edge-snapping, auto-docking floating action button
  *
  * Behaviour:
- *  1. Freely draggable anywhere on screen via pointer events
+ *  1. Freely draggable anywhere on screen via pointer events (entire container is the drag handle)
  *  2. On release → snaps to nearest screen edge
  *  3. After snap → stays fully visible for 5s (peek-in period)
  *  4. After 5s idle → slides ~85% off-screen toward anchor edge (docked state)
@@ -31,30 +31,30 @@ import { CONTACTS } from "../../config/contacts";
 type Edge = "left" | "right" | "top" | "bottom";
 
 interface Pos {
-  x: number; // distance from LEFT of viewport
-  y: number; // distance from TOP of viewport
+  x: number;
+  y: number;
 }
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 
-const FAB_SIZE        = 52;   // px — diameter of the circular handle
-const PEEK_OFFSET     = 18;   // px — how much stays visible when docked
-const PEEK_DURATION   = 5000; // ms — how long FAB stays fully visible after snap
-const EDGE_THRESHOLD  = 0.35; // fraction of screen — top/bottom snap zone
-const KBD_STEP        = 24;   // px — arrow-key move step
+const FAB_SIZE = 52;
+const PEEK_OFFSET = 18;
+const PEEK_DURATION = 5000;
+const EDGE_THRESHOLD = 0.35;
+const KBD_STEP = 24;
+/** If pointer moves less than this (px) between down/up, treat as a click — not a drag. */
+const DRAG_THRESHOLD = 5;
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
-/** Returns the nearest edge and the snapped {x,y} for the FAB center. */
 function snapToEdge(x: number, y: number, vw: number, vh: number): { edge: Edge; pos: Pos } {
   const cx = x + FAB_SIZE / 2;
   const cy = y + FAB_SIZE / 2;
-  const toLeft   = cx;
-  const toRight  = vw - cx;
+  const toLeft = cx;
+  const toRight = vw - cx;
 
-  // Bias strongly toward left/right unless clearly in top/bottom quarter
   const verticalFraction = cy / vh;
-  const preferVertical   = verticalFraction < EDGE_THRESHOLD || verticalFraction > (1 - EDGE_THRESHOLD);
+  const preferVertical = verticalFraction < EDGE_THRESHOLD || verticalFraction > (1 - EDGE_THRESHOLD);
 
   let edge: Edge;
   if (preferVertical) {
@@ -63,8 +63,7 @@ function snapToEdge(x: number, y: number, vw: number, vh: number): { edge: Edge;
     edge = toLeft < toRight ? "left" : "right";
   }
 
-  // Clamped center position along the opposite axis
-  const margin = FAB_SIZE / 2 + 4; // 4px inset from viewport edge
+  const margin = FAB_SIZE / 2 + 4;
   let snappedX = x;
   let snappedY = y;
 
@@ -90,7 +89,6 @@ function snapToEdge(x: number, y: number, vw: number, vh: number): { edge: Edge;
   return { edge, pos: { x: snappedX, y: snappedY } };
 }
 
-/** Translate for docked (partially off-screen) state. */
 function dockedTranslate(edge: Edge): string {
   const hide = FAB_SIZE - PEEK_OFFSET;
   switch (edge) {
@@ -101,9 +99,7 @@ function dockedTranslate(edge: Edge): string {
   }
 }
 
-/** Menu open direction based on anchor edge. */
 function menuDirection(edge: Edge): string {
-  // Returns Tailwind-compatible flex direction
   switch (edge) {
     case "right":  return "flex-col items-end";
     case "left":   return "flex-col items-start";
@@ -112,7 +108,6 @@ function menuDirection(edge: Edge): string {
   }
 }
 
-/** Whether to show menu above or to the side of the FAB. */
 function menuOffset(edge: Edge): React.CSSProperties {
   const gap = 10;
   switch (edge) {
@@ -129,25 +124,21 @@ export function GlobalFab() {
   const vw = () => window.innerWidth;
   const vh = () => window.innerHeight;
 
-  /* Position & anchor state */
-  const [pos,      setPos]      = useState<Pos>({ x: vw() - FAB_SIZE, y: vh() / 2 - FAB_SIZE / 2 });
-  const [edge,     setEdge]     = useState<Edge>("right");
-  const [docked,   setDocked]   = useState(false);  // true = partially hidden
-  const [open,     setOpen]     = useState(false);
+  const [pos, setPos] = useState<Pos>({ x: vw() - FAB_SIZE, y: vh() / 2 - FAB_SIZE / 2 });
+  const [edge, setEdge] = useState<Edge>("right");
+  const [docked, setDocked] = useState(false);
+  const [open, setOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [hovered,  setHovered]  = useState(false);
+  const [hovered, setHovered] = useState(false);
 
-  /* Refs for drag tracking */
   const dragStartPointer = useRef<{ px: number; py: number; fx: number; fy: number } | null>(null);
-  const fabRef           = useRef<HTMLDivElement>(null);
-  const peekTimer        = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Always-current mirror of pos — readable in callbacks without stale closure
-  const posRef           = useRef<Pos>({ x: window.innerWidth - FAB_SIZE, y: window.innerHeight / 2 - FAB_SIZE / 2 });
+  const hasDragged = useRef(false);
+  const fabRef = useRef<HTMLDivElement>(null);
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const posRef = useRef<Pos>({ x: window.innerWidth - FAB_SIZE, y: window.innerHeight / 2 - FAB_SIZE / 2 });
 
-  /* Keep posRef in sync with pos state — synchronous, no re-render */
   posRef.current = pos;
 
-  /* Reduced motion */
   const reducedMotion = typeof window !== "undefined"
     ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
     : false;
@@ -159,7 +150,6 @@ export function GlobalFab() {
     peekTimer.current = null;
   }, []);
 
-  /** Start the 5-second countdown then dock. */
   const startPeekTimer = useCallback(() => {
     clearPeekTimer();
     peekTimer.current = setTimeout(() => {
@@ -167,7 +157,7 @@ export function GlobalFab() {
     }, PEEK_DURATION);
   }, [clearPeekTimer]);
 
-  /** Called whenever user interacts — resets dock timer. */
+  /** Undock + restart timer. Called on any interaction. */
   const resetPeekTimer = useCallback(() => {
     setDocked(false);
     if (!open) startPeekTimer();
@@ -176,65 +166,81 @@ export function GlobalFab() {
   /* ── Drag handlers ─────────────────────────────────────────────────── */
 
   const onPointerDown = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    // Only block drag if the event originated from a menu link.
-    // The button already calls e.stopPropagation() on its own pointerdown,
-    // so button clicks never reach this handler.
-    if ((e.target as HTMLElement).closest("a[href]")) return;
-
     e.currentTarget.setPointerCapture(e.pointerId);
-    e.preventDefault(); // prevent text selection during drag
+    e.preventDefault();
 
     clearPeekTimer();
     setDocked(false);
 
-    // Write to ref first — readable synchronously in onPointerMove
-    // before the setDragging(true) re-render has flushed.
     dragStartPointer.current = {
       px: e.clientX,
       py: e.clientY,
       fx: pos.x,
       fy: pos.y,
     };
+    hasDragged.current = false;
     setDragging(true);
   }, [pos, clearPeekTimer]);
 
   const onPointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    // Check the ref — never stale, no waiting for re-render flush
     if (!dragStartPointer.current) return;
+
     const dx = e.clientX - dragStartPointer.current.px;
     const dy = e.clientY - dragStartPointer.current.py;
-    const newX = Math.max(0, Math.min(window.innerWidth  - FAB_SIZE, dragStartPointer.current.fx + dx));
+
+    // Only count as a drag once threshold is exceeded
+    if (!hasDragged.current) {
+      if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+      hasDragged.current = true;
+    }
+
+    const newX = Math.max(0, Math.min(window.innerWidth - FAB_SIZE, dragStartPointer.current.fx + dx));
     const newY = Math.max(0, Math.min(window.innerHeight - FAB_SIZE, dragStartPointer.current.fy + dy));
     setPos({ x: newX, y: newY });
   }, []);
 
   const onPointerUp = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
     if (!dragStartPointer.current) return;
+
+    const dx = e.clientX - dragStartPointer.current.px;
+    const dy = e.clientY - dragStartPointer.current.py;
+    const wasDrag = hasDragged.current;
+
+    // Compute end position from drag start + total delta (no stale closure)
+    const endX = Math.max(0, Math.min(window.innerWidth - FAB_SIZE, dragStartPointer.current.fx + dx));
+    const endY = Math.max(0, Math.min(window.innerHeight - FAB_SIZE, dragStartPointer.current.fy + dy));
+
+    dragStartPointer.current = null;
     setDragging(false);
 
-    const endX = dragStartPointer.current.fx + (e.clientX - dragStartPointer.current.px);
-    const endY = dragStartPointer.current.fy + (e.clientY - dragStartPointer.current.py);
-    dragStartPointer.current = null;
+    if (wasDrag) {
+      const { edge: newEdge, pos: snapped } = snapToEdge(endX, endY, window.innerWidth, window.innerHeight);
+      setEdge(newEdge);
+      setPos(snapped);
+      startPeekTimer();
+    } else {
+      // It was a tap/click — toggle menu
+      setOpen((v) => {
+        const next = !v;
+        if (next) {
+          clearPeekTimer();
+          setDocked(false);
+        } else {
+          startPeekTimer();
+        }
+        return next;
+      });
+    }
+  }, [startPeekTimer, clearPeekTimer]);
 
-    const { edge: newEdge, pos: snapped } = snapToEdge(
-      Math.max(0, Math.min(window.innerWidth  - FAB_SIZE, endX)),
-      Math.max(0, Math.min(window.innerHeight - FAB_SIZE, endY)),
-      window.innerWidth, window.innerHeight,
-    );
-    setEdge(newEdge);
-    setPos(snapped);
-    setDocked(false);
-    startPeekTimer();
-  }, [startPeekTimer]);
-
-  /* ── Keyboard drag ─────────────────────────────────────────────────── */
+  /* ── Keyboard ──────────────────────────────────────────────────────── */
 
   const onKeyDown = useCallback((e: ReactKeyboardEvent<HTMLDivElement>) => {
     const moves: Record<string, [number, number]> = {
       ArrowLeft:  [-KBD_STEP, 0],
-      ArrowRight: [KBD_STEP,  0],
+      ArrowRight: [KBD_STEP, 0],
       ArrowUp:    [0, -KBD_STEP],
-      ArrowDown:  [0,  KBD_STEP],
+      ArrowDown:  [0, KBD_STEP],
     };
     if (moves[e.key]) {
       e.preventDefault();
@@ -248,10 +254,23 @@ export function GlobalFab() {
       setOpen(false);
       resetPeekTimer();
     }
-  }, [resetPeekTimer]);
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setOpen((v) => {
+        const next = !v;
+        if (next) {
+          clearPeekTimer();
+          setDocked(false);
+        } else {
+          startPeekTimer();
+        }
+        return next;
+      });
+    }
+  }, [resetPeekTimer, clearPeekTimer, startPeekTimer]);
 
   const onKeyUp = useCallback((e: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) {
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
       const { edge: newEdge, pos: snapped } = snapToEdge(posRef.current.x, posRef.current.y, window.innerWidth, window.innerHeight);
       setEdge(newEdge);
       setPos(snapped);
@@ -259,22 +278,7 @@ export function GlobalFab() {
     }
   }, [startPeekTimer]);
 
-  /* ── Menu toggle ───────────────────────────────────────────────────── */
-
-  const toggleMenu = useCallback(() => {
-    setOpen((v) => {
-      const next = !v;
-      if (next) {
-        clearPeekTimer(); // suspend timer while menu is open
-        setDocked(false);
-      } else {
-        startPeekTimer(); // restart timer when menu closes
-      }
-      return next;
-    });
-  }, [clearPeekTimer, startPeekTimer]);
-
-  /* ── Hover management ──────────────────────────────────────────────── */
+  /* ── Hover ─────────────────────────────────────────────────────────── */
 
   const onMouseEnter = useCallback(() => {
     setHovered(true);
@@ -287,7 +291,7 @@ export function GlobalFab() {
     if (!open) startPeekTimer();
   }, [open, startPeekTimer]);
 
-  /* ── Cleanup on unmount ────────────────────────────────────────────── */
+  /* ── Cleanup ───────────────────────────────────────────────────────── */
 
   useEffect(() => () => { clearPeekTimer(); }, [clearPeekTimer]);
 
@@ -308,21 +312,25 @@ export function GlobalFab() {
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
         setOpen(false);
         startPeekTimer();
       }
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, [open, startPeekTimer]);
 
   /* ── Derived visual values ─────────────────────────────────────────── */
 
-  const shouldDock    = docked && !hovered && !open && !dragging;
-  const showPulse     = !open && !dragging && !hovered;
-  const transition    = reducedMotion ? "none" : dragging
+  const shouldDock = docked && !hovered && !open && !dragging;
+  const showPulse = !open && !dragging && !hovered;
+  const transition = reducedMotion ? "none" : dragging
     ? "none"
     : "transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), left 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)";
 
@@ -330,7 +338,6 @@ export function GlobalFab() {
 
   return (
     <>
-      {/* ── Scoped styles — minimal, only what Tailwind cannot express ── */}
       <style>{`
         @keyframes fab-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5), 0 4px 20px rgba(0,0,0,0.25); }
@@ -353,11 +360,6 @@ export function GlobalFab() {
         }
       `}</style>
 
-      {/*
-        The FAB container is positioned absolutely via inline style (left/top)
-        since Tailwind cannot express arbitrary dynamic values.
-        Everything else — colours, spacing, shape — is Tailwind.
-      */}
       <div
         ref={fabRef}
         role="complementary"
@@ -376,15 +378,15 @@ export function GlobalFab() {
           "focus-visible:outline-none",
         ].join(" ")}
         style={{
-          left:       pos.x,
-          top:        pos.y,
-          width:      FAB_SIZE,
-          height:     FAB_SIZE,
-          transform:  shouldDock ? dockedTranslate(edge) : "translate(0,0)",
+          left: pos.x,
+          top: pos.y,
+          width: FAB_SIZE,
+          height: FAB_SIZE,
+          transform: shouldDock ? dockedTranslate(edge) : "translate(0,0)",
           transition,
         }}
       >
-        {/* ── Action menu — floats relative to FAB ───────────────────── */}
+        {/* ── Action menu ───────────────────────────────────────────── */}
         {open && (
           <div
             role="menu"
@@ -444,29 +446,20 @@ export function GlobalFab() {
         {/* ── Handle button ──────────────────────────────────────────── */}
         <button
           type="button"
-          onClick={toggleMenu}
           aria-expanded={open}
           aria-haspopup="menu"
           aria-label={open ? "Close contact menu" : "Open contact menu"}
           className={[
-            // Shape & size — fill the 52×52 container
             "flex h-full w-full items-center justify-center rounded-full",
-            // Prevent button drag from conflicting with FAB drag
-            "pointer-events-auto",
-            // Focus ring
+            "pointer-events-none",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-600",
-            // Active scale
             "active:scale-90 transition-transform duration-100",
-            // Pulse (class toggled, animation defined in <style>)
             showPulse && !reducedMotion ? "fab-pulse" : "",
           ].filter(Boolean).join(" ")}
           style={{
             background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
-            // Shadow always present, pulse overrides with animated version
             boxShadow: showPulse ? undefined : "0 4px 20px rgba(0,0,0,0.25)",
           }}
-          // Prevent pointer-down on button from bubbling into FAB drag
-          onPointerDown={(e) => e.stopPropagation()}
         >
           {open ? (
             <X className="h-5 w-5 text-white" aria-hidden="true" />
@@ -475,13 +468,12 @@ export function GlobalFab() {
           )}
         </button>
 
-        {/* ── Dock edge indicator — tiny pill showing anchor direction ── */}
+        {/* ── Dock edge indicator ────────────────────────────────────── */}
         {!open && !dragging && (
           <span
             aria-hidden="true"
             className={[
               "pointer-events-none absolute rounded-full bg-white/30",
-              // Position the indicator on the docked edge side
               edge === "left"   ? "left-0 top-1/2 -translate-y-1/2 -translate-x-px h-5 w-1"   : "",
               edge === "right"  ? "right-0 top-1/2 -translate-y-1/2 translate-x-px h-5 w-1"   : "",
               edge === "top"    ? "top-0 left-1/2 -translate-x-1/2 -translate-y-px w-5 h-1"   : "",

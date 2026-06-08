@@ -89,6 +89,16 @@ export default function SuperAdminDashboard() {
       icon: <FaUserCog className="text-white text-sm sm:text-lg lg:text-xl" />,
     },
     {
+      key: "elite_dealers",
+      label: "Elite Dealers",
+      icon: <FaUserCog className="text-white text-sm sm:text-lg lg:text-xl" />,
+    },
+    {
+      key: "master_dealers",
+      label: "Master Dealers",
+      icon: <FaUserCog className="text-white text-sm sm:text-lg lg:text-xl" />,
+    },
+    {
       key: "super_admins",
       label: "Super Admins",
       icon: <FaCrown className="text-white text-sm sm:text-lg lg:text-xl" />,

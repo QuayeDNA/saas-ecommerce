@@ -13,6 +13,7 @@ import {
 import { EditProfileDialog } from "../components/common/edit-profile-dialog";
 import { ChangePasswordDialog } from "../components/common/change-password-dialog";
 import { UpdatePinDialog } from "../components/common/update-pin-dialog";
+import { getUserTypeColor } from "../utils/userTypeHelpers";
 import {
   FaUser,
   FaEnvelope,
@@ -113,21 +114,6 @@ export const ProfilePage: React.FC = () => {
       setBrowserPermission(Notification.permission);
     }
   }, []);
-
-  const getUserTypeColor = (
-    userType: string,
-  ): "blue" | "green" | "yellow" | "red" | "gray" => {
-    switch (userType) {
-      case "agent":
-        return "blue";
-      case "customer":
-        return "green";
-      case "super_admin":
-        return "red";
-      default:
-        return "gray";
-    }
-  };
 
   const getConnectionStatusIndicator = () => {
     switch (connectionStatus) {

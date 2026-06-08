@@ -1,6 +1,17 @@
 // Frontend pricing utilities to match backend functionality
+// Imports user type data from userTypeHelpers (single source of truth)
 import type { Bundle } from "../types/package";
 import type { UserType } from "../types/auth";
+import {
+  BUSINESS_USER_TYPES,
+  getUserTypeLabel as _getUserTypeLabel,
+  isBusinessUser as _isBusinessUser,
+} from "./userTypeHelpers";
+
+// Re-export for backward compatibility (other files may import from here)
+export { BUSINESS_USER_TYPES } from "./userTypeHelpers";
+export const getUserTypeLabel = _getUserTypeLabel;
+export const isBusinessUser = _isBusinessUser;
 
 /**
  * User type-based pricing tiers interface
@@ -10,6 +21,8 @@ export interface PricingTiers {
   super_agent?: number;
   dealer?: number;
   super_dealer?: number;
+  elite_dealer?: number;
+  master_dealer?: number;
   default?: number;
 }
 
@@ -25,33 +38,18 @@ export interface BundleWithPricing extends Bundle {
 }
 
 /**
- * Business user types that have specific pricing
- */
-export const BUSINESS_USER_TYPES: UserType[] = [
-  "agent",
-  "super_agent",
-  "dealer",
-  "super_dealer",
-];
-
-/**
  * Get the appropriate price for a user type from a bundle
- * @param bundle - The bundle object
- * @param userType - The user's type
- * @returns The price for the specific user type
  */
 export const getPriceForUserType = (
   bundle: Bundle,
   userType?: UserType | string
 ): number => {
-  // If no user type provided or bundle has no pricing tiers, return base price
   if (!userType || !bundle.pricingTiers) {
     return bundle.price;
   }
 
   const pricingTiers = bundle.pricingTiers as PricingTiers;
 
-  // Business user types that have specific pricing
   if (BUSINESS_USER_TYPES.includes(userType as UserType)) {
     const userPrice = pricingTiers[userType as keyof PricingTiers];
     if (userPrice !== undefined && userPrice !== null) {
@@ -59,20 +57,15 @@ export const getPriceForUserType = (
     }
   }
 
-  // Fall back to default pricing tier, then base price
   if (pricingTiers.default !== undefined && pricingTiers.default !== null) {
     return pricingTiers.default;
   }
 
-  // Final fallback to base price
   return bundle.price;
 };
 
 /**
  * Calculate discount percentage compared to base price
- * @param basePrice - Original bundle price
- * @param userPrice - User-specific price
- * @returns Discount percentage (0 if no discount)
  */
 export const calculateDiscountPercentage = (
   basePrice: number,
@@ -84,9 +77,6 @@ export const calculateDiscountPercentage = (
 
 /**
  * Calculate total price for multiple bundles with quantities
- * @param items - Array of bundle items with quantities
- * @param userType - User type for pricing
- * @returns Total price
  */
 export const calculateTotalPrice = (
   items: Array<{ bundle: Bundle; quantity: number }>,
@@ -100,9 +90,6 @@ export const calculateTotalPrice = (
 
 /**
  * Enhance a bundle with user-specific pricing information
- * @param bundle - The bundle to enhance
- * @param userType - User type for pricing
- * @returns Enhanced bundle with pricing information
  */
 export const enhanceBundleWithPricing = (
   bundle: Bundle,
@@ -126,38 +113,7 @@ export const enhanceBundleWithPricing = (
 
 /**
  * Format currency amount (Ghanaian Cedis)
- * @param amount - Amount to format
- * @param currency - Currency symbol (default: GH₵)
- * @returns Formatted currency string
  */
 export const formatCurrency = (amount: number, currency = "GH₵"): string => {
   return `${currency}${amount.toFixed(2)}`;
-};
-
-/**
- * Get user-friendly label for user type
- * @param userType - User type
- * @returns Human-readable label
- */
-export const getUserTypeLabel = (userType?: UserType | string): string => {
-  const labels: Record<string, string> = {
-    agent: "Agent",
-    super_agent: "Super Agent",
-    dealer: "Dealer",
-    super_dealer: "Super Dealer",
-    subscriber: "Subscriber",
-    super_admin: "Super Admin",
-    admin: "Admin",
-  };
-
-  return labels[userType || ""] || "Customer";
-};
-
-/**
- * Check if user type qualifies for business pricing
- * @param userType - User type to check
- * @returns True if business user
- */
-export const isBusinessUser = (userType?: UserType | string): boolean => {
-  return BUSINESS_USER_TYPES.includes(userType as UserType);
 };

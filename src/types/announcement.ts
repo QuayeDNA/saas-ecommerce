@@ -16,6 +16,8 @@ export type TargetAudience =
   | "super_agent"
   | "dealer"
   | "super_dealer"
+  | "elite_dealer"
+  | "master_dealer"
   | "admin"
   | "public";
 
