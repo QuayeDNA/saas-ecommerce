@@ -3,10 +3,10 @@ import { Edit, Key as KeyIcon, Eye, EyeOff, Smartphone, CreditCard } from "lucid
 import { Button } from "../../design-system/components/button";
 import { Card } from "../../design-system/components/card";
 import { Badge } from "../../design-system/components/badge";
-import { Spinner, Tabs, TabsList, TabsTrigger } from "../../design-system";
+import { Spinner, Tabs, TabsList, TabsTrigger, Switch } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
 import { DarkModeToggle } from "../../components/common/dark-mode-toggle";
-import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type SystemInfo } from "../../services/settings.service";
+import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type BryteLinksSettings, type SystemInfo } from "../../services/settings.service";
 import pushNotificationService from "../../services/pushNotificationService";
 import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog } from "../../components/superadmin";
 import { FeeSettingsDialog } from "../../components/superadmin/fee-settings-dialog";
@@ -18,6 +18,7 @@ export default function SuperAdminSettingsPage() {
     siteSettings: SiteSettings;
     apiSettings: ApiSettings;
     walletSettings: WalletSettings;
+    bryteLinksSettings: BryteLinksSettings;
     signupApproval: { requireApprovalForSignup: boolean };
     autoApproveStorefronts: { autoApproveStorefronts: boolean };
     systemInfo: SystemInfo;
@@ -125,7 +126,66 @@ export default function SuperAdminSettingsPage() {
     }
   }, [data, setBusy, addToast]);
 
-  // Dialog callbacks update the combined `data` object — prevents refetching
+  // BryteLinks — Payment Gate & Auto-Suspend handlers
+  const handleTogglePaymentGate = useCallback(async () => {
+    if (!data) return;
+    const prev = data.bryteLinksSettings.requirePaymentForStorefrontCreation;
+    setData(d => d ? { ...d, bryteLinksSettings: { ...d.bryteLinksSettings, requirePaymentForStorefrontCreation: !prev } } : d);
+    setBusy("paymentGateToggle", true);
+    try {
+      await settingsService.updateBryteLinksSettings({ requirePaymentForStorefrontCreation: !prev });
+      addToast(`Storefront payment gate ${!prev ? "enabled" : "disabled"}`, "success");
+    } catch {
+      setData(d => d ? { ...d, bryteLinksSettings: { ...d.bryteLinksSettings, requirePaymentForStorefrontCreation: prev } } : d);
+      addToast("Failed to update payment gate setting", "error");
+    } finally {
+      setBusy("paymentGateToggle", false);
+    }
+  }, [data, setBusy, addToast]);
+
+  const handleToggleAutoSuspend = useCallback(async () => {
+    if (!data) return;
+    const prev = data.bryteLinksSettings.autoSuspendInactiveStores;
+    setData(d => d ? { ...d, bryteLinksSettings: { ...d.bryteLinksSettings, autoSuspendInactiveStores: !prev } } : d);
+    setBusy("autoSuspendToggle", true);
+    try {
+      await settingsService.updateBryteLinksSettings({ autoSuspendInactiveStores: !prev });
+      addToast(`Auto-suspend inactive stores ${!prev ? "enabled" : "disabled"}`, "success");
+    } catch {
+      setData(d => d ? { ...d, bryteLinksSettings: { ...d.bryteLinksSettings, autoSuspendInactiveStores: prev } } : d);
+      addToast("Failed to update auto-suspend setting", "error");
+    } finally {
+      setBusy("autoSuspendToggle", false);
+    }
+  }, [data, setBusy, addToast]);
+
+  const handleSaveCreationFee = useCallback(async () => {
+    if (!data) return;
+    const fee = data.bryteLinksSettings.storefrontCreationFee;
+    setBusy("creationFeeSave", true);
+    try {
+      await settingsService.updateBryteLinksSettings({ storefrontCreationFee: fee });
+      addToast("Creation fee saved", "success");
+    } catch {
+      addToast("Failed to save creation fee", "error");
+    } finally {
+      setBusy("creationFeeSave", false);
+    }
+  }, [data, setBusy, addToast]);
+
+  const handleSaveInactivityThreshold = useCallback(async () => {
+    if (!data) return;
+    const days = data.bryteLinksSettings.inactivityThresholdDays;
+    setBusy("inactivityDaysSave", true);
+    try {
+      await settingsService.updateBryteLinksSettings({ inactivityThresholdDays: days });
+      addToast("Inactivity threshold saved", "success");
+    } catch {
+      addToast("Failed to save inactivity threshold", "error");
+    } finally {
+      setBusy("inactivityDaysSave", false);
+    }
+  }, [data, setBusy, addToast]);
   const handleSiteSettingsSuccess = useCallback((settings: SiteSettings) => {
     setData(d => d ? { ...d, siteSettings: settings } : d);
     addToast("Site settings updated", "success");
@@ -177,6 +237,10 @@ export default function SuperAdminSettingsPage() {
   const storefrontsOpen = data?.siteSettings?.storefrontsOpen ?? true;
   const signupRequired = data?.signupApproval?.requireApprovalForSignup ?? false;
   const autoApprove = data?.autoApproveStorefronts?.autoApproveStorefronts ?? false;
+  const paymentGate = data?.bryteLinksSettings?.requirePaymentForStorefrontCreation ?? false;
+  const creationFee = data?.bryteLinksSettings?.storefrontCreationFee ?? 50;
+  const autoSuspend = data?.bryteLinksSettings?.autoSuspendInactiveStores ?? false;
+  const inactivityDays = data?.bryteLinksSettings?.inactivityThresholdDays ?? 14;
 
   // compact responsive layout pieces
   const SectionHeader: React.FC<{ title: string; subtitle?: string; action?: React.ReactNode }> = ({ title, subtitle, action }) => (
@@ -260,10 +324,7 @@ export default function SuperAdminSettingsPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium" style={{ color: siteOpen ? 'var(--success)' : 'var(--error)' }}>{siteOpen ? 'Open' : 'Closed'}</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={siteOpen} onChange={handleToggleSite} disabled={!!busyKeys['siteToggle']} />
-                        <div className="w-10 h-5 bg-[var(--bg-muted)] rounded-full peer-checked:bg-[var(--color-primary)] relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[var(--text-inverse)] after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
-                      </label>
+                      <Switch checked={siteOpen} onCheckedChange={handleToggleSite} isDisabled={!!busyKeys['siteToggle']} />
                     </div>
                   </div>
 
@@ -296,10 +357,7 @@ export default function SuperAdminSettingsPage() {
                       <span className="text-sm font-medium" style={{ color: storefrontsOpen ? 'var(--success)' : 'var(--error)' }}>
                         {storefrontsOpen ? 'Open' : 'Closed'}
                       </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={storefrontsOpen} onChange={handleToggleStorefronts} disabled={!!busyKeys['storefrontsToggle']} />
-                        <div className="w-10 h-5 bg-[var(--bg-muted)] rounded-full peer-checked:bg-[var(--color-primary)] relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[var(--text-inverse)] after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
-                      </label>
+                      <Switch checked={storefrontsOpen} onCheckedChange={handleToggleStorefronts} isDisabled={!!busyKeys['storefrontsToggle']} />
                     </div>
                   </div>
 
@@ -308,10 +366,7 @@ export default function SuperAdminSettingsPage() {
                       <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Require admin approval for signups</div>
                       <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{signupRequired ? 'Approval required' : 'Auto-approve new users'}</div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={signupRequired} onChange={handleToggleSignupApproval} disabled={!!busyKeys['signupToggle']} />
-                      <div className="w-10 h-5 bg-[var(--bg-muted)] rounded-full peer-checked:bg-[var(--color-primary)] relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[var(--text-inverse)] after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
-                    </label>
+                    <Switch checked={signupRequired} onCheckedChange={handleToggleSignupApproval} isDisabled={!!busyKeys['signupToggle']} />
                   </div>
 
                   <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
@@ -319,10 +374,89 @@ export default function SuperAdminSettingsPage() {
                       <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Auto-approve storefronts</div>
                       <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{autoApprove ? 'Auto' : 'Manual'}</div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={autoApprove} onChange={handleToggleAutoApprove} disabled={!!busyKeys['autoApproveToggle']} />
-                      <div className="w-10 h-5 bg-[var(--bg-muted)] rounded-full peer-checked:bg-[var(--color-primary)] relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[var(--text-inverse)] after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></div>
-                    </label>
+                    <Switch checked={autoApprove} onCheckedChange={handleToggleAutoApprove} isDisabled={!!busyKeys['autoApproveToggle']} />
+                  </div>
+                </div>
+              </Card>
+
+              {/* BryteLinks — Storefront Payment Gate & Auto-Suspend */}
+              <Card>
+                <SectionHeader title="Storefront Policies" subtitle="Payment gate and inactivity auto-suspension" />
+                <div className="mt-4 space-y-4">
+                  {/* Payment Gate Toggle */}
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Require payment for storefront creation</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                        {paymentGate ? `Agents must pay GH₵${creationFee} before creating a store` : 'No payment required'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium" style={{ color: paymentGate ? 'var(--success)' : 'var(--text-secondary)' }}>{paymentGate ? 'On' : 'Off'}</span>
+                      <Switch checked={paymentGate} onCheckedChange={handleTogglePaymentGate} isDisabled={!!busyKeys['paymentGateToggle']} />
+                    </div>
+                  </div>
+
+                  {/* Creation Fee Input */}
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Storefront creation fee (GH₵)</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Amount deducted from agent wallet on creation</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={creationFee}
+                        onChange={e => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setData(d => d ? { ...d, bryteLinksSettings: { ...d.bryteLinksSettings, storefrontCreationFee: val } } : d);
+                        }}
+                        className="w-24 px-3 py-1.5 text-sm rounded-lg border text-right"
+                        style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                        disabled={!!busyKeys['creationFeeSave']}
+                      />
+                      <Button size="sm" variant="secondary" onClick={handleSaveCreationFee} isLoading={!!busyKeys['creationFeeSave']}>Save</Button>
+                    </div>
+                  </div>
+
+                  {/* Auto-Suspend Toggle */}
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Auto-suspend inactive stores</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                        {autoSuspend ? `Suspends stores with no activity for ${inactivityDays} days` : 'Disabled'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium" style={{ color: autoSuspend ? 'var(--success)' : 'var(--text-secondary)' }}>{autoSuspend ? 'On' : 'Off'}</span>
+                      <Switch checked={autoSuspend} onCheckedChange={handleToggleAutoSuspend} isDisabled={!!busyKeys['autoSuspendToggle']} />
+                    </div>
+                  </div>
+
+                  {/* Inactivity Threshold Input */}
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Inactivity threshold (days)</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Number of days without activity before auto-suspension</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={inactivityDays}
+                        onChange={e => {
+                          const val = parseInt(e.target.value, 10) || 14;
+                          setData(d => d ? { ...d, bryteLinksSettings: { ...d.bryteLinksSettings, inactivityThresholdDays: val } } : d);
+                        }}
+                        className="w-24 px-3 py-1.5 text-sm rounded-lg border text-right"
+                        style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                        disabled={!!busyKeys['inactivityDaysSave']}
+                      />
+                      <Button size="sm" variant="secondary" onClick={handleSaveInactivityThreshold} isLoading={!!busyKeys['inactivityDaysSave']}>Save</Button>
+                    </div>
                   </div>
                 </div>
               </Card>

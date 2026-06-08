@@ -44,6 +44,12 @@ import { useAuth, useUser } from "../../hooks";
 interface StorefrontManagerProps {
   onStorefrontCreated?: (storefront: StorefrontData) => void;
   hasCheckedExisting?: boolean;
+  /** When true, skip the "Create Your Online Store" screen and only render the wizard dialog */
+  wizardOnly?: boolean;
+  /** Controls wizard dialog open state in wizardOnly mode */
+  isOpen?: boolean;
+  /** Called when the wizard dialog is closed (for wizardOnly mode to update parent state) */
+  onClose?: () => void;
 }
 
 interface FormData {
@@ -112,14 +118,23 @@ const StepProgress: React.FC<{ current: number; steps: string[] }> = ({ current,
 export const StorefrontManager: React.FC<StorefrontManagerProps> = ({
   onStorefrontCreated,
   hasCheckedExisting = false,
+  wizardOnly = false,
+  isOpen = false,
+  onClose,
 }) => {
   const [showWizard, setShowWizard] = useState(false);
   const [storefront, setStorefront] = useState<StorefrontData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!wizardOnly);
   const [error, setError] = useState<string | null>(null);
   const { getProfile } = useUser();
 
   useEffect(() => {
+    if (wizardOnly) {
+      // Wizard-only mode: skip API call, don't auto-open wizard
+      setIsLoading(false);
+      return;
+    }
+
     if (hasCheckedExisting) {
       // Dashboard already checked, no storefront exists, skip the API call
       setIsLoading(false);
@@ -149,7 +164,7 @@ export const StorefrontManager: React.FC<StorefrontManagerProps> = ({
     };
 
     checkExistingStorefront();
-  }, [getProfile, hasCheckedExisting]);
+  }, [getProfile, hasCheckedExisting, wizardOnly]);
 
   const handleStorefrontCreated = (newStorefront: StorefrontData) => {
     setStorefront(newStorefront);
@@ -159,6 +174,7 @@ export const StorefrontManager: React.FC<StorefrontManagerProps> = ({
 
   const handleWizardCancel = () => {
     setShowWizard(false);
+    onClose?.();
   };
 
   if (isLoading) {
@@ -219,6 +235,17 @@ export const StorefrontManager: React.FC<StorefrontManagerProps> = ({
           </div>
         </CardBody>
       </Card>
+    );
+  }
+
+  // Wizard-only mode: skip the "Create Your Online Store" screen
+  if (wizardOnly) {
+    return (
+      <StoreSetupWizardDialog
+        isOpen={isOpen}
+        onClose={handleWizardCancel}
+        onComplete={handleStorefrontCreated}
+      />
     );
   }
 

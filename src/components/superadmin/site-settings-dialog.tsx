@@ -7,6 +7,7 @@ import {
   Form,
   Button,
   Textarea,
+  Switch,
 } from "../../design-system";
 import { Input } from "../../design-system/components/input";
 import {
@@ -138,22 +139,15 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
                     Toggle whether the welcome message includes an icon.
                   </p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={formData.showGreetingIcon ?? true}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        showGreetingIcon: e.target.checked,
-                      }))
-                    }
-                  />
-                  <div className="w-10 h-5 rounded-full peer relative transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-transform peer-checked:after:translate-x-5"
-                    style={{ backgroundColor: formData.showGreetingIcon ? 'var(--color-primary)' : 'var(--border-color)' }}
-                  ></div>
-                </label>
+                <Switch
+                  checked={formData.showGreetingIcon ?? true}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      showGreetingIcon: checked,
+                    }))
+                  }
+                />
               </div>
             </div>
 

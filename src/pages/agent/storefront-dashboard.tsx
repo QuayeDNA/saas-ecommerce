@@ -28,6 +28,8 @@ import {
   type StorefrontOrder,
   type AgentBundle,
 } from "../../services/storefront.service";
+import { settingsService, type BryteLinksSettings } from "../../services/settings.service";
+import { useWallet } from "../../hooks";
 import {
   Store,
   DollarSign,
@@ -55,6 +57,10 @@ import {
   CheckCircle2,
   XCircle,
   Info,
+  Shield,
+  CreditCard,
+  Plus,
+  AlertCircle,
 } from "lucide-react";
 import { getApiErrorMessage } from "../../utils/error-helpers";
 import { getStoreUrl } from "../../utils/store-url";
@@ -75,6 +81,7 @@ const TABS = [
 export const StorefrontDashboardPage: React.FC = () => {
   const { addToast } = useToast();
   const { siteStatus } = useSiteStatus();
+  const { walletBalance } = useWallet();
   const [storefront, setStorefront] = useState<StorefrontData | null>(null);
   const [suspended, setSuspended] = useState(false);
   const [suspensionMessage, setSuspensionMessage] = useState<string | null>(
@@ -87,6 +94,10 @@ export const StorefrontDashboardPage: React.FC = () => {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   const [showBreakdownInfoModal, setShowBreakdownInfoModal] = useState(false);
+
+  // Payment gate state
+  const [bryteLinksSettings, setBryteLinksSettings] = useState<BryteLinksSettings | null>(null);
+  const [, setSettingsLoading] = useState(true);
 
   // Analytics & orders state
   const [analytics, setAnalytics] = useState<StorefrontAnalytics | null>(null);
@@ -111,7 +122,19 @@ export const StorefrontDashboardPage: React.FC = () => {
         setSuspensionMessage(result.suspensionMessage || null);
       } else {
         setStorefront(null);
-        setShowSetupWizard(true);
+        // Don't auto-open wizard — show the "Create Your Online Store" screen instead
+      }
+
+      // Fetch BryteLinks settings for payment gate (always, regardless of storefront)
+      try {
+        setSettingsLoading(true);
+        const settings = await settingsService.getBryteLinksSettings();
+        setBryteLinksSettings(settings);
+      } catch (err) {
+        console.error("Failed to load BryteLinks settings:", err);
+        // Settings unavailable — assume gate is off to avoid blocking users
+      } finally {
+        setSettingsLoading(false);
       }
     } catch (error) {
       console.error("Failed to load storefront:", error);
@@ -157,6 +180,19 @@ export const StorefrontDashboardPage: React.FC = () => {
 
   const handleStorefrontUpdated = (updatedStorefront: StorefrontData) => {
     setStorefront(updatedStorefront);
+  };
+
+  // Payment gate derived state
+  const paymentGateActive = bryteLinksSettings?.requirePaymentForStorefrontCreation ?? false;
+  const creationFee = bryteLinksSettings?.storefrontCreationFee ?? 0;
+  const hasEnoughBalance = walletBalance >= creationFee;
+  const handleWizardLaunch = () => {
+    if (paymentGateActive && !hasEnoughBalance) {
+      // Don't open wizard — show a toast instead
+      addToast("Insufficient wallet balance. Please top up your wallet to create a storefront.", "warning");
+      return;
+    }
+    setShowSetupWizard(true);
   };
 
   const getStorefrontUrl = () => {
@@ -260,13 +296,165 @@ export const StorefrontDashboardPage: React.FC = () => {
     );
   }
 
-  // Setup wizard
-  if (!storefront || showSetupWizard) {
+  // No storefront — show "Create Your Online Store" screen
+  if (!storefront) {
     return (
       <div className="max-w-4xl mx-auto">
+        <Card variant="elevated">
+          <CardBody className="p-6 sm:p-8">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{
+                  backgroundColor: `color-mix(in srgb, var(--color-primary) 15%, transparent)`,
+                }}
+              >
+                <Store className="w-8 h-8" style={{ color: "var(--color-primary)" }} />
+              </div>
+              <h3 className="text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
+                Create Your Online Store
+              </h3>
+              <p className="max-w-md mx-auto" style={{ color: "var(--text-secondary)" }}>
+                Set up your digital storefront in minutes and start selling airtime
+                and data bundles online
+              </p>
+            </div>
+
+            {/* Payment Gate Info */}
+            {paymentGateActive && (
+              <div
+                className="rounded-xl p-5 mb-6"
+                style={{
+                  backgroundColor: `color-mix(in srgb, var(--color-primary) 8%, transparent)`,
+                  border: `1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)`,
+                }}
+              >
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: `color-mix(in srgb, var(--color-primary) 15%, transparent)` }}>
+                    <Shield className="w-5 h-5" style={{ color: "var(--color-primary)" }} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1" style={{ color: "var(--text-primary)" }}>
+                      Storefront Creation Fee
+                    </h4>
+                    <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                      A one-time fee is required to create your storefront. This helps maintain platform quality.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: "rgba(0,0,0,0.05)" }}>
+                  <div className="flex items-center gap-2">
+                    <Wallet className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />
+                    <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Your Wallet Balance</span>
+                  </div>
+                  <span
+                    className="text-lg font-bold"
+                    style={{ color: hasEnoughBalance ? "var(--success)" : "var(--error)" }}
+                  >
+                    GH₵ {walletBalance.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-lg mt-2" style={{ backgroundColor: "rgba(0,0,0,0.05)" }}>
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />
+                    <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Creation Fee</span>
+                  </div>
+                  <span className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+                    GH₵ {creationFee.toFixed(2)}
+                  </span>
+                </div>
+
+                {!hasEnoughBalance && (
+                  <div className="mt-4 p-3 rounded-lg flex items-center gap-2" style={{ backgroundColor: `color-mix(in srgb, var(--error) 10%, transparent)` }}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: "var(--error)" }} />
+                    <span className="text-xs font-medium" style={{ color: "var(--error)" }}>
+                      Insufficient balance. Please top up your wallet to continue.
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3-step guide */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="text-center">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, var(--color-primary) 15%, transparent)`,
+                  }}
+                >
+                  <span className="font-semibold text-sm" style={{ color: "var(--color-primary)" }}>1</span>
+                </div>
+                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Business Details</p>
+                <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Add your info</p>
+              </div>
+
+              <div className="text-center">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, var(--color-primary) 15%, transparent)`,
+                  }}
+                >
+                  <span className="font-semibold text-sm" style={{ color: "var(--color-primary)" }}>2</span>
+                </div>
+                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Payment Methods</p>
+                <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Set up payments</p>
+              </div>
+
+              <div className="text-center">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, var(--color-primary) 15%, transparent)`,
+                  }}
+                >
+                  <span className="font-semibold text-sm" style={{ color: "var(--color-primary)" }}>3</span>
+                </div>
+                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Launch Store</p>
+                <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Go live</p>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {paymentGateActive && !hasEnoughBalance ? (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full sm:w-auto px-8 flex items-center justify-center gap-2"
+                  onClick={() => window.location.href = "/wallet"}
+                >
+                  <Wallet className="w-5 h-5" />
+                  Top Up Wallet
+                  <ExternalLink className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={handleWizardLaunch}
+                  className="w-full sm:w-auto px-8 flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  Create Your Storefront
+                </Button>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Setup Wizard Dialog — controlled by showSetupWizard state */}
         <StorefrontManager
           onStorefrontCreated={handleStorefrontCreated}
           hasCheckedExisting={true}
+          wizardOnly={true}
+          isOpen={showSetupWizard}
+          onClose={() => setShowSetupWizard(false)}
         />
       </div>
     );
