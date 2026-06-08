@@ -70,6 +70,7 @@ import { StorefrontManager } from "../../components/storefront/store-setup-wizar
 import { PricingManager } from "../../components/storefront/pricing-manager";
 import { OrderManager } from "../../components/storefront/order-manager";
 import { StorefrontSettings } from "../../components/storefront/storefront-settings";
+import { TopUpRequestModal } from "../../components/wallet/TopUpRequestModal";
 
 const TABS = [
   { id: "overview", label: "Overview", icon: Store },
@@ -81,7 +82,7 @@ const TABS = [
 export const StorefrontDashboardPage: React.FC = () => {
   const { addToast } = useToast();
   const { siteStatus } = useSiteStatus();
-  const { walletBalance } = useWallet();
+  const { walletBalance, requestTopUp } = useWallet();
   const [storefront, setStorefront] = useState<StorefrontData | null>(null);
   const [suspended, setSuspended] = useState(false);
   const [suspensionMessage, setSuspensionMessage] = useState<string | null>(
@@ -94,6 +95,8 @@ export const StorefrontDashboardPage: React.FC = () => {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   const [showBreakdownInfoModal, setShowBreakdownInfoModal] = useState(false);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [isSubmittingTopUp, setIsSubmittingTopUp] = useState(false);
 
   // Payment gate state
   const [bryteLinksSettings, setBryteLinksSettings] = useState<BryteLinksSettings | null>(null);
@@ -186,6 +189,22 @@ export const StorefrontDashboardPage: React.FC = () => {
   const paymentGateActive = bryteLinksSettings?.requirePaymentForStorefrontCreation ?? false;
   const creationFee = bryteLinksSettings?.storefrontCreationFee ?? 0;
   const hasEnoughBalance = walletBalance >= creationFee;
+
+  const handleTopUpRequest = async (amount: number, description: string) => {
+    setIsSubmittingTopUp(true);
+    try {
+      await requestTopUp(amount, description);
+      addToast("Top-up request submitted successfully!", "success");
+      setShowTopUpModal(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to submit top-up request";
+      console.error("Top-up request error:", errorMessage);
+      throw err;
+    } finally {
+      setIsSubmittingTopUp(false);
+    }
+  };
+
   const handleWizardLaunch = () => {
     if (paymentGateActive && !hasEnoughBalance) {
       // Don't open wizard — show a toast instead
@@ -427,7 +446,7 @@ export const StorefrontDashboardPage: React.FC = () => {
                   variant="primary"
                   size="lg"
                   className="w-full sm:w-auto px-8 flex items-center justify-center gap-2"
-                  onClick={() => window.location.href = "/wallet"}
+                  onClick={() => setShowTopUpModal(true)}
                 >
                   <Wallet className="w-5 h-5" />
                   Top Up Wallet
@@ -455,6 +474,14 @@ export const StorefrontDashboardPage: React.FC = () => {
           wizardOnly={true}
           isOpen={showSetupWizard}
           onClose={() => setShowSetupWizard(false)}
+        />
+
+        {/* Top-up Request Modal */}
+        <TopUpRequestModal
+          isOpen={showTopUpModal}
+          onClose={() => setShowTopUpModal(false)}
+          onSubmit={handleTopUpRequest}
+          isSubmitting={isSubmittingTopUp}
         />
       </div>
     );
