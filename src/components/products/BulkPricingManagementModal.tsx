@@ -11,15 +11,20 @@ import {
 } from "react-icons/fa";
 import type { Bundle } from "../../types/package";
 import { useBulkPricing } from "../../hooks/useBulkPricing";
+import {
+  PRICING_USER_TYPES,
+  USER_TYPE_LABELS,
+} from "../../utils/userTypeHelpers";
 
 const CELL_STYLES = "w-full px-2 py-1.5 text-xs text-center rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]";
 
 const USER_TYPES = [
   { key: "customer", label: "Customer", color: "bg-[var(--info)]/10 text-[var(--info)]" },
-  { key: "agent", label: "Agent", color: "bg-[var(--success)]/10 text-[var(--success)]" },
-  { key: "super_agent", label: "Super Agent", color: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" },
-  { key: "dealer", label: "Dealer", color: "bg-[var(--warning)]/10 text-[var(--warning)]" },
-  { key: "super_dealer", label: "Super Dealer", color: "bg-[var(--error)]/10 text-[var(--error)]" },
+  ...PRICING_USER_TYPES.map((type) => ({
+    key: type,
+    label: USER_TYPE_LABELS[type],
+    color: `bg-[var(--color-primary)]/10 text-[var(--color-primary)]`,
+  })),
 ] as const;
 
 interface PriceCellProps {

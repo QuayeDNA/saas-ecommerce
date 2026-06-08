@@ -18,6 +18,7 @@ import {
   FaShareAlt,
   FaMoneyCheckAlt,
 } from "react-icons/fa";
+import { isBusinessUser } from "../../utils/userTypeHelpers";
 import { FaChartLine } from "react-icons/fa6";
 
 export interface NavItem {
@@ -141,10 +142,8 @@ const superAdminSections: NavSection[] = [
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
-const agentTypes = new Set(["agent", "super_agent", "dealer", "super_dealer"]);
-
 export function isAgent(userType: string | undefined): boolean {
-  return agentTypes.has(userType ?? "");
+  return isBusinessUser(userType ?? "");
 }
 
 export function getNavSections(

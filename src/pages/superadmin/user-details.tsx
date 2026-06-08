@@ -280,13 +280,7 @@ export default function SuperAdminUserDetailsPage() {
       addToast(`Now impersonating ${impersonatedUser.fullName}`, "success");
 
       // Redirect based on user type
-      if (impersonatedUser.userType === "agent") {
-        window.location.href = "/agent/dashboard";
-      } else if (
-        ["dealer", "super_dealer", "super_agent"].includes(
-          impersonatedUser.userType,
-        )
-      ) {
+      if (["agent", "super_agent", "dealer", "super_dealer", "elite_dealer", "master_dealer", "subscriber"].includes(impersonatedUser.userType)) {
         window.location.href = "/agent/dashboard";
       } else if (impersonatedUser.userType === "super_admin") {
         window.location.href = "/superadmin";

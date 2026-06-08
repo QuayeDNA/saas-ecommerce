@@ -34,6 +34,11 @@ import type { WalletTransaction, WalletAnalytics } from "../../types/wallet";
 import { walletService } from "../../services/wallet-service";
 import { websocketService } from "../../services/websocket.service";
 import { userService, type User } from "../../services/user.service";
+import {
+  BUSINESS_USER_TYPES,
+  USER_TYPE_LABELS,
+  getUserTypeColor,
+} from "../../utils/userTypeHelpers";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS" }).format(n);
@@ -181,12 +186,10 @@ function WalletTransactionModal({
 // Helpers
 // ---------------------------------------------------------------------------
 
-const USER_TYPE_OPTIONS = [
-  { value: "agent", label: "Agent" },
-  { value: "super_agent", label: "Super Agent" },
-  { value: "dealer", label: "Dealer" },
-  { value: "super_dealer", label: "Super Dealer" },
-];
+const USER_TYPE_OPTIONS = BUSINESS_USER_TYPES.map((type) => ({
+  value: type,
+  label: USER_TYPE_LABELS[type],
+}));
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
@@ -195,11 +198,12 @@ const STATUS_OPTIONS = [
 ];
 
 function userTypeBadgeColor(userType: string): "success" | "info" | "warning" | "error" | "gray" {
-  switch (userType) {
-    case "agent": return "success";
-    case "super_agent": return "info";
-    case "dealer": return "warning";
-    case "super_dealer": return "error";
+  const color = getUserTypeColor(userType);
+  switch (color) {
+    case "green": return "success";
+    case "blue": return "info";
+    case "yellow": return "warning";
+    case "red": return "error";
     default: return "gray";
   }
 }

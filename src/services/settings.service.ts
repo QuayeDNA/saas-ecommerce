@@ -1,4 +1,5 @@
 import { apiClient, publicApiClient } from "../utils/api-client";
+import type { UserType } from "../types/auth";
 
 // =============================================================================
 // TYPES
@@ -89,13 +90,7 @@ export interface PasswordResetRequest {
 
 export interface RoleChangeRequest {
   userId: string;
-  newRole:
-    | "agent"
-    | "super_agent"
-    | "dealer"
-    | "super_dealer"
-    | "admin"
-    | "super_admin";
+  newRole: UserType | "admin" | "super_admin";
 }
 
 export interface BryteLinksSettings {

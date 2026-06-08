@@ -13,6 +13,10 @@ import {
   settingsService,
   type WalletSettings,
 } from "../../services/settings.service";
+import {
+  BUSINESS_USER_TYPES,
+  USER_TYPE_LABELS,
+} from "../../utils/userTypeHelpers";
 
 interface WalletSettingsDialogProps {
   isOpen: boolean;
@@ -80,31 +84,22 @@ export const WalletSettingsDialog: React.FC<WalletSettingsDialogProps> = ({
     }));
   };
 
+  const userTypeMeta: Record<string, { icon: string; accentVar: string }> = {
+    agent: { icon: "👤", accentVar: "--success" },
+    super_agent: { icon: "⭐", accentVar: "--warning" },
+    dealer: { icon: "🏪", accentVar: "--color-primary" },
+    super_dealer: { icon: "👑", accentVar: "--color-secondary" },
+    elite_dealer: { icon: "💎", accentVar: "--color-secondary" },
+    master_dealer: { icon: "🏆", accentVar: "--error" },
+  };
+
   const userTypes = [
-    {
-      key: "agent" as const,
-      label: "Agent",
-      icon: "👤",
-      accentVar: "--success",
-    },
-    {
-      key: "super_agent" as const,
-      label: "Super Agent",
-      icon: "⭐",
-      accentVar: "--warning",
-    },
-    {
-      key: "dealer" as const,
-      label: "Dealer",
-      icon: "🏪",
-      accentVar: "--color-primary",
-    },
-    {
-      key: "super_dealer" as const,
-      label: "Super Dealer",
-      icon: "👑",
-      accentVar: "--color-secondary",
-    },
+    ...BUSINESS_USER_TYPES.map((type) => ({
+      key: type as const,
+      label: USER_TYPE_LABELS[type],
+      icon: userTypeMeta[type]?.icon ?? "👤",
+      accentVar: userTypeMeta[type]?.accentVar ?? "--text-muted",
+    })),
     {
       key: "default" as const,
       label: "Default",

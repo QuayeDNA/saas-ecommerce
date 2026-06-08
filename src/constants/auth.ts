@@ -1,3 +1,5 @@
+import { BUSINESS_USER_TYPES } from "../utils/userTypeHelpers";
+
 export const AUTH_COOKIE_KEYS = {
   TOKEN: "authToken",
   USER: "user",
@@ -32,10 +34,7 @@ export const TOKEN_REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
 export const DASHBOARD_ROUTES: Record<string, string> = {
   super_admin: "/superadmin",
   admin: "/admin/dashboard",
-  agent: "/agent/dashboard",
-  super_agent: "/agent/dashboard",
-  dealer: "/agent/dashboard",
-  super_dealer: "/agent/dashboard",
+  ...Object.fromEntries(BUSINESS_USER_TYPES.map((type) => [type, "/agent/dashboard"])),
   subscriber: "/agent/dashboard",
 };
 

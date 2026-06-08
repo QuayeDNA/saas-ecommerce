@@ -7,6 +7,7 @@ import { PageLoader } from "../components/page-loader";
 import { ProtectedRoute } from "../components/protected-route";
 import { StorefrontRouteGuard } from "../contexts/storefront-session-context";
 import superadminRoutes from "./superadmin-routes";
+import { BUSINESS_USER_TYPES } from "../utils/userTypeHelpers";
 
 // =============================================================================
 // LAZY LOADED COMPONENTS - PUBLIC PAGES
@@ -343,12 +344,7 @@ const agentRoutes: RouteObject[] = [
       <SystemRouteElement
         element={
           <ProtectedRoute
-            allowedUserTypes={[
-              "agent",
-              "super_agent",
-              "dealer",
-              "super_dealer",
-            ]}
+            allowedUserTypes={BUSINESS_USER_TYPES}
           />
         }
       />

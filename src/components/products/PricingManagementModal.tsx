@@ -12,6 +12,12 @@ import {
 import { useToast } from "../../design-system/components/toast";
 import { bundleService } from "../../services/bundle.service";
 import { FaDollarSign, FaUsers, FaSave, FaTimes, FaTag } from "react-icons/fa";
+import {
+  PRICING_USER_TYPES,
+  USER_TYPE_LABELS,
+  getUserTypeLabel,
+} from "../../utils/userTypeHelpers";
+import type { UserType } from "../../types/auth";
 
 interface PricingManagementModalProps {
   isOpen: boolean;
@@ -22,19 +28,9 @@ interface PricingManagementModalProps {
 }
 
 type PricingTiers = Record<string, number | string> & {
-  agent: number | string;
-  super_agent: number | string;
-  dealer: number | string;
-  super_dealer: number | string;
+  [K in UserType]?: number | string;
+} & {
   default: number | string;
-};
-
-const userTypeLabels: Record<string, string> = {
-  agent: "Agent",
-  super_agent: "Super Agent",
-  dealer: "Dealer",
-  super_dealer: "Super Dealer",
-  default: "Default Price",
 };
 
 const userTypeDescriptions: Record<string, string> = {
@@ -42,6 +38,8 @@ const userTypeDescriptions: Record<string, string> = {
   super_agent: "Senior agents — special pricing",
   dealer: "Dealers — volume discounts",
   super_dealer: "High-volume dealers — maximum discounts",
+  elite_dealer: "Elite dealers — premium pricing tier",
+  master_dealer: "Master dealers — top-tier pricing",
   default: "Fallback price when no specific pricing is set",
 };
 
@@ -50,6 +48,8 @@ const userTypeColors: Record<string, string> = {
   super_agent: "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20",
   dealer: "bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20",
   super_dealer: "bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20",
+  elite_dealer: "bg-[var(--color-secondary)]/10 text-[var(--color-secondary)] border-[var(--color-secondary)]/20",
+  master_dealer: "bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20",
   default: "bg-[var(--bg-surface-alt)] text-[var(--text-secondary)] border-[var(--border-color)]",
 };
 
@@ -68,6 +68,8 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
     super_agent: 0,
     dealer: 0,
     super_dealer: 0,
+    elite_dealer: 0,
+    master_dealer: 0,
     default: 0,
   });
   const [originalPricing, setOriginalPricing] = useState<PricingTiers>({
@@ -75,6 +77,8 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
     super_agent: 0,
     dealer: 0,
     super_dealer: 0,
+    elite_dealer: 0,
+    master_dealer: 0,
     default: 0,
   });
   const { addToast } = useToast();
@@ -90,6 +94,8 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
         super_agent: data.pricingTiers.super_agent ?? data.basePrice,
         dealer: data.pricingTiers.dealer ?? data.basePrice,
         super_dealer: data.pricingTiers.super_dealer ?? data.basePrice,
+        elite_dealer: data.pricingTiers.elite_dealer ?? data.basePrice,
+        master_dealer: data.pricingTiers.master_dealer ?? data.basePrice,
         default: data.pricingTiers.default ?? data.basePrice,
       };
 
@@ -250,9 +256,8 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
               </div>
 
               <div className="grid gap-3">
-                {Object.entries(userTypeLabels)
-                  .filter(([userType]) => userType !== "default")
-                  .map(([userType, label]) => {
+                {PRICING_USER_TYPES.map((userType) => {
+                    const label = USER_TYPE_LABELS[userType];
                     const price = pricingTiers[userType];
                     const discount = calculateDiscount(price);
 
@@ -344,7 +349,7 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
                   {Object.entries(pricingTiers).map(([userType, price]) => (
                     <div key={userType} className="flex items-center justify-between gap-2 rounded-md bg-[var(--bg-surface)] px-3 py-2">
                       <span className="text-[var(--text-secondary)]">
-                        {userTypeLabels[userType]}:
+                        {userType === "default" ? "Default Price" : USER_TYPE_LABELS[userType as UserType]}:
                       </span>
                       <span className="font-semibold text-[var(--text-primary)]">
                         {formatCurrency(price)}

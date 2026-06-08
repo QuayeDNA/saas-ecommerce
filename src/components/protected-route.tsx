@@ -4,6 +4,7 @@ import { useAuth } from "../hooks";
 import { PageLoader } from "./page-loader";
 import { useEffect, useState } from "react";
 import { SetupPinGate } from "./setup-pin-gate";
+import { isBusinessUser } from "../utils/userTypeHelpers";
 
 interface ProtectedRouteProps {
   allowedUserTypes?: string[];
@@ -134,12 +135,7 @@ export const RoleBasedRoute = ({
     }
 
     // Redirect to user's appropriate dashboard
-    const dashboardUrl = [
-      "agent",
-      "super_agent",
-      "dealer",
-      "super_dealer",
-    ].includes(authState.user.userType)
+    const dashboardUrl = isBusinessUser(authState.user.userType)
       ? "/agent/dashboard"
       : "/";
 
