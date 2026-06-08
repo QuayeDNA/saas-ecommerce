@@ -35,6 +35,12 @@ import {
   CardHeader,
   CardBody,
 } from "../../design-system/components/card";
+import {
+  BUSINESS_USER_TYPES,
+  USER_TYPE_LABELS,
+  getUserTypeLabel,
+} from "../../utils/userTypeHelpers";
+import type { UserType } from "../../types/auth";
 
 export default function SuperAdminUserDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -74,7 +80,6 @@ export default function SuperAdminUserDetailsPage() {
     });
     setEditMode(true);
     setEditError(null);
-    addToast("Edit mode enabled", "info");
   };
 
   const handleEditChange = (
@@ -336,27 +341,43 @@ export default function SuperAdminUserDetailsPage() {
       case "agent":
         return <FaUserShield style={{ color: 'var(--color-primary)' }} />;
       case "customer":
+      case "subscriber":
         return <FaUser style={{ color: 'var(--success)' }} />;
       case "super_admin":
+      case "admin":
         return <FaUserCheck style={{ color: 'var(--color-primary)' }} />;
       case "elite_dealer":
         return <FaUserShield style={{ color: 'var(--color-primary)' }} />;
       case "master_dealer":
         return <FaUserShield style={{ color: 'var(--error)' }} />;
+      case "super_agent":
+      case "dealer":
+      case "super_dealer":
+        return <FaUserShield style={{ color: 'var(--color-secondary)' }} />;
       default:
         return <FaUser style={{ color: 'var(--text-secondary)' }} />;
     }
   };
 
-  const getUserTypeLabel = (userType: string) => {
-    const labels: Record<string, string> = {
-      agent: "Agent",
-      customer: "Customer",
-      super_admin: "Super Admin",
-      elite_dealer: "Elite Dealer",
-      master_dealer: "Master Dealer",
-    };
-    return labels[userType] || userType;
+  const getUserTypeBadge = (userType: string) => {
+    const label = getUserTypeLabel(userType);
+    switch (userType) {
+      case "super_admin":
+        return { label, color: 'var(--error)', bg: 'color-mix(in srgb, var(--error) 10%, transparent)' };
+      case "admin":
+        return { label, color: 'var(--color-primary)', bg: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' };
+      case "elite_dealer":
+      case "master_dealer":
+        return { label, color: 'var(--color-secondary)', bg: 'color-mix(in srgb, var(--color-secondary) 10%, transparent)' };
+      case "super_agent":
+      case "dealer":
+      case "super_dealer":
+        return { label, color: 'var(--success)', bg: 'color-mix(in srgb, var(--success) 10%, transparent)' };
+      case "agent":
+        return { label, color: 'var(--color-primary)', bg: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' };
+      default:
+        return { label, color: 'var(--text-secondary)', bg: 'var(--bg-muted)' };
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -443,7 +464,12 @@ export default function SuperAdminUserDetailsPage() {
                   <div className="flex flex-row sm:items-center gap-2 sm:gap-2 text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                     <div className="flex items-center gap-1">
                       {getUserTypeIcon(user.userType)}
-                      <span>{getUserTypeLabel(user.userType)}</span>
+                      <span
+                        className="px-2 py-0.5 rounded-full text-xs font-medium"
+                        style={{ color: getUserTypeBadge(user.userType).color, backgroundColor: getUserTypeBadge(user.userType).bg }}
+                      >
+                        {getUserTypeBadge(user.userType).label}
+                      </span>
                       {user.agentCode && (
                         <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                           ({user.agentCode})
@@ -666,21 +692,23 @@ export default function SuperAdminUserDetailsPage() {
           </CardBody>
         </Card>
 
-        {/* Edit Form */}
+        {/* Edit User Modal */}
         {editMode && (
-          <Card>
-            <CardHeader>
-              <h3 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Edit User Information
-              </h3>
-            </CardHeader>
-            <CardBody>
+          <Modal
+            isOpen={editMode}
+            onClose={() => {
+              setEditMode(false);
+              setEditError(null);
+            }}
+            title="Edit User"
+          >
+            <div className="space-y-4">
               {editError && (
-                <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--error) 30%, transparent)' }}>
+                <div className="p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--error) 30%, transparent)' }}>
                   <p className="text-sm" style={{ color: 'var(--error)' }}>{editError}</p>
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Full Name"
                   name="fullName"
@@ -710,16 +738,12 @@ export default function SuperAdminUserDetailsPage() {
                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     style={{ borderColor: 'var(--border-color)' }}
                   >
-                    <option value="agent">Agent</option>
-                    <option value="super_agent">Super Agent</option>
-                    <option value="dealer">Dealer</option>
-                    <option value="super_dealer">Super Dealer</option>
-                    <option value="super_admin">Super Admin</option>
+                    {Object.entries(USER_TYPE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
                   </select>
                 </div>
-                {["agent", "super_agent", "dealer", "super_dealer"].includes(
-                  editData.userType || user.userType,
-                ) && (
+                {BUSINESS_USER_TYPES.includes(editData.userType as UserType) && (
                   <>
                     <Input
                       label="Business Name"
@@ -783,7 +807,7 @@ export default function SuperAdminUserDetailsPage() {
                   </>
                 )}
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button
                   variant="primary"
                   onClick={saveEdit}
@@ -796,7 +820,7 @@ export default function SuperAdminUserDetailsPage() {
                   variant="outline"
                   onClick={() => {
                     setEditMode(false);
-                    addToast("Edit mode cancelled", "info");
+                    setEditError(null);
                   }}
                   disabled={editLoading}
                   size="sm"
@@ -804,8 +828,8 @@ export default function SuperAdminUserDetailsPage() {
                   Cancel
                 </Button>
               </div>
-            </CardBody>
-          </Card>
+            </div>
+          </Modal>
         )}
 
         {/* User Activity Timeline */}
