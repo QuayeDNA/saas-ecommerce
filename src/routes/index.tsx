@@ -120,6 +120,11 @@ const StorefrontDashboardPage = lazy(() =>
     default: module.StorefrontDashboardPage,
   })),
 );
+const ApiMarketplacePage = lazy(() =>
+  import("../pages/agent/api-marketplace").then((module) => ({
+    default: module.ApiMarketplacePage,
+  })),
+);
 
 // =============================================================================
 // LAZY LOADED COMPONENTS - COMMISSION & REFERRAL PAGES
@@ -427,10 +432,26 @@ const agentRoutes: RouteObject[] = [
             ),
           },
           {
-            path: "privacy-policy",
+            path: "api-marketplace",
             element: (
               <Suspense fallback={<PageLoader />}>
-                <PrivacyPolicyPage />
+                <ApiMarketplacePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "profile",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProfilePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "api-marketplace",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ApiMarketplacePage />
               </Suspense>
             ),
           },

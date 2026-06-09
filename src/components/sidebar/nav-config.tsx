@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Home, Plus } from "lucide-react";
 import {
   FaBox,
-  FaMobile,
   FaUsers,
   FaUsersCog,
   FaWallet,
@@ -17,6 +16,7 @@ import {
   FaStore,
   FaShareAlt,
   FaMoneyCheckAlt,
+  FaCode,
 } from "react-icons/fa";
 import { isBusinessUser } from "../../utils/userTypeHelpers";
 import { FaChartLine } from "react-icons/fa6";
@@ -35,7 +35,8 @@ export interface NavSection {
 
 /* ─── Agent nav ──────────────────────────────────────────────────────────── */
 
-const agentSections = (packages: NavItem[] = []): NavSection[] => [
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const agentSections = (_packages: NavItem[] = []): NavSection[] => [
   {
     label: "Overview",
     items: [
@@ -45,9 +46,10 @@ const agentSections = (packages: NavItem[] = []): NavSection[] => [
   {
     label: "Commerce",
     items: [
-      { label: "Packages", path: "/agent/dashboard/packages", icon: <FaBox />, children: packages },
-      { label: "Orders", path: "/agent/dashboard/orders", icon: <FaMobile /> },
+      { label: "Packages", path: "/agent/dashboard/packages", icon: <FaBox /> },
+      { label: "Orders", path: "/agent/dashboard/orders", icon: <FaClipboardList /> },
       { label: "My Storefront", path: "/agent/dashboard/storefront", icon: <FaStore /> },
+      { label: "API Marketplace", path: "/agent/dashboard/api-marketplace", icon: <FaCode /> },
     ],
   },
   {
@@ -79,6 +81,7 @@ const adminSections: NavSection[] = [
     label: "Commerce",
     items: [
       { label: "Packages", path: "/admin/dashboard/packages", icon: <FaBox /> },
+      { label: "API Marketplace", path: "/admin/dashboard/api-marketplace", icon: <FaCode /> },
     ],
   },
   {
