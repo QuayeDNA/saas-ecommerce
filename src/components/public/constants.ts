@@ -1,93 +1,34 @@
 import type { ThemeConfig } from "./types";
 
 // =============================================================================
-// Constants & Theme System
+// Theme System — two fixed colors: brand blue or midnight black
 // =============================================================================
 
-export const THEMES: Record<string, ThemeConfig> = {
-  blue: {
-    primary: "#2563EB",
-    secondary: "#1E40AF",
-    accent: "#60A5FA",
-    bg: "#EFF6FF",
-    text: "#1E3A5F",
-    gradient: "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 50%, #1e3a8a 100%)",
-    cardBorder: "#BFDBFE",
-    heroBg: "#EFF6FF",
-  },
-  green: {
-    primary: "#16A34A",
-    secondary: "#15803D",
-    accent: "#4ADE80",
-    bg: "#F0FDF4",
-    text: "#14532D",
-    gradient: "linear-gradient(135deg, #15803D 0%, #166534 50%, #14532d 100%)",
-    cardBorder: "#BBF7D0",
-    heroBg: "#F0FDF4",
-  },
-  purple: {
-    primary: "#7C3AED",
-    secondary: "#6D28D9",
-    accent: "#A78BFA",
-    bg: "#FAF5FF",
-    text: "#3B0764",
-    gradient: "linear-gradient(135deg, #6D28D9 0%, #5B21B6 50%, #4c1d95 100%)",
-    cardBorder: "#DDD6FE",
-    heroBg: "#FAF5FF",
-  },
-  orange: {
-    primary: "#EA580C",
-    secondary: "#C2410C",
-    accent: "#FB923C",
-    bg: "#FFF7ED",
-    text: "#7C2D12",
-    gradient: "linear-gradient(135deg, #C2410C 0%, #B45309 50%, #92400e 100%)",
-    cardBorder: "#FED7AA",
-    heroBg: "#FFF7ED",
-  },
-  red: {
-    primary: "#DC2626",
-    secondary: "#B91C1C",
-    accent: "#F87171",
-    bg: "#FEF2F2",
-    text: "#7F1D1D",
-    gradient: "linear-gradient(135deg, #B91C1C 0%, #991B1B 50%, #7f1d1d 100%)",
-    cardBorder: "#FECACA",
-    heroBg: "#FEF2F2",
-  },
-  teal: {
-    primary: "#0D9488",
-    secondary: "#0F766E",
-    accent: "#2DD4BF",
-    bg: "#F0FDFA",
-    text: "#134E4A",
-    gradient: "linear-gradient(135deg, #0F766E 0%, #115E59 50%, #134e4a 100%)",
-    cardBorder: "#99F6E4",
-    heroBg: "#F0FDFA",
-  },
-  indigo: {
-    primary: "#4F46E5",
-    secondary: "#4338CA",
-    accent: "#818CF8",
-    bg: "#EEF2FF",
-    text: "#312E81",
-    gradient: "linear-gradient(135deg, #4338CA 0%, #3730A3 50%, #312e81 100%)",
-    cardBorder: "#C7D2FE",
-    heroBg: "#EEF2FF",
-  },
-  rose: {
-    primary: "#E11D48",
-    secondary: "#BE123C",
-    accent: "#FB7185",
-    bg: "#FFF1F2",
-    text: "#881337",
-    gradient: "linear-gradient(135deg, #BE123C 0%, #9F1239 50%, #881337 100%)",
-    cardBorder: "#FECDD3",
-    heroBg: "#FFF1F2",
-  },
-};
+const COLORS = {
+  brand: "#2563EB",
+  midnight: "#0B1120",
+} as const;
 
-export const DEFAULT_THEME = THEMES.blue;
+/** Build a ThemeConfig from the agent's store color choice */
+export function buildBrandTheme(color?: string): ThemeConfig {
+  const isMidnight = color === COLORS.midnight;
+  const primary = isMidnight ? COLORS.midnight : COLORS.brand;
+  return {
+    primary,
+    secondary: primary,
+    accent: primary,
+    bg: "#FFFFFF",
+    text: "#0B1120",
+    gradient: isMidnight
+      ? `linear-gradient(135deg, ${COLORS.midnight} 0%, ${COLORS.brand} 100%)`
+      : `linear-gradient(135deg, ${COLORS.brand} 0%, ${COLORS.midnight} 100%)`,
+    cardBorder: `${primary}22`,
+    heroBg: `${primary}0A`,
+  };
+}
+
+/** Fallback when no brand color is set */
+export const DEFAULT_THEME = buildBrandTheme();
 
 // placeholders removed – popularity driven exclusively by backend now.
 

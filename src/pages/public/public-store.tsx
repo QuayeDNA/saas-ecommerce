@@ -44,7 +44,7 @@ import AdBanner from "../../components/ads/ad-banner";
 
 // ─── Extracted components ────────────────────────────────────────────────────
 import {
-  THEMES,
+  buildBrandTheme,
   DEFAULT_THEME,
   type ThemeConfig,
   type OrderItem,
@@ -432,26 +432,8 @@ const PublicStore: React.FC = () => {
 
   const theme: ThemeConfig = useMemo(() => {
     if (!storeData) return DEFAULT_THEME;
-    const branding = storeData.storefront.branding;
-    if (branding?.customColors) {
-      return {
-        primary: branding.customColors.primary || DEFAULT_THEME.primary,
-        secondary:
-          branding.customColors.secondary || DEFAULT_THEME.secondary,
-        accent: branding.customColors.accent || DEFAULT_THEME.accent,
-        bg: DEFAULT_THEME.bg,
-        text: DEFAULT_THEME.text,
-        gradient: `linear-gradient(135deg, ${branding.customColors.primary || DEFAULT_THEME.primary} 0%, ${branding.customColors.secondary || DEFAULT_THEME.secondary} 100%)`,
-        cardBorder: DEFAULT_THEME.cardBorder,
-        heroBg: DEFAULT_THEME.heroBg,
-      };
-    }
-    const name = (storeData.storefront.businessName || "").toLowerCase();
-    let hash = 0;
-    for (let i = 0; i < name.length; i++)
-      hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-    const themeKeys = Object.keys(THEMES);
-    return THEMES[themeKeys[hash % themeKeys.length]] || DEFAULT_THEME;
+    const brandColor = storeData.storefront.branding?.customColors?.primary;
+    return buildBrandTheme(brandColor);
   }, [storeData]);
 
   const providers = useMemo(() => {

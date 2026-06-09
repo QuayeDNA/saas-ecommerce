@@ -56,15 +56,8 @@ export const StoreHeader = memo(
         return taglines[hash % taglines.length];
       })();
 
-    // System-generated logo (SVG data-URI) when none is set
-    const getSystemLogo = () => {
-      const letter = (storefront.displayName || storefront.businessName || "S")
-        .charAt(0)
-        .toUpperCase();
-      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:${theme.primary}'/><stop offset='100%' style='stop-color:${theme.secondary}'/></linearGradient></defs><rect width='200' height='200' rx='40' fill='url(#g)'/><text x='100' y='130' font-family='Arial Black,Arial,sans-serif' font-size='110' font-weight='900' fill='white' text-anchor='middle'>${letter}</text></svg>`;
-      return `data:image/svg+xml;base64,${btoa(svg)}`;
-    };
-    const logoSrc = branding.logoUrl || getSystemLogo();
+    // Default logo — app icon when none is set by the agent
+    const logoSrc = branding.logoUrl || "/icons/store-icon.png";
     const displayDescription =
       storefront.description ||
       `Welcome to ${storefront.displayName}! We offer fast, affordable data bundles from all major networks in Ghana.`;
