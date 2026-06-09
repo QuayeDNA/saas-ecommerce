@@ -15,7 +15,6 @@ import { FaDollarSign, FaUsers, FaSave, FaTimes, FaTag } from "react-icons/fa";
 import {
   PRICING_USER_TYPES,
   USER_TYPE_LABELS,
-  getUserTypeLabel,
 } from "../../utils/userTypeHelpers";
 import type { UserType } from "../../types/auth";
 
@@ -259,7 +258,7 @@ export const PricingManagementModal: React.FC<PricingManagementModalProps> = ({
                 {PRICING_USER_TYPES.map((userType) => {
                     const label = USER_TYPE_LABELS[userType];
                     const price = pricingTiers[userType];
-                    const discount = calculateDiscount(price);
+                    const discount = calculateDiscount(price ?? 0);
 
                     return (
                       <div

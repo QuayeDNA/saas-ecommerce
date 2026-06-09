@@ -31,7 +31,6 @@ import { Pagination } from "../../design-system/components/pagination";
 import { Skeleton, LoadingCard } from "../../design-system/components/loading";
 import {
   BUSINESS_USER_TYPES,
-  ADMIN_USER_TYPES,
   USER_TYPE_LABELS,
 } from "../../utils/userTypeHelpers";
 

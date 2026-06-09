@@ -50,6 +50,8 @@ export interface WalletSettings {
     super_agent: number;
     dealer: number;
     super_dealer: number;
+    elite_dealer: number;
+    master_dealer: number;
     default: number;
   };
   /** Global minimum applied specifically to Paystack instant top-ups */
