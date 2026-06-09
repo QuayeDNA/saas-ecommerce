@@ -129,6 +129,13 @@ export interface PayoutRequestItem {
   completedAt?: string | Date;
 }
 
+export interface ConvertEarningsResponse {
+  earningsBalance: number;
+  walletBalance: number;
+  amount: number;
+  reference: string;
+}
+
 export interface EarningsDashboard {
   availableBalance: number;
   walletBalance: number;

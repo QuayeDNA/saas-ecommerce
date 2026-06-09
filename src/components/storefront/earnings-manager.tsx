@@ -33,6 +33,7 @@ import {
   Wallet,
   TrendingUp,
   ArrowDownToLine,
+  ArrowRightLeft,
   RefreshCw,
   Zap,
   Clock,
@@ -140,6 +141,11 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
   const [historyLimit, setHistoryLimit] = useState(20);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [historyTotalPages, setHistoryTotalPages] = useState(1);
+
+  // Convert to wallet state
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [convertAmount, setConvertAmount] = useState<number | ''>('');
+  const [converting, setConverting] = useState(false);
 
   // Form state
   const [amount, setAmount] = useState<number | ''>('');
@@ -375,12 +381,22 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
     }
   };
 
+  const QUICK_CONVERT_AMOUNTS = [50, 100, 200, 500];
+
   const metrics = [
     {
       title: "Available balance",
       value: dashboard?.availableBalance ?? 0,
+      sub: "Earnings",
       icon: Wallet,
       color: colorVar("green"),
+    },
+    {
+      title: "Wallet balance",
+      value: dashboard?.walletBalance ?? 0,
+      sub: "Spendable",
+      icon: ArrowRightLeft,
+      color: colorVar("blue"),
     },
     {
       title: "Total earned",
@@ -420,6 +436,14 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
             Refresh
           </Button>
           <Button
+            variant="secondary"
+            onClick={() => setShowConvertDialog(true)}
+            disabled={!dashboard || dashboard.availableBalance <= 0}
+            leftIcon={<ArrowRightLeft className="w-4 h-4" />}
+          >
+            Convert to Wallet
+          </Button>
+          <Button
             onClick={openRequest}
             disabled={!canRequestPayout}
             leftIcon={isAutoMode ? <Zap className="w-4 h-4" /> : <ArrowDownToLine className="w-4 h-4" />}
@@ -429,7 +453,7 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {metrics.map((metric, index) => (
           <Card key={index}>
             <CardBody>
@@ -439,6 +463,9 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
                   <p className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
                     {metric.isCount ? metric.value : formatCurrency(metric.value)}
                   </p>
+                  {metric.sub && (
+                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{metric.sub}</p>
+                  )}
                 </div>
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center"
@@ -922,6 +949,167 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
               }
             >
               {isAutoMode ? 'Withdraw Now' : 'Submit Request'}
+            </Button>
+          </div>
+        </DialogFooter>
+      </Dialog>
+
+      {/* ── Convert to wallet dialog ──────────────────────────────────────────── */}
+      <Dialog isOpen={showConvertDialog} onClose={() => setShowConvertDialog(false)} size="sm">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <ArrowRightLeft className="w-5 h-5" style={{ color: "var(--color-secondary)" }} />
+            <h3 className="text-lg font-semibold">Convert Earnings to Wallet</h3>
+          </div>
+        </DialogHeader>
+
+        <DialogBody>
+          <div className="space-y-4">
+            <div
+              className="flex items-center gap-2.5 p-3 rounded-xl text-sm"
+              style={{
+                backgroundColor: `color-mix(in srgb, var(--color-secondary) 10%, transparent)`,
+                border: `1px solid color-mix(in srgb, var(--color-secondary) 30%, transparent)`,
+                color: 'var(--color-secondary)',
+              }}
+            >
+              <Info className="w-4 h-4 shrink-0" />
+              Instant transfer — no fees, no admin approval. Funds are available in your wallet immediately.
+            </div>
+
+            <div
+              className="flex items-center justify-between rounded-xl px-4 py-3"
+              style={{
+                backgroundColor: "var(--bg-surface-alt)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <span className="text-sm" style={{ color: "var(--text-secondary)" }}>Available earnings</span>
+              <span className="text-lg font-bold" style={{ color: "var(--success)" }}>
+                GH₵ {dashboard?.availableBalance.toFixed(2) ?? '0.00'}
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-primary)" }}>
+                Amount to convert
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={convertAmount === '' ? '' : convertAmount}
+                  onChange={(e) => setConvertAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                  min={1}
+                  max={dashboard?.availableBalance ?? 0}
+                  placeholder="Enter amount"
+                  className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: "var(--bg-surface)",
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-primary)",
+                  }}
+                />
+              </div>
+              <div className="flex gap-2 mt-2">
+                {QUICK_CONVERT_AMOUNTS.map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setConvertAmount(amt)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                    style={{
+                      backgroundColor: `${colorVar("blue")}15`,
+                      color: colorVar("blue"),
+                      border: `1px solid ${colorVar("blue")}30`,
+                    }}
+                  >
+                    GH₵ {amt}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setConvertAmount(dashboard?.availableBalance ?? 0)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ml-auto"
+                  style={{
+                    backgroundColor: `${colorVar("green")}15`,
+                    color: colorVar("green"),
+                    border: `1px solid ${colorVar("green")}30`,
+                  }}
+                >
+                  Max
+                </button>
+              </div>
+            </div>
+
+            {convertAmount !== '' && Number(convertAmount) > 0 && (
+              <div
+                className="rounded-xl p-3.5 space-y-2 text-sm"
+                style={{
+                  backgroundColor: `color-mix(in srgb, var(--success) 8%, transparent)`,
+                  border: `1px solid color-mix(in srgb, var(--success) 20%, transparent)`,
+                }}
+              >
+                <div className="flex justify-between" style={{ color: "var(--text-secondary)" }}>
+                  <span>From earnings</span>
+                  <span className="font-medium" style={{ color: "var(--error)" }}>− GH₵ {Number(convertAmount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between" style={{ color: "var(--text-secondary)" }}>
+                  <span>To wallet</span>
+                  <span className="font-medium" style={{ color: "var(--success)" }}>+ GH₵ {Number(convertAmount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs" style={{ color: "var(--text-muted)" }}>
+                  <span>Fee</span>
+                  <span style={{ color: "var(--success)" }}>Free</span>
+                </div>
+                <div
+                  className="flex justify-between pt-2 font-semibold"
+                  style={{ borderTop: `1px solid color-mix(in srgb, var(--success) 20%, transparent)` }}
+                >
+                  <span style={{ color: "var(--text-primary)" }}>New wallet balance</span>
+                  <span style={{ color: "var(--success)" }}>
+                    GH₵ {((dashboard?.walletBalance ?? 0) + Number(convertAmount)).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogBody>
+
+        <DialogFooter>
+          <div className="flex gap-2 w-full">
+            <Button variant="secondary" onClick={() => setShowConvertDialog(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={async () => {
+                if (!convertAmount || Number(convertAmount) <= 0) {
+                  addToast('Enter a valid amount', 'error');
+                  return;
+                }
+                const numAmount = Number(convertAmount);
+                if (dashboard && numAmount > dashboard.availableBalance) {
+                  addToast('Amount exceeds your available earnings', 'error');
+                  return;
+                }
+                try {
+                  setConverting(true);
+                  await walletService.convertEarningsToWallet(numAmount);
+                  setShowConvertDialog(false);
+                  setConvertAmount('');
+                  addToast(`GH₵ ${numAmount.toFixed(2)} converted to wallet`, 'success');
+                  await load();
+                } catch {
+                  addToast('Failed to convert earnings', 'error');
+                } finally {
+                  setConverting(false);
+                }
+              }}
+              isLoading={converting}
+              disabled={converting || !convertAmount || Number(convertAmount) <= 0}
+              leftIcon={<ArrowRightLeft className="w-4 h-4" />}
+            >
+              Convert to Wallet
             </Button>
           </div>
         </DialogFooter>
