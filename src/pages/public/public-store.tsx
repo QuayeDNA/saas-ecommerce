@@ -99,7 +99,7 @@ const StoreSkeleton = memo(({ theme }: { theme: ThemeConfig }) => (
   <div className="min-h-screen" style={{ backgroundColor: "var(--bg-muted)" }}>
     {/* Hero skeleton */}
     <div
-      className="h-48 sm:h-64"
+      className="min-h-[280px] sm:min-h-[340px]"
       style={{ background: theme.gradient, opacity: 0.15 }}
     />
     <div className="max-w-7xl mx-auto px-4 -mt-8 space-y-6">
@@ -735,24 +735,90 @@ const PublicStore: React.FC = () => {
   // Render
   // ==========================================================================
 
-  if (loading) return <StoreSkeleton theme={theme} />;
-  if (error || !storeData)
-    return (
-      <StoreError error={error || "Store not found"} onRetry={fetchStore} />
-    );
-
-  const { storefront, bundles } = storeData;
-  const branding: StorefrontBranding = storefront.branding || {};
-  const storeLayout = branding.layout || "modern";
-
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen storefront-root"
       style={{ backgroundColor: "var(--bg-muted)" }}
     >
+      {(() => {
+        if (loading) return <StoreSkeleton theme={theme} />;
+        if (error || !storeData)
+          return (
+            <StoreError error={error || "Store not found"} onRetry={fetchStore} />
+          );
+
+        const { storefront, bundles } = storeData;
+        const branding: StorefrontBranding = storefront.branding || {};
+        const storeLayout = branding.layout || "modern";
+
+        return (
+          <>
       <style>{`
+        @import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@1,400,500,700,800&f[]=satoshi@1,300,400,500,700&display=swap');
+
+        .storefront-root {
+          --text-primary: #0F172A;
+          --text-secondary: #475569;
+          --text-tertiary: #94A3B8;
+          --text-inverse: #FFFFFF;
+          --bg-muted: #F8FAFC;
+          --bg-surface: #FFFFFF;
+          --border-color: #E2E8F0;
+          --color-primary: ${theme.primary};
+          --error: #EF4444;
+          --warning: #F59E0B;
+          --success: #10B981;
+          --font-family: 'Satoshi', 'Sora', sans-serif;
+        }
+
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes glow-pulse {
+          0%, 100% { box-shadow: 0 0 18px var(--glow-color, #2563EB); }
+          50% { box-shadow: 0 0 36px var(--glow-color, #2563EB); }
+        }
+        @keyframes gradient-shift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes drift {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          25% { transform: translate(20px, -15px) rotate(3deg); }
+          50% { transform: translate(-10px, 10px) rotate(-2deg); }
+          75% { transform: translate(15px, 5px) rotate(1deg); }
+        }
+        @keyframes ken-burns {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.08); }
+        }
+        @keyframes fade-slide-up {
+          from { opacity: 0; transform: translateY(24px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .animate-float { animation: float 4s ease-in-out infinite; }
+        .animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+        .animate-gradient { background-size: 200% 200%; animation: gradient-shift 12s ease infinite; }
+        .animate-drift { animation: drift 20s ease-in-out infinite; }
+        .animate-ken-burns { animation: ken-burns 10s ease-out forwards; }
+        .animate-fade-slide-up { animation: fade-slide-up 0.7s ease-out both; }
+        .animate-fade-in { animation: fade-in 0.6s ease-out both; }
+
+        @media (prefers-reduced-motion: reduce) {
+          .animate-float, .animate-glow-pulse, .animate-gradient,
+          .animate-drift, .animate-ken-burns, .animate-fade-slide-up,
+          .animate-fade-in { animation: none !important; }
+        }
       `}</style>
 
       {/* SECURITY: marks this browser session as storefront-only so that
@@ -939,6 +1005,9 @@ const PublicStore: React.FC = () => {
           onClose={() => setShowTrackDrawer(false)}
         />
       )}
+        </>
+      );
+    })()}
     </div>
   );
 };

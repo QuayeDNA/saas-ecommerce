@@ -20,8 +20,8 @@ export function buildBrandTheme(color?: string): ThemeConfig {
     bg: "#FFFFFF",
     text: "#0B1120",
     gradient: isMidnight
-      ? `linear-gradient(135deg, ${COLORS.midnight} 0%, ${COLORS.brand} 100%)`
-      : `linear-gradient(135deg, ${COLORS.brand} 0%, ${COLORS.midnight} 100%)`,
+      ? "linear-gradient(135deg, #0B1120 0%, #1C2538 100%)"
+      : "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
     cardBorder: `${primary}22`,
     heroBg: `${primary}0A`,
   };

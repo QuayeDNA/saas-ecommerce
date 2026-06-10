@@ -75,7 +75,7 @@ export function updateStorefrontOGTags(
 
   const ogTitle = `${storeTitle} | DirectData`;
   const ogDesc = `${storeDesc} · ${bundleCount} bundles available on ${networks}`;
-  const imageUrl = storefront.branding?.logoUrl || "/og-image.png";
+  const imageUrl = storefront.branding?.logoUrl || "/icons/store-icon.png";
 
   document.title = ogTitle;
   setOGMetaTag("og:title", ogTitle);

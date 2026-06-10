@@ -1275,8 +1275,8 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                     className="w-full h-24 rounded-lg flex items-center justify-center text-white font-bold text-lg"
                     style={{
                       background: brandingData.storeColor === "midnight"
-                        ? 'linear-gradient(135deg, #0B1120 0%, #1a2332 50%, #2563EB 100%)'
-                        : 'linear-gradient(135deg, #2563EB 0%, #1E40AF 50%, #0B1120 100%)',
+                        ? 'linear-gradient(135deg, #0B1120 0%, #1C2538 100%)'
+                        : 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
                     }}
                   >
                     {formData.businessName || 'Your Store'}
