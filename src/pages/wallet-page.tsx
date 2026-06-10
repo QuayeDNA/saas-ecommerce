@@ -36,7 +36,7 @@ import {
 import { useToast } from "../design-system/components/toast";
 import { TopUpRequestModal } from "../components/wallet/TopUpRequestModal";
 import { EarningsManager } from "../components/storefront/earnings-manager";
-import { FaClock } from "react-icons/fa6";
+
 
 export const WalletPage = () => {
   const {
@@ -175,26 +175,11 @@ export const WalletPage = () => {
     type: string,
     transaction?: WalletTransaction,
   ): string => {
-    const meta = transaction ? ((transaction.metadata || {}) as any) : null;
-
-    if (
-      transaction &&
-      transaction.type === "credit" &&
-      transaction.status === "pending" &&
-      meta?.momoReferenceId
-    ) {
-      return "var(--warning)";
-    }
-
     if (
       transaction &&
       transaction.type === "credit" &&
       transaction.status === "rejected"
     ) {
-      const momoStatus = String(meta?.momoStatus?.status || "").toUpperCase();
-      if (["TIMEOUT", "EXPIRED", "STALE"].includes(momoStatus)) {
-        return "var(--warning)";
-      }
       return "var(--error)";
     }
 
@@ -212,17 +197,7 @@ export const WalletPage = () => {
     type: string,
     transaction?: WalletTransaction,
   ): ReactNode => {
-    const meta = transaction ? ((transaction.metadata || {}) as any) : null;
     const color = getTransactionColor(type, transaction);
-
-    if (
-      transaction &&
-      transaction.type === "credit" &&
-      transaction.status === "pending" &&
-      meta?.momoReferenceId
-    ) {
-      return <FaClock style={{ color }} />;
-    }
 
     if (
       transaction &&

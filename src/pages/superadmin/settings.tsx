@@ -255,7 +255,6 @@ export default function SuperAdminSettingsPage() {
 
   // Reveal state for sensitive keys shown in the API tab (display only)
   const [revealKeys, setRevealKeys] = useState<Record<string, boolean>>({
-    mtn: false,
     telecel: false,
     airtelTigo: false,
     paystackTestPublic: false,
@@ -482,18 +481,6 @@ export default function SuperAdminSettingsPage() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* MTN key (masked, reveal) */}
-                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
-                      <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4" style={{ color: 'var(--warning)' }} />MTN API Key</div>
-                      <div className="mt-2 flex items-center justify-between gap-3">
-                        <div className="font-mono text-sm break-all whitespace-pre-wrap max-w-full overflow-auto" style={{ color: 'var(--text-primary)' }}>{revealKeys.mtn ? (data.apiSettings.mtnApiKey || 'Not configured') : formatMasked(data.apiSettings.mtnApiKey)}</div>
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="ghost" leftIcon={revealKeys.mtn ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />} onClick={() => toggleRevealKey('mtn')}>{revealKeys.mtn ? 'Hide' : 'Reveal'}</Button>
-                          <Badge colorScheme={data.apiSettings.mtnApiKey ? 'success' : 'error'}>{data.apiSettings.mtnApiKey ? 'Active' : 'Inactive'}</Badge>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Telecel key (masked, reveal) */}
                     <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
                       <div className="text-sm font-medium flex items-center gap-2"><Smartphone className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />Telecel API Key</div>
@@ -669,10 +656,6 @@ export default function SuperAdminSettingsPage() {
               <Card>
                 <SectionHeader title="Payout Transfer Fees" subtitle="Paystack transfer costs & payout configuration" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' }}>
-                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>MoMo Transfer Fee</div>
-                    <div className="font-medium">GH₵{(feeSettings?.paystackTransferFees?.mobile_money ?? 1.0).toFixed(2)}</div>
-                  </div>
                   <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' }}>
                     <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Bank Transfer Fee</div>
                     <div className="font-medium">GH₵{(feeSettings?.paystackTransferFees?.bank_account ?? 8.0).toFixed(2)}</div>

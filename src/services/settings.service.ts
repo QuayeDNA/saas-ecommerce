@@ -16,14 +16,12 @@ export interface SiteSettings {
 }
 
 export interface ApiSettings {
-  mtnApiKey: string;
   telecelApiKey: string;
   airtelTigoApiKey: string;
   apiEndpoint: string;
   // Paystack
   paystackEnabled?: boolean;
   paystackWalletTopUpEnabled?: boolean;
-  mtnWalletTopUpEnabled?: boolean;
   paystackStorefrontEnabled?: boolean;
   paystackTestPublicKey?: string;
   paystackTestSecretKey?: string; // returned only in non-production builds
