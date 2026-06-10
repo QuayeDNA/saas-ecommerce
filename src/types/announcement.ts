@@ -127,7 +127,7 @@ export interface AnnouncementContextValue {
   loading: boolean;
   error: string | null;
   fetchActiveAnnouncements: () => Promise<void>;
-  fetchUnreadAnnouncements: () => Promise<void>;
+  fetchUnreadAnnouncements?: () => Promise<void>;
   markAsViewed: (announcementId: string) => Promise<void>;
   markAsAcknowledged: (announcementId: string) => Promise<void>;
   clearError: () => void;

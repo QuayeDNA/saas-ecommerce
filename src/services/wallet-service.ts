@@ -161,30 +161,6 @@ export const walletService = {
   },
 
   /**
-   * Initiate MTN Mobile Money wallet top-up
-   */
-  initiateMomoTopUp: async (
-    amount: number,
-    phoneNumber: string
-  ): Promise<MomoInitiateResponse> => {
-    const response = await apiClient.post<{ success: boolean; message?: string; referenceId?: string }>(
-      "/api/wallet/momo/initiate",
-      { amount, phoneNumber },
-    );
-    return response.data;
-  },
-
-  /**
-   * Verify a MTN Mobile Money top-up by reference
-   */
-  verifyMomoTopUp: async (referenceId: string): Promise<MomoVerifyResponse> => {
-    const response = await apiClient.get<{ success: boolean; message?: string; transaction?: WalletTransaction | null }>(
-      `/api/wallet/momo/verify/${encodeURIComponent(referenceId)}`,
-    );
-    return response.data;
-  },
-
-  /**
    * Cancel a pending Paystack top-up request by reference (cleanup on failure)
    */
   cancelPaystackTopUp: async (reference: string) => {

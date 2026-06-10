@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Announcement } from "../types/announcement";
 import announcementService from "../services/announcement.service";
 import { websocketService } from "../services/websocket.service";
@@ -62,9 +62,13 @@ export function usePublicAnnouncements({ businessName, dismissedKey, viewedKey }
   }, [businessName]);
 
   // WebSocket for real-time
+  const wsConnected = useRef<string | null>(null);
   useEffect(() => {
     if (!businessName) return;
-    websocketService.connect(`public:${businessName}`);
+    if (wsConnected.current !== businessName) {
+      websocketService.connect(`public:${businessName}`);
+      wsConnected.current = businessName;
+    }
     const handler = (data: unknown) => {
       const announcement = data as Announcement;
       if (!announcement?._id) return;

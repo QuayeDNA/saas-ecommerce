@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-interface AdBannerProps {
+export interface AdBannerProps {
   adSlot: string;
   adFormat?: 'auto' | 'rectangle' | 'horizontal' | 'vertical';
   fullWidth?: boolean;

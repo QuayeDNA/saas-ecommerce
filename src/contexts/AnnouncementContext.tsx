@@ -109,7 +109,6 @@ export const AnnouncementProvider: React.FC<AnnouncementProviderProps> = ({
       loading,
       error,
       fetchActiveAnnouncements,
-      fetchUnreadAnnouncements: fetchActiveAnnouncements,
       markAsViewed,
       markAsAcknowledged,
       clearError,
