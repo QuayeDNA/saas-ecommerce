@@ -45,6 +45,8 @@ export interface Bundle {
     super_agent?: number;
     dealer?: number;
     super_dealer?: number;
+    elite_dealer?: number;
+    master_dealer?: number;
     default?: number;
   };
 
@@ -219,6 +221,8 @@ export interface CreateBundleData {
     super_agent?: number;
     dealer?: number;
     super_dealer?: number;
+    elite_dealer?: number;
+    master_dealer?: number;
     default?: number;
   };
 }

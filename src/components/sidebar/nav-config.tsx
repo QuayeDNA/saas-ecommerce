@@ -35,8 +35,7 @@ export interface NavSection {
 
 /* ─── Agent nav ──────────────────────────────────────────────────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const agentSections = (_packages: NavItem[] = []): NavSection[] => [
+const agentSections = (packages: NavItem[] = []): NavSection[] => [
   {
     label: "Overview",
     items: [
@@ -46,7 +45,12 @@ const agentSections = (_packages: NavItem[] = []): NavSection[] => [
   {
     label: "Commerce",
     items: [
-      { label: "Packages", path: "/agent/dashboard/packages", icon: <FaBox /> },
+      {
+        label: "Packages",
+        path: "/agent/dashboard/packages",
+        icon: <FaBox />,
+        children: packages.length > 0 ? packages : undefined,
+      },
       { label: "Orders", path: "/agent/dashboard/orders", icon: <FaClipboardList /> },
       { label: "My Storefront", path: "/agent/dashboard/storefront", icon: <FaStore /> },
       { label: "API Marketplace", path: "/agent/dashboard/api-marketplace", icon: <FaCode /> },

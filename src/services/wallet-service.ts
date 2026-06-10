@@ -9,6 +9,9 @@ import type {
   PayoutRequestItem,
   PayoutDestination,
   AdminPayoutSummary,
+  MomoInitiateResponse,
+  MomoVerifyResponse,
+  ConvertEarningsResponse,
 } from "../types/wallet";
 import { canHaveWallet } from "../utils/userTypeHelpers";
 
@@ -281,6 +284,14 @@ export const walletService = {
   /* Earnings & Payouts (agent-facing) */
   getEarningsDashboard: async (): Promise<EarningsDashboard> => {
     const response = await apiClient.get<{ success: boolean; data: EarningsDashboard }>("/api/wallet/earnings/dashboard");
+    return response.data.data;
+  },
+
+  convertEarningsToWallet: async (amount: number): Promise<ConvertEarningsResponse> => {
+    const response = await apiClient.post<{ success: boolean; data: ConvertEarningsResponse }>(
+      "/api/wallet/earnings/convert-to-wallet",
+      { amount },
+    );
     return response.data.data;
   },
 
