@@ -9,8 +9,6 @@ import type {
   PayoutRequestItem,
   PayoutDestination,
   AdminPayoutSummary,
-  MomoInitiateResponse,
-  MomoVerifyResponse,
   ConvertEarningsResponse,
 } from "../types/wallet";
 import { canHaveWallet } from "../utils/userTypeHelpers";
