@@ -407,7 +407,7 @@ export const OrderDialog = memo(
                 <button
                   disabled={!step1Valid}
                   onClick={confirmDetails}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40 text-white"
                   style={{ backgroundColor: theme.primary }}
                 >
                   Continue to Payment <FaArrowRight className="w-3.5 h-3.5" />
@@ -722,7 +722,7 @@ export const OrderDialog = memo(
                 <button
                   disabled={!canSubmitOrder || submitting}
                   onClick={submitOrder}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-50 text-white"
                   style={{ backgroundColor: theme.primary }}
                 >
                   {submitting ? (
@@ -923,7 +923,7 @@ export const OrderDialog = memo(
                                     orderResult.total,
                                   )
                                 }
-                                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold"
+                                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white"
                                 style={{ backgroundColor: theme.primary }}
                               >
                                 <FaBolt className="w-4 h-4" /> Continue to
@@ -1058,6 +1058,7 @@ export const OrderDialog = memo(
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] rounded-xl font-bold text-sm hover:bg-[#20BD5C] transition active:scale-95"
+                    style={{ color: "#fff" }}
                   >
                     <FaWhatsapp className="w-4 h-4" /> Message store on WhatsApp
                   </a>
@@ -1067,7 +1068,7 @@ export const OrderDialog = memo(
             <DialogFooter>
               <button
                 onClick={closeOrderDialog}
-                className="w-full py-3 rounded-xl font-bold active:scale-95 transition"
+                className="w-full py-3 rounded-xl font-bold active:scale-95 transition text-white"
                 style={{ backgroundColor: theme.primary }}
               >
                 Done — Browse More Bundles

@@ -912,6 +912,7 @@ const PublicStore: React.FC = () => {
               trendingBundles={popularBundles}
               allBundles={bundles}
               onSelect={openOrderDialog}
+              getProviderLogoUrl={getProviderLogoUrl}
             />
           </div>
         )}

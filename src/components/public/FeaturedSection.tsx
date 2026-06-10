@@ -5,16 +5,11 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaWifi,
-  FaBagShopping,
 } from "react-icons/fa6";
 import { getProviderColors } from "../../utils/provider-colors";
 import type { PublicBundle } from "../../services/storefront.service";
 import type { ThemeConfig } from "./types";
 import { fmt, fmtValidity } from "./utils";
-
-// =============================================================================
-// Featured Bundles Section — Trending + Best Value tabs, auto-advancing carousel
-// =============================================================================
 
 type FeaturedTab = "trending" | "value";
 
@@ -24,16 +19,21 @@ export const FeaturedSection = memo(
     trendingBundles,
     allBundles,
     onSelect,
+    getProviderLogoUrl,
   }: {
     theme: ThemeConfig;
     trendingBundles: PublicBundle[];
     allBundles: PublicBundle[];
     onSelect: (b: PublicBundle) => void;
+    getProviderLogoUrl?: (code: string) => string | undefined;
   }) => {
     const [tab, setTab] = useState<FeaturedTab>("trending");
     const [activeIdx, setActiveIdx] = useState(0);
     const [paused, setPaused] = useState(false);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const carouselRef = useRef<HTMLDivElement>(null);
+    const touchStartX = useRef(0);
+    const touchDeltaX = useRef(0);
 
     const valueBundles = useMemo(() => {
       if (!allBundles.length) return [];
@@ -52,7 +52,6 @@ export const FeaturedSection = memo(
 
     const count = items.length;
 
-    // Reset index when tab changes
     useEffect(() => {
       setActiveIdx(0);
     }, [tab]);
@@ -64,7 +63,6 @@ export const FeaturedSection = memo(
       [count],
     );
 
-    // Auto-advance
     useEffect(() => {
       if (count <= 1 || paused) return;
       intervalRef.current = setInterval(() => {
@@ -82,6 +80,19 @@ export const FeaturedSection = memo(
       "linear-gradient(135deg,#D97706,#B45309)",
     ];
 
+    const handleCarouselKeyDown = useCallback(
+      (e: React.KeyboardEvent) => {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          goTo(activeIdx - 1);
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          goTo(activeIdx + 1);
+        }
+      },
+      [activeIdx, goTo],
+    );
+
     if (!trendingBundles.length && !allBundles.length) return null;
 
     const activeBundle = items[activeIdx];
@@ -90,8 +101,7 @@ export const FeaturedSection = memo(
       : null;
 
     return (
-      <div className="pt-4 pb-5 px-4">
-        {/* Header + Tabs */}
+      <section className="pt-4 pb-5 px-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             {tab === "trending" ? (
@@ -135,22 +145,37 @@ export const FeaturedSection = memo(
           </div>
         </div>
 
-        {/* Full-screen single-card carousel */}
         <div
+          ref={carouselRef}
           className="relative"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
-          onTouchStart={() => setPaused(true)}
-          onTouchEnd={() => setPaused(false)}
+          onTouchStart={(e) => {
+            setPaused(true);
+            touchStartX.current = e.changedTouches[0].screenX;
+            touchDeltaX.current = 0;
+          }}
+          onTouchMove={(e) => {
+            touchDeltaX.current = e.changedTouches[0].screenX - touchStartX.current;
+          }}
+          onTouchEnd={() => {
+            setPaused(false);
+            if (Math.abs(touchDeltaX.current) > 50) {
+              goTo(touchDeltaX.current > 0 ? activeIdx - 1 : activeIdx + 1);
+            }
+          }}
+          onFocus={() => setPaused(true)}
+          onBlur={() => setPaused(false)}
         >
-          {/* Card track — CSS transform slide */}
           <div
-            className="overflow-hidden rounded-3xl"
+            className="overflow-hidden rounded-2xl"
             style={{
-              boxShadow: activePc
-                ? `0 12px 48px ${activePc.primary}55`
-                : "0 8px 32px rgba(0,0,0,0.15)",
+              boxShadow: `0 6px 20px ${(activePc?.primary || theme.primary)}40`,
             }}
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="Featured bundles"
+            onKeyDown={handleCarouselKeyDown}
           >
             <div
               className="flex transition-transform duration-500 ease-out"
@@ -158,51 +183,59 @@ export const FeaturedSection = memo(
             >
               {items.map((b, idx) => {
                 const pc = getProviderColors(b.provider);
-                const valuePer =
-                  b.dataVolume > 0 && b.price > 0
-                    ? (b.dataVolume / b.price).toFixed(1)
-                    : null;
+                const isAfa = b.provider?.toUpperCase() === "AFA";
+                const isActive = idx === activeIdx;
                 return (
                   <div
                     key={b._id}
-                    className="w-full shrink-0 cursor-pointer select-none"
+                    className="w-full shrink-0 cursor-pointer select-none relative"
                     onClick={() => onSelect(b)}
                     role="button"
-                    tabIndex={idx === activeIdx ? 0 : -1}
+                    tabIndex={isActive ? 0 : -1}
                     onKeyDown={(e) => e.key === "Enter" && onSelect(b)}
                     aria-label={`Buy ${b.name} for ${fmt(b.price)}`}
+                    aria-hidden={!isActive}
                     style={{
-                      background: `linear-gradient(145deg, ${pc.primary}, ${pc.secondary})`,
+                      backgroundColor: pc.primary,
+                      color: pc.text,
+                      border: `1px solid ${pc.secondary}44`,
                     }}
                   >
-                    <div
-                      className="relative p-6 pb-7 overflow-hidden"
-                      style={{ color: "var(--text-inverse)" }}
-                    >
-                      {/* Decorative blobs */}
-                      <div className="absolute -top-12 -right-12 w-52 h-52 rounded-full bg-white/10 pointer-events-none" />
-                      <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-black/10 pointer-events-none" />
+                    <div className="absolute inset-x-0 top-0 h-px bg-white/30 pointer-events-none" />
 
-                      {/* Top row: provider name + rank badge */}
-                      <div className="relative flex items-center justify-between mb-5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-black uppercase tracking-widest opacity-80">
-                            {b.providerName}
-                          </span>
-                          {tab === "trending" && (
-                            <span className="text-[10px] bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5 font-bold">
-                              🔥 Popular
-                            </span>
-                          )}
-                          {tab === "value" && valuePer && (
-                            <span className="text-[10px] bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5 font-bold">
-                              💰 {valuePer}GB/₵
-                            </span>
-                          )}
+                    <div className="relative p-4 space-y-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0">
+                            {getProviderLogoUrl?.(b.provider || "") ? (
+                              <img
+                                src={getProviderLogoUrl(b.provider || "")!}
+                                alt={`${b.providerName || b.provider} logo`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-lg font-black text-white/90">
+                                {(b.providerName || b.provider || "?").charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-black uppercase tracking-[0.2em] opacity-80 truncate">
+                              {b.providerName || b.provider}
+                            </div>
+                            <div className="text-xs opacity-80 truncate">
+                              {b.name}
+                            </div>
+                          </div>
                         </div>
-                        {RANK_BG[idx + 1] && (
+                        {isAfa && b.requiresGhanaCard && (
+                          <span className="text-[9px] bg-white/20 rounded-full px-1.5 py-0.5 font-semibold shrink-0">
+                            ID
+                          </span>
+                        )}
+                        {!isAfa && RANK_BG[idx + 1] && (
                           <span
-                            className="text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg"
+                            className="text-[10px] font-black px-2 py-1 rounded-full shadow-lg shrink-0"
                             style={{
                               background: RANK_BG[idx + 1],
                               color: "#fff",
@@ -213,52 +246,39 @@ export const FeaturedSection = memo(
                         )}
                       </div>
 
-                      {/* Data volume — hero */}
-                      <div className="relative mb-4">
-                        {b.dataVolume > 0 ? (
-                          <>
-                            <div className="leading-none">
-                              <span className="text-7xl font-black tracking-tighter">
-                                {b.dataVolume}
-                              </span>
-                              <span className="text-3xl font-bold ml-2 opacity-80">
-                                {b.dataUnit}
-                              </span>
+                      {b.dataVolume > 0 ? (
+                        <div className="leading-none">
+                          <span className="text-4xl font-black tracking-tight">
+                            {b.dataVolume}
+                          </span>
+                          <span className="text-xl font-bold ml-1 opacity-90">
+                            {b.dataUnit}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-base font-black leading-snug">
+                          {b.name}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-2.5 py-1 text-[11px] font-semibold">
+                          <FaWifi className="w-2.5 h-2.5 opacity-80" />
+                          {fmtValidity(b.validity, b.validityUnit)}
+                        </div>
+                        {tab === "value" &&
+                          b.dataVolume > 0 &&
+                          b.price > 0 && (
+                            <div className="inline-flex items-center gap-1 bg-white/20 rounded-full px-2.5 py-1 text-[11px] font-semibold">
+                              💰 {(b.dataVolume / b.price).toFixed(1)}GB/₵
                             </div>
-                            <div className="text-sm opacity-65 mt-1.5 font-semibold truncate">
-                              {b.name}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-3xl font-black leading-snug">
-                            {b.name}
-                          </div>
-                        )}
+                          )}
                       </div>
 
-                      {/* Validity pill */}
-                      <div className="relative inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-sm font-semibold mb-6">
-                        <FaWifi className="w-3.5 h-3.5 opacity-80" />
-                        {fmtValidity(b.validity, b.validityUnit)}
-                      </div>
-
-                      {/* Price + CTA */}
-                      <div className="relative flex items-center justify-between">
-                        <div>
-                          <div className="text-xs opacity-55 font-semibold uppercase tracking-wide mb-0.5">
-                            Price
-                          </div>
-                          <div className="text-3xl font-black">
-                            {fmt(b.price)}
-                          </div>
-                        </div>
-                        <div
-                          className="flex items-center gap-2 rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all active:scale-95"
-                          style={{ color: pc.primary }}
-                        >
-                          <FaBagShopping className="w-4 h-4" />
-                          <span className="text-sm font-black">Buy Now</span>
-                        </div>
+                      <div className="flex items-center border-t border-white/15 pt-3">
+                        <span className="text-xl font-extrabold">
+                          {fmt(b.price)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -267,73 +287,55 @@ export const FeaturedSection = memo(
             </div>
           </div>
 
-          {/* Prev / Next overlay arrows */}
-          {count > 1 && (
-            <>
-              <button
-                onClick={() => goTo(activeIdx - 1)}
-                className="absolute left-0 bottom-0 z-10 w-10 h-10 rounded-tr-2xl bg-black/20 backdrop-blur-sm flex items-center justify-center hover:bg-black/35 transition-all active:scale-95"
-                aria-label="Previous bundle"
-              >
-                <FaChevronLeft className="w-3.5 h-3.5 drop-shadow" />
-              </button>
-              <button
-                onClick={() => goTo(activeIdx + 1)}
-                className="absolute right-0 bottom-0 z-10 w-10 h-10 rounded-tl-2xl bg-black/20 backdrop-blur-sm flex items-center justify-center hover:bg-black/35 transition-all active:scale-95"
-                aria-label="Next bundle"
-              >
-                <FaChevronRight className="w-3.5 h-3.5 drop-shadow" />
-              </button>
-            </>
-          )}
         </div>
 
-        {/* Dot indicators + nav row */}
         {count > 1 && (
           <div className="flex items-center justify-center gap-3 mt-4">
             <button
               onClick={() => goTo(activeIdx - 1)}
-              className="w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all hover:scale-110 active:scale-95"
+              className="w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-all hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-offset-2"
               style={{
                 borderColor: activePc?.primary || theme.primary,
                 color: activePc?.primary || theme.primary,
               }}
               aria-label="Previous bundle"
             >
-              <FaChevronLeft className="w-2.5 h-2.5" />
+              <FaChevronLeft className="w-3 h-3" />
             </button>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5" role="tablist" aria-label="Slides">
               {items.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => goTo(idx)}
-                  className="rounded-full transition-all duration-300"
+                  className="rounded-full transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-2"
                   style={{
-                    width: idx === activeIdx ? "24px" : "7px",
-                    height: "7px",
+                    width: idx === activeIdx ? "24px" : "8px",
+                    height: "8px",
                     backgroundColor:
                       idx === activeIdx
                         ? activePc?.primary || theme.primary
                         : "#D1D5DB",
                   }}
+                  role="tab"
+                  aria-selected={idx === activeIdx}
                   aria-label={`Go to slide ${idx + 1}`}
                 />
               ))}
             </div>
             <button
               onClick={() => goTo(activeIdx + 1)}
-              className="w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all hover:scale-110 active:scale-95"
+              className="w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-all hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-offset-2"
               style={{
                 borderColor: activePc?.primary || theme.primary,
                 color: activePc?.primary || theme.primary,
               }}
               aria-label="Next bundle"
             >
-              <FaChevronRight className="w-2.5 h-2.5" />
+              <FaChevronRight className="w-3 h-3" />
             </button>
           </div>
         )}
-      </div>
+      </section>
     );
   },
 );
