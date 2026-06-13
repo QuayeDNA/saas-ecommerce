@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
+    "@paystack/inline-js": "^2.22.9",
     "@tailwindcss/postcss": "^4.1.10",
     "@tanstack/react-query": "^5.81.1",
     "@types/js-cookie": "^3.0.6",

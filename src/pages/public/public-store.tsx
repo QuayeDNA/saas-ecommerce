@@ -21,8 +21,8 @@ import {
   DialogBody,
   DialogFooter,
 } from "../../design-system";
+import { getPaystackEmail } from "../../utils/paystack-email";
 import storefrontService from "../../services/storefront.service";
-import { walletService } from "../../services/wallet-service";
 import { useToast } from "../../design-system/components/toast";
 import { useSiteStatus } from "../../contexts/site-status-context";
 import { usePublicAnnouncements } from "../../hooks/usePublicAnnouncements";
@@ -555,55 +555,47 @@ const PublicStore: React.FC = () => {
   }, [activeOrder, orderPhone]);
 
   const openPaystackInline = useCallback(
-    async (reference: string, amountGhs: number) => {
+    async (_reference: string, _amountGhs: number, accessCode: string) => {
       try {
         setPaystackStatus("idle");
         await loadPaystackScript();
-        const { publicKey, paystackEnabled: paystackAllowed } =
-          await walletService.getPaystackPublicKey();
-        if (!paystackAllowed)
-          throw new Error("Paystack is disabled on this platform");
-        if (!publicKey) throw new Error("Paystack public key not available");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const PaystackPop = (window as any).PaystackPop;
-        if (!PaystackPop) throw new Error("Paystack script failed to load");
-        const handler = PaystackPop.setup({
-          key: publicKey,
-          email:
-            storeData?.storefront.contactInfo?.email ||
-            `store-${businessName || "unknown"}@brytelink.com`,
-          amount: Math.round((amountGhs || 0) * 100),
-          currency: "GHS",
-          ref: reference,
-          onClose: () => {
-            addToast(
-              "Payment window closed — no charge was made.",
-              "info",
-              4000,
-            );
-          },
-          callback: (response: { reference: string }) => {
-            storefrontService
-              .verifyPaystackReference(response.reference)
-              .then(() => {
-                setPaystackStatus("success");
-                addToast(
-                  "Payment confirmed! Your order is processing.",
-                  "success",
-                  5000,
-                );
-              })
-              .catch(() => {
-                setPaystackStatus("failed");
-                addToast(
-                  "Payment received but verification is pending.",
-                  "warning",
-                  8000,
-                );
-              });
-          },
-        });
-        handler.openIframe();
+        const PaystackPopCtor = (window as any).PaystackPop;
+        if (!PaystackPopCtor) throw new Error("Paystack script failed to load");
+
+        if (!accessCode) throw new Error("Missing Paystack access code");
+
+        const onSuccess = (response: { reference: string }) => {
+          storefrontService
+            .verifyPaystackReference(response.reference)
+            .then(() => {
+              setPaystackStatus("success");
+              setOrderStep("confirmation");
+              addToast(
+                "Payment confirmed! Your order is processing.",
+                "success",
+                5000,
+              );
+            })
+            .catch(() => {
+              setPaystackStatus("failed");
+              addToast(
+                "Payment received but verification is pending.",
+                "warning",
+                8000,
+              );
+            });
+        };
+
+        const onClose = () => {
+          addToast(
+            "Payment window closed — no charge was made.",
+            "info",
+            4000,
+          );
+        };
+
+        const popup = new PaystackPopCtor();
+        popup.resumeTransaction(accessCode, { onSuccess, onCancel: onClose });
       } catch (err) {
         console.error("[PublicStore] Paystack inline checkout failed", err);
         addToast(
@@ -613,7 +605,7 @@ const PublicStore: React.FC = () => {
         );
       }
     },
-    [addToast, businessName, storeData],
+    [addToast],
   );
 
   const submitOrder = useCallback(async () => {
@@ -639,7 +631,7 @@ const PublicStore: React.FC = () => {
               ? activeOrder.customerName.trim()
               : customerName.trim(),
           phone,
-          email: storeData?.storefront.contactInfo?.email || undefined,
+          email: getPaystackEmail(phone),
           ...(activeOrder.ghanaCardNumber && {
             ghanaCardNumber: activeOrder.ghanaCardNumber,
           }),
@@ -665,6 +657,7 @@ const PublicStore: React.FC = () => {
       const paystackUrl =
         paystackData?.authorizationUrl || paystackData?.authorization_url;
       const reference = paystackData?.reference;
+      const accessCode = (result?.paystack as any)?.accessCode || "";
 
       setOrderResult(result);
       // Save to device localStorage for order tracking (24 h TTL)
@@ -688,6 +681,7 @@ const PublicStore: React.FC = () => {
         await openPaystackInline(
           reference,
           result.total ?? activeOrder.bundle.price,
+          accessCode,
         );
       }
     } catch (err) {

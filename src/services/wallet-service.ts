@@ -113,10 +113,12 @@ export const walletService = {
     amount: number
   ): Promise<{
     reference: string;
+    accessCode: string;
+    authorizationUrl: string;
     publicKey: string;
     /** Gross amount Paystack charges the agent (may include fee if delegated) */
     chargeAmount: number;
-    /** Amount in pesewas to pass to PaystackPop.setup */
+    /** Amount in pesewas to pass to PaystackPop.resumeTransaction */
     amountPesewas: number;
     /** Original requested wallet credit amount */
     targetCreditAmount: number;

@@ -65,7 +65,7 @@ interface OrderDialogProps {
   // Step 3 state
   orderResult: PublicOrderResult | null;
   paystackStatus: string;
-  openPaystackInline: (ref: string, amount: number) => void;
+  openPaystackInline: (ref: string, amount: number, accessCode: string) => void;
   closeOrderDialog: () => void;
   setShowTrackDrawer: (show: boolean) => void;
   storefrontContact?: {
@@ -921,6 +921,7 @@ export const OrderDialog = memo(
                                   openPaystackInline(
                                     paystackReference,
                                     orderResult.total,
+                                    orderResult.paystack?.accessCode || "",
                                   )
                                 }
                                 className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white"

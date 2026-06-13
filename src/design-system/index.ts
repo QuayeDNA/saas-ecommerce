@@ -43,6 +43,8 @@ export {
   FullPageLoading,
   InlineLoading,
 } from "./components/loading";
+export { EmptyState } from "./components/empty-state";
+export { ErrorState } from "./components/error-state";
 export { Hero, HeroTitle, HeroSubtitle } from "./components/hero";
 export { Feature, FeatureGrid } from "./components/feature";
 export { Container } from "./components/container";

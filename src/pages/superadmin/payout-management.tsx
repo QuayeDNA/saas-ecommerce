@@ -14,14 +14,17 @@ import {
   Badge,
   Button,
   Card,
+  CardBody,
+  CardFooter,
   Dialog,
   DialogBody,
   DialogFooter,
   DialogHeader,
+  EmptyState,
   FormField,
   Input,
   Pagination,
-  Spinner,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -111,7 +114,7 @@ function destLabel(dest?: PayoutRequestItem['destination']) {
     return (
       <div className="space-y-0.5">
         <div>{`${provider}${number}`.trim()}</div>
-        {name ? <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{name}</div> : null}
+        {name ? <div className="text-xs text-[var(--text-secondary)]">{name}</div> : null}
       </div>
     );
   }
@@ -121,7 +124,7 @@ function destLabel(dest?: PayoutRequestItem['destination']) {
   return (
     <div className="space-y-0.5">
       <div>{`${account}${bank}`.trim()}</div>
-      {name ? <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{name}</div> : null}
+      {name ? <div className="text-xs text-[var(--text-secondary)]">{name}</div> : null}
     </div>
   );
 }
@@ -164,16 +167,15 @@ function statusIcon(s: string) {
   }
 }
 
-function statusSectionStyle(s: string): React.CSSProperties {
-  const base: React.CSSProperties = { color: 'white' };
+function statusBgClass(s: string) {
   switch (s) {
-    case 'pending': return { ...base, backgroundColor: 'color-mix(in srgb, var(--warning) 60%, transparent)', borderColor: 'color-mix(in srgb, var(--warning) 50%, transparent)' };
-    case 'approved': return { ...base, backgroundColor: 'color-mix(in srgb, var(--color-primary) 60%, transparent)', borderColor: 'color-mix(in srgb, var(--color-primary) 50%, transparent)' };
-    case 'processing': return { ...base, backgroundColor: 'color-mix(in srgb, var(--color-primary) 60%, transparent)', borderColor: 'color-mix(in srgb, var(--color-primary) 50%, transparent)' };
-    case 'completed': return { ...base, backgroundColor: 'color-mix(in srgb, var(--success) 60%, transparent)', borderColor: 'color-mix(in srgb, var(--success) 50%, transparent)' };
+    case 'pending': return 'border-[color:var(--warning)] bg-[color:var(--warning)]/10';
+    case 'approved': return 'border-[color:var(--color-primary)] bg-[color:var(--color-primary)]/10';
+    case 'processing': return 'border-[color:var(--color-primary)] bg-[color:var(--color-primary)]/10';
+    case 'completed': return 'border-[color:var(--success)] bg-[color:var(--success)]/10';
     case 'rejected':
-    case 'failed': return { ...base, backgroundColor: 'color-mix(in srgb, var(--error) 60%, transparent)', borderColor: 'color-mix(in srgb, var(--error) 50%, transparent)' };
-    default: return { ...base, backgroundColor: 'color-mix(in srgb, var(--text-muted) 60%, transparent)', borderColor: 'color-mix(in srgb, var(--text-muted) 50%, transparent)' };
+    case 'failed': return 'border-[color:var(--error)] bg-[color:var(--error)]/10';
+    default: return 'border-[var(--border-color)] bg-[var(--bg-surface-alt)]';
   }
 }
 
@@ -199,13 +201,13 @@ const ModeBanner: React.FC<ModeBannerProps> = ({ status, loading }) => {
 
   if (status.autoPayoutEnabled && status.canAutoPayout) {
     return (
-      <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--success) 20%, transparent)' }}>
-        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'var(--success)' }}>
+      <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm bg-success/5 border border-success/20 text-success">
+        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-success">
           <Zap className="w-3.5 h-3.5 text-white" />
         </div>
         <div>
-          <p className="font-semibold" style={{ color: 'var(--success)' }}>Auto Payout Mode</p>
-          <p className="mt-0.5" style={{ color: 'var(--success)' }}>
+          <p className="font-semibold">Auto Payout Mode</p>
+          <p className="mt-0.5">
             Agent requests trigger an immediate Paystack transfer. No admin action is required.
             Completed and failed transfers appear in history below.
           </p>
@@ -216,13 +218,13 @@ const ModeBanner: React.FC<ModeBannerProps> = ({ status, loading }) => {
 
   if (!status.paystackConfigured) {
     return (
-      <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--warning) 20%, transparent)' }}>
-        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'var(--warning)' }}>
+      <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm bg-warning/5 border border-warning/20 text-warning">
+        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-warning">
           <Info className="w-3.5 h-3.5 text-white" />
         </div>
         <div>
-          <p className="font-semibold" style={{ color: 'var(--warning)' }}>Manual Payout Mode — Paystack not configured</p>
-          <p className="mt-0.5" style={{ color: 'var(--warning)' }}>
+          <p className="font-semibold">Manual Payout Mode — Paystack not configured</p>
+          <p className="mt-0.5">
             Approve requests, then send money manually (MoMo/bank), and click <strong>Mark Paid</strong> to record completion.
             Configure Paystack in <em>Settings → API</em> to enable the automatic transfer option.
           </p>
@@ -232,13 +234,13 @@ const ModeBanner: React.FC<ModeBannerProps> = ({ status, loading }) => {
   }
 
   return (
-    <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)' }}>
-      <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'var(--color-primary)' }}>
+    <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm bg-primary/5 border border-primary/20 text-primary">
+      <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-primary">
         <Send className="w-3.5 h-3.5 text-white" />
       </div>
       <div>
-        <p className="font-semibold" style={{ color: 'var(--color-primary)' }}>Semi-Auto Payout Mode</p>
-        <p className="mt-0.5" style={{ color: 'var(--color-primary)' }}>
+        <p className="font-semibold">Semi-Auto Payout Mode</p>
+        <p className="mt-0.5">
           Approve each request to deduct the agent's earnings, then click <strong>Send via Paystack</strong> to trigger the transfer, or <strong>Mark Paid</strong> if you sent money manually.
         </p>
       </div>
@@ -267,9 +269,9 @@ const ActionCell: React.FC<ActionCellProps> = ({
 
   // Auto mode: no manual actions (transfers happen automatically)
   if (autoMode) {
-    if (status === 'processing') return <span className="text-xs flex items-center gap-1" style={{ color: 'var(--color-primary)' }}><Loader2 className="w-3 h-3 animate-spin" /> Processing…</span>;
-    if (status === 'completed') return <span className="text-xs" style={{ color: 'var(--success)' }}>Completed</span>;
-    if (status === 'failed') return <span className="text-xs" style={{ color: 'var(--error)' }}>Failed — earnings refunded</span>;
+    if (status === 'processing') return <span className="text-xs flex items-center gap-1 text-[var(--color-primary)]"><Loader2 className="w-3 h-3 animate-spin" /> Processing…</span>;
+    if (status === 'completed') return <span className="text-xs text-[var(--success)]">Completed</span>;
+    if (status === 'failed') return <span className="text-xs text-[var(--error)]">Failed — earnings refunded</span>;
     return null;
   }
 
@@ -307,7 +309,7 @@ const ActionCell: React.FC<ActionCellProps> = ({
   if (status === 'processing') {
     return (
       <div className="flex flex-wrap gap-2">
-        <span className="text-xs flex items-center gap-1 mr-1" style={{ color: 'var(--color-primary)' }}>
+        <span className="text-xs flex items-center gap-1 mr-1 text-[var(--color-primary)]">
           <Loader2 className="w-3 h-3 animate-spin" /> Awaiting Paystack…
         </span>
         <Button size="xs" variant="success" onClick={() => onMarkPaid(payout)} disabled={loading}>
@@ -332,6 +334,143 @@ const ActionCell: React.FC<ActionCellProps> = ({
 
   return null;
 };
+
+// ─── Payout table row (reusable) ─────────────────────────────────────────────
+
+interface PayoutRowProps {
+  payout: PayoutRequestItem;
+  autoMode: boolean;
+  paystackConfigured: boolean;
+  loading: boolean;
+  onApprove: (p: PayoutRequestItem) => void;
+  onProcess: (p: PayoutRequestItem) => void;
+  onMarkPaid: (p: PayoutRequestItem) => void;
+  onReject: (p: PayoutRequestItem) => void;
+}
+
+const PayoutRow: React.FC<PayoutRowProps> = ({
+  payout, autoMode, paystackConfigured, loading,
+  onApprove, onProcess, onMarkPaid, onReject,
+}) => (
+  <TableRow>
+    <TableCell>
+      <div className="font-medium">{fmtDate(payout.requestedAt)}</div>
+      <div className="text-xs text-[var(--text-muted)]">{fmtDate(payout.createdAt)}</div>
+    </TableCell>
+
+    <TableCell>
+      <div className="font-medium">{userName(payout.user)}</div>
+      <div className="text-xs text-[var(--text-muted)]">{userEmail(payout.user)}</div>
+    </TableCell>
+
+    <TableCell>
+      <div className="font-semibold">{fmt(payout.amount)}</div>
+      {payout.transferFee != null && (
+        <div className="text-xs text-[var(--warning)]">Fee: {fmt(payout.transferFee)}</div>
+      )}
+      {payout.netAmount != null && (
+        <div className="text-xs font-medium text-[var(--success)]">Net: {fmt(payout.netAmount)}</div>
+      )}
+    </TableCell>
+
+    <TableCell>
+      <div className="flex items-center gap-1.5">
+        {payout.destination?.type === 'mobile_money'
+          ? <Smartphone className="w-3.5 h-3.5 shrink-0 text-[var(--text-muted)]" />
+          : <Building2 className="w-3.5 h-3.5 shrink-0 text-[var(--text-muted)]" />
+        }
+        {destLabel(payout.destination)}
+      </div>
+    </TableCell>
+
+    <TableCell>
+      <Badge colorScheme={statusColor(payout.status)} size="sm">
+        <span className="flex items-center gap-1">
+          {statusIcon(payout.status)}
+          {statusLabel(payout.status)}
+        </span>
+      </Badge>
+      {payout.paystackTransfer?.failureReason && (
+        <div className="text-xs mt-1 max-w-[180px] text-[var(--error)]" title={payout.paystackTransfer.failureReason}>
+          {payout.paystackTransfer.failureReason}
+        </div>
+      )}
+      {payout.rejectionReason && payout.status === 'rejected' && (
+        <div className="text-xs mt-1 max-w-[180px] text-[var(--text-muted)]" title={payout.rejectionReason}>
+          {payout.rejectionReason}
+        </div>
+      )}
+    </TableCell>
+
+    <TableCell className="text-right">
+      <ActionCell
+        payout={payout}
+        autoMode={autoMode}
+        paystackConfigured={paystackConfigured}
+        loading={loading}
+        onApprove={onApprove}
+        onProcess={onProcess}
+        onMarkPaid={onMarkPaid}
+        onReject={onReject}
+      />
+    </TableCell>
+  </TableRow>
+);
+
+PayoutRow.displayName = 'PayoutRow';
+
+// ─── Skeleton loaders ─────────────────────────────────────────────────────────
+
+const PayoutTableSkeleton: React.FC = () => (
+  <div className="hidden sm:block">
+    <div className="min-w-[760px]">
+      <div className="grid grid-cols-6 gap-4 px-4 py-3 bg-[var(--bg-surface-alt)]">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} height="1rem" width="60%" />
+        ))}
+      </div>
+      {Array.from({ length: 5 }).map((_, row) => (
+        <div key={row} className="grid grid-cols-6 gap-4 px-4 py-3 border-t border-[var(--border-color)]">
+          {Array.from({ length: 6 }).map((_, col) => (
+            <Skeleton key={col} height={col === 4 ? '1.5rem' : '1rem'} width={col === 5 ? '40%' : '80%'} />
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const PayoutMobileSkeleton: React.FC = () => (
+  <div className="sm:hidden space-y-3">
+    {Array.from({ length: 3 }).map((_, i) => (
+      <Card key={i} variant="interactive" size="sm">
+        <CardBody className="space-y-3 pt-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Skeleton variant="circular" width={44} height={44} />
+              <div className="space-y-1.5">
+                <Skeleton height="0.875rem" width="8rem" />
+                <Skeleton height="0.75rem" width="10rem" />
+              </div>
+            </div>
+            <Skeleton height="1.25rem" width="4rem" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {Array.from({ length: 4 }).map((_, j) => (
+              <div key={j} className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-2.5 space-y-1.5">
+                <Skeleton height="0.625rem" width="3rem" />
+                <Skeleton height="0.75rem" width="70%" />
+              </div>
+            ))}
+          </div>
+        </CardBody>
+        <CardFooter className="px-3 py-2.5">
+          <Skeleton height="1.5rem" width="5rem" />
+        </CardFooter>
+      </Card>
+    ))}
+  </div>
+);
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
@@ -513,13 +652,13 @@ export default function PayoutManagementPage() {
         return {
           title: 'Approve Payout',
           body: (
-            <div className="space-y-3 text-sm" style={{ color: 'var(--text-primary)' }}>
+            <div className="space-y-3 text-sm text-[var(--text-primary)]">
               <p>Approving will deduct <strong>{fmt(p.amount)}</strong> from <strong>{userName(p.user)}</strong>&apos;s earnings balance.</p>
               {!isAutoMode && psConfigured && (
-                <p style={{ color: 'var(--color-primary)' }}>After approval, use <strong>Send via Paystack</strong> or <strong>Mark Paid</strong> to complete the transfer.</p>
+                <p className="text-primary">After approval, use <strong>Send via Paystack</strong> or <strong>Mark Paid</strong> to complete the transfer.</p>
               )}
               {!isAutoMode && !psConfigured && (
-                <p style={{ color: 'var(--warning)' }}>Paystack is not configured. After approval, send the funds manually and use <strong>Mark Paid</strong>.</p>
+                <p className="text-warning">Paystack is not configured. After approval, send the funds manually and use <strong>Mark Paid</strong>.</p>
               )}
             </div>
           ),
@@ -531,16 +670,16 @@ export default function PayoutManagementPage() {
         return {
           title: 'Send via Paystack',
           body: (
-            <div className="space-y-3 text-sm" style={{ color: 'var(--text-primary)' }}>
+            <div className="space-y-3 text-sm text-[var(--text-primary)]">
               <p>This transfers <strong>{fmt(p.netAmount ?? p.amount)}</strong> from your Paystack account balance directly to the agent.</p>
-              <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--text-secondary)' }}>
+              <ul className="list-disc list-inside space-y-1 text-[var(--text-secondary)]">
                 <li>Requires sufficient Paystack balance and Transfers enabled</li>
                 <li>If it fails, the payout stays approved so you can retry or use Mark Paid</li>
               </ul>
               {p.paystackTransfer?.failureReason && (
-                <div className="p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--error) 30%, transparent)' }}>
-                  <p className="font-medium text-xs" style={{ color: 'var(--error)' }}>Previous failure:</p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--error)' }}>{p.paystackTransfer.failureReason}</p>
+                <div className="p-3 rounded-lg bg-error/10 border border-error/30 text-error">
+                  <p className="font-medium text-xs">Previous failure:</p>
+                  <p className="text-xs mt-1">{p.paystackTransfer.failureReason}</p>
                 </div>
               )}
             </div>
@@ -553,9 +692,9 @@ export default function PayoutManagementPage() {
         return {
           title: 'Mark as Paid',
           body: (
-            <div className="space-y-3 text-sm" style={{ color: 'var(--text-primary)' }}>
+            <div className="space-y-3 text-sm text-[var(--text-primary)]">
               <p>Use this after sending the money manually (MoMo/bank/Paystack dashboard).</p>
-              <ol className="list-decimal list-inside space-y-1" style={{ color: 'var(--text-secondary)' }}>
+              <ol className="list-decimal list-inside space-y-1 text-[var(--text-secondary)]">
                 <li>Send <strong>{fmt(p.netAmount ?? p.amount)}</strong> to {destLabel(p.destination)}</li>
                 <li>Enter the transaction reference below (recommended)</li>
                 <li>Click Mark as Paid to update the agent&apos;s dashboard</li>
@@ -577,7 +716,7 @@ export default function PayoutManagementPage() {
         return {
           title: 'Reject Payout',
           body: (
-            <div className="space-y-3 text-sm text-gray-700">
+            <div className="space-y-3 text-sm text-[var(--text-secondary)]">
               <p>Rejecting will notify the agent. If their earnings were already deducted, they will be refunded automatically.</p>
               <FormField label="Reason (optional)">
                 <Input
@@ -602,18 +741,15 @@ export default function PayoutManagementPage() {
     <div className="space-y-4 pb-6">
 
       {/* ── Page header ──────────────────────────────────────────────────────── */}
-      <div
-        className="rounded-xl p-4 sm:p-6"
-        style={{ background: 'var(--gradient-primary)', color: 'white' }}
-      >
+      <div className="rounded-xl p-4 sm:p-6 border border-border-color">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+            <div className="p-2.5 rounded-xl bg-white/20">
               <ArrowDownToLine className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-bold">Payout Management</h1>
-              <p className="text-xs sm:text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>
+              <p className="text-xs sm:text-sm mt-0.5 text-white/70">
                 {modeLoading
                   ? 'Loading mode…'
                   : isAutoMode
@@ -627,8 +763,7 @@ export default function PayoutManagementPage() {
           <Button
             variant="secondary"
             size="sm"
-            className="self-start sm:self-auto"
-            style={{ borderColor: 'rgba(255,255,255,0.4)', color: 'white' }}
+            className="self-start sm:self-auto border-white/40 text-white"
             onClick={refresh}
             leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
           >
@@ -637,65 +772,84 @@ export default function PayoutManagementPage() {
         </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {[
-            {
-              label: 'Total Profit',
-              value: summary.totalProfit,
-              icon: <DollarSign className="w-4 h-4" />,
-              bg: 'rgba(255,255,255,0.15)',
-              border: undefined,
-              note: 'Available + withdrawn',
-            },
-            {
-              label: 'Available Earnings',
-              value: summary.availableEarnings,
-              icon: <CheckCircle2 className="w-4 h-4" />,
-              bg: 'color-mix(in srgb, var(--success) 30%, transparent)',
-              border: 'color-mix(in srgb, var(--success) 40%, transparent)',
-            },
-            {
-              label: 'Total Withdrawn',
-              value: summary.totalWithdrawn,
-              icon: <ArrowDownToLine className="w-4 h-4" />,
-              bg: 'rgba(255,255,255,0.15)',
-              border: undefined,
-              note: summary.processingAmount
-                ? `Processing: ${fmt(summary.processingAmount)}`
-                : undefined,
-            },
-          ].map(({ label, value, icon, bg, border, note }) => (
-            <div key={label} className="rounded-lg px-3 py-2.5 flex flex-col gap-2" style={{ backgroundColor: bg, border: border ? `1px solid ${border}` : undefined }}>
-              <div className="flex items-center gap-2">
-                <span className="shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }}>{icon}</span>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</p>
-                  <p className="font-bold text-sm sm:text-base" style={{ color: 'white' }}>
-                    {summaryLoading ? 'Loading…' : fmt(value)}
-                  </p>
-                </div>
+          <div className="rounded-lg px-3 py-2.5 flex flex-col gap-2 bg-white/15">
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-white/70"><DollarSign className="w-4 h-4" /></span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-white/70">Total Profit</p>
+                <p className="font-bold text-sm sm:text-base text-white">
+                  {summaryLoading ? <Skeleton width="4rem" height="1rem" className="bg-white/20" /> : fmt(summary.totalProfit)}
+                </p>
               </div>
-              {note ? <p className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>{note}</p> : null}
             </div>
-          ))}
+            <p className="text-xs text-white/70">Available + withdrawn</p>
+          </div>
+
+          <div className="rounded-lg px-3 py-2.5 flex flex-col gap-2 bg-success/30 border border-success/40">
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-white/70"><CheckCircle2 className="w-4 h-4" /></span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-white/70">Available Earnings</p>
+                <p className="font-bold text-sm sm:text-base text-white">
+                  {summaryLoading ? <Skeleton width="4rem" height="1rem" className="bg-white/20" /> : fmt(summary.availableEarnings)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg px-3 py-2.5 flex flex-col gap-2 bg-white/15">
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-white/70"><ArrowDownToLine className="w-4 h-4" /></span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-white/70">Total Withdrawn</p>
+                <p className="font-bold text-sm sm:text-base text-white">
+                  {summaryLoading ? <Skeleton width="4rem" height="1rem" className="bg-white/20" /> : fmt(summary.totalWithdrawn)}
+                </p>
+              </div>
+            </div>
+            {summary.processingAmount ? (
+              <p className="text-xs text-white/70">Processing: {fmt(summary.processingAmount)}</p>
+            ) : null}
+          </div>
         </div>
 
         {/* Stats strip */}
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-          {[
-            { label: 'Total', value: pagination.total, icon: <DollarSign className="w-4 h-4" />, bg: 'rgba(255,255,255,0.15)' },
-            { label: 'Pending', value: pendingCount, icon: <Clock className="w-4 h-4" />, bg: 'color-mix(in srgb, var(--warning) 30%, transparent)', border: 'color-mix(in srgb, var(--warning) 40%, transparent)' },
-            { label: 'Processing', value: processingCount, icon: <Loader2 className="w-4 h-4" />, bg: 'color-mix(in srgb, var(--color-primary) 30%, transparent)', border: 'color-mix(in srgb, var(--color-primary) 40%, transparent)' },
-            { label: 'Completed', value: completedCount, icon: <CheckCircle2 className="w-4 h-4" />, bg: 'color-mix(in srgb, var(--success) 30%, transparent)', border: 'color-mix(in srgb, var(--success) 40%, transparent)' },
-            { label: 'Failed', value: failedCount, icon: <XCircle className="w-4 h-4" />, bg: 'color-mix(in srgb, var(--error) 30%, transparent)', border: 'color-mix(in srgb, var(--error) 40%, transparent)' },
-          ].map(({ label, value, icon, bg, border }) => (
-            <div key={label} className="rounded-lg px-3 py-2.5 flex items-center gap-2" style={{ backgroundColor: bg, border: border ? `1px solid ${border}` : undefined }}>
-              <span className="shrink-0" style={{ color: 'rgba(255,255,255,0.7)' }}>{icon}</span>
-              <div className="min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</p>
-                <p className="font-bold text-sm sm:text-base" style={{ color: 'white' }}>{value}</p>
-              </div>
+          <div className="rounded-lg px-3 py-2.5 flex items-center gap-2 bg-white/15">
+            <span className="shrink-0 text-white/70"><DollarSign className="w-4 h-4" /></span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-white/70">Total</p>
+              <p className="font-bold text-sm sm:text-base text-white">{pagination.total}</p>
             </div>
-          ))}
+          </div>
+          <div className="rounded-lg px-3 py-2.5 flex items-center gap-2 bg-warning/30 border border-warning/40">
+            <span className="shrink-0 text-white/70"><Clock className="w-4 h-4" /></span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-white/70">Pending</p>
+              <p className="font-bold text-sm sm:text-base text-white">{pendingCount}</p>
+            </div>
+          </div>
+          <div className="rounded-lg px-3 py-2.5 flex items-center gap-2 bg-primary/30 border border-primary/40">
+            <span className="shrink-0 text-white/70"><Loader2 className="w-4 h-4" /></span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-white/70">Processing</p>
+              <p className="font-bold text-sm sm:text-base text-white">{processingCount}</p>
+            </div>
+          </div>
+          <div className="rounded-lg px-3 py-2.5 flex items-center gap-2 bg-success/30 border border-success/40">
+            <span className="shrink-0 text-white/70"><CheckCircle2 className="w-4 h-4" /></span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-white/70">Completed</p>
+              <p className="font-bold text-sm sm:text-base text-white">{completedCount}</p>
+            </div>
+          </div>
+          <div className="rounded-lg px-3 py-2.5 flex items-center gap-2 bg-error/30 border border-error/40">
+            <span className="shrink-0 text-white/70"><XCircle className="w-4 h-4" /></span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-white/70">Failed</p>
+              <p className="font-bold text-sm sm:text-base text-white">{failedCount}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -704,9 +858,9 @@ export default function PayoutManagementPage() {
 
       {/* ── Approved queue notice (semi-auto/manual only) ─────────────────── */}
       {!isAutoMode && approvedCount > 0 && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)' }}>
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--color-primary)' }} />
-          <div style={{ color: 'var(--color-primary)' }}>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm bg-primary/5 border border-primary/20 text-primary">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div>
             <span className="font-semibold">{approvedCount} approved payout{approvedCount > 1 ? 's' : ''} waiting for transfer.</span>{' '}
             {psConfigured
               ? 'Use "Send via Paystack" to trigger the transfer automatically, or "Mark Paid" if you\'ve sent it manually.'
@@ -732,103 +886,86 @@ export default function PayoutManagementPage() {
       />
 
       {/* ── Table ────────────────────────────────────────────────────────────── */}
-      <Card className="overflow-hidden rounded-xl shadow-lg" style={{ background: 'var(--gradient-primary)', color: 'white' }}>
+      <div className="overflow-hidden rounded-xl shadow-lg">
         {loading ? (
-          <div className="p-8 flex items-center justify-center gap-3" style={{ color: 'rgba(255,255,255,0.7)' }}>
-            <Spinner size="sm" />
-            <span>Loading payouts…</span>
-          </div>
+          <>
+            <PayoutTableSkeleton />
+            <PayoutMobileSkeleton />
+          </>
         ) : payouts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3" style={{ color: 'rgba(255,255,255,0.6)' }}>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
-              <ArrowDownToLine className="text-2xl" style={{ color: 'rgba(255,255,255,0.6)' }} />
-            </div>
-            <div className="text-center">
-              <p className="font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>No payouts found</p>
-              <p className="text-sm mt-0.5">
-                {hasFilters ? 'Try adjusting your filters.' : 'No payout requests in the system yet.'}
-              </p>
-            </div>
-            {hasFilters && (
-              <Button variant="outline" size="sm" onClick={() => { setSearchTerm(''); setStatusFilter('all'); setDateRange({ startDate: '', endDate: '' }); setPagination(p => ({ ...p, page: 1 })); }}>
-                Clear filters
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            icon={<ArrowDownToLine className="text-2xl text-[var(--text-muted)]" />}
+            title="No payouts found"
+            description={hasFilters ? 'Try adjusting your filters.' : 'No payout requests in the system yet.'}
+            action={
+              hasFilters ? (
+                <Button variant="outline" size="sm" onClick={() => { setSearchTerm(''); setStatusFilter('all'); setDateRange({ startDate: '', endDate: '' }); setPagination(p => ({ ...p, page: 1 })); }}>
+                  Clear filters
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <>
             {/* Mobile card view */}
             <div className="sm:hidden space-y-3">
               {payouts.map((payout) => (
-                <div
-                  key={payout._id}
-                  className="rounded-xl border p-2 transition-shadow"
-                  style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(0,0,0,0.9)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.5)' }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.5)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.5)'; }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                        style={{ background: 'var(--gradient-primary)', color: 'white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.3)' }}
-                      >
-                        {userName(payout.user).charAt(0)}
+                <Card key={payout._id} variant="interactive" size="sm">
+                  <CardBody className="space-y-3 pt-0 pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 bg-gradient-to-br from-primary to-primary-hover text-white">
+                          {userName(payout.user).charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm truncate">{userName(payout.user)}</p>
+                          <p className="text-xs text-[var(--text-secondary)] truncate">{userEmail(payout.user)}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-sm truncate" style={{ color: 'white' }}>{userName(payout.user)}</p>
-                        <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.6)' }}>{userEmail(payout.user)}</p>
-                      </div>
+                      <Badge colorScheme={statusColor(payout.status)} size="xs">
+                        {statusLabel(payout.status)}
+                      </Badge>
                     </div>
-                    <Badge
-                      colorScheme={statusColor(payout.status)}
-                      size="xs"
-                    >
-                      {statusLabel(payout.status)}
-                    </Badge>
-                  </div>
 
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <div className="min-w-[45%] flex-1 rounded-3xl border p-3" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                      <p className="text-[11px] uppercase tracking-[0.18em] mb-2" style={{ color: 'rgba(255,255,255,0.6)' }}>Requested</p>
-                      <p className="text-sm font-semibold" style={{ color: 'white' }}>{fmtDate(payout.requestedAt)}</p>
-                      <p className="text-[11px] mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{fmtDate(payout.createdAt)}</p>
-                    </div>
-                    <div className="min-w-[45%] flex-1 rounded-3xl border p-3" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                      <p className="text-[11px] uppercase tracking-[0.18em] mb-2" style={{ color: 'rgba(255,255,255,0.6)' }}>Amount</p>
-                      <p className="text-sm font-semibold" style={{ color: 'white' }}>{fmt(payout.amount)}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        {payout.transferFee != null && (
-                          <p className="text-[11px]" style={{ color: 'var(--warning)' }}>Fee: {fmt(payout.transferFee)}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-2.5">
+                        <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Requested</p>
+                        <p className="text-xs font-semibold">{fmtDate(payout.requestedAt)}</p>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{fmtDate(payout.createdAt)}</p>
+                      </div>
+                      <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-2.5">
+                        <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Amount</p>
+                        <p className="text-xs font-semibold">{fmt(payout.amount)}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {payout.transferFee != null && (
+                            <p className="text-[10px] text-[var(--warning)]">Fee: {fmt(payout.transferFee)}</p>
+                          )}
+                          {payout.netAmount != null && (
+                            <p className="text-[10px] text-[var(--success)]">Net: {fmt(payout.netAmount)}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface-alt)] p-2.5">
+                        <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Destination</p>
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+                          {payout.destination?.type === 'mobile_money'
+                            ? <Smartphone className="w-3 h-3 shrink-0" />
+                            : <Building2 className="w-3 h-3 shrink-0" />
+                          }
+                          <span className="truncate">{destLabel(payout.destination)}</span>
+                        </div>
+                      </div>
+                      <div className={`rounded-lg border p-2.5 ${statusBgClass(payout.status)}`}>
+                        <p className="text-[10px] uppercase tracking-wider opacity-80 mb-1">Status</p>
+                        <p className="text-xs font-semibold">{statusLabel(payout.status)}</p>
+                        {payout.rejectionReason && payout.status === 'rejected' && (
+                          <p className="text-[10px] opacity-80 mt-1">{payout.rejectionReason}</p>
                         )}
-                        {payout.netAmount != null && (
-                          <p className="text-[11px]" style={{ color: 'var(--success)' }}>Net: {fmt(payout.netAmount)}</p>
-                        )}
                       </div>
                     </div>
-                  </div>
+                  </CardBody>
 
-                  <div className="mt-3 flex flex-wrap gap-3">
-                    <div className="min-w-[45%] flex-1 rounded-3xl border p-3" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                      <p className="text-[11px] uppercase tracking-[0.18em] mb-2" style={{ color: 'rgba(255,255,255,0.6)' }}>Destination</p>
-                      <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                        {payout.destination?.type === 'mobile_money'
-                          ? <Smartphone className="w-3 h-3" />
-                          : <Building2 className="w-3 h-3" />
-                        }
-                        <span className="truncate">{destLabel(payout.destination)}</span>
-                      </div>
-                    </div>
-                    <div className="min-w-[45%] flex-1 rounded-3xl border p-3" style={statusSectionStyle(payout.status)}>
-                      <p className="text-[11px] text-white/80 uppercase tracking-[0.18em] mb-2">Status</p>
-                      <p className="text-sm font-semibold">{statusLabel(payout.status)}</p>
-                      {payout.rejectionReason && payout.status === 'rejected' && (
-                        <p className="text-[11px] text-white/80 mt-2">{payout.rejectionReason}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <CardFooter className="px-3 py-3">
                     <ActionCell
                       payout={payout}
                       autoMode={!!isAutoMode}
@@ -839,92 +976,37 @@ export default function PayoutManagementPage() {
                       onMarkPaid={(p) => openConfirm('markPaid', p)}
                       onReject={(p) => openConfirm('reject', p)}
                     />
-                  </div>
-                </div>
+                  </CardFooter>
+                </Card>
               ))}
             </div>
 
             {/* Desktop table view */}
-            <div className="hidden sm:block overflow-x-auto">
+            <div className="hidden sm:block">
               <Table className="min-w-[760px]" variant="simple" size="md">
                 <TableHeader>
                   <TableRow>
-                    <TableHeaderCell style={{ color: 'rgba(255,255,255,0.8)' }}>Requested</TableHeaderCell>
-                    <TableHeaderCell style={{ color: 'rgba(255,255,255,0.8)' }}>Agent</TableHeaderCell>
-                    <TableHeaderCell style={{ color: 'rgba(255,255,255,0.8)' }}>Amount</TableHeaderCell>
-                    <TableHeaderCell style={{ color: 'rgba(255,255,255,0.8)' }}>Destination</TableHeaderCell>
-                    <TableHeaderCell style={{ color: 'rgba(255,255,255,0.8)' }}>Status</TableHeaderCell>
-                    <TableHeaderCell className="text-right" style={{ color: 'rgba(255,255,255,0.8)' }}>Actions</TableHeaderCell>
+                    <TableHeaderCell>Requested</TableHeaderCell>
+                    <TableHeaderCell>Agent</TableHeaderCell>
+                    <TableHeaderCell>Amount</TableHeaderCell>
+                    <TableHeaderCell>Destination</TableHeaderCell>
+                    <TableHeaderCell>Status</TableHeaderCell>
+                    <TableHeaderCell className="text-right">Actions</TableHeaderCell>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {payouts.map((payout) => (
-                    <TableRow key={payout._id} style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                    >
-                      <TableCell>
-                        <div className="text-sm font-medium" style={{ color: 'white' }}>{fmtDate(payout.requestedAt)}</div>
-                        <div className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>{fmtDate(payout.createdAt)}</div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="text-sm font-medium" style={{ color: 'white' }}>{userName(payout.user)}</div>
-                        <div className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>{userEmail(payout.user)}</div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="text-sm font-semibold" style={{ color: 'white' }}>{fmt(payout.amount)}</div>
-                        {payout.transferFee != null && (
-                          <div className="text-xs" style={{ color: 'var(--warning)' }}>Fee: {fmt(payout.transferFee)}</div>
-                        )}
-                        {payout.netAmount != null && (
-                          <div className="text-xs font-medium" style={{ color: 'var(--success)' }}>Net: {fmt(payout.netAmount)}</div>
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="flex items-center gap-1.5 text-sm" style={{ color: 'white' }}>
-                          {payout.destination?.type === 'mobile_money'
-                            ? <Smartphone className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.6)' }} />
-                            : <Building2 className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.6)' }} />
-                          }
-                          {destLabel(payout.destination)}
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge colorScheme={statusColor(payout.status)} size="sm">
-                          <span className="flex items-center gap-1">
-                            {statusIcon(payout.status)}
-                            {statusLabel(payout.status)}
-                          </span>
-                        </Badge>
-                        {payout.paystackTransfer?.failureReason && (
-                          <div className="text-xs mt-1 max-w-[180px]" style={{ color: 'var(--error)' }} title={payout.paystackTransfer.failureReason}>
-                            {payout.paystackTransfer.failureReason}
-                          </div>
-                        )}
-                        {payout.rejectionReason && payout.status === 'rejected' && (
-                          <div className="text-xs mt-1 max-w-[180px]" style={{ color: 'rgba(255,255,255,0.6)' }} title={payout.rejectionReason}>
-                            {payout.rejectionReason}
-                          </div>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <ActionCell
-                          payout={payout}
-                          autoMode={!!isAutoMode}
-                          paystackConfigured={psConfigured}
-                          loading={actionLoading === payout._id}
-                          onApprove={(p) => openConfirm('approve', p)}
-                          onProcess={(p) => openConfirm('process', p)}
-                          onMarkPaid={(p) => openConfirm('markPaid', p)}
-                          onReject={(p) => openConfirm('reject', p)}
-                        />
-                      </TableCell>
-                    </TableRow>
+                    <PayoutRow
+                      key={payout._id}
+                      payout={payout}
+                      autoMode={!!isAutoMode}
+                      paystackConfigured={psConfigured}
+                      loading={actionLoading === payout._id}
+                      onApprove={(p) => openConfirm('approve', p)}
+                      onProcess={(p) => openConfirm('process', p)}
+                      onMarkPaid={(p) => openConfirm('markPaid', p)}
+                      onReject={(p) => openConfirm('reject', p)}
+                    />
                   ))}
                 </TableBody>
               </Table>
@@ -934,7 +1016,7 @@ export default function PayoutManagementPage() {
 
         {/* ── Pagination ────────────────────────────────────────────────────────── */}
         {pagination.pages > 1 && !loading && (
-          <div className="px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+          <div className="px-4 py-3 border-t border-[var(--border-color)]">
             <Pagination
               currentPage={pagination.page}
               totalPages={pagination.pages}
@@ -947,7 +1029,7 @@ export default function PayoutManagementPage() {
             />
           </div>
         )}
-      </Card>
+      </div>
 
       {/* ── Confirm dialog ────────────────────────────────────────────────────── */}
       <Dialog isOpen={confirm.open} onClose={closeConfirm} size="sm">

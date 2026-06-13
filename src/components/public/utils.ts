@@ -33,7 +33,7 @@ export async function loadPaystackScript(): Promise<void> {
   if ((window as any).PaystackPop) return;
   return new Promise((resolve, reject) => {
     const s = document.createElement("script");
-    s.src = "https://js.paystack.co/v1/inline.js";
+    s.src = "https://js.paystack.co/v2/inline.js";
     s.async = true;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error("Failed to load Paystack script"));

@@ -138,22 +138,18 @@ export const LoadingTable: React.FC<LoadingTableProps> = ({
   columns = 4,
   className = ''
 }) => {
+  const gridStyle = { gridTemplateColumns: `repeat(${columns}, 1fr)` } as React.CSSProperties;
+
   return (
     <div className={`space-y-3 ${className}`}>
-      {/* Header */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+      <div className="grid gap-4" style={gridStyle}>
         {Array.from({ length: columns }).map((_, index) => (
           <Skeleton key={index} height="1.5rem" width="80%" />
         ))}
       </div>
-      
-      {/* Rows */}
+
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div
-          key={rowIndex}
-          className="grid gap-4"
-          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
-        >
+        <div key={rowIndex} className="grid gap-4" style={gridStyle}>
           {Array.from({ length: columns }).map((_, colIndex) => (
             <Skeleton key={colIndex} height="1.25rem" />
           ))}

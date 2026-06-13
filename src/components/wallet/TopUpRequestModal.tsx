@@ -79,7 +79,7 @@ async function loadPaystackScript(): Promise<void> {
   if ((window as any).PaystackPop) return;
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = 'https://js.paystack.co/v1/inline.js';
+    s.src = 'https://js.paystack.co/v2/inline.js';
     s.async = true;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error('Failed to load Paystack script'));
@@ -103,7 +103,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   const [minimumAmount, setMinimumAmount] = useState(10);
   const [paystackMinimum, setPaystackMinimum] = useState(0);
   const [paystackEnabled, setPaystackEnabled] = useState(false);
-  const [paystackPublicKey, setPaystackPublicKey] = useState<string | null>(null);
+  const [_paystackPublicKey, setPaystackPublicKey] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paystack'>('paystack');
 
   const [checkingPending, setCheckingPending] = useState(false);
@@ -275,63 +275,49 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
 
     setIsPaystackLoading(true);
     try {
-      // Get checkout config from server — no DB record created yet
+      // Get checkout config from server — transaction is already initialized
+      // server-side via POST /transaction/initialize. The returned accessCode
+      // lets us resume the pre-registered transaction.
       const init = await walletService.initiatePaystackTopUp(parsedAmount);
-      const { reference } = init;
-      const publicKey = init.publicKey || paystackPublicKey;
+      const { reference, accessCode } = init;
 
       if (!reference) throw new Error('Missing transaction reference from server');
-      if (!publicKey) throw new Error('Paystack public key unavailable');
+      if (!accessCode) throw new Error('Missing access code from server');
 
       await loadPaystackScript();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const PaystackPop = (window as any).PaystackPop;
-      if (!PaystackPop) throw new Error('Paystack inline script failed to load');
+      const PaystackPopCtor = (window as any).PaystackPop;
+      if (!PaystackPopCtor) throw new Error('Paystack inline script failed to load');
 
-      const handler = PaystackPop.setup({
-        key: publicKey,
-        email: user?.email,
-        amount: init.amountPesewas,   // gross charge in pesewas (includes fee if delegated)
-        currency: 'GHS',
-        ref: reference,
-        metadata: {
-          type: 'wallet_topup',
-          userId: user?.id ?? user?._id,
-          userName: user?.fullName,
-          targetCreditAmount: init.targetCreditAmount, // wallet credit amount (pre-fee)
-          chargeAmount: init.chargeAmount,
-          paystackFee: init.paystackFee,
-          platformFee: init.platformFee,
-          totalFee: init.totalFee,
-          feesDelegate: init.feesDelegate,
-        },
-        onClose: () => {
-          // Nothing to clean up in DB — the transaction only exists after payment
-          addToast('Payment window closed. No charge was made.', 'info', 4000);
-          setIsPaystackLoading(false);
-        },
-        callback: (response: { reference: string }) => {
-          // Immediately verify on the server so the wallet is credited
-          walletService
-            .verifyPaystackReference(response.reference)
-            .then(() => {
-              addToast('Payment successful! Your wallet has been credited.', 'success', 5000);
-              handleClose();
-            })
-            .catch((verifyErr) => {
-              console.error('[TopUpModal] Verification failed:', verifyErr);
-              addToast(
-                'Payment received but verification is pending. Your wallet will be updated shortly.',
-                'warning',
-                8000
-              );
-              handleClose();
-            });
-        },
-      });
+      const onSuccess = (response: { reference: string }) => {
+        // Immediately verify on the server so the wallet is credited
+        walletService
+          .verifyPaystackReference(response.reference || reference)
+          .then(() => {
+            addToast('Payment successful! Your wallet has been credited.', 'success', 5000);
+            handleClose();
+          })
+          .catch((verifyErr) => {
+            console.error('[TopUpModal] Verification failed:', verifyErr);
+            addToast(
+              'Payment received but verification is pending. Your wallet will be updated shortly.',
+              'warning',
+              8000
+            );
+            handleClose();
+          });
+      };
 
-      handler.openIframe();
+      const onClose = () => {
+        // Transaction was initialized server-side but user closed the popup.
+        // The PaystackVerificationTask will eventually expire.
+        addToast('Payment window closed. No charge was made.', 'info', 4000);
+        setIsPaystackLoading(false);
+      };
+
+      const popup = new PaystackPopCtor();
+      popup.resumeTransaction(accessCode, { onSuccess, onCancel: onClose });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to start Paystack checkout';
 

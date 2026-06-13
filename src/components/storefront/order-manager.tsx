@@ -235,7 +235,10 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
   const handleRetryPaystackVerification = async (order: StorefrontOrder) => {
     setIsProcessing(true);
     try {
-      const result = await storefrontService.verifyPaystackReference(`storefront_${order._id}`);
+      // Use the stored Paystack reference if available (saved at initialization time),
+      // otherwise fall back to the standard storefront_<id> pattern.
+      const paystackRef = order.storefrontData?.paymentMethod?.reference || `storefront_${order._id}`;
+      const result = await storefrontService.verifyPaystackReference(paystackRef);
       if (!result?.success) {
         throw new Error(result?.message || 'Verification did not succeed');
       }
@@ -243,11 +246,21 @@ export const OrderManager: React.FC<OrderManagerProps> = () => {
       loadOrders();
     } catch (error) {
       console.error('Retry paystack verification failed:', error);
-      addToast(
-        getApiErrorMessage(error, 'Verification failed. We will keep retrying in the background.'),
-        'error',
-      );
-      // Refresh list so the latest status is visible (may still be pending)
+      const errMsg = getApiErrorMessage(error);
+      // Paystack confirms the transaction was not successful (cancelled/failed) →
+      // no point retrying again. Mark the order so the agent can act.
+      if (errMsg?.toLowerCase().includes('cancelled') || errMsg?.toLowerCase().includes('not successful')) {
+        addToast(
+          `Payment was not completed on Paystack. ${errMsg}`,
+          'warning',
+          10000,
+        );
+      } else {
+        addToast(
+          errMsg || 'Verification failed. We will keep retrying in the background.',
+          'error',
+        );
+      }
       loadOrders();
     } finally {
       setIsProcessing(false);
