@@ -2,7 +2,8 @@ import { memo } from "react";
 import type { ThemeConfig } from "./types";
 
 // =============================================================================
-// StoreHeader — 3 layouts: Signal (minimal), Canvas (classic), Pulse (modern)
+// StoreHeader — Minimal · Classic · Modern
+// All colour decisions flow from `theme.primary` — no scattered hardcoded hex.
 // =============================================================================
 
 interface StoreHeaderProps {
@@ -21,7 +22,7 @@ interface StoreHeaderProps {
   storeLayout?: string;
 }
 
-// ─── Reusable tagline pool ───────────────────────────────────────────────────
+// ─── Tagline pool ─────────────────────────────────────────────────────────────
 const TAGLINES = [
   "Fast data, great prices — always.",
   "Your trusted data partner in Ghana.",
@@ -52,11 +53,32 @@ function pickTagline(name: string): string {
   return TAGLINES[hash % TAGLINES.length];
 }
 
-// =============================================================================
-// Signal — Dark, architectural, typography-forward
-// =============================================================================
+// ─── Shared logo component ────────────────────────────────────────────────────
+function StoreLogo({
+  src,
+  alt,
+  size = "md",
+}: {
+  src: string;
+  alt: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const dim = size === "sm" ? "h-12 w-12" : size === "lg" ? "h-24 w-24" : "h-16 w-16";
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={`${dim} rounded-2xl object-cover shrink-0`}
+      style={{ border: "2px solid rgba(255,255,255,0.2)" }}
+    />
+  );
+}
 
-function SignalLayout({
+// =============================================================================
+// Minimal — Logo + name on one line, tagline below, stark white background.
+// Feels like a premium app header rather than a promotional banner.
+// =============================================================================
+function MinimalLayout({
   theme,
   logoSrc,
   displayName,
@@ -69,74 +91,57 @@ function SignalLayout({
 }) {
   return (
     <header
-      className="relative overflow-hidden py-20 sm:py-28 px-4"
-      style={{ backgroundColor: "#0B1120" }}
+      className="px-4 py-8 sm:py-10"
+      style={{ backgroundColor: "var(--bg-surface)" }}
     >
-      {/* Grid dot pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-          backgroundSize: "24px 24px",
-        }}
-      />
-
-      {/* Brand accent vertical line — off-center, visible on sm+ */}
-      <div
-        className="absolute left-[12%] sm:left-[20%] top-0 bottom-0 w-px hidden sm:block pointer-events-none"
-        style={{
-          background: `linear-gradient(to bottom, transparent 10%, ${theme.primary} 30%, ${theme.primary} 70%, transparent 90%)`,
-        }}
-      />
-
-      <div className="relative max-w-2xl mx-auto text-center">
-        {/* Logo with ambient glow */}
-        <div className="relative inline-flex mb-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Logo + name row */}
+        <div className="flex items-center gap-4">
           <div
-            className="absolute inset-0 rounded-2xl blur-2xl"
-            style={{ backgroundColor: theme.primary, opacity: 0.3 }}
-          />
-          <img
-            src={logoSrc}
-            alt={displayName}
-            className="relative h-20 w-20 rounded-2xl object-cover animate-float"
-          />
+            className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center"
+            style={{ backgroundColor: `${theme.primary}15` }}
+          >
+            <img
+              src={logoSrc}
+              alt={displayName}
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div>
+            <h1
+              className="text-2xl sm:text-3xl font-bold leading-tight"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {displayName}
+            </h1>
+            {tagline && (
+              <p
+                className="text-sm mt-0.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {tagline}
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Thin brand accent rule */}
+        {/* Accent rule */}
         <div
-          className="w-10 h-[2px] mx-auto mb-6 rounded-full"
-          style={{ backgroundColor: theme.primary }}
+          className="mt-6 h-px"
+          style={{
+            background: `linear-gradient(to right, ${theme.primary}40, transparent)`,
+          }}
         />
-
-        {/* Display name — huge, light */}
-        <h1
-          className="text-5xl sm:text-7xl font-light tracking-wide text-white leading-none break-words animate-fade-slide-up"
-          style={{ fontFamily: "'Satoshi', var(--font-family, sans-serif)" }}
-        >
-          {displayName}
-        </h1>
-
-        {/* Tagline */}
-        {tagline && (
-          <p
-            className="mt-5 text-sm sm:text-base text-white max-w-lg mx-auto animate-fade-slide-up"
-            style={{ fontFamily: "'Satoshi', var(--font-family, sans-serif)" }}
-          >
-            {tagline}
-          </p>
-        )}
       </div>
     </header>
   );
 }
 
 // =============================================================================
-// Canvas — Editorial magazine, full-bleed hero + overlapping logo
+// Classic — Full-bleed banner hero with a solid info strip below.
+// Banner is optional; falls back to a gradient built from theme.primary.
 // =============================================================================
-
-function CanvasLayout({
+function ClassicLayout({
   theme,
   logoSrc,
   displayName,
@@ -153,98 +158,78 @@ function CanvasLayout({
   showBanner?: boolean;
   description?: string;
 }) {
-  const hasBanner = bannerUrl && showBanner !== false;
+  const hasBanner = !!(bannerUrl && showBanner !== false);
+
   return (
     <header>
-      {/* Hero Section */}
+      {/* Hero */}
       <div
-        className={`relative ${hasBanner ? "h-[50vh] min-h-[380px]" : "min-h-[300px] sm:min-h-[360px]"} overflow-hidden`}
-        style={!hasBanner ? { background: theme.gradient } : undefined}
+        className="relative overflow-hidden"
+        style={{
+          minHeight: hasBanner ? 260 : 200,
+          background: hasBanner ? undefined : theme.gradient,
+        }}
       >
         {hasBanner && (
           <>
             <img
               src={bannerUrl!}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover animate-ken-burns"
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
             />
-            {/* Multilayer gradient overlay — dark at bottom, transparent at top */}
+            {/* Scrim — brand-tinted, heavier at bottom so text is always legible */}
             <div
               className="absolute inset-0"
               style={{
-                background: `linear-gradient(to top, ${theme.primary}ee 0%, ${theme.primary}88 30%, transparent 60%)`,
+                background: `linear-gradient(to top, ${theme.primary}cc 0%, ${theme.primary}55 45%, transparent 75%)`,
               }}
             />
           </>
         )}
 
-        {/* Grain texture overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-          }}
-        />
-
-        {/* Decorative shapes */}
-        <div className="absolute top-8 right-8 w-40 h-40 rounded-full border border-white/10 pointer-events-none" />
-        <div className="absolute top-12 right-12 w-24 h-24 rounded-full bg-white/[0.04] pointer-events-none" />
-
-        {/* Logo — top-left masthead position */}
-        <div className="absolute top-6 left-6 sm:top-8 sm:left-10 z-10">
-          <img
-            src={logoSrc}
-            alt={displayName}
-            className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover border-2 border-white/30 shadow-2xl"
-          />
+        {/* Logo — top-left */}
+        <div className="absolute top-5 left-5 sm:top-6 sm:left-8 z-10">
+          <StoreLogo src={logoSrc} alt={displayName} size="sm" />
         </div>
 
-        {/* Business name — bottom-left, always white */}
-        <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-10 right-6 z-10 animate-fade-slide-up">
+        {/* Store name — bottom-left */}
+        <div className="absolute bottom-5 left-5 sm:bottom-6 sm:left-8 right-6 z-10">
           <h1
-            className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none"
-            style={{
-              color: "#FFFFFF",
-              textShadow: "0 4px 30px rgba(0,0,0,0.4)",
-              fontFamily: "'Cabinet Grotesk', var(--font-family, sans-serif)",
-            }}
+            className="text-3xl sm:text-5xl font-black tracking-tight leading-none text-white"
+            style={{ textShadow: "0 2px 16px rgba(0,0,0,0.35)" }}
           >
             {displayName}
           </h1>
         </div>
       </div>
 
-      {/* Info strip below hero */}
+      {/* Info strip */}
       <div
-        className="pt-6 pb-5 px-4 sm:px-6"
-        style={{ backgroundColor: "var(--bg-muted)" }}
+        className="px-4 sm:px-8 py-4"
+        style={{ backgroundColor: "var(--bg-surface)", borderBottom: "1px solid var(--border-color)" }}
       >
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            {/* Tagline with editorial left accent bar */}
-            <div className="flex items-start gap-3 max-w-xl">
-              <div
-                className="w-1 h-10 rounded-full shrink-0 mt-1"
-                style={{ backgroundColor: theme.primary }}
-              />
-              <div>
-                <p
-                  className="text-base sm:text-lg italic"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {tagline}
-                </p>
-                {description && (
-                  <p
-                    className="text-xs sm:text-sm mt-1"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    {description}
-                  </p>
-                )}
-              </div>
-            </div>
+        <div className="max-w-7xl mx-auto flex items-start gap-3">
+          {/* Accent bar */}
+          <div
+            className="w-1 rounded-full shrink-0 mt-0.5 self-stretch min-h-[2rem]"
+            style={{ backgroundColor: theme.primary }}
+          />
+          <div>
+            <p
+              className="text-sm sm:text-base font-medium"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {tagline}
+            </p>
+            {description && (
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {description}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -253,10 +238,10 @@ function CanvasLayout({
 }
 
 // =============================================================================
-// Pulse — Animated gradient hero with geometric shapes & glow
+// Modern — Gradient hero, centered logo + name, animated live badge.
+// Uses `theme.gradient` so colour is always on-brand.
 // =============================================================================
-
-function PulseLayout({
+function ModernLayout({
   theme,
   logoSrc,
   displayName,
@@ -273,101 +258,63 @@ function PulseLayout({
 }) {
   return (
     <header
-      className="relative overflow-hidden min-h-[420px] sm:min-h-[520px] flex items-center animate-gradient"
+      className="relative overflow-hidden flex items-center animate-gradient"
       style={{
+        minHeight: 340,
         backgroundImage: theme.gradient,
+        backgroundSize: "200% 200%",
       }}
     >
-      {/* Banner overlay */}
+      {/* Optional banner photo at low opacity for texture */}
       {bannerUrl && showBanner !== false && (
         <img
           src={bannerUrl}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay animate-ken-burns"
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay"
         />
       )}
 
-      {/* Floating geometric shapes */}
-      <div
-        className="absolute top-1/4 right-[15%] w-64 h-64 rounded-full bg-white/[0.04] animate-drift pointer-events-none hidden sm:block"
-        style={{ animationDuration: "22s" }}
-      />
-      <div
-        className="absolute bottom-1/4 left-[10%] w-48 h-48 border border-white/10 rotate-45 animate-drift pointer-events-none"
-        style={{ animationDuration: "26s", animationDelay: "-6s" }}
-      />
-      <div
-        className="absolute top-1/3 left-1/4 w-32 h-32 rounded-full bg-white/[0.02] animate-drift pointer-events-none hidden md:block"
-        style={{ animationDuration: "18s", animationDelay: "-12s" }}
-      />
-
-      {/* Dot grid pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.02] pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-          backgroundSize: "32px 32px",
-        }}
-      />
-
-      <div className="relative w-full px-4 py-16 sm:py-20">
-        <div className="max-w-3xl mx-auto text-center">
-          {/* Logo with glow */}
-          <div
-            className="relative inline-flex mb-6 animate-fade-slide-up"
-            style={{ animationDelay: "0s" }}
-          >
+      {/* Content */}
+      <div className="relative w-full px-4 py-14 sm:py-16">
+        <div className="max-w-2xl mx-auto text-center flex flex-col items-center gap-5">
+          {/* Logo */}
+          <div className="relative">
             <div
-              className="absolute inset-0 rounded-2xl blur-3xl"
-              style={{ backgroundColor: theme.primary, opacity: 0.4 }}
+              className="absolute inset-0 rounded-2xl blur-2xl"
+              style={{ backgroundColor: "#ffffff", opacity: 0.15 }}
             />
-            <img
-              src={logoSrc}
-              alt={displayName}
-              className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-2xl object-cover border-2 border-white/20 shadow-2xl animate-float"
-            />
+            <StoreLogo src={logoSrc} alt={displayName} size="lg" />
           </div>
 
-          {/* Display name — gradient text */}
+          {/* Name */}
           <h1
-            className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-none animate-fade-slide-up"
-            style={{
-              fontFamily: "'Cabinet Grotesk', var(--font-family, sans-serif)",
-              background:
-                "linear-gradient(135deg, white 30%, rgba(255,255,255,0.5) 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
+            className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-white"
+            style={{ textShadow: "0 2px 24px rgba(0,0,0,0.25)" }}
           >
             {displayName}
           </h1>
 
           {/* Tagline */}
-          <p
-            className="mt-5 text-white/70 text-sm sm:text-base max-w-lg mx-auto animate-fade-slide-up"
-            style={{ animationDelay: "0.2s" }}
-          >
-            {tagline}
-          </p>
+          {tagline && (
+            <p className="text-white/70 text-sm sm:text-base max-w-md">
+              {tagline}
+            </p>
+          )}
 
           {/* Live indicator */}
-          <div
-            className="mt-8 flex items-center justify-center gap-2 animate-fade-in"
-            style={{ animationDelay: "0.4s" }}
-          >
-            <span className="relative flex h-3 w-3">
+          <div className="flex items-center gap-2 mt-1">
+            <span className="relative flex h-2.5 w-2.5">
               <span
-                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                style={{ backgroundColor: "#22c55e" }}
+                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
+                style={{ backgroundColor: "#4ade80" }}
               />
               <span
-                className="relative inline-flex rounded-full h-3 w-3"
+                className="relative inline-flex rounded-full h-2.5 w-2.5"
                 style={{ backgroundColor: "#22c55e" }}
               />
             </span>
-            <span className="text-white/50 text-[10px] tracking-[0.15em] uppercase font-medium">
+            <span className="text-white/50 text-[10px] tracking-widest uppercase font-medium">
               Open for orders
             </span>
           </div>
@@ -378,20 +325,18 @@ function PulseLayout({
 }
 
 // =============================================================================
-// Main
+// Main export
 // =============================================================================
-
 export const StoreHeader = memo(
   ({ theme, storefront, branding, storeLayout }: StoreHeaderProps) => {
     const displayName = storefront.displayName || storefront.businessName || "";
     const tagline =
-      branding.tagline ||
-      pickTagline(storefront.businessName || displayName || "");
+      branding.tagline || pickTagline(storefront.businessName || displayName);
     const logoSrc = branding.logoUrl || "/icons/store-icon.png";
 
     if (storeLayout === "minimal") {
       return (
-        <SignalLayout
+        <MinimalLayout
           theme={theme}
           logoSrc={logoSrc}
           displayName={displayName}
@@ -402,7 +347,7 @@ export const StoreHeader = memo(
 
     if (storeLayout === "classic") {
       return (
-        <CanvasLayout
+        <ClassicLayout
           theme={theme}
           logoSrc={logoSrc}
           displayName={displayName}
@@ -414,9 +359,9 @@ export const StoreHeader = memo(
       );
     }
 
-    // Pulse (default)
+    // Modern (default)
     return (
-      <PulseLayout
+      <ModernLayout
         theme={theme}
         logoSrc={logoSrc}
         displayName={displayName}

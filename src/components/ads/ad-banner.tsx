@@ -28,6 +28,9 @@ export default function AdBanner({
   fullWidth = true,
   className = '',
 }: AdBannerProps) {
+  // Hide until real AdSense slots are configured
+  if (!adSlot || adSlot.startsWith('YOUR_AD_SLOT')) return null;
+
   const pushed = useRef(false);
 
   useEffect(() => {

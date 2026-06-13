@@ -122,13 +122,13 @@ export const BundleCard = memo(
             <FaWifi className="w-2.5 h-2.5 opacity-80" />
             {fmtValidity(bundle.validity, bundle.validityUnit)}
           </div>
+        </div>
 
-          {/* Bottom: price + buy CTA */}
-          <div className="flex items-center justify-between border-t border-white/15 pt-3">
-            <span className="text-xl font-extrabold">{fmt(bundle.price)}</span>
-            <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs text-white font-black shadow transition-all group-hover:shadow-lg">
-              <FaBagShopping className="w-5 h-5" /> Buy
-            </div>
+        {/* Bottom: price + buy CTA — full width, outside padding */}
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-500 border-t border-white/15">
+          <span className="text-xl font-extrabold">{fmt(bundle.price)}</span>
+          <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs text-white font-black shadow transition-all group-hover:shadow-lg">
+            <FaBagShopping className="w-5 h-5" /> Buy
           </div>
         </div>
       </article>
