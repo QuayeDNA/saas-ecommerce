@@ -25,10 +25,10 @@ export const ReferralDashboardPage = () => {
       try {
         const [dash, board] = await Promise.all([
           referralService.getDashboard(),
-          referralService.getLeaderboard(timeframe),
+          referralService.getLeaderboard(timeframe, 1),
         ]);
         setDashboard(dash);
-        setLeaderboard(board);
+        setLeaderboard(board.entries);
       } catch (err) {
         console.error("Failed to load referral data", err);
       } finally {

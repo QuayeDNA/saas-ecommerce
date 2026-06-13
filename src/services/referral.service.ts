@@ -10,6 +10,7 @@ import type {
   ReferralAdminStats,
   ReferralAdminUsersResponse,
   ReferralAdminUser,
+  ReferralAdminUserDetail,
   BackendPagination,
 } from "../types/referral";
 
@@ -24,10 +25,11 @@ class ReferralService {
   }
 
   async getLeaderboard(
-    timeframe: "this-week" | "this-month" | "all-time" = "all-time"
-  ): Promise<LeaderboardEntry[]> {
+    timeframe: "this-week" | "this-month" | "all-time" = "all-time",
+    page = 1
+  ): Promise<{ entries: LeaderboardEntry[]; pagination: BackendPagination }> {
     const response = await apiClient.get<LeaderboardResponse>(
-      `/api/referrals/leaderboard?timeframe=${timeframe}`
+      `/api/referrals/leaderboard?timeframe=${timeframe}&page=${page}`
     );
     return response.data.data;
   }
@@ -53,6 +55,7 @@ class ReferralService {
           phone: userInfo.phone || "",
           referralCode: "",
           createdAt: "",
+          totalOrders: 0,
         },
         children: treeData,
       },
@@ -79,6 +82,14 @@ class ReferralService {
       users: Array.isArray(response.data.data.users) ? response.data.data.users : [],
       pagination: response.data.data.pagination,
     };
+  }
+
+  async getAdminUserDetail(id: string): Promise<ReferralAdminUserDetail> {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: ReferralAdminUserDetail;
+    }>(`/api/referrals/admin/users/${id}`);
+    return response.data.data;
   }
 }
 

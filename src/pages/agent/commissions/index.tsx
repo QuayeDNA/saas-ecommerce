@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { commissionService } from "../../../services/commission.service";
 import { referralService } from "../../../services/referral.service";
 import { useAgentAnalytics, useInvalidateAnalytics } from "../../../hooks/use-analytics";
-import { FaWallet, FaShareAlt } from "react-icons/fa";
+import { FaWallet, FaShareAlt, FaUsers, FaUserPlus } from "react-icons/fa";
 import { Spinner } from "../../../design-system/components/spinner";
 import {
   Tabs, TabsList, TabsTrigger, TabsContent,
@@ -34,7 +34,10 @@ export const CommissionPage = () => {
   const { data: analytics, isLoading: analyticsLoading } = useAgentAnalytics();
   const { invalidateAgent } = useInvalidateAnalytics();
 
+  const [totalReferred, setTotalReferred] = useState(0);
+  const [activeReferred, setActiveReferred] = useState(0);
   const [tree, setTree] = useState<ReferralTreeNode[]>([]);
+  const [treeLoading, setTreeLoading] = useState(false);
   const treeFetchedRef = useRef(false);
 
   const [nonAnalyticsLoaded, setNonAnalyticsLoaded] = useState(false);
@@ -47,6 +50,8 @@ export const CommissionPage = () => {
         commissionService.getWithdrawalHistory(),
       ]);
       setReferralCode(dash.referralCode);
+      setTotalReferred(dash.totalReferred);
+      setActiveReferred(dash.activeReferred);
       setCommissions(comms);
       setWithdrawals(wds);
     } catch (err) {
@@ -80,7 +85,8 @@ export const CommissionPage = () => {
   useEffect(() => {
     if (activeTab === "tree" && !treeFetchedRef.current) {
       treeFetchedRef.current = true;
-      referralService.getReferralTree().then(setTree).catch(() => {});
+      setTreeLoading(true);
+      referralService.getReferralTree().then(setTree).catch(() => {}).finally(() => setTreeLoading(false));
     }
   }, [activeTab]);
 
@@ -131,6 +137,15 @@ export const CommissionPage = () => {
 
       {referralCode && <ReferralBanner referralCode={referralCode} />}
 
+      <StatsGrid
+        stats={[
+          { title: "Total Referrals", value: String(totalReferred), subtitle: "Users referred", icon: <FaUsers />, size: "md" },
+          { title: "Active Referrals", value: String(activeReferred), subtitle: "Users with orders", icon: <FaUserPlus />, size: "md" },
+        ]}
+        columns={2}
+        gap="xs"
+      />
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="commission">
@@ -168,7 +183,7 @@ export const CommissionPage = () => {
         </TabsContent>
 
         <TabsContent value="tree" className="space-y-4 pt-4">
-          <ReferralTree tree={tree} />
+          <ReferralTree tree={tree} loading={treeLoading} />
         </TabsContent>
       </Tabs>
     </div>

@@ -223,22 +223,6 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       className="sticky top-0 z-10 border-b border-[var(--border-color)] rounded-b-xl shadow-sm"
       style={{ background: "var(--bg-header)" }}
     >
-      {/* ── Impersonation banner ─────────────────────────────────────────── */}
-      {isImpersonating && (
-        <div className="flex items-center justify-center gap-2 bg-amber-500/20 border-b border-amber-500/30 px-4 py-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-          <span className="text-xs font-semibold text-amber-300 tracking-wide">
-            Impersonating user
-          </span>
-          <button
-            onClick={handleReturnToAdmin}
-            className="ml-2 rounded px-2 py-0.5 text-[10px] font-bold bg-amber-400/20 text-amber-200 hover:bg-amber-400/40 transition-colors"
-          >
-            Exit
-          </button>
-        </div>
-      )}
-
       <div className="px-3 sm:px-5 lg:px-7 py-3 sm:py-4">
 
         {/* ════════════════════════════════════════════════════════════════

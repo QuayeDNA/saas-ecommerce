@@ -24,9 +24,14 @@ export interface LeaderboardEntry {
   batchCount: number;
 }
 
+export interface PaginatedLeaderboard {
+  entries: LeaderboardEntry[];
+  pagination: BackendPagination;
+}
+
 export interface LeaderboardResponse {
   success: boolean;
-  data: LeaderboardEntry[];
+  data: PaginatedLeaderboard;
 }
 
 export interface ReferralTreeUser {
@@ -36,6 +41,7 @@ export interface ReferralTreeUser {
   phone: string;
   referralCode: string;
   createdAt: string;
+  totalOrders: number;
 }
 
 export interface ReferralTreeNode {
@@ -87,9 +93,32 @@ export interface ReferralAdminUser {
   } | null;
   status: string;
   createdAt: string;
+  orderCount: number;
+}
+
+export interface ReferralAdminUserDetail {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  referralCode: string;
+  referredBy?: {
+    _id: string;
+    fullName: string;
+    email: string;
+    referralCode: string;
+  } | null;
+  status: string;
+  createdAt: string;
   walletBalance: number;
   commissionBalance: number;
-  commissionStats: {
+  totalReferred: number;
+  orderStats: {
+    totalOrders: number;
+    totalOrderValue: number;
+    lastOrderDate: string | null;
+  };
+  commissionAsReferrer: {
     totalEarned: number;
     totalOrders: number;
     batchCount: number;
