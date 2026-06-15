@@ -114,6 +114,7 @@ export const NotificationDropdown: React.FC = () => {
       wallet: "bg-success/10 text-success",
       announcement: "bg-[var(--color-secondary)]/10 text-[var(--color-secondary)]",
       commission: "bg-warning/10 text-warning",
+      api: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
     };
     return (
       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${colors[category] || "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]"}`}>

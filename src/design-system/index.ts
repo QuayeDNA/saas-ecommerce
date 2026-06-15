@@ -31,6 +31,7 @@ export { DialogHeader } from "./components/dialog-header";
 export { DialogBody } from "./components/dialog-body";
 export { DialogFooter } from "./components/dialog-footer";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs";
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./components/accordion";
 
 export { Switch } from "./components/switch";
 

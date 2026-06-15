@@ -125,6 +125,11 @@ const ApiMarketplacePage = lazy(() =>
     default: module.ApiMarketplacePage,
   })),
 );
+const ApiMarketplaceDocsPage = lazy(() =>
+  import("../pages/agent/api-marketplace-docs").then((module) => ({
+    default: module.ApiMarketplaceDocsPage,
+  })),
+);
 
 // =============================================================================
 // LAZY LOADED COMPONENTS - COMMISSION & REFERRAL PAGES
@@ -440,18 +445,18 @@ const agentRoutes: RouteObject[] = [
             ),
           },
           {
-            path: "profile",
+            path: "api-marketplace/docs",
             element: (
               <Suspense fallback={<PageLoader />}>
-                <ProfilePage />
+                <ApiMarketplaceDocsPage />
               </Suspense>
             ),
           },
           {
-            path: "api-marketplace",
+            path: "profile",
             element: (
               <Suspense fallback={<PageLoader />}>
-                <ApiMarketplacePage />
+                <ProfilePage />
               </Suspense>
             ),
           },
@@ -470,7 +475,7 @@ const adminRoutes: RouteObject[] = [
     path: "/admin",
     element: (
       <SystemRouteElement
-        element={<ProtectedRoute allowedUserTypes={["super_admin"]} />}
+        element={<ProtectedRoute allowedUserTypes={["super_admin", "admin"]} />}
       />
     ),
     children: [

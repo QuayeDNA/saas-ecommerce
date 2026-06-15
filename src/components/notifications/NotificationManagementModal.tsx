@@ -312,6 +312,7 @@ export const NotificationManagementModal: React.FC<NotificationManagementModalPr
                   { value: "wallet", label: "Wallet", color: "bg-success/10 text-success hover:bg-success/20" },
                   { value: "commission", label: "Commission", color: "bg-warning/10 text-warning hover:bg-warning/20" },
                   { value: "announcement", label: "Announcement", color: "bg-[var(--color-secondary)]/10 text-[var(--color-secondary)] hover:bg-[var(--color-secondary)]/20" },
+                  { value: "api", label: "API", color: "bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20" },
                 ].map((cat) => (
                   <button
                     key={cat.value || "all"}

@@ -5,6 +5,7 @@ type BadgeVariant = "solid" | "subtle" | "outline";
 type BadgeSize = "xs" | "sm" | "md" | "lg";
 type BadgeColorScheme =
   | "default"
+  | "primary"
   | "success"
   | "warning"
   | "error"
@@ -29,6 +30,11 @@ const sizeClasses = {
 
 const colorMap: Record<BadgeColorScheme, Record<BadgeVariant, string>> = {
   default: {
+    solid: "bg-[var(--color-primary)] text-white",
+    subtle: "bg-[var(--color-accent-soft)] text-[var(--color-secondary)]",
+    outline: "bg-transparent border border-[var(--color-primary)] text-[var(--color-primary)]",
+  },
+  primary: {
     solid: "bg-[var(--color-primary)] text-white",
     subtle: "bg-[var(--color-accent-soft)] text-[var(--color-secondary)]",
     outline: "bg-transparent border border-[var(--color-primary)] text-[var(--color-primary)]",

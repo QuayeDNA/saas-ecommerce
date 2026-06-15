@@ -98,6 +98,13 @@ export const NavItem = memo(function NavItem({
           {/* Label */}
           <span className="flex-1 truncate text-left">{item.label}</span>
 
+          {/* Badge */}
+          {item.badge && (
+            <span className="flex-shrink-0 rounded-full bg-emerald-500/20 px-1.5 py-px text-[10px] font-semibold leading-normal text-emerald-400">
+              {item.badge}
+            </span>
+          )}
+
           {/* Chevron */}
           <ChevronRight
             size={13}
@@ -156,6 +163,13 @@ export const NavItem = memo(function NavItem({
 
         {/* Label */}
         <span className="flex-1 truncate">{item.label}</span>
+
+        {/* Badge */}
+        {item.badge && (
+          <span className="flex-shrink-0 rounded-full bg-emerald-500/20 px-1.5 py-px text-[10px] font-semibold leading-normal text-emerald-400">
+            {item.badge}
+          </span>
+        )}
 
         {/* Active indicator */}
         {isActive && <ActiveDot />}

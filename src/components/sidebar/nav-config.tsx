@@ -26,12 +26,20 @@ export interface NavItem {
   path: string;
   icon: ReactNode;
   children?: NavItem[];
+  badge?: string;
 }
 
 export interface NavSection {
   label: string;
   items: NavItem[];
 }
+
+/* ─── Badge helper ─────────────────────────────────────────────────────────── */
+
+const withBadge = (badge: string) => (item: NavItem): NavItem => ({
+  ...item,
+  badge,
+});
 
 /* ─── Agent nav ──────────────────────────────────────────────────────────── */
 
@@ -53,7 +61,7 @@ const agentSections = (packages: NavItem[] = []): NavSection[] => [
       },
       { label: "Orders", path: "/agent/dashboard/orders", icon: <FaClipboardList /> },
       { label: "My Storefront", path: "/agent/dashboard/storefront", icon: <FaStore /> },
-      { label: "API Marketplace", path: "/agent/dashboard/api-marketplace", icon: <FaCode /> },
+      withBadge("New")({ label: "API Marketplace", path: "/agent/dashboard/api-marketplace", icon: <FaCode /> }),
     ],
   },
   {
@@ -85,7 +93,7 @@ const adminSections: NavSection[] = [
     label: "Commerce",
     items: [
       { label: "Packages", path: "/admin/dashboard/packages", icon: <FaBox /> },
-      { label: "API Marketplace", path: "/admin/dashboard/api-marketplace", icon: <FaCode /> },
+      withBadge("New")({ label: "API Marketplace", path: "/admin/dashboard/api-marketplace", icon: <FaCode /> }),
     ],
   },
   {
@@ -122,6 +130,7 @@ const superAdminSections: NavSection[] = [
       { label: "Announcements", path: "/superadmin/announcements", icon: <FaBullhorn /> },
       { label: "Stores", path: "/superadmin/stores", icon: <FaStore /> },
       { label: "Referrals", path: "/superadmin/referrals", icon: <FaShareAlt /> },
+      withBadge("New")({ label: "API Marketplace", path: "/superadmin/api-marketplace", icon: <FaCode /> }),
     ],
   },
   {
