@@ -8,9 +8,9 @@ export interface Package {
   provider: string; // Provider code (MTN, TELECEL, etc.)
   category: "daily" | "weekly" | "monthly" | "unlimited" | "custom";
   isActive: boolean;
-  isDeleted: boolean;
-  tenantId: string;
-  createdBy: string;
+  isDeleted?: boolean;
+  tenantId?: string;
+  createdBy?: string;
   updatedBy?: string;
   deletedAt?: Date;
   deletedBy?: string;
@@ -54,11 +54,11 @@ export interface Bundle {
   packageId: string;
   providerId: string;
 
-  // Multi-tenant and audit
-  tenantId: string;
-  createdBy: string;
+  // Multi-tenant and audit — DTO strips these from non-admin responses
+  tenantId?: string;
+  createdBy?: string;
   updatedBy?: string;
-  isDeleted: boolean;
+  isDeleted?: boolean;
   deletedAt?: Date;
   deletedBy?: string;
   createdAt?: Date;
