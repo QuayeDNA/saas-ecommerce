@@ -114,8 +114,8 @@ export const StoreHeader = memo(function StoreHeader({
           width: clamp(72px, 11vw, 104px);
           border-radius: 24px;
           object-fit: cover;
-          border: 1px solid color-mix(in srgb, var(--text-primary, #0F172A) 8%, transparent);
-          box-shadow: 0 2px 12px color-mix(in srgb, var(--text-primary, #0F172A) 6%, transparent);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
         }
 
         /* ── Name ──────────────────────────────────────── */
@@ -127,7 +127,7 @@ export const StoreHeader = memo(function StoreHeader({
           line-height: 0.92;
           letter-spacing: -0.045em;
           margin: 0;
-          color: var(--text-primary, #0F172A);
+          color: #fff;
           opacity: 0;
           transform: translateY(12px);
           transition: opacity 600ms ease-out, transform 600ms cubic-bezier(0.19, 1, 0.22, 1);
@@ -142,6 +142,7 @@ export const StoreHeader = memo(function StoreHeader({
         .sh-header__name:empty::before {
           content: "Your Store";
           opacity: 0.35;
+          color: #fff;
           font-family: 'Cabinet Grotesk', sans-serif;
           font-weight: 800;
         }
@@ -153,8 +154,8 @@ export const StoreHeader = memo(function StoreHeader({
           width: 0;
           height: 2px;
           border-radius: 1px;
-          background: var(--text-primary, #0F172A);
-          opacity: 0.15;
+          background: #fff;
+          opacity: 0.25;
           transition: width 800ms cubic-bezier(0.19, 1, 0.22, 1);
           transition-delay: 500ms;
         }
@@ -171,7 +172,7 @@ export const StoreHeader = memo(function StoreHeader({
           font-size: clamp(14px, 2.2vw, 19px);
           line-height: 1.65;
           letter-spacing: 0.01em;
-          color: var(--text-secondary, #475569);
+          color: rgba(255, 255, 255, 0.75);
           margin: clamp(16px, 2.5vw, 28px) 0 0;
           max-width: 32em;
           opacity: 0;
