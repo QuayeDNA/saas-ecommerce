@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useInstallPrompt } from "../hooks/use-install-prompt";
 import { Button } from "../design-system/components/button";
 import { Modal } from "../design-system/components/modal";
-import { Download, Smartphone, X } from "lucide-react";
+import { Download, Smartphone } from "lucide-react";
 
 export const InstallPrompt: React.FC = () => {
   const { canPrompt, isInstalled, promptInstall, shouldShowAutoPrompt, markDismissed } = useInstallPrompt();
