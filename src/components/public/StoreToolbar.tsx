@@ -83,8 +83,9 @@ export const StoreToolbar = memo(
               <div
                 className="rounded-xl p-3 text-sm cursor-pointer select-none"
                 style={{
-                  backgroundColor: `${theme.primary}12`,
-                  border: `1px solid ${theme.primary}30`,
+                  backgroundColor: `color-mix(in srgb, ${theme.primary} 88%, white)`,
+                  border: `1px solid ${theme.primary}50`,
+                  color: "#fff",
                 }}
                 onClick={() => setAnnouncementExpanded((prev) => !prev)}
                 onKeyDown={(e) => {
@@ -98,10 +99,7 @@ export const StoreToolbar = memo(
                 aria-expanded={announcementExpanded}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div
-                    className="font-semibold text-xs uppercase tracking-wider"
-                    style={{ color: theme.primary }}
-                  >
+                  <div className="font-semibold text-xs uppercase tracking-wider text-white/90">
                     {activeAnnouncement.title}
                   </div>
                   <button
@@ -110,17 +108,15 @@ export const StoreToolbar = memo(
                       e.stopPropagation();
                       onDismissAnnouncement(activeAnnouncement._id);
                     }}
-                    className="shrink-0 transition-opacity hover:opacity-70 p-0.5"
-                    style={{ color: theme.primary }}
+                    className="shrink-0 transition-opacity hover:opacity-70 p-0.5 text-white/80"
                     aria-label="Dismiss announcement"
                   >
                     <FaXmark className="w-4 h-4" />
                   </button>
                 </div>
                 <div
-                  className="mt-1.5 text-xs transition-all overflow-hidden"
+                  className="mt-1.5 text-xs text-white/85 transition-all overflow-hidden"
                   style={{
-                    color: "var(--text-secondary)",
                     display: "-webkit-box",
                     WebkitLineClamp: announcementExpanded ? "unset" : 2,
                     WebkitBoxOrient: "vertical",
@@ -183,7 +179,7 @@ export const StoreToolbar = memo(
                   onChange={(e) => onSearchChange(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm transition"
                   style={{
-                    backgroundColor: "var(--bg-muted)",
+                    backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
                     border: "1px solid var(--border-color)",
                     color: "var(--text-primary)",
                     outline: "none",
@@ -204,7 +200,7 @@ export const StoreToolbar = memo(
                 title="Track my orders"
                 className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition"
                 style={{
-                  backgroundColor: "var(--bg-muted)",
+                  backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
                   border: "1px solid var(--border-color)",
                   color: "var(--text-secondary)",
                 }}
@@ -239,7 +235,7 @@ export const StoreToolbar = memo(
                             color: "#fff",
                           }
                         : {
-                            backgroundColor: "var(--bg-muted)",
+                            backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
                             border: "2px solid var(--border-color)",
                             color: "var(--text-secondary)",
                           }
@@ -272,7 +268,7 @@ export const StoreToolbar = memo(
                                 color: "#fff",
                               }
                             : {
-                                backgroundColor: "var(--bg-muted)",
+                                backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
                                 border: "2px solid var(--border-color)",
                                 color: "var(--text-secondary)",
                               }
