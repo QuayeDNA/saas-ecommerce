@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { FaMagnifyingGlass, FaBoxOpen } from "react-icons/fa6";
+import { memo, useState } from "react";
+import { FaMagnifyingGlass, FaBoxOpen, FaXmark } from "react-icons/fa6";
 import type { ThemeConfig } from "./types";
 import { getLogoUrl } from "./utils";
 import { getProviderColors } from "../../utils/provider-colors";
@@ -53,6 +53,7 @@ export const StoreToolbar = memo(
     activeAnnouncement,
     onDismissAnnouncement,
   }: StoreToolbarProps) => {
+    const [announcementExpanded, setAnnouncementExpanded] = useState(false);
     return (
       <div
         className="sticky top-0 z-20 backdrop-blur-md"
@@ -68,31 +69,53 @@ export const StoreToolbar = memo(
 
           {activeAnnouncement && (
             <div
-              className="rounded-xl p-3 text-sm flex items-start justify-between gap-3"
+              className="rounded-xl p-3 text-sm cursor-pointer select-none"
               style={{
                 backgroundColor: `${theme.primary}12`,
                 border: `1px solid ${theme.primary}30`,
               }}
+              onClick={() => setAnnouncementExpanded((prev) => !prev)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setAnnouncementExpanded((prev) => !prev);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-expanded={announcementExpanded}
             >
-              <div className="min-w-0">
-                <div className="font-semibold" style={{ color: theme.primary }}>
+              <div className="flex items-start justify-between gap-3">
+                <div
+                  className="font-semibold text-xs uppercase tracking-wider"
+                  style={{ color: theme.primary }}
+                >
                   {activeAnnouncement.title}
                 </div>
-                <div
-                  className="truncate text-xs mt-1"
-                  style={{ color: "var(--text-secondary)" }}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDismissAnnouncement(activeAnnouncement._id);
+                  }}
+                  className="shrink-0 transition-opacity hover:opacity-70 p-0.5"
+                  style={{ color: theme.primary }}
+                  aria-label="Dismiss announcement"
                 >
-                  {activeAnnouncement.message}
-                </div>
+                  <FaXmark className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => onDismissAnnouncement(activeAnnouncement._id)}
-                className="text-xs font-semibold shrink-0 transition-opacity hover:opacity-70"
-                style={{ color: theme.primary }}
+              <div
+                className="mt-1.5 text-xs transition-all overflow-hidden"
+                style={{
+                  color: "var(--text-secondary)",
+                  display: "-webkit-box",
+                  WebkitLineClamp: announcementExpanded ? "unset" : 2,
+                  WebkitBoxOrient: "vertical",
+                }}
               >
-                Dismiss
-              </button>
+                {activeAnnouncement.message}
+              </div>
             </div>
           )}
 
