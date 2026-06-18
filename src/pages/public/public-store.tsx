@@ -44,7 +44,6 @@ import AdBanner from "../../components/ads/ad-banner";
 
 // ─── Extracted components ────────────────────────────────────────────────────
 import {
-  buildBrandTheme,
   DEFAULT_THEME,
   type ThemeConfig,
   type OrderItem,
@@ -430,11 +429,7 @@ const PublicStore: React.FC = () => {
   // Derived / Memoised state
   // ==========================================================================
 
-  const theme: ThemeConfig = useMemo(() => {
-    if (!storeData) return DEFAULT_THEME;
-    const brandColor = storeData.storefront.branding?.customColors?.primary;
-    return buildBrandTheme(brandColor);
-  }, [storeData]);
+  const theme: ThemeConfig = DEFAULT_THEME;
 
   const providers = useMemo(() => {
     if (!storeData) return [];
@@ -743,7 +738,6 @@ const PublicStore: React.FC = () => {
 
         const { storefront, bundles } = storeData;
         const branding: StorefrontBranding = storefront.branding || {};
-        const storeLayout = branding.layout || "modern";
 
         return (
           <>
@@ -873,10 +867,8 @@ const PublicStore: React.FC = () => {
       )}
 
       <StoreHeader
-        theme={theme}
         storefront={storefront}
         branding={branding}
-        storeLayout={storeLayout}
       />
 
       <StoreToolbar

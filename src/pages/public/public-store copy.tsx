@@ -210,90 +210,16 @@ interface ThemeConfig {
 // Constants & Theme System
 // =============================================================================
 
-const THEMES: Record<string, ThemeConfig> = {
-  blue: {
-    primary: "#2563EB",
-    secondary: "#1E40AF",
-    accent: "#60A5FA",
-    bg: "#EFF6FF",
-    text: "#1E3A5F",
-    gradient: "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 50%, #1e3a8a 100%)",
-    cardBorder: "#BFDBFE",
-    heroBg: "#EFF6FF",
-  },
-  green: {
-    primary: "#16A34A",
-    secondary: "#15803D",
-    accent: "#4ADE80",
-    bg: "#F0FDF4",
-    text: "#14532D",
-    gradient: "linear-gradient(135deg, #15803D 0%, #166534 50%, #14532d 100%)",
-    cardBorder: "#BBF7D0",
-    heroBg: "#F0FDF4",
-  },
-  purple: {
-    primary: "#7C3AED",
-    secondary: "#6D28D9",
-    accent: "#A78BFA",
-    bg: "#FAF5FF",
-    text: "#3B0764",
-    gradient: "linear-gradient(135deg, #6D28D9 0%, #5B21B6 50%, #4c1d95 100%)",
-    cardBorder: "#DDD6FE",
-    heroBg: "#FAF5FF",
-  },
-  orange: {
-    primary: "#EA580C",
-    secondary: "#C2410C",
-    accent: "#FB923C",
-    bg: "#FFF7ED",
-    text: "#7C2D12",
-    gradient: "linear-gradient(135deg, #C2410C 0%, #B45309 50%, #92400e 100%)",
-    cardBorder: "#FED7AA",
-    heroBg: "#FFF7ED",
-  },
-  red: {
-    primary: "#DC2626",
-    secondary: "#B91C1C",
-    accent: "#F87171",
-    bg: "#FEF2F2",
-    text: "#7F1D1D",
-    gradient: "linear-gradient(135deg, #B91C1C 0%, #991B1B 50%, #7f1d1d 100%)",
-    cardBorder: "#FECACA",
-    heroBg: "#FEF2F2",
-  },
-  teal: {
-    primary: "#0D9488",
-    secondary: "#0F766E",
-    accent: "#2DD4BF",
-    bg: "#F0FDFA",
-    text: "#134E4A",
-    gradient: "linear-gradient(135deg, #0F766E 0%, #115E59 50%, #134e4a 100%)",
-    cardBorder: "#99F6E4",
-    heroBg: "#F0FDFA",
-  },
-  indigo: {
-    primary: "#4F46E5",
-    secondary: "#4338CA",
-    accent: "#818CF8",
-    bg: "#EEF2FF",
-    text: "#312E81",
-    gradient: "linear-gradient(135deg, #4338CA 0%, #3730A3 50%, #312e81 100%)",
-    cardBorder: "#C7D2FE",
-    heroBg: "#EEF2FF",
-  },
-  rose: {
-    primary: "#E11D48",
-    secondary: "#BE123C",
-    accent: "#FB7185",
-    bg: "#FFF1F2",
-    text: "#881337",
-    gradient: "linear-gradient(135deg, #BE123C 0%, #9F1239 50%, #881337 100%)",
-    cardBorder: "#FECDD3",
-    heroBg: "#FFF1F2",
-  },
+const DEFAULT_THEME: ThemeConfig = {
+  primary: "#2563EB",
+  secondary: "#1E40AF",
+  accent: "#60A5FA",
+  bg: "#EFF6FF",
+  text: "#1E3A5F",
+  gradient: "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 50%, #1e3a8a 100%)",
+  cardBorder: "#BFDBFE",
+  heroBg: "#EFF6FF",
 };
-
-const DEFAULT_THEME = THEMES.blue;
 
 // placeholders removed – popularity driven exclusively by backend now.
 
@@ -1774,27 +1700,9 @@ const PublicStore: React.FC = () => {
   // Derived state (memoised)
   // ==========================================================================
 
-  const theme = useMemo<ThemeConfig>(() => {
-    if (!storeData) return DEFAULT_THEME;
-    const b = storeData.storefront.branding;
-    if (b?.customColors?.primary) {
-      return {
-        primary: b.customColors.primary,
-        secondary: b.customColors.secondary || b.customColors.primary,
-        accent: b.customColors.accent || b.customColors.primary + "40",
-        bg: b.customColors.primary + "12",
-        text: "#FFFFFF",
-        gradient: `linear-gradient(135deg, ${b.customColors.primary}, ${b.customColors.secondary || b.customColors.primary})`,
-        cardBorder: b.customColors.primary + "30",
-        heroBg: b.customColors.primary + "10",
-      };
-    }
-    const key = storeData.storefront.settings?.theme || "blue";
-    return THEMES[key] || DEFAULT_THEME;
-  }, [storeData]);
+  const theme = DEFAULT_THEME;
 
   const branding: StorefrontBranding = storeData?.storefront.branding || {};
-  const storeLayout = branding.layout || "modern";
 
   const providers = useMemo(() => {
     if (!storeData) return [];
@@ -2185,125 +2093,25 @@ const PublicStore: React.FC = () => {
       })();
 
     // System-generated logo (SVG data-URI) when none is set
-    const getSystemLogo = () => {
-      const letter = (storefront.displayName || storefront.businessName || "S")
-        .charAt(0)
-        .toUpperCase();
-      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:${theme.primary}'/><stop offset='100%' style='stop-color:${theme.secondary}'/></linearGradient></defs><rect width='200' height='200' rx='40' fill='url(#g)'/><text x='100' y='130' font-family='Arial Black,Arial,sans-serif' font-size='110' font-weight='900' fill='white' text-anchor='middle'>${letter}</text></svg>`;
-      return `data:image/svg+xml;base64,${btoa(svg)}`;
-    };
-    const logoSrc = branding.logoUrl || getSystemLogo();
-    const displayDescription =
-      storefront.description ||
-      `Welcome to ${storefront.displayName}! We offer fast, affordable data bundles from all major networks in Ghana.`;
-    if (storeLayout === "minimal") {
-      return (
-        <header
-          className="pt-10 pb-6 px-4 text-center"
-          style={{ backgroundColor: theme.heroBg }}
-        >
+    const logoSrc = branding.logoUrl || "";
+    return (
+      <div className="flex flex-col items-center gap-5 py-14 sm:py-16 px-4 text-center">
+        {logoSrc && (
           <img
             src={logoSrc}
             alt={storefront.displayName}
-            className="h-14 w-14 rounded-2xl mx-auto mb-4 object-cover shadow"
-            style={{ border: `2px solid ${theme.primary}40` }}
-          />
-          <h1
-            className="text-2xl font-black tracking-tight"
-            style={{ color: "var(--text-primary)" }}
-          >
-            {storefront.displayName}
-          </h1>
-          <p
-            className="text-sm mt-1"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            {displayTagline}
-          </p>
-        </header>
-      );
-    }
-
-    if (storeLayout === "classic") {
-      return (
-        <header>
-          {branding.bannerUrl && branding.showBanner !== false && (
-            <div className="h-36 overflow-hidden">
-              <img
-                src={branding.bannerUrl}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          <div
-            className="px-4 py-5 border-b-4"
-            style={{ backgroundColor: theme.bg, borderColor: theme.primary }}
-          >
-            <div className="max-w-7xl mx-auto flex items-center gap-4">
-              <img
-                src={logoSrc}
-                alt={storefront.displayName}
-                className="h-14 w-14 rounded-xl object-cover border-2 shadow-md shrink-0"
-                style={{ borderColor: theme.primary }}
-              />
-              <div>
-                <h1
-                  className="text-2xl font-black"
-                  style={{ color: theme.secondary }}
-                >
-                  {storefront.displayName}
-                </h1>
-                <p
-                  className="text-sm"
-                  style={{ color: theme.secondary + "aa" }}
-                >
-                  {displayTagline}
-                </p>
-              </div>
-            </div>
-          </div>
-        </header>
-      );
-    }
-
-    // Modern (default) — bold gradient hero
-    return (
-      <header
-        className="relative overflow-hidden"
-        style={{ background: theme.gradient }}
-      >
-        {branding.bannerUrl && branding.showBanner !== false && (
-          <img
-            src={branding.bannerUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-15 mix-blend-overlay"
+            className="h-24 w-24 rounded-2xl object-cover shrink-0"
           />
         )}
-        {/* Decorative circles */}
-        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/5" />
-        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5" />
-
-        <div className="relative px-4 pt-10 pb-12 sm:pt-16 sm:pb-20 text-center">
-          <img
-            src={logoSrc}
-            alt={storefront.displayName}
-            className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl mx-auto mb-4 object-cover border-2 border-white/30 shadow-xl"
-          />
-          <h1
-            className="text-3xl sm:text-5xl font-black tracking-tight leading-none"
-            style={{ color: "var(--text-inverse)" }}
-          >
-            {storefront.displayName}
-          </h1>
-          <p className="mt-3 text-white/70 text-sm sm:text-base max-w-xs mx-auto">
+        <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none">
+          {storefront.displayName}
+        </h1>
+        {displayTagline && (
+          <p className="text-sm sm:text-base max-w-md">
             {displayTagline}
           </p>
-          <p className="mt-1 text-white/50 text-xs max-w-sm mx-auto">
-            {displayDescription}
-          </p>
-        </div>
-      </header>
+        )}
+      </div>
     );
   };
 

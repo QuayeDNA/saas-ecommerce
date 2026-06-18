@@ -50,7 +50,6 @@ import {
   Info,
   Save,
   MessageCircle,
-  Palette,
   Eye,
   Image,
   Type,
@@ -226,7 +225,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   }, [initialTab]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
 
@@ -255,15 +254,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   // Branding state
   const [brandingData, setBrandingData] = useState({
     logoUrl: storefront.branding?.logoUrl || "",
-    bannerUrl: storefront.branding?.bannerUrl || "",
     tagline: storefront.branding?.tagline || "",
-    storeColor: storefront.branding?.customColors?.primary === "#0B1120" ? "midnight" : "brand",
     facebook: storefront.branding?.socialLinks?.facebook || "",
     instagram: storefront.branding?.socialLinks?.instagram || "",
     twitter: storefront.branding?.socialLinks?.twitter || "",
     tiktok: storefront.branding?.socialLinks?.tiktok || "",
-    layout: storefront.branding?.layout || "classic",
-    showBanner: storefront.branding?.showBanner ?? true,
     footerText: storefront.branding?.footerText || "",
     showContact: storefront.settings?.showContact ?? true,
   });
@@ -550,19 +545,13 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         description: resolvedDescription,
         branding: {
           logoUrl: resolvedLogoUrl,
-          bannerUrl: brandingData.bannerUrl.trim() || undefined,
           tagline: resolvedTagline,
-          customColors: {
-            primary: brandingData.storeColor === "midnight" ? "#0B1120" : "#2563EB",
-          },
           socialLinks: {
             facebook: brandingData.facebook.trim() || undefined,
             instagram: brandingData.instagram.trim() || undefined,
             twitter: brandingData.twitter.trim() || undefined,
             tiktok: brandingData.tiktok.trim() || undefined,
           },
-          layout: brandingData.layout,
-          showBanner: brandingData.showBanner,
           footerText: resolvedFooterText,
         },
         settings: {
@@ -1059,62 +1048,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
 
         {/* ===== Branding & Customization ===== */}
         <TabsContent value="branding" className="space-y-6" data-tour="storefront-branding">
-          {/* Appearance & Theme */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
-              <Palette className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
-              <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
-                Appearance & Theme
-              </h3>
-            </div>
-
-            <FormField label="Store Color">
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { value: "brand", label: "Brand Blue", color: "#2563EB" },
-                  { value: "midnight", label: "Midnight Black", color: "#0B1120" },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => handleBrandingChange("storeColor", opt.value)}
-                    className="flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all"
-                    style={{
-                      borderColor: brandingData.storeColor === opt.value ? opt.color : "var(--border-color)",
-                      backgroundColor: brandingData.storeColor === opt.value ? `${opt.color}0D` : "transparent",
-                    }}
-                  >
-                    <span
-                      className="w-8 h-8 rounded-lg shrink-0 border"
-                      style={{ backgroundColor: opt.color, borderColor: `${opt.color}33` }}
-                    />
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{opt.label}</p>
-                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{opt.color}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                Primary accent color for your public storefront
-              </p>
-            </FormField>
-
-            <FormField label="Store Layout">
-                <Select
-                  value={brandingData.layout}
-                  onChange={(val) => handleBrandingChange("layout", val)}
-                  options={[
-                    { value: "classic", label: "Classic — Standard header" },
-                    { value: "modern", label: "Modern — Large banner overlay" },
-                    { value: "minimal", label: "Minimal — Clean, text-focused" },
-                  ]}
-                />
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                  How your public storefront looks to customers
-                </p>
-              </FormField>
-
             <FormField label="Store Tagline">
               <Input
                 value={brandingData.tagline}
@@ -1161,19 +1095,6 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                   onCheckedChange={(checked) => handleBrandingChange("showContact", checked)}
                 />
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
-                <div className="flex items-center gap-2">
-                  <Image className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Show Banner</p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Display banner on public store</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={brandingData.showBanner}
-                  onCheckedChange={(checked) => handleBrandingChange("showBanner", checked)}
-                />
-              </div>
             </div>
           </section>
 
@@ -1182,7 +1103,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
             <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
               <Image className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
               <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
-                Logo & Banner
+                Logo
               </h3>
             </div>
 
@@ -1252,82 +1173,6 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
               </div>
             </div>
 
-            {/* Banner */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Store Banner</label>
-              <div
-                className="p-3 rounded-xl border space-y-2"
-                style={{ backgroundColor: "var(--bg-surface-alt)", borderColor: "var(--border-color)" }}
-              >
-                {/* Banner preview */}
-                {brandingData.bannerUrl ? (
-                  <img
-                    src={brandingData.bannerUrl}
-                    alt="Store banner"
-                    className="w-full h-24 rounded-lg object-cover border"
-                    style={{ borderColor: "var(--border-color)" }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div
-                    className="w-full h-24 rounded-lg flex items-center justify-center text-white font-bold text-lg"
-                    style={{
-                      background: brandingData.storeColor === "midnight"
-                        ? 'linear-gradient(135deg, #0B1120 0%, #1C2538 100%)'
-                        : 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-                    }}
-                  >
-                    {formData.businessName || 'Your Store'}
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setIsUploadingBanner(true);
-                        try {
-                          const { uploadService } = await import("../../services/upload.service");
-                          const url = await uploadService.uploadImage(file);
-                          handleBrandingChange("bannerUrl", url);
-                        } catch (err) {
-                          addToast(err instanceof Error ? err.message : "Banner upload failed", "error");
-                        } finally {
-                          setIsUploadingBanner(false);
-                        }
-                      }}
-                    />
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer hover:opacity-80 transition-opacity"
-                      style={{ borderColor: "var(--border-color)", color: "var(--text-primary)" }}
-                    >
-                      {isUploadingBanner ? "Uploading…" : "Upload Banner"}
-                    </span>
-                  </label>
-                  {brandingData.bannerUrl && (
-                    <button
-                      type="button"
-                      onClick={() => handleBrandingChange("bannerUrl", "")}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border hover:opacity-80 transition-opacity"
-                      style={{ borderColor: "var(--border-color)", color: "var(--error)" }}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  {brandingData.bannerUrl
-                    ? 'Your custom banner image will be shown on the storefront.'
-                    : 'Wide image recommended (1200×300 px). A gradient is shown when no image is set.'}
-                </p>
-              </div>
-            </div>
           </section>
 
           {/* Social Links */}
