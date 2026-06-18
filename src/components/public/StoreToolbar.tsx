@@ -170,7 +170,7 @@ export const StoreToolbar = memo(
               <div className="relative flex-1">
                 <FaMagnifyingGlass
                   className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
-                  style={{ color: "var(--text-tertiary)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 />
                 <input
                   type="search"
@@ -202,7 +202,7 @@ export const StoreToolbar = memo(
                 style={{
                   backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
                   border: "1px solid var(--border-color)",
-                  color: "var(--text-secondary)",
+                  color: "var(--text-primary)",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = theme.primary;
@@ -210,7 +210,7 @@ export const StoreToolbar = memo(
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = "var(--border-color)";
-                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.color = "var(--text-primary)";
                 }}
               >
                 <FaBoxOpen className="w-3.5 h-3.5" />
@@ -237,7 +237,7 @@ export const StoreToolbar = memo(
                         : {
                             backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
                             border: "2px solid var(--border-color)",
-                            color: "var(--text-secondary)",
+                            color: "var(--text-primary)",
                           }
                     }
                   >
@@ -270,7 +270,7 @@ export const StoreToolbar = memo(
                             : {
                                 backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
                                 border: "2px solid var(--border-color)",
-                                color: "var(--text-secondary)",
+                                color: "var(--text-primary)",
                               }
                         }
                       >
