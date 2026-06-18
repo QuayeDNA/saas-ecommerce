@@ -74,21 +74,21 @@ const BundleCardSkeletonInline = memo(() => (
   <div
     className="rounded-2xl overflow-hidden border shadow-sm"
     style={{
-      borderColor: "var(--border-color)",
-      backgroundColor: "var(--bg-surface)",
+      borderColor: "rgba(255,255,255,0.08)",
+      backgroundColor: "rgba(255,255,255,0.06)",
     }}
   >
-    <div className="h-1" style={{ backgroundColor: "var(--bg-muted)" }} />
+    <div className="h-1" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
     <div className="p-4 space-y-3">
-      <Skeleton height="1.75rem" width="60%" />
-      <Skeleton height="0.9rem" width="80%" />
+      <Skeleton height="1.75rem" width="60%" className="bg-white/10" />
+      <Skeleton height="0.9rem" width="80%" className="bg-white/10" />
       <div className="flex gap-2 pt-1">
-        <Skeleton height="1.3rem" width="3rem" />
-        <Skeleton height="1.3rem" width="4rem" />
+        <Skeleton height="1.3rem" width="3rem" className="bg-white/10" />
+        <Skeleton height="1.3rem" width="4rem" className="bg-white/10" />
       </div>
       <div className="flex justify-between items-center pt-2">
-        <Skeleton height="1.5rem" width="5rem" />
-        <Skeleton height="2rem" width="4.5rem" />
+        <Skeleton height="1.5rem" width="5rem" className="bg-white/10" />
+        <Skeleton height="2rem" width="4.5rem" className="bg-white/10" />
       </div>
     </div>
   </div>
@@ -105,15 +105,15 @@ const StoreSkeleton = memo(({ theme }: { theme: ThemeConfig }) => (
       {/* Popular row skeleton */}
       <div
         className="rounded-2xl p-4 shadow-sm"
-        style={{ backgroundColor: "var(--bg-surface)" }}
+        style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
       >
-        <Skeleton height="1rem" width="160px" className="mb-3" />
+        <Skeleton height="1rem" width="160px" className="mb-3 bg-white/10" />
         <div className="flex gap-3 overflow-hidden">
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
               className="shrink-0 w-36 h-28 rounded-2xl animate-pulse"
-              style={{ backgroundColor: "var(--bg-muted)" }}
+              style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
             />
           ))}
         </div>
@@ -286,13 +286,13 @@ const PackageHeader = memo(
         <div>
           <div
             className="text-sm font-bold"
-            style={{ color: "var(--text-primary)" }}
+            style={{ color: "#fff" }}
           >
             {pkgName}
           </div>
           <div
             className="text-xs"
-            style={{ color: "var(--text-tertiary)" }}
+            style={{ color: "rgba(255,255,255,0.65)" }}
           >
             {count} bundle{count !== 1 ? "s" : ""}
           </div>
@@ -300,7 +300,7 @@ const PackageHeader = memo(
       </div>
       <FaChevronDown
         className={`w-4 h-4 transition-transform duration-200 ${collapsed ? "" : "rotate-180"}`}
-        style={{ color: "var(--text-tertiary)" }}
+        style={{ color: "rgba(255,255,255,0.65)" }}
       />
     </button>
   ),

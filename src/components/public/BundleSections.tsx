@@ -43,7 +43,7 @@ interface BundleSectionsProps {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const AdBannerPlaceholder: React.FC<AdBannerProps> = ({ adSlot, adFormat }: AdBannerProps) => (
-  <div className="rounded-xl border p-3 text-center text-xs" style={{ borderColor: "var(--border-color)", color: "var(--text-tertiary)" }}>
+  <div className="rounded-xl border p-3 text-center text-xs" style={{ borderColor: "var(--border-color)", color: "rgba(255,255,255,0.65)" }}>
     Ad: {adSlot} ({adFormat})
   </div>
 );
@@ -159,13 +159,13 @@ export const BundleSections = memo(
                     <div>
                       <h2
                         className="text-base font-black"
-                        style={{ color: "var(--text-primary)" }}
+                        style={{ color: "#fff" }}
                       >
                         {prov.name}
                       </h2>
                       <p
                         className="text-xs"
-                        style={{ color: "var(--text-tertiary)" }}
+                        style={{ color: "rgba(255,255,255,0.65)" }}
                       >
                         {total} bundle{total !== 1 ? "s" : ""}
                       </p>
@@ -226,13 +226,13 @@ export const BundleSections = memo(
                 <div>
                   <h2
                     className="text-base font-black"
-                    style={{ color: "var(--text-primary)" }}
+                    style={{ color: "#fff" }}
                   >
                     {provName}
                   </h2>
                   <p
                     className="text-xs"
-                    style={{ color: "var(--text-tertiary)" }}
+                    style={{ color: "rgba(255,255,255,0.65)" }}
                   >
                     {total} bundle{total !== 1 ? "s" : ""}
                   </p>
@@ -274,7 +274,7 @@ export const BundleSections = memo(
 // Fallback stubs — these are only used when props aren't provided (for backwards compat)
 const EmptyBundlesFallback = ({ searchTerm: _searchTerm, onClear: _onClear }: { searchTerm: string; onClear: () => void }) => (
   <div className="py-20 text-center px-4">
-    <p className="font-medium" style={{ color: "var(--text-tertiary)" }}>
+    <p className="font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>
       No bundles available right now
     </p>
   </div>
@@ -300,10 +300,10 @@ const PackageHeaderFallback = ({ pkgName, count, collapsed, onToggle, color }: {
         <FaStore className="w-3.5 h-3.5" />
       </div>
       <div>
-        <div className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+        <div className="text-sm font-bold" style={{ color: "#fff" }}>
           {pkgName}
         </div>
-        <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+        <div className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
           {count} bundle{count !== 1 ? "s" : ""}
         </div>
       </div>

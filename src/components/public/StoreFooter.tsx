@@ -51,25 +51,28 @@ export const StoreFooter = memo(
 
     return (
       <footer
-        className="border-t px-4 py-8"
-        style={{
-          backgroundColor: "var(--bg-muted)",
-          borderColor: "var(--border-color)",
-        }}
+        className="px-4 pt-12 pb-10 sm:pt-16 sm:pb-14"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
       >
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="space-y-3 sm:space-y-0 text-center sm:text-left">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8">
+          <div className="space-y-5 text-center sm:text-left">
             {hasSocial && (
-              <div className="flex items-center justify-center sm:justify-start gap-5">
+              <div className="flex items-center justify-center sm:justify-start gap-3">
                 {social?.facebook && (
                   <a
                     href={social.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-blue-600 transition"
-                    style={{ color: "var(--text-tertiary)" }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300"
+                    style={{ backgroundColor: "rgba(255,255,255,0.06)" }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.18)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.06)";
+                    }}
                   >
-                    <FaFacebook className="w-5 h-5" />
+                    <FaFacebook className="w-4 h-4 text-white/60 hover:text-white transition" />
                   </a>
                 )}
                 {social?.twitter && (
@@ -77,10 +80,16 @@ export const StoreFooter = memo(
                     href={social.twitter}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-sky-500 transition"
-                    style={{ color: "var(--text-tertiary)" }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300"
+                    style={{ backgroundColor: "rgba(255,255,255,0.06)" }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.18)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.06)";
+                    }}
                   >
-                    <FaTwitter className="w-5 h-5" />
+                    <FaTwitter className="w-4 h-4 text-white/60 hover:text-white transition" />
                   </a>
                 )}
                 {social?.instagram && (
@@ -88,32 +97,28 @@ export const StoreFooter = memo(
                     href={social.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-pink-600 transition"
-                    style={{ color: "var(--text-tertiary)" }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300"
+                    style={{ backgroundColor: "rgba(255,255,255,0.06)" }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.18)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.06)";
+                    }}
                   >
-                    <FaInstagram className="w-5 h-5" />
+                    <FaInstagram className="w-4 h-4 text-white/60 hover:text-white transition" />
                   </a>
                 )}
               </div>
             )}
             {hasContact && (
-              <div
-                className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm"
-                style={{ color: "var(--text-secondary)" }}
-              >
+              <div className="flex flex-wrap justify-center sm:justify-start gap-x-5 gap-y-2 text-sm text-white/70">
                 {storefront.contactInfo?.phone && (
                   <a
                     href={`tel:${storefront.contactInfo.phone}`}
-                    className="flex items-center gap-1.5 transition"
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.color =
-                        "var(--text-primary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = "";
-                    }}
+                    className="flex items-center gap-1.5 transition hover:text-white"
                   >
-                    <FaPhone className="w-3 h-3" />
+                    <FaPhone className="w-3 h-3 text-white/50" />
                     {storefront.contactInfo.phone}
                   </a>
                 )}
@@ -122,61 +127,39 @@ export const StoreFooter = memo(
                     href={`https://wa.me/${normalizeWhatsappNumber(storefront.contactInfo.whatsapp)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 font-semibold transition"
-                    style={{ color: "#25D366" }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = "#20BD5C";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = "#25D366";
-                    }}
+                    className="flex items-center gap-1.5 font-semibold transition hover:text-white"
+                    style={{ color: "rgba(255,255,255,0.7)" }}
                   >
-                    <FaWhatsapp className="w-4 h-4" />
+                    <FaWhatsapp className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} />
                     WhatsApp
                   </a>
                 )}
                 {storefront.contactInfo?.email && (
                   <a
                     href={`mailto:${storefront.contactInfo.email}`}
-                    className="flex items-center gap-1.5 transition"
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.color =
-                        "var(--text-primary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.color = "";
-                    }}
+                    className="flex items-center gap-1.5 transition hover:text-white"
                   >
-                    <FaEnvelope className="w-3 h-3" />
+                    <FaEnvelope className="w-3 h-3 text-white/50" />
                     {storefront.contactInfo.email}
                   </a>
                 )}
               </div>
             )}
-            <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+            <p className="text-xs text-white/50">
               {footerText}
-              <span className="mx-2" style={{ color: "var(--text-tertiary)" }}>
-                |
-              </span>
-              <span
-                className="font-medium"
-                style={{ color: "var(--text-secondary)" }}
-              >
+              <span className="mx-2 text-white/20">|</span>
+              <span className="font-medium text-white/80">
                 {storefront.businessName}
               </span>
             </p>
           </div>
-          <p
-            className="text-xs text-center sm:text-right"
-            style={{ color: "var(--text-tertiary)" }}
-          >
+          <p className="text-xs text-center sm:text-right text-white/50">
             Made with love by{" "}
             <a
               href="https://quayedna-portfolio.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:underline"
-              style={{ color: "var(--color-primary)" }}
+              className="text-white/80 hover:text-white hover:underline transition"
             >
               DNA Studios
             </a>
