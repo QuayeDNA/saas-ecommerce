@@ -19,9 +19,7 @@ export function buildBrandTheme(color?: string): ThemeConfig {
     accent: primary,
     bg: "#FFFFFF",
     text: "#0B1120",
-    gradient: isMidnight
-      ? "linear-gradient(135deg, #001b44 0%, #003b8f 100%);"
-      : "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+    gradient: "linear-gradient(135deg, #001b44 0%, #003b8f 100%)",
     cardBorder: `${primary}22`,
     heroBg: `${primary}0A`,
   };
