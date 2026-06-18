@@ -13,6 +13,7 @@ import { AnnouncementBanner } from "./components/announcements/announcement-bann
 import { AnnouncementWatcher } from "./components/announcements/announcement-watcher";
 import PushNotificationInitializer from "./components/PushNotificationInitializer";
 import { useLocation, useNavigate } from "react-router-dom";
+import { FaExclamationTriangle } from "react-icons/fa";
 import ImpersonationService from "./utils/impersonation";
 
 function App() {
@@ -48,18 +49,27 @@ function App() {
     <StorefrontSessionProvider>
       <>
         {isImpersonating && isAuthenticatedRoute && (
-          <div className="sticky top-0 z-50 w-full p-2 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between shadow-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 10%, transparent)', borderBottom: '1px solid color-mix(in srgb, var(--warning) 40%, transparent)' }}>
-            <span className="font-semibold text-sm sm:text-base mb-2 sm:mb-0" style={{ color: 'var(--warning)' }}>
-              Impersonation Active: You are acting as another user.
-            </span>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={handleReturnToAdmin}
-              className="self-start sm:self-auto"
-            >
-              Return to Admin
-            </Button>
+          <div className="sticky top-0 z-50 bg-warning/10 border-b border-warning/30 px-4 py-2">
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center space-x-2 flex-1 min-w-0">
+                <FaExclamationTriangle className="w-4 h-4 text-warning flex-shrink-0" />
+                <div className="overflow-hidden whitespace-nowrap flex-1 min-w-0">
+                  <div className="inline-block animate-marquee">
+                    <span className="text-sm text-warning font-medium px-4">
+                      Impersonation Active: You are acting as another user.
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleReturnToAdmin}
+                className="flex-shrink-0 ml-4"
+              >
+                Return to Admin
+              </Button>
+            </div>
           </div>
         )}
         <ThemeProvider>
