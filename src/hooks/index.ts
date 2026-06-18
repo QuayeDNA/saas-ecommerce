@@ -11,3 +11,5 @@ export { useDailySpending } from "./use-daily-spending";
 export { useNavigationLoader } from "./use-navigation-loader";
 export * from "./use-debounce";
 export { useProvider } from "./use-provider";
+export { useStorefrontAssets } from "./use-storefront-assets";
+export { useProfilePhoto } from "./use-profile-photo";

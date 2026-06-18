@@ -5,7 +5,7 @@ import { Card } from "../../design-system/components/card";
 import { Badge } from "../../design-system/components/badge";
 import { Spinner, Tabs, TabsList, TabsTrigger, Switch } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
-import { useAuth } from "../../hooks";
+import { useAuth, useProfilePhoto } from "../../hooks";
 import { DarkModeToggle } from "../../components/common/dark-mode-toggle";
 import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type BryteLinksSettings, type SystemInfo } from "../../services/settings.service";
 import pushNotificationService from "../../services/pushNotificationService";
@@ -37,7 +37,7 @@ export default function SuperAdminSettingsPage() {
   const [feeDialogOpen, setFeeDialogOpen] = useState(false);
   const [feeSettings, setFeeSettings] = useState<FeeSettings | null>(null);
   const [testPushLoading, setTestPushLoading] = useState(false);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const { upload: uploadPhoto, remove: removePhoto, isUploading: isUploadingPhoto, photoError } = useProfilePhoto();
   const { authState, refreshAuth } = useAuth();
 
   // single load + client cache via settingsService.getAllSettings()
@@ -217,18 +217,22 @@ export default function SuperAdminSettingsPage() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setIsUploadingPhoto(true);
-    try {
-      const { uploadService } = await import("../../services/upload.service");
-      const url = await uploadService.uploadImage(file);
-      const { userService } = await import("../../services/user.service");
-      await userService.updateProfilePicture(url);
+    const result = await uploadPhoto(file);
+    if (result) {
       await refreshAuth();
       addToast("Profile photo updated", "success");
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "Photo upload failed", "error");
-    } finally {
-      setIsUploadingPhoto(false);
+    } else {
+      addToast(photoError || "Photo upload failed", "error");
+    }
+  };
+
+  const handlePhotoRemove = async () => {
+    const ok = await removePhoto();
+    if (ok) {
+      await refreshAuth();
+      addToast("Profile photo removed", "success");
+    } else {
+      addToast(photoError || "Failed to remove photo", "error");
     }
   };
 
@@ -497,7 +501,11 @@ export default function SuperAdminSettingsPage() {
                     )}
                     <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-full">
                       <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploadingPhoto} />
-                      <Camera className="h-5 w-5 text-white" />
+                      {isUploadingPhoto ? (
+                        <span className="text-xs text-white font-medium">...</span>
+                      ) : (
+                        <Camera className="h-5 w-5 text-white" />
+                      )}
                     </label>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -510,6 +518,16 @@ export default function SuperAdminSettingsPage() {
                     <p className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>
                       {isUploadingPhoto ? "Uploading…" : "Hover avatar to change photo"}
                     </p>
+                    {authState.user?.profilePicture && !isUploadingPhoto && (
+                      <button
+                        type="button"
+                        onClick={handlePhotoRemove}
+                        className="text-xs underline mt-1"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        Remove photo
+                      </button>
+                    )}
                   </div>
                 </div>
 

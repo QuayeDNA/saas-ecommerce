@@ -225,6 +225,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   }, [initialTab]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
@@ -254,6 +255,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
   // Branding state
   const [brandingData, setBrandingData] = useState({
     logoUrl: storefront.branding?.logoUrl || "",
+    bannerUrl: storefront.branding?.bannerUrl || "",
     tagline: storefront.branding?.tagline || "",
     facebook: storefront.branding?.socialLinks?.facebook || "",
     instagram: storefront.branding?.socialLinks?.instagram || "",
@@ -536,6 +538,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
       const resolvedDescription = formData.description.trim()
         || getSystemDescription(storefront.displayName || formData.businessName || storefront.businessName);
       const resolvedLogoUrl = brandingData.logoUrl.trim() || undefined;
+      const resolvedBannerUrl = brandingData.bannerUrl.trim() || undefined;
 
       const resolvedFooterText =
         brandingData.footerText.trim() ||
@@ -545,6 +548,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
         description: resolvedDescription,
         branding: {
           logoUrl: resolvedLogoUrl,
+          bannerUrl: resolvedBannerUrl,
           tagline: resolvedTagline,
           socialLinks: {
             facebook: brandingData.facebook.trim() || undefined,
@@ -1103,7 +1107,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
             <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "var(--border-color)" }}>
               <Image className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
               <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-primary)" }}>
-                Logo
+                Logo &amp; Banner
               </h3>
             </div>
 
@@ -1142,8 +1146,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                         if (!file) return;
                         setIsUploadingLogo(true);
                         try {
-                          const { uploadService } = await import("../../services/upload.service");
-                          const url = await uploadService.uploadImage(file);
+                          const { url } = await storefrontService.uploadLogo(file);
                           handleBrandingChange("logoUrl", url);
                         } catch (err) {
                           addToast(err instanceof Error ? err.message : "Logo upload failed", "error");
@@ -1162,7 +1165,93 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                   {brandingData.logoUrl && (
                     <button
                       type="button"
-                      onClick={() => handleBrandingChange("logoUrl", "")}
+                      onClick={async () => {
+                        try {
+                          await storefrontService.deleteLogo();
+                          handleBrandingChange("logoUrl", "");
+                        } catch (err) {
+                          addToast(err instanceof Error ? err.message : "Failed to remove logo", "error");
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border hover:opacity-80 transition-opacity"
+                      style={{ borderColor: "var(--border-color)", color: "var(--error)" }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Banner */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>Store Banner</label>
+              <div
+                className="flex items-center gap-3 p-3 rounded-xl border"
+                style={{ backgroundColor: "var(--bg-surface-alt)", borderColor: "var(--border-color)" }}
+              >
+                <div className="w-28 h-14 rounded-xl overflow-hidden border shadow-sm shrink-0 flex items-center justify-center"
+                  style={{ borderColor: "var(--border-color)", backgroundColor: "var(--bg-surface)" }}
+                >
+                  {brandingData.bannerUrl ? (
+                    <img
+                      src={brandingData.bannerUrl}
+                      alt="Store banner"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <Image className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
+                    {brandingData.bannerUrl ? 'Banner uploaded' : 'No banner set'}
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    {brandingData.bannerUrl ? 'Click change to upload a new banner' : 'Upload a wide image (1200×400 px) for your store header.'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setIsUploadingBanner(true);
+                        try {
+                          const { url } = await storefrontService.uploadBanner(file);
+                          handleBrandingChange("bannerUrl", url);
+                        } catch (err) {
+                          addToast(err instanceof Error ? err.message : "Banner upload failed", "error");
+                        } finally {
+                          setIsUploadingBanner(false);
+                        }
+                      }}
+                    />
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer hover:opacity-80 transition-opacity"
+                      style={{ borderColor: "var(--border-color)", color: "var(--text-primary)" }}
+                    >
+                      {isUploadingBanner ? "Uploading…" : "Change"}
+                    </span>
+                  </label>
+                  {brandingData.bannerUrl && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await storefrontService.deleteBanner();
+                          handleBrandingChange("bannerUrl", "");
+                        } catch (err) {
+                          addToast(err instanceof Error ? err.message : "Failed to remove banner", "error");
+                        }
+                      }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border hover:opacity-80 transition-opacity"
                       style={{ borderColor: "var(--border-color)", color: "var(--error)" }}
                     >

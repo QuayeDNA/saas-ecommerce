@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth, useUser, useWallet } from "../hooks";
+import { useAuth, useUser, useWallet, useProfilePhoto } from "../hooks";
 import {
   Card,
   CardBody,
@@ -57,26 +57,30 @@ export const ProfilePage: React.FC = () => {
         ? Notification.permission
         : "denied",
     );
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-
+  const { upload: uploadPhoto, remove: removePhoto, isUploading: isUploadingPhoto, photoError } = useProfilePhoto();
   const { addToast } = useToast();
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setIsUploadingPhoto(true);
-    try {
-      const { uploadService } = await import("../services/upload.service");
-      const url = await uploadService.uploadImage(file);
-      const { userService } = await import("../services/user.service");
-      await userService.updateProfilePicture(url);
+    const result = await uploadPhoto(file);
+    if (result) {
       await refreshProfile();
       await refreshAuth();
       addToast("Profile photo updated", "success");
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "Photo upload failed", "error");
-    } finally {
-      setIsUploadingPhoto(false);
+    } else {
+      addToast(photoError || "Photo upload failed", "error");
+    }
+  };
+
+  const handlePhotoRemove = async () => {
+    const ok = await removePhoto();
+    if (ok) {
+      setProfileData(prev => prev ? { ...prev, profilePicture: undefined } : prev);
+      await refreshAuth();
+      addToast("Profile photo removed", "success");
+    } else {
+      addToast(photoError || "Failed to remove photo", "error");
     }
   };
 
@@ -459,9 +463,23 @@ export const ProfilePage: React.FC = () => {
                   )}
                   <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-full">
                     <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploadingPhoto} />
-                    <Camera className="h-5 w-5 text-white" />
+                    {isUploadingPhoto ? (
+                      <span className="text-xs text-white font-medium">...</span>
+                    ) : (
+                      <Camera className="h-5 w-5 text-white" />
+                    )}
                   </label>
                 </div>
+                {profileData.profilePicture && !isUploadingPhoto && (
+                  <button
+                    type="button"
+                    onClick={handlePhotoRemove}
+                    className="text-xs underline"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Remove
+                  </button>
+                )}
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl font-bold truncate" style={{ color: "var(--text-primary)" }}>
                     {profileData.fullName}
@@ -914,16 +932,32 @@ export const ProfilePage: React.FC = () => {
             <Card className="shadow-sm hover:shadow-md transition-shadow">
               <CardBody>
                 <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg flex-shrink-0 overflow-hidden relative group" style={!profileData.profilePicture ? { background: "var(--gradient-primary)" } : undefined}>
-                    {profileData.profilePicture ? (
-                      <img src={profileData.profilePicture} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <span>{profileData.fullName.charAt(0)}{profileData.fullName.split(" ")[1]?.charAt(0) ?? ""}</span>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg flex-shrink-0 overflow-hidden relative group" style={!profileData.profilePicture ? { background: "var(--gradient-primary)" } : undefined}>
+                      {profileData.profilePicture ? (
+                        <img src={profileData.profilePicture} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span>{profileData.fullName.charAt(0)}{profileData.fullName.split(" ")[1]?.charAt(0) ?? ""}</span>
+                      )}
+                      <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-full">
+                        <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploadingPhoto} />
+                        {isUploadingPhoto ? (
+                          <span className="text-xs text-white font-medium">...</span>
+                        ) : (
+                          <Camera className="h-6 w-6 text-white" />
+                        )}
+                      </label>
+                    </div>
+                    {profileData.profilePicture && !isUploadingPhoto && (
+                      <button
+                        type="button"
+                        onClick={handlePhotoRemove}
+                        className="text-xs underline"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        Remove
+                      </button>
                     )}
-                    <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-full">
-                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploadingPhoto} />
-                      <Camera className="h-6 w-6 text-white" />
-                    </label>
                   </div>
                   <div className="flex-1 min-w-0">
                     <h2 className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>

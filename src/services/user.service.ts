@@ -357,8 +357,33 @@ export const userService = {
     const resp = await apiClient.patch(`/api/users/${id}/status`, data);
     return resp.data.user;
   },
-  async updateProfilePicture(profilePicture: string): Promise<User> {
-    const resp = await apiClient.patch("/api/users/profile-picture", { profilePicture });
-    return resp.data.user;
+  async uploadProfilePicture(
+    file: File,
+    onProgress?: (pct: number) => void,
+  ): Promise<{ url: string; user: User }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const resp = await apiClient.post<{ success: boolean; data: { url: string; user: User } }>(
+      "/api/users/profile-picture",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (e) => {
+          if (onProgress && e.total) {
+            onProgress(Math.round((e.loaded * 100) / e.total));
+          }
+        },
+      },
+    );
+    if (!resp.data.success || !resp.data.data) {
+      throw new Error("Upload failed");
+    }
+    return resp.data.data;
+  },
+  async deleteProfilePicture(): Promise<void> {
+    const resp = await apiClient.delete("/api/users/profile-picture");
+    if (!resp.data.success) {
+      throw new Error(resp.data.message || "Failed to delete profile picture");
+    }
   },
 };
