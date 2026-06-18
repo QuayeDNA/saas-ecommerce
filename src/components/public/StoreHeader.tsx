@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 
 interface StoreHeaderProps {
   storefront: {
@@ -41,29 +41,165 @@ function pickTagline(name: string): string {
   return TAGLINES[hash % TAGLINES.length];
 }
 
-export const StoreHeader = memo(
-  ({ storefront, branding }: StoreHeaderProps) => {
-    const displayName = storefront.displayName || storefront.businessName || "";
-    const tagline =
-      branding.tagline || pickTagline(storefront.businessName || displayName);
-    const logoSrc = branding.logoUrl || "/icons/store-icon.png";
+export const StoreHeader = memo(function StoreHeader({
+  storefront,
+  branding,
+}: StoreHeaderProps) {
+  const displayName = storefront.displayName || storefront.businessName || "";
+  const tagline =
+    branding.tagline || pickTagline(storefront.businessName || displayName);
+  const logoSrc = branding.logoUrl || "/icons/store-icon.png";
+  const [mounted, setMounted] = useState(false);
 
-    return (
-      <div className="flex flex-col items-center gap-5 py-14 sm:py-16 px-4">
-        <img
-          src={logoSrc}
-          alt={displayName}
-          className="h-24 w-24 rounded-2xl object-cover shrink-0"
-        />
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none">
-          {displayName}
-        </h1>
-        {tagline && (
-          <p className="text-sm sm:text-base max-w-md">
-            {tagline}
-          </p>
-        )}
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  return (
+    <header className={`sh-header ${mounted ? "is-mounted" : ""}`}>
+      <div className="sh-header__inner">
+        <div className="sh-header__logo-wrap">
+          <img src={logoSrc} alt={displayName} className="sh-header__logo" />
+        </div>
+        <h1 className="sh-header__name">{displayName}</h1>
+        <div className="sh-header__rule" />
+        {tagline && <p className="sh-header__tagline">{tagline}</p>}
       </div>
-    );
-  },
-);
+
+      <style>{`
+        @import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@1,700,800&f[]=satoshi@1,300,400&display=swap');
+
+        .sh-header {
+          display: flex;
+          justify-content: center;
+          padding: clamp(48px, 10vw, 100px) clamp(20px, 5vw, 64px) clamp(40px, 6vw, 72px);
+        }
+
+        .sh-header__inner {
+          max-width: 640px;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          opacity: 0;
+          transform: translateY(16px);
+          transition: opacity 700ms cubic-bezier(0.19, 1, 0.22, 1),
+                      transform 700ms cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .sh-header.is-mounted .sh-header__inner {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* ── Logo ──────────────────────────────────────── */
+
+        .sh-header__logo-wrap {
+          margin-bottom: clamp(20px, 3.5vw, 36px);
+          opacity: 0;
+          transform: scale(0.92);
+          transition: opacity 500ms ease-out, transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition-delay: 150ms;
+        }
+
+        .sh-header.is-mounted .sh-header__logo-wrap {
+          opacity: 1;
+          transform: scale(1);
+        }
+
+        .sh-header__logo {
+          display: block;
+          height: clamp(72px, 11vw, 104px);
+          width: clamp(72px, 11vw, 104px);
+          border-radius: 24px;
+          object-fit: cover;
+          border: 1px solid color-mix(in srgb, var(--text-primary, #0F172A) 8%, transparent);
+          box-shadow: 0 2px 12px color-mix(in srgb, var(--text-primary, #0F172A) 6%, transparent);
+        }
+
+        /* ── Name ──────────────────────────────────────── */
+
+        .sh-header__name {
+          font-family: 'Cabinet Grotesk', sans-serif;
+          font-weight: 800;
+          font-size: clamp(32px, 8.5vw, 80px);
+          line-height: 0.92;
+          letter-spacing: -0.045em;
+          margin: 0;
+          color: var(--text-primary, #0F172A);
+          opacity: 0;
+          transform: translateY(12px);
+          transition: opacity 600ms ease-out, transform 600ms cubic-bezier(0.19, 1, 0.22, 1);
+          transition-delay: 300ms;
+        }
+
+        .sh-header.is-mounted .sh-header__name {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .sh-header__name:empty::before {
+          content: "Your Store";
+          opacity: 0.35;
+          font-family: 'Cabinet Grotesk', sans-serif;
+          font-weight: 800;
+        }
+
+        /* ── Decorative rule ───────────────────────────── */
+
+        .sh-header__rule {
+          margin-top: clamp(16px, 2.5vw, 28px);
+          width: 0;
+          height: 2px;
+          border-radius: 1px;
+          background: var(--text-primary, #0F172A);
+          opacity: 0.15;
+          transition: width 800ms cubic-bezier(0.19, 1, 0.22, 1);
+          transition-delay: 500ms;
+        }
+
+        .sh-header.is-mounted .sh-header__rule {
+          width: clamp(48px, 8vw, 96px);
+        }
+
+        /* ── Tagline ───────────────────────────────────── */
+
+        .sh-header__tagline {
+          font-family: 'Satoshi', sans-serif;
+          font-weight: 300;
+          font-size: clamp(14px, 2.2vw, 19px);
+          line-height: 1.65;
+          letter-spacing: 0.01em;
+          color: var(--text-secondary, #475569);
+          margin: clamp(16px, 2.5vw, 28px) 0 0;
+          max-width: 32em;
+          opacity: 0;
+          transform: translateY(8px);
+          transition: opacity 600ms ease-out, transform 600ms cubic-bezier(0.19, 1, 0.22, 1);
+          transition-delay: 650ms;
+        }
+
+        .sh-header.is-mounted .sh-header__tagline {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* ── Motion safety ─────────────────────────────── */
+
+        @media (prefers-reduced-motion: reduce) {
+          .sh-header__inner,
+          .sh-header__logo-wrap,
+          .sh-header__name,
+          .sh-header__rule,
+          .sh-header__tagline {
+            transition: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+            width: clamp(48px, 8vw, 96px);
+          }
+        }
+      `}</style>
+    </header>
+  );
+});
