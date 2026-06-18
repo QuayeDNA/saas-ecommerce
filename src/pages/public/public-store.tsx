@@ -894,7 +894,6 @@ const PublicStore: React.FC = () => {
         {(popularBundles.length > 0 || bundles.length > 0) && (
           <div className="max-w-7xl mx-auto">
             <FeaturedSection
-              theme={theme}
               trendingBundles={popularBundles}
               allBundles={bundles}
               onSelect={openOrderDialog}

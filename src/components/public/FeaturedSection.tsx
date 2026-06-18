@@ -8,20 +8,17 @@ import {
 } from "react-icons/fa6";
 import { getProviderColors } from "../../utils/provider-colors";
 import type { PublicBundle } from "../../services/storefront.service";
-import type { ThemeConfig } from "./types";
 import { fmt, fmtValidity } from "./utils";
 
 type FeaturedTab = "trending" | "value";
 
 export const FeaturedSection = memo(
   ({
-    theme,
     trendingBundles,
     allBundles,
     onSelect,
     getProviderLogoUrl,
   }: {
-    theme: ThemeConfig;
     trendingBundles: PublicBundle[];
     allBundles: PublicBundle[];
     onSelect: (b: PublicBundle) => void;
@@ -94,11 +91,6 @@ export const FeaturedSection = memo(
     );
 
     if (!trendingBundles.length && !allBundles.length) return null;
-
-    const activeBundle = items[activeIdx];
-    const activePc = activeBundle
-      ? getProviderColors(activeBundle.provider)
-      : null;
 
     return (
       <section className="fs-section">
