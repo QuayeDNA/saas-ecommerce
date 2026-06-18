@@ -14,7 +14,7 @@ export const uploadService = {
     formData.append("file", file);
 
     const response = await apiClient.post<{ success: boolean; url: string }>(
-      "/upload/image",
+      "/api/upload/image",
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },

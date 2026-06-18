@@ -27,7 +27,7 @@ import {
   FaRedo,
   FaBell,
 } from "react-icons/fa";
-import { UserPen, Key } from "lucide-react";
+import { UserPen, Key, Camera } from "lucide-react";
 import type { User } from "../types";
 import { isBusinessUser } from "../utils/userTypeHelpers";
 import { DarkModeToggle } from "../components/common/dark-mode-toggle";
@@ -35,7 +35,7 @@ import pushNotificationService from "../services/pushNotificationService";
 import { CONTACTS } from "../config/contacts";
 
 export const ProfilePage: React.FC = () => {
-  const { authState, logout } = useAuth();
+  const { authState, logout, refreshAuth } = useAuth();
   const { getProfile } = useUser();
   const { walletBalance, connectionStatus, refreshWallet } = useWallet();
   const [profileData, setProfileData] = useState<User | null>(authState.user);
@@ -57,7 +57,28 @@ export const ProfilePage: React.FC = () => {
         ? Notification.permission
         : "denied",
     );
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
   const { addToast } = useToast();
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    try {
+      const { uploadService } = await import("../services/upload.service");
+      const url = await uploadService.uploadImage(file);
+      const { userService } = await import("../services/user.service");
+      await userService.updateProfilePicture(url);
+      await refreshProfile();
+      await refreshAuth();
+      addToast("Profile photo updated", "success");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Photo upload failed", "error");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   const refreshProfile = async () => {
     try {
@@ -430,9 +451,16 @@ export const ProfilePage: React.FC = () => {
           <Card className="shadow-sm hover:shadow-md transition-shadow">
             <CardBody>
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-lg flex-shrink-0" style={{ background: "var(--gradient-primary)" }}>
-                  {profileData.fullName.charAt(0)}
-                  {profileData.fullName.split(" ")[1]?.charAt(0) ?? ""}
+                <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-lg flex-shrink-0 overflow-hidden relative group" style={!profileData.profilePicture ? { background: "var(--gradient-primary)" } : undefined}>
+                  {profileData.profilePicture ? (
+                    <img src={profileData.profilePicture} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{profileData.fullName.charAt(0)}{profileData.fullName.split(" ")[1]?.charAt(0) ?? ""}</span>
+                  )}
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-full">
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploadingPhoto} />
+                    <Camera className="h-5 w-5 text-white" />
+                  </label>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl font-bold truncate" style={{ color: "var(--text-primary)" }}>
@@ -886,9 +914,16 @@ export const ProfilePage: React.FC = () => {
             <Card className="shadow-sm hover:shadow-md transition-shadow">
               <CardBody>
                 <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg flex-shrink-0" style={{ background: "var(--gradient-primary)" }}>
-                    {profileData.fullName.charAt(0)}
-                    {profileData.fullName.split(" ")[1]?.charAt(0) ?? ""}
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg flex-shrink-0 overflow-hidden relative group" style={!profileData.profilePicture ? { background: "var(--gradient-primary)" } : undefined}>
+                    {profileData.profilePicture ? (
+                      <img src={profileData.profilePicture} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span>{profileData.fullName.charAt(0)}{profileData.fullName.split(" ")[1]?.charAt(0) ?? ""}</span>
+                    )}
+                    <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-full">
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploadingPhoto} />
+                      <Camera className="h-6 w-6 text-white" />
+                    </label>
                   </div>
                   <div className="flex-1 min-w-0">
                     <h2 className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>

@@ -304,15 +304,21 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             <div className="relative flex-shrink-0" aria-hidden="true">
               <div
                 className={[
-                  "flex h-9 w-9 items-center justify-center rounded-full",
+                  "flex h-9 w-9 items-center justify-center rounded-full overflow-hidden",
                   "text-[13px] font-bold tracking-wide text-[var(--sb-text-primary)]",
                 ].join(" ")}
-                style={{
+                style={!authState.user?.profilePicture ? {
                   background: "linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-700, #2563eb))",
+                  boxShadow: "0 0 0 1px var(--sb-avatar-ring)",
+                } : {
                   boxShadow: "0 0 0 1px var(--sb-avatar-ring)",
                 }}
               >
-                {initials}
+                {authState.user?.profilePicture ? (
+                  <img src={authState.user.profilePicture} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  initials
+                )}
               </div>
               {/* Online status dot */}
               <span

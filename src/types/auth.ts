@@ -29,7 +29,8 @@ export interface User {
   // Multi-tenant fields
   tenantId?: string;
 
-
+  // Profile
+  profilePicture?: string;
 
   // Security fields
   requiresPinSetup?: boolean;

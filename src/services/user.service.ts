@@ -20,6 +20,7 @@ export interface User {
   subscriptionStatus?: "active" | "inactive" | "suspended";
   walletBalance: number;
   isVerified: boolean;
+  profilePicture?: string;
 }
 
 export interface FetchUsersParams {
@@ -354,6 +355,10 @@ export const userService = {
   },
   async updateUserStatus(id: string, data: { status: string }): Promise<User> {
     const resp = await apiClient.patch(`/api/users/${id}/status`, data);
+    return resp.data.user;
+  },
+  async updateProfilePicture(profilePicture: string): Promise<User> {
+    const resp = await apiClient.patch("/api/users/profile-picture", { profilePicture });
     return resp.data.user;
   },
 };

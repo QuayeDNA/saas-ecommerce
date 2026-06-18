@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Edit, Key as KeyIcon, Eye, EyeOff, Smartphone, CreditCard } from "lucide-react";
+import { Edit, Key as KeyIcon, Eye, EyeOff, Smartphone, CreditCard, Camera } from "lucide-react";
 import { Button } from "../../design-system/components/button";
 import { Card } from "../../design-system/components/card";
 import { Badge } from "../../design-system/components/badge";
 import { Spinner, Tabs, TabsList, TabsTrigger, Switch } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
+import { useAuth } from "../../hooks";
 import { DarkModeToggle } from "../../components/common/dark-mode-toggle";
 import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type BryteLinksSettings, type SystemInfo } from "../../services/settings.service";
 import pushNotificationService from "../../services/pushNotificationService";
@@ -36,6 +37,8 @@ export default function SuperAdminSettingsPage() {
   const [feeDialogOpen, setFeeDialogOpen] = useState(false);
   const [feeSettings, setFeeSettings] = useState<FeeSettings | null>(null);
   const [testPushLoading, setTestPushLoading] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const { authState, refreshAuth } = useAuth();
 
   // single load + client cache via settingsService.getAllSettings()
   useEffect(() => {
@@ -210,6 +213,24 @@ export default function SuperAdminSettingsPage() {
   const handlePasswordChangeSuccess = useCallback(() => {
     addToast("Admin password changed successfully. Please log in again.", "success");
   }, [addToast]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    try {
+      const { uploadService } = await import("../../services/upload.service");
+      const url = await uploadService.uploadImage(file);
+      const { userService } = await import("../../services/user.service");
+      await userService.updateProfilePicture(url);
+      await refreshAuth();
+      addToast("Profile photo updated", "success");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Photo upload failed", "error");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   const handleSendTestPush = useCallback(async () => {
     setTestPushLoading(true);
@@ -462,6 +483,36 @@ export default function SuperAdminSettingsPage() {
 
               <Card>
                 <SectionHeader title="User Management" subtitle="Admin & security settings" action={<Button size="sm" variant="secondary" onClick={() => setPasswordDialogOpen(true)}><KeyIcon className="w-3 h-3 mr-1" />Change Password</Button>} />
+
+                {/* Profile picture */}
+                <div className="mt-4 flex items-center gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md flex-shrink-0 overflow-hidden relative group" style={!authState.user?.profilePicture ? { background: "var(--gradient-primary)" } : undefined}>
+                    {authState.user?.profilePicture ? (
+                      <img src={authState.user.profilePicture} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span>
+                        {authState.user?.fullName?.charAt(0)?.toUpperCase() ?? "A"}
+                        {authState.user?.fullName?.split(" ")[1]?.charAt(0)?.toUpperCase() ?? ""}
+                      </span>
+                    )}
+                    <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-full">
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploadingPhoto} />
+                      <Camera className="h-5 w-5 text-white" />
+                    </label>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+                      {authState.user?.fullName ?? "Admin"}
+                    </p>
+                    <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      {authState.user?.email ?? ""}
+                    </p>
+                    <p className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>
+                      {isUploadingPhoto ? "Uploading…" : "Hover avatar to change photo"}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' }}>
                   <div className="text-sm font-medium" style={{ color: 'var(--success)' }}>Admin account security</div>
                   <div className="text-xs mt-1" style={{ color: 'var(--success)' }}>Change your admin password regularly. You'll be required to log in again after changing it.</div>

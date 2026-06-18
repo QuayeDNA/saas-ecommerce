@@ -357,14 +357,18 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 onClick={() => setIsDropdownOpen((v) => !v)}
                 aria-label="User menu"
                 aria-expanded={isDropdownOpen}
-                className="relative flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                style={{
+                className="relative flex h-9 w-9 items-center justify-center rounded-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                style={!authState.user?.profilePicture ? {
                   background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover, #1d4ed8))",
-                }}
+                } : undefined}
               >
-                <span className="text-[13px] font-bold text-white leading-none">
-                  {initials}
-                </span>
+                {authState.user?.profilePicture ? (
+                  <img src={authState.user.profilePicture} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-[13px] font-bold text-white leading-none">
+                    {initials}
+                  </span>
+                )}
                 {/* Impersonation pulse dot */}
                 {isImpersonating && (
                   <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-amber-400 animate-pulse" />
@@ -398,10 +402,14 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                       <div className="flex items-start gap-3">
                         {/* Mini avatar */}
                         <div
-                          className="h-9 w-9 flex-shrink-0 rounded-full flex items-center justify-center text-[12px] font-bold text-white"
-                          style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover, #1d4ed8))" }}
+                          className="h-9 w-9 flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center text-[12px] font-bold text-white"
+                          style={!authState.user?.profilePicture ? { background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover, #1d4ed8))" } : undefined}
                         >
-                          {initials}
+                          {authState.user?.profilePicture ? (
+                            <img src={authState.user.profilePicture} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            initials
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-[var(--text-primary)] leading-snug">
