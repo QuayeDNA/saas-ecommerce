@@ -95,7 +95,7 @@ const BundleCardSkeletonInline = memo(() => (
 ));
 
 const StoreSkeleton = memo(({ theme }: { theme: ThemeConfig }) => (
-  <div className="min-h-screen" style={{ backgroundColor: "var(--bg-muted)" }}>
+  <div className="min-h-screen" style={{ background: theme.gradient }}>
     {/* Hero skeleton */}
     <div
       className="min-h-[280px] sm:min-h-[340px]"
@@ -129,10 +129,10 @@ const StoreSkeleton = memo(({ theme }: { theme: ThemeConfig }) => (
 ));
 
 const StoreError = memo(
-  ({ error, onRetry }: { error: string; onRetry: () => void }) => (
+  ({ error, onRetry, theme }: { error: string; onRetry: () => void; theme: ThemeConfig }) => (
     <div
       className="min-h-screen flex items-center justify-center p-6"
-      style={{ backgroundColor: "var(--bg-muted)" }}
+      style={{ background: theme.gradient }}
     >
       <div className="max-w-sm w-full text-center space-y-5">
         <div
@@ -725,15 +725,15 @@ const PublicStore: React.FC = () => {
   // ==========================================================================
 
   return (
-    <div
-      className="min-h-screen storefront-root"
-      style={{ backgroundColor: "var(--bg-muted)" }}
-    >
+      <div
+        className="min-h-screen storefront-root"
+        style={{ background: theme.gradient }}
+      >
       {(() => {
         if (loading) return <StoreSkeleton theme={theme} />;
         if (error || !storeData)
           return (
-            <StoreError error={error || "Store not found"} onRetry={fetchStore} />
+            <StoreError error={error || "Store not found"} onRetry={fetchStore} theme={theme} />
           );
 
         const { storefront, bundles } = storeData;
