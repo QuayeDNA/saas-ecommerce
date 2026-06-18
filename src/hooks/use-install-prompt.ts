@@ -1,11 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-
-interface InstallPromptState {
-  isInstallable: boolean;
-  isInstalled: boolean;
-  canPrompt: boolean;
-  deferredPrompt: BeforeInstallPromptEvent | null;
-}
+import { useLocation } from "react-router-dom";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -13,144 +7,90 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export const useInstallPrompt = () => {
-  const [state, setState] = useState<InstallPromptState>({
-    isInstallable: false,
-    isInstalled: false,
-    canPrompt: false,
-    deferredPrompt: null,
-  });
+  const location = useLocation();
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
-  // Check if app is already installed
+  const isStandalone =
+    typeof window !== "undefined" &&
+    (window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as { standalone?: boolean }).standalone === true);
+
+  const canPrompt = deferredPrompt !== null && !isInstalled && !isStandalone;
+
+  // Track route changes for engagement
   useEffect(() => {
-    const checkInstalled = () => {
-      // Check if running in standalone mode (installed PWA)
-      const isStandalone = window.matchMedia(
-        "(display-mode: standalone)"
-      ).matches;
-      const navigator = window.navigator as { standalone?: boolean };
-      const isInWebAppiOS = navigator.standalone === true;
+    const key = "pwa_page_visits";
+    const raw = localStorage.getItem(key);
+    const count = raw ? parseInt(raw, 10) : 0;
+    localStorage.setItem(key, String(count + 1));
+  }, [location.pathname]);
 
-      setState((prev) => ({
-        ...prev,
-        isInstalled: isStandalone || isInWebAppiOS,
-      }));
-    };
-
-    checkInstalled();
-
-    // Listen for display mode changes
-    const mediaQuery = window.matchMedia("(display-mode: standalone)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      setState((prev) => ({ ...prev, isInstalled: e.matches }));
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
-  // Listen for install prompt
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
+    const onBeforeInstall = (e: Event) => {
       e.preventDefault();
-
-      // Store the event for later use
-      setState((prev) => ({
-        ...prev,
-        isInstallable: true,
-        canPrompt: true,
-        deferredPrompt: e as BeforeInstallPromptEvent,
-      }));
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
-    const handleAppInstalled = () => {
-      setState((prev) => ({
-        ...prev,
-        isInstalled: true,
-        canPrompt: false,
-        deferredPrompt: null,
-      }));
+    const onInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
     };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
+    const onDisplayMode = (e: MediaQueryListEvent) => {
+      if (e.matches) setIsInstalled(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("appinstalled", onInstalled);
+    const mq = window.matchMedia("(display-mode: standalone)");
+    mq.addEventListener("change", onDisplayMode);
 
     return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt
-      );
-      window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("appinstalled", onInstalled);
+      mq.removeEventListener("change", onDisplayMode);
     };
   }, []);
 
   const promptInstall = useCallback(async (): Promise<boolean> => {
-    if (!state.deferredPrompt || !state.canPrompt) {
-      return false;
-    }
-
+    if (!deferredPrompt) return false;
     try {
-      // Show the install prompt
-      await state.deferredPrompt.prompt();
-
-      // Wait for the user to respond to the prompt
-      const { outcome } = await state.deferredPrompt.userChoice;
-
-      // Reset the deferred prompt
-      setState((prev) => ({
-        ...prev,
-        canPrompt: false,
-        deferredPrompt: null,
-      }));
-
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
       return outcome === "accepted";
-    } catch (error) {
-      console.error("Error showing install prompt:", error);
+    } catch {
       return false;
     }
-  }, [state.deferredPrompt, state.canPrompt]);
+  }, [deferredPrompt]);
 
   const dismissPrompt = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      canPrompt: false,
-    }));
+    setDeferredPrompt(null);
   }, []);
 
-  // Smart install prompt logic - show after user engagement
-  const shouldShowPrompt = useCallback(() => {
-    if (!state.canPrompt || state.isInstalled) return false;
+  const shouldShowAutoPrompt = useCallback(() => {
+    if (!canPrompt) return false;
+    const visits = parseInt(localStorage.getItem("pwa_page_visits") || "0", 10);
+    const dismissed = localStorage.getItem("pwa_dismissed_at");
+    if (dismissed) {
+      const elapsed = Date.now() - parseInt(dismissed, 10);
+      if (elapsed < 24 * 60 * 60 * 1000) return false;
+    }
+    return visits >= 2;
+  }, [canPrompt]);
 
-    // Check if user has been engaged (multiple page views, time spent, etc.)
-    const pageViews = parseInt(localStorage.getItem("pageViews") || "0");
-    const lastPromptDismissed = localStorage.getItem("installPromptDismissed");
-    const timeSinceDismissed = lastPromptDismissed
-      ? Date.now() - parseInt(lastPromptDismissed)
-      : Infinity;
-
-    // Show prompt if:
-    // - User has viewed at least 3 pages, AND
-    // - At least 24 hours have passed since last dismissal, OR
-    // - No previous dismissal
-    return pageViews >= 3 && timeSinceDismissed > 24 * 60 * 60 * 1000;
-  }, [state.canPrompt, state.isInstalled]);
-
-  const trackEngagement = useCallback(() => {
-    const currentViews = parseInt(localStorage.getItem("pageViews") || "0");
-    localStorage.setItem("pageViews", (currentViews + 1).toString());
+  const markDismissed = useCallback(() => {
+    localStorage.setItem("pwa_dismissed_at", String(Date.now()));
+    setDeferredPrompt(null);
   }, []);
-
-  const markPromptDismissed = useCallback(() => {
-    localStorage.setItem("installPromptDismissed", Date.now().toString());
-    dismissPrompt();
-  }, [dismissPrompt]);
 
   return {
-    ...state,
+    canPrompt,
+    isInstalled: isInstalled || isStandalone,
     promptInstall,
     dismissPrompt,
-    shouldShowPrompt,
-    trackEngagement,
-    markPromptDismissed,
+    shouldShowAutoPrompt,
+    markDismissed,
   };
 };

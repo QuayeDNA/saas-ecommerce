@@ -13,9 +13,10 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { LogOut, X } from "lucide-react";
+import { LogOut, X, Download } from "lucide-react";
 import { FaBox } from "react-icons/fa";
 import { useAuth } from "../hooks/use-auth";
+import { useInstallPrompt } from "../hooks/use-install-prompt";
 import { packageService } from "../services/package.service";
 import { BryteLinksSvgIcon } from "./common/BryteLinksSvgLogo";
 import { NavItem } from "./sidebar/nav-item";
@@ -356,6 +357,9 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             </div>
           </div>
 
+          {/* Install PWA */}
+          <SidebarInstallButton />
+
           {/* Logout */}
           <button
             type="button"
@@ -387,5 +391,31 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </footer>
       </aside>
     </>
+  );
+};
+
+/* ─── Sidebar install PWA button ─────────────────────────────────────────── */
+
+const SidebarInstallButton: React.FC = () => {
+  const { canPrompt, isInstalled, promptInstall } = useInstallPrompt();
+
+  if (!canPrompt || isInstalled) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={promptInstall}
+      className={[
+        "flex min-h-[40px] w-full items-center justify-center gap-2 rounded-md px-4 py-2",
+        "text-[13px] font-semibold transition-colors duration-150",
+        "text-white border border-white/15",
+        "hover:bg-white/10 hover:border-white/25",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
+      ].join(" ")}
+      style={{ background: "rgba(255,255,255,0.06)" }}
+    >
+      <Download size={15} aria-hidden="true" />
+      <span>Install App</span>
+    </button>
   );
 };
