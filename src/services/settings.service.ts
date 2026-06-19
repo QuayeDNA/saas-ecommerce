@@ -291,12 +291,13 @@ class SettingsService {
   /**
    * Combined fetch used by the Settings page — cached client‑side for a short TTL
    * reduces duplicate network calls when the page remounts or dialogs re-open.
+   * Each endpoint is fetched independently so a single 404 doesn't block the page.
    */
   async getAllSettings(force = false): Promise<{
     siteSettings: SiteSettings;
     apiSettings: ApiSettings;
     walletSettings: WalletSettings;
-    feeSettings: FeeSettings;
+    feeSettings: FeeSettings | null;
     bryteLinksSettings: BryteLinksSettings;
     momoBridgeSettings: MomoBridgeSettings;
     signupApproval: { requireApprovalForSignup: boolean };
@@ -308,16 +309,39 @@ class SettingsService {
       return this._allSettingsCache.data;
     }
 
-    const [siteSettings, apiSettings, walletSettings, feeSettings, bryteLinksSettings, momoBridgeSettings, signupApproval, autoApproveStorefronts, systemInfo] = await Promise.all([
-      this.getSiteSettings(),
-      this.getApiSettings(),
-      this.getWalletSettings(),
-      this.getFeeSettings(),
-      this.getBryteLinksSettings(),
-      this.getMomoBridgeSettings(),
-      this.getSignupApprovalSetting(),
-      this.getAutoApproveStorefronts(),
-      this.getSystemInfo(),
+    const fetchOrDefault = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+      try {
+        return await fn();
+      } catch {
+        return fallback;
+      }
+    };
+
+    const [
+      siteSettings,
+      apiSettings,
+      walletSettings,
+      feeSettings,
+      bryteLinksSettings,
+      momoBridgeSettings,
+      signupApproval,
+      autoApproveStorefronts,
+      systemInfo,
+    ] = await Promise.all([
+      fetchOrDefault(() => this.getSiteSettings(), {} as SiteSettings),
+      fetchOrDefault(() => this.getApiSettings(), {} as ApiSettings),
+      fetchOrDefault(() => this.getWalletSettings(), {} as WalletSettings),
+      fetchOrDefault(() => this.getFeeSettings(), null),
+      fetchOrDefault(() => this.getBryteLinksSettings(), {} as BryteLinksSettings),
+      fetchOrDefault(() => this.getMomoBridgeSettings(), {
+        momoBridgeApiKey: "",
+        momoBridgeRelayUrl: "https://momobridge-relay.onrender.com",
+        momoBridgeEnabled: false,
+        momoBridgeClaimFeePercent: 0,
+      }),
+      fetchOrDefault(() => this.getSignupApprovalSetting(), { requireApprovalForSignup: false }),
+      fetchOrDefault(() => this.getAutoApproveStorefronts(), { autoApproveStorefronts: false }),
+      fetchOrDefault(() => this.getSystemInfo(), {} as SystemInfo),
     ]);
 
     const combined = { siteSettings, apiSettings, walletSettings, feeSettings, bryteLinksSettings, momoBridgeSettings, signupApproval, autoApproveStorefronts, systemInfo };
