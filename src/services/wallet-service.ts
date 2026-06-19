@@ -163,6 +163,40 @@ export const walletService = {
   /**
    * Cancel a pending Paystack top-up request by reference (cleanup on failure)
    */
+  /**
+   * MoMo Bridge: Get checkout configuration for the widget
+   */
+  getMomoBridgeConfig: async (
+    amount: number
+  ): Promise<{
+    relayUrl: string;
+    apiKey: string;
+    amount: number;
+    netAmount: number;
+    feeAmount: number;
+    feePercent: number;
+  }> => {
+    const response = await apiClient.get<{ success: boolean; data: any }>(
+      `/api/wallet/momo/config?amount=${amount}`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * MoMo Bridge: Verify a payment and credit the wallet
+   */
+  verifyMomoClaim: async (
+    reference: string,
+    amount: number
+  ): Promise<{ success: boolean; message: string; data: { amount: number; grossAmount: number; feeAmount: number; reference: string } }> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>("/api/wallet/momo/verify", { reference, amount });
+    return response.data;
+  },
+
   cancelPaystackTopUp: async (reference: string) => {
     const response = await apiClient.delete<{ success: boolean; message?: string }>(
       `/api/wallet/paystack/cancel?reference=${encodeURIComponent(reference)}`

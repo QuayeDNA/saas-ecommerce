@@ -7,9 +7,9 @@ import { Spinner, Tabs, TabsList, TabsTrigger, Switch } from "../../design-syste
 import { useToast } from "../../design-system/components/toast";
 import { useAuth, useProfilePhoto } from "../../hooks";
 import { DarkModeToggle } from "../../components/common/dark-mode-toggle";
-import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type BryteLinksSettings, type SystemInfo } from "../../services/settings.service";
+import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type BryteLinksSettings, type MomoBridgeSettings, type SystemInfo } from "../../services/settings.service";
 import pushNotificationService from "../../services/pushNotificationService";
-import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog } from "../../components/superadmin";
+import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog, MomoBridgeSettingsDialog } from "../../components/superadmin";
 import { FeeSettingsDialog } from "../../components/superadmin/fee-settings-dialog";
 
 export default function SuperAdminSettingsPage() {
@@ -20,6 +20,7 @@ export default function SuperAdminSettingsPage() {
     apiSettings: ApiSettings;
     walletSettings: WalletSettings;
     bryteLinksSettings: BryteLinksSettings;
+    momoBridgeSettings: MomoBridgeSettings;
     signupApproval: { requireApprovalForSignup: boolean };
     autoApproveStorefronts: { autoApproveStorefronts: boolean };
     systemInfo: SystemInfo;
@@ -34,6 +35,7 @@ export default function SuperAdminSettingsPage() {
   const [apiDialogOpen, setApiDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [momoDialogOpen, setMomoDialogOpen] = useState(false);
   const [feeDialogOpen, setFeeDialogOpen] = useState(false);
   const [feeSettings, setFeeSettings] = useState<FeeSettings | null>(null);
   const [testPushLoading, setTestPushLoading] = useState(false);
@@ -203,6 +205,11 @@ export default function SuperAdminSettingsPage() {
     setFeeSettings(settings);
     setData(d => d ? { ...d, feeSettings: settings } : d);
     addToast('Fee settings updated', 'success');
+  }, [addToast]);
+
+  const handleMomoBridgeSettingsSuccess = useCallback((settings: MomoBridgeSettings) => {
+    setData(d => d ? { ...d, momoBridgeSettings: settings } : d);
+    addToast("MoMo Bridge settings updated", "success");
   }, [addToast]);
 
   const handleWalletSettingsSuccess = useCallback((settings: WalletSettings) => {
@@ -687,6 +694,40 @@ export default function SuperAdminSettingsPage() {
               </Card>
 
               <Card>
+                <SectionHeader
+                  title="MoMo Bridge"
+                  subtitle="Mobile money wallet top-up via MoMo Bridge"
+                  action={<Button size="sm" variant="secondary" onClick={() => setMomoDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>}
+                />
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Status</div>
+                    <Badge colorScheme={data.momoBridgeSettings.momoBridgeEnabled ? 'success' : 'error'}>
+                      {data.momoBridgeSettings.momoBridgeEnabled ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                  <div className="p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>API Key</div>
+                    <div className="font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
+                      {data.momoBridgeSettings.momoBridgeApiKey
+                        ? `${data.momoBridgeSettings.momoBridgeApiKey.slice(0, 6)}…${data.momoBridgeSettings.momoBridgeApiKey.slice(-4)}`
+                        : <span style={{ color: 'var(--text-muted)' }}>Not configured</span>}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Relay URL</div>
+                    <div className="text-sm font-mono truncate max-w-[180px]" style={{ color: 'var(--text-primary)' }}>
+                      {data.momoBridgeSettings.momoBridgeRelayUrl || 'Default'}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Platform Fee</div>
+                    <div className="font-medium">{data.momoBridgeSettings.momoBridgeClaimFeePercent}%</div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card>
                 <SectionHeader title="Storefront Collection Fees" subtitle="Fees applied to agent storefront payments via Paystack" action={<Button size="sm" variant="secondary" onClick={() => setFeeDialogOpen(true)}><Edit className="w-3 h-3 mr-1" />Configure</Button>} />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)' }}>
@@ -817,6 +858,8 @@ export default function SuperAdminSettingsPage() {
         <WalletSettingsDialog isOpen={walletDialogOpen} onClose={() => setWalletDialogOpen(false)} currentSettings={data.walletSettings} onSuccess={handleWalletSettingsSuccess} />
 
         <FeeSettingsDialog isOpen={feeDialogOpen} onClose={() => setFeeDialogOpen(false)} currentSettings={feeSettings} onSuccess={handleFeeSettingsSuccess} />
+
+        <MomoBridgeSettingsDialog isOpen={momoDialogOpen} onClose={() => setMomoDialogOpen(false)} currentSettings={data.momoBridgeSettings} onSuccess={handleMomoBridgeSettingsSuccess} />
 
         <AdminPasswordDialog isOpen={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)} onSuccess={handlePasswordChangeSuccess} />
       </div>

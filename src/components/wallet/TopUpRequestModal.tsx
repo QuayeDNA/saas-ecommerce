@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // src/components/wallet/TopUpRequestModal.tsx
-import React, { useState, useEffect, useContext, useMemo } from 'react';
-import { FaMoneyBillWave, FaWhatsapp, FaCheck, FaArrowLeft, FaArrowRight, FaBolt } from 'react-icons/fa';
+import React, { useState, useEffect, useContext, useMemo, useCallback, useRef } from 'react';
+import { FaMoneyBillWave, FaWhatsapp, FaCheck, FaArrowLeft, FaArrowRight, FaBolt, FaMobileAlt } from 'react-icons/fa';
 import {
   Button, Input, Textarea, Alert, Dialog, DialogHeader, DialogBody, DialogFooter, Spinner,
 } from '../../design-system';
@@ -14,7 +14,7 @@ import { CONTACTS } from '../../config/contacts';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TopUpMode = 'request' | 'instant';
+type TopUpMode = 'request' | 'instant' | 'momo';
 
 interface FormState {
   amount: string;
@@ -88,6 +88,21 @@ async function loadPaystackScript(): Promise<void> {
   });
 }
 
+// ─── MoMo Bridge Script Loader ───────────────────────────────────────────────
+
+async function loadMomoScript(): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((window as any).MoMoBridge) return;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://momo-bridge.vercel.app/momobridge.js';
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load MoMo Bridge script'));
+    document.head.appendChild(s);
+  });
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, isSubmitting, error }) => {
@@ -105,11 +120,25 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   const [paystackMinimum, setPaystackMinimum] = useState(0);
   const [paystackEnabled, setPaystackEnabled] = useState(false);
   const [_paystackPublicKey, setPaystackPublicKey] = useState<string | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paystack'>('paystack');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paystack' | 'momo'>('paystack');
+
+  // MoMo Bridge state
+  const [momoBridgeEnabled, setMomoBridgeEnabled] = useState(false);
+  const [momoConfig, setMomoConfig] = useState<{
+    relayUrl: string;
+    apiKey: string;
+    amount: number;
+    netAmount: number;
+    feeAmount: number;
+    feePercent: number;
+  } | null>(null);
+  const [momoReference, setMomoReference] = useState('');
+  const momoClosedBySuccess = useRef(false);
 
   const [checkingPending, setCheckingPending] = useState(false);
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
   const [isPaystackLoading, setIsPaystackLoading] = useState(false);
+  const [isMomoLoading, setIsMomoLoading] = useState(false);
   const [feeSettings, setFeeSettings] = useState<FeeSettings | null>(null);
 
   // ── Effects ────────────────────────────────────────────────────────────────
@@ -155,6 +184,13 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
       } catch {
         // Non-critical — fee preview just won't show
       }
+
+      try {
+        const momo = await settingsService.getMomoBridgeSettings();
+        setMomoBridgeEnabled(momo.momoBridgeEnabled && Boolean(momo.momoBridgeApiKey));
+      } catch {
+        setMomoBridgeEnabled(false);
+      }
     };
 
     init();
@@ -165,9 +201,10 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   const parsedAmount = useMemo(() => parseFloat(form.amount || ''), [form.amount]);
   const canUseWallet = useMemo(() => canHaveWallet(user?.userType ?? ''), [user]);
   const paystackMethodVisible = paystackEnabled && canUseWallet;
+  const momoMethodVisible = momoBridgeEnabled && canUseWallet;
 
   // effective minimum depends on mode:
-  // - request mode uses the user-type minimum (admin-defined per role)
+  // - request/momo mode uses the user-type minimum (admin-defined per role)
   // - instant (Paystack) mode uses the global Paystack minimum (regardless of role)
   //   (fall back to the role minimum when Paystack minimum isn't configured)
   const effectiveMinimum = useMemo(() => {
@@ -182,6 +219,17 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   );
 
   // ── Fee preview ───────────────────────────────────────────────────────────
+
+  const momoFeePreview = useMemo(() => {
+    if (mode !== 'momo' || !isAmountValid || Number.isNaN(parsedAmount)) return null;
+    if (!momoConfig?.feePercent) return null;
+    const feePercent = momoConfig.feePercent;
+    const feeAmount = (parsedAmount * feePercent) / 100;
+    const netCredit = parsedAmount - feeAmount;
+    return feePercent > 0
+      ? { feePercent, feeAmount, netCredit }
+      : null;
+  }, [mode, isAmountValid, parsedAmount, momoConfig]);
 
   const collectionFeePreview = useMemo(() => {
     if (mode !== 'instant') return null;
@@ -264,6 +312,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
   const handleBack = () => {
     setFieldErrors({});
     setStep(1);
+    setMomoReference('');
   };
 
   // ── Paystack Inline Checkout ───────────────────────────────────────────────
@@ -331,6 +380,72 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
       }
 
       setIsPaystackLoading(false);
+    }
+  };
+
+  // ── MoMo Bridge Verification ──────────────────────────────────────────────
+
+  const handleMomoCheckout = async () => {
+    if (!momoBridgeEnabled) {
+      addToast('MoMo Bridge is not enabled for this platform.', 'error');
+      return;
+    }
+
+    const ref = momoReference.trim();
+    if (!ref) {
+      addToast('Please enter the transaction reference from the store phone.', 'error');
+      return;
+    }
+
+    setIsMomoLoading(true);
+    try {
+      const config = await walletService.getMomoBridgeConfig(parsedAmount);
+      setMomoConfig(config);
+
+      await loadMomoScript();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const MB = (window as any).MoMoBridge;
+      if (!MB) throw new Error('MoMo Bridge script failed to load');
+
+      momoClosedBySuccess.current = false;
+
+      MB.popup({
+        relayUrl: config.relayUrl,
+        apiKey: config.apiKey,
+        amount: config.amount,
+        reference: ref,
+        currencySymbol: 'GH₵',
+        onSuccess: async () => {
+          try {
+            const result = await walletService.verifyMomoClaim(ref, parsedAmount);
+            addToast(result.message || 'Payment verified! Wallet credited.', 'success', 5000);
+            momoClosedBySuccess.current = true;
+            const overlay = document.getElementById('__mb-overlay');
+            if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            handleClose();
+          } catch (verifyErr) {
+            const msg = verifyErr instanceof Error ? verifyErr.message : 'Verification failed';
+            addToast(msg, 'error', 8000);
+            setIsMomoLoading(false);
+          }
+        },
+        onFailure: (data: { message?: string }) => {
+          const msg = data.message || 'Payment verification declined by the store phone.';
+          addToast(msg, 'error', 6000);
+          setIsMomoLoading(false);
+        },
+        onClose: () => {
+          setIsMomoLoading(false);
+          if (!momoClosedBySuccess.current) {
+            addToast('Verification window closed. No charge was made.', 'info', 4000);
+          }
+        },
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to start MoMo Bridge verification';
+      addToast(message, 'error');
+      setIsMomoLoading(false);
     }
   };
 
@@ -494,6 +609,51 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                 </button>
               )}
 
+              {/* MoMo Bridge instant card */}
+              {momoMethodVisible && (
+                <button
+                  type="button"
+                  onClick={() => { setMode('momo'); setSelectedPaymentMethod('momo'); }}
+                  className="relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-all focus-visible:outline-none"
+                  style={
+                    mode === 'momo'
+                      ? {
+                          borderColor: '#d4a843',
+                          backgroundColor: `color-mix(in srgb, #d4a843 10%, transparent)`,
+                          color: '#d4a843',
+                          boxShadow: 'var(--shadow-sm)',
+                        }
+                      : {
+                          borderColor: 'var(--border-color)',
+                          backgroundColor: 'var(--bg-surface-alt)',
+                          color: 'var(--text-secondary)',
+                        }
+                  }
+                >
+                  {mode === 'momo' && (
+                    <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full" style={{ backgroundColor: '#d4a843', color: '#0a0e1a' }}>
+                      <FaCheck className="h-2 w-2" />
+                    </span>
+                  )}
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+                    style={{
+                      backgroundColor: mode === 'momo'
+                        ? `color-mix(in srgb, #d4a843 20%, transparent)`
+                        : 'var(--border-color)',
+                    }}
+                  >
+                    <FaMobileAlt className="h-4 w-4" style={{ color: mode === 'momo' ? '#d4a843' : 'var(--text-muted)' }} />
+                  </div>
+                  <div className="text-center leading-tight">
+                    <p className="font-semibold">Instant Claim</p>
+                    <p className="mt-0.5 text-xs" style={{ color: mode === 'momo' ? '#d4a843' : 'var(--text-muted)' }}>
+                      Via MoMo Bridge
+                    </p>
+                  </div>
+                </button>
+              )}
+
             </div>
 
             {/* Amount input */}
@@ -553,6 +713,10 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
               <InfoBox>
                 Your request will be reviewed by an administrator. You'll be notified and can follow up via WhatsApp once submitted.
               </InfoBox>
+            ) : mode === 'momo' ? (
+              <InfoBox>
+                <>Enter the amount you want to credit. On the next step you&apos;ll verify the payment via MoMo Bridge.</>
+              </InfoBox>
             ) : (
               <InfoBox>
                 <>Pay instantly via Paystack. Your wallet is credited automatically on payment confirmation — no admin approval needed.</>
@@ -569,7 +733,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
         {/* ── Step 2: Confirm ── */}
         {!isBlocked && step === 2 && (
           <div className="space-y-4">
-            <h4 className="font-semibold" style={{ color: "var(--text-primary)" }}>Confirm Your {mode === 'instant' ? 'Payment' : 'Request'}</h4>
+            <h4 className="font-semibold" style={{ color: "var(--text-primary)" }}>Confirm Your {mode === 'instant' ? 'Payment' : mode === 'momo' ? 'Claim' : 'Request'}</h4>
 
             <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: "var(--bg-surface-alt)", border: "1px solid var(--border-color)" }}>
               <SummaryRow label="Amount" value={`GH₵${parsedAmount.toFixed(2)}`} />
@@ -578,6 +742,22 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                 <>
                   <SummaryRow label="Method" value="Admin approval" />
                   <SummaryRow label="Follow-up" value={<span className="flex items-center gap-1"><FaWhatsapp style={{ color: "var(--success)" }} /> WhatsApp</span>} />
+                </>
+              ) : mode === 'momo' ? (
+                <>
+                  <SummaryRow label="Payment gateway" value="MoMo Bridge (instant)" />
+                  <SummaryRow
+                    label="Wallet credited"
+                    value={<span className="font-semibold" style={{ color: "#d4a843" }}>GH₵{(momoFeePreview ? momoFeePreview.netCredit : parsedAmount).toFixed(2)}</span>}
+                  />
+                  {momoFeePreview ? (
+                    <SummaryRow
+                      label={`MoMo Bridge Fee (${momoFeePreview.feePercent}%)`}
+                      value={<span style={{ color: "var(--warning)" }}>- GH₵{momoFeePreview.feeAmount.toFixed(2)}</span>}
+                    />
+                  ) : (
+                    <SummaryRow label="Platform fee" value={<span className="text-xs" style={{ color: "var(--text-muted)" }}>None</span>} />
+                  )}
                 </>
               ) : (
                 <>
@@ -606,9 +786,32 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
               )}
             </div>
 
+            {mode === 'momo' && (
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  Transaction Reference
+                </label>
+                <input
+                  type="text"
+                  value={momoReference}
+                  onChange={e => setMomoReference(e.target.value)}
+                  placeholder="e.g. 0000013331054115"
+                  className="w-full px-3 py-2 mt-1 text-sm rounded-lg border font-mono"
+                  style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                />
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                  Enter the MoMo transaction reference from the SMS on the store phone.
+                </p>
+              </div>
+            )}
+
             {mode === 'instant' ? (
               <InfoBox>
                 Clicking <strong>Pay Now</strong> will open the Paystack payment window. Your wallet is credited immediately after a successful payment.
+              </InfoBox>
+            ) : mode === 'momo' ? (
+              <InfoBox>
+                Clicking <strong>Verify via MoMo Bridge</strong> will open the mobile money verification widget. Complete payment on the store phone to continue.
               </InfoBox>
             ) : (
               <InfoBox>
@@ -634,7 +837,7 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
 
         {!isBlocked && step === 2 && (
           <div className="flex gap-3">
-            <Button variant="secondary" onClick={handleBack} disabled={isSubmitting || isPaystackLoading}>
+            <Button variant="secondary" onClick={handleBack} disabled={isSubmitting || isPaystackLoading || isMomoLoading}>
               <FaArrowLeft className="w-3.5 h-3.5 mr-2" />
               <span>Back</span>
             </Button>
@@ -645,6 +848,18 @@ export const TopUpRequestModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, 
                   <><Spinner size="sm" color="primary" /><span className="ml-2">Submitting…</span></>
                 ) : (
                   <><FaCheck className="w-3.5 h-3.5 mr-2" /><span>Submit Request</span></>
+                )}
+              </Button>
+            ) : mode === 'momo' ? (
+              <Button
+                onClick={handleMomoCheckout}
+                disabled={isMomoLoading}
+                style={{ backgroundColor: '#d4a843', borderColor: '#d4a843', color: '#0a0e1a' }}
+              >
+                {isMomoLoading ? (
+                  <><Spinner size="sm" color="primary" /><span className="ml-2">Loading MoMo…</span></>
+                ) : (
+                  <><FaMobileAlt className="w-3.5 h-3.5 mr-2" /><span>Verify via MoMo Bridge</span></>
                 )}
               </Button>
             ) : (

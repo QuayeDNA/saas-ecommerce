@@ -100,6 +100,13 @@ export interface BryteLinksSettings {
   inactivityThresholdDays: number;
 }
 
+export interface MomoBridgeSettings {
+  momoBridgeApiKey: string;
+  momoBridgeRelayUrl: string;
+  momoBridgeEnabled: boolean;
+  momoBridgeClaimFeePercent: number;
+}
+
 // =============================================================================
 // SETTINGS SERVICE
 // =============================================================================
@@ -266,6 +273,21 @@ class SettingsService {
     return response.data.data ?? response.data;
   }
 
+  // ── MoMo Bridge — Mobile Money Payment Verification ──────────────────────────
+
+  async getMomoBridgeSettings(): Promise<MomoBridgeSettings> {
+    const response = await apiClient.get("/api/settings/momobridge");
+    return response.data.data ?? response.data;
+  }
+
+  async updateMomoBridgeSettings(
+    settings: Partial<MomoBridgeSettings>
+  ): Promise<MomoBridgeSettings> {
+    const response = await apiClient.put("/api/settings/momobridge", settings);
+    this._allSettingsCache = null;
+    return response.data.data ?? response.data;
+  }
+
   /**
    * Combined fetch used by the Settings page — cached client‑side for a short TTL
    * reduces duplicate network calls when the page remounts or dialogs re-open.
@@ -276,6 +298,7 @@ class SettingsService {
     walletSettings: WalletSettings;
     feeSettings: FeeSettings;
     bryteLinksSettings: BryteLinksSettings;
+    momoBridgeSettings: MomoBridgeSettings;
     signupApproval: { requireApprovalForSignup: boolean };
     autoApproveStorefronts: { autoApproveStorefronts: boolean };
     systemInfo: SystemInfo;
@@ -285,18 +308,19 @@ class SettingsService {
       return this._allSettingsCache.data;
     }
 
-    const [siteSettings, apiSettings, walletSettings, feeSettings, bryteLinksSettings, signupApproval, autoApproveStorefronts, systemInfo] = await Promise.all([
+    const [siteSettings, apiSettings, walletSettings, feeSettings, bryteLinksSettings, momoBridgeSettings, signupApproval, autoApproveStorefronts, systemInfo] = await Promise.all([
       this.getSiteSettings(),
       this.getApiSettings(),
       this.getWalletSettings(),
       this.getFeeSettings(),
       this.getBryteLinksSettings(),
+      this.getMomoBridgeSettings(),
       this.getSignupApprovalSetting(),
       this.getAutoApproveStorefronts(),
       this.getSystemInfo(),
     ]);
 
-    const combined = { siteSettings, apiSettings, walletSettings, feeSettings, bryteLinksSettings, signupApproval, autoApproveStorefronts, systemInfo };
+    const combined = { siteSettings, apiSettings, walletSettings, feeSettings, bryteLinksSettings, momoBridgeSettings, signupApproval, autoApproveStorefronts, systemInfo };
     this._allSettingsCache = { ts: Date.now(), data: combined };
     return combined;
   }

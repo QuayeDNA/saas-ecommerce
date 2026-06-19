@@ -4,6 +4,7 @@ export { WalletSettingsDialog } from "./wallet-settings-dialog";
 export { AdminPasswordDialog } from "./admin-password-dialog";
 export { PayoutDrawer } from "./payout-drawer";
 export { FeeSettingsDialog } from "./fee-settings-dialog";
+export { MomoBridgeSettingsDialog } from "./momo-bridge-settings-dialog";
 export {
   ReferralOverviewTab,
   ReferralUsersTab,
