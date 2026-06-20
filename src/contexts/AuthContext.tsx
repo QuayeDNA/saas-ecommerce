@@ -126,6 +126,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       dashboardUrl,
     });
 
+    // Persist fresh user to cookie so it survives hard refresh
+    authService.updateStoredUser(user);
+
     // Start proactive token refresh
     tokenRefreshService.startTokenRefresh();
   }, []);

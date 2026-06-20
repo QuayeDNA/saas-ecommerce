@@ -265,6 +265,9 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
     showContact: storefront.settings?.showContact ?? true,
   });
 
+  const hasUploadedLogo = !!brandingData.logoUrl;
+  const hasUploadedBanner = !!brandingData.bannerUrl;
+
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodForm[]>(
     storefront.paymentMethods && storefront.paymentMethods.length > 0
       ? (storefront.paymentMethods as PaymentMethodForm[])
@@ -533,12 +536,11 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
       setIsLoading(true);
       // Inject system-generated placeholders when the agent leaves fields blank.
       // These are stored in the DB so the public store always has something to show.
+      // Logo and banner are managed independently via dedicated upload/delete endpoints.
       const resolvedTagline = brandingData.tagline.trim()
         || getSystemTagline(formData.businessName || storefront.businessName);
       const resolvedDescription = formData.description.trim()
         || getSystemDescription(storefront.displayName || formData.businessName || storefront.businessName);
-      const resolvedLogoUrl = brandingData.logoUrl.trim() || undefined;
-      const resolvedBannerUrl = brandingData.bannerUrl.trim() || undefined;
 
       const resolvedFooterText =
         brandingData.footerText.trim() ||
@@ -547,8 +549,6 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
       const updateData = {
         description: resolvedDescription,
         branding: {
-          logoUrl: resolvedLogoUrl,
-          bannerUrl: resolvedBannerUrl,
           tagline: resolvedTagline,
           socialLinks: {
             facebook: brandingData.facebook.trim() || undefined,
@@ -1119,13 +1119,10 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                 style={{ backgroundColor: "var(--bg-surface-alt)", borderColor: "var(--border-color)" }}
               >
                 <img
-                  src={brandingData.logoUrl || "/icons/store-icon.png"}
+                  src={brandingData.logoUrl}
                   alt="Store logo"
                   className="w-14 h-14 rounded-xl object-cover border shadow-sm shrink-0"
                   style={{ borderColor: "var(--border-color)" }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/icons/store-icon.png";
-                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
@@ -1162,7 +1159,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                       {isUploadingLogo ? "Uploading…" : "Change"}
                     </span>
                   </label>
-                  {brandingData.logoUrl && (
+                  {hasUploadedLogo && (
                     <button
                       type="button"
                       onClick={async () => {
@@ -1241,7 +1238,7 @@ export const StorefrontSettings: React.FC<StorefrontSettingsProps> = ({
                       {isUploadingBanner ? "Uploading…" : "Change"}
                     </span>
                   </label>
-                  {brandingData.bannerUrl && (
+                  {hasUploadedBanner && (
                     <button
                       type="button"
                       onClick={async () => {

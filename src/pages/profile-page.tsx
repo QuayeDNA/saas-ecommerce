@@ -60,6 +60,8 @@ export const ProfilePage: React.FC = () => {
   const { upload: uploadPhoto, remove: removePhoto, isUploading: isUploadingPhoto, photoError } = useProfilePhoto();
   const { addToast } = useToast();
 
+  const hasUploadedPhoto = profileData?.profilePicture && !profileData.profilePicture.includes('/api/assets/avatar');
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -470,7 +472,7 @@ export const ProfilePage: React.FC = () => {
                     )}
                   </label>
                 </div>
-                {profileData.profilePicture && !isUploadingPhoto && (
+                {hasUploadedPhoto && !isUploadingPhoto && (
                   <button
                     type="button"
                     onClick={handlePhotoRemove}
@@ -948,7 +950,7 @@ export const ProfilePage: React.FC = () => {
                         )}
                       </label>
                     </div>
-                    {profileData.profilePicture && !isUploadingPhoto && (
+                    {hasUploadedPhoto && !isUploadingPhoto && (
                       <button
                         type="button"
                         onClick={handlePhotoRemove}

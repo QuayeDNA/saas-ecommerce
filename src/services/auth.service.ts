@@ -103,8 +103,9 @@ class AuthService {
 
       // Case 2: Have access token - verify it's still valid
       if (accessToken) {
-        const { valid } = await this.verifyToken();
+        const { valid, user } = await this.verifyToken();
         if (valid) {
+          if (user) this.updateStoredUser(user);
           return true;
         } else if (refreshToken) {
           try {
