@@ -312,10 +312,6 @@ export const ReferralUsersTab = ({ users, pagination, loading, onPageChange }: R
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>Orders from Referrals</p>
                   <p className="text-xl font-bold mt-0.5" style={{ color: "var(--text-primary)" }}>{detailUser.commissionAsReferrer.totalOrders}</p>
                 </div>
-                <div>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Commission Batches</p>
-                  <p className="text-xl font-bold mt-0.5" style={{ color: "var(--text-primary)" }}>{detailUser.commissionAsReferrer.batchCount}</p>
-                </div>
               </div>
             </div>
           ) : null}

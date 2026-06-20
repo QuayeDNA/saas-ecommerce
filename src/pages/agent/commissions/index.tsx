@@ -122,7 +122,7 @@ export const CommissionPage = () => {
 
   const commissionStatCards: StatCardProps[] = [
     { title: "Available Balance", value: `GHS ${balance.toFixed(2)}`, subtitle: "Ready to withdraw", icon: <FaWallet />, size: "md" },
-    { title: "Total Earned", value: `GHS ${totalEarned.toFixed(2)}`, subtitle: `${creditedCount} batches credited`, icon: <FaWallet />, size: "md" },
+    { title: "Total Earned", value: `GHS ${totalEarned.toFixed(2)}`, subtitle: `${creditedCount} commissions credited`, icon: <FaWallet />, size: "md" },
     { title: "Total Withdrawn", value: `GHS ${totalWithdrawn.toFixed(2)}`, subtitle: "Cumulative withdrawals", icon: <FaWallet />, size: "md" },
   ];
 

@@ -120,7 +120,6 @@ export const ReferralLeaderboard = ({
                 <div className="flex gap-4 mt-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
                   <span>{entry.totalOrders} orders</span>
                   <span>{entry.totalReferred} referred</span>
-                  <span>{entry.batchCount} batches</span>
                 </div>
               </div>
             ))}
@@ -136,7 +135,6 @@ export const ReferralLeaderboard = ({
                   <TableHeaderCell>Commission Earned</TableHeaderCell>
                   <TableHeaderCell>Orders</TableHeaderCell>
                   <TableHeaderCell>Referred</TableHeaderCell>
-                  <TableHeaderCell>Batches</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -167,7 +165,6 @@ export const ReferralLeaderboard = ({
                     </TableCell>
                     <TableCell>{entry.totalOrders}</TableCell>
                     <TableCell>{entry.totalReferred}</TableCell>
-                    <TableCell>{entry.batchCount}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

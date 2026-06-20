@@ -20,7 +20,7 @@ import type { ReferralAdminStats, ReferralAdminUser, LeaderboardEntry } from "..
 import type { Commission } from "../../types/commission";
 import type { Withdrawal } from "../../types/commission";
 
-type CommissionStatusFilter = "all" | "pending" | "credited" | "cancelled";
+type CommissionStatusFilter = "all" | "credited" | "cancelled";
 
 const TAB_ITEMS = [
   { id: "overview", label: "Overview", icon: FaUsers },
@@ -57,12 +57,6 @@ export const ReferralManagement = () => {
   const [usersLoading, setUsersLoading] = useState(true);
   const [commissionsLoading, setCommissionsLoading] = useState(false);
   const [withdrawalsLoading, setWithdrawalsLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
-
-  const [batchResult, setBatchResult] = useState<{
-    success: boolean; message: string;
-    data?: { processed: number; skipped: number; message: string; date: string };
-  } | null>(null);
 
   const fetchMainData = useCallback(async () => {
     setLoading(true);
@@ -159,24 +153,6 @@ export const ReferralManagement = () => {
     if (activeTab === "withdrawals") fetchWithdrawals(withdrawalsPage);
   }, [activeTab, withdrawalsPage, fetchWithdrawals]);
 
-  const handleProcessDaily = async () => {
-    setProcessing(true);
-    setBatchResult(null);
-    try {
-      const result = await commissionService.processDailyBatch();
-      setBatchResult(result);
-      addToast("Daily batch processing completed", "success");
-      fetchMainData();
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = error?.response?.data?.message || error?.message || "Batch processing failed";
-      setBatchResult({ success: false, message: msg });
-      addToast(msg, "error");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   const handleCommissionFilterChange = (filter: CommissionStatusFilter) => {
     setCommissionsFilter(filter);
     setCommissionsPage(1);
@@ -217,9 +193,6 @@ export const ReferralManagement = () => {
             adminStats={adminStats}
             commissionRate={commissionRate}
             loading={loading}
-            processing={processing}
-            batchResult={batchResult}
-            onProcessBatch={handleProcessDaily}
             leaderboard={leaderboard}
             leaderboardLoading={leaderboardLoading}
             leaderboardTimeframe={leaderboardTimeframe}

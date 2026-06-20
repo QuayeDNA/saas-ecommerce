@@ -1,11 +1,11 @@
-type CommissionStatusFilter = "all" | "pending" | "credited" | "cancelled";
+type CommissionStatusFilter = "all" | "credited" | "cancelled";
 
 interface ReferralCommissionFilterProps {
   value: CommissionStatusFilter;
   onChange: (filter: CommissionStatusFilter) => void;
 }
 
-const FILTERS: CommissionStatusFilter[] = ["all", "pending", "credited", "cancelled"];
+const FILTERS: CommissionStatusFilter[] = ["all", "credited", "cancelled"];
 
 export const ReferralCommissionFilter = ({ value, onChange }: ReferralCommissionFilterProps) => (
   <div className="flex gap-1 flex-wrap">

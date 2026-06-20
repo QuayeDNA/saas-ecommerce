@@ -1,13 +1,4 @@
-/**
- * Modern Dashboard Layout Component
- *
- * Features:
- * - Responsive sidebar that collapses on mobile
- * - Modern header with user profile and notifications
- * - Mobile-first design with touch-friendly controls
- */
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "../components/sidebar";
 import { Header } from "../components/header";
@@ -16,33 +7,26 @@ import { AnnouncementBanner } from "../components/announcements/announcement-ban
 import { GlobalFab } from "../components/common/GlobalFab";
 import { useAuth } from "../hooks";
 
+const MOBILE_BREAKPOINT = 768;
+
 export const DashboardLayout = () => {
   const { authState, updateFirstTimeFlag } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(true);
   const location = useLocation();
 
-  // Handle window resize to detect mobile/desktop view
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      const mobile = e.matches;
       setIsMobile(mobile);
-      if (!mobile) {
-        setSidebarOpen(true); // Always show sidebar on desktop
-      } else {
-        setSidebarOpen(false); // Hide sidebar on mobile by default
-      }
+      setSidebarOpen(!mobile);
     };
-
-    window.addEventListener("resize", handleResize);
-    handleResize(); // Initialize on mount
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    handleChange(mql);
+    mql.addEventListener("change", handleChange);
+    return () => mql.removeEventListener("change", handleChange);
   }, []);
 
-  // Mark first-time users as onboarded after first visit
   useEffect(() => {
     if (
       authState.isAuthenticated &&
@@ -57,46 +41,36 @@ export const DashboardLayout = () => {
     }
   }, [authState.isAuthenticated, authState.user, location.pathname, updateFirstTimeFlag]);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, []);
 
   return (
-    <div className="flex bg-[var(--bg-page)] overflow-hidden h-screen">
-      {/* Mobile sidebar overlay */}
+    <div className="flex bg-[var(--bg-page)] h-screen overflow-hidden">
       {sidebarOpen && isMobile && (
-        <button
-          className="fixed inset-0 z-20 bg-[var(--color-navy-dark)]/50 transition-opacity duration-300 ease-in-out lg:hidden border-0"
+        <div
+          className="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") setSidebarOpen(false);
-          }}
-          aria-label="Close sidebar overlay"
+          role="presentation"
+          tabIndex={-1}
         />
       )}
 
-      {/* Sidebar component */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 w-full transition-all duration-300">
-        {/* Header - gets the toggleSidebar function */}
+      <div className="flex flex-col flex-1 w-full min-w-0 transition-all duration-300">
         <Header onMenuClick={toggleSidebar} />
 
-        {/* Content */}
-        <main
-          className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-[var(--bg-page)]"
-        >
-          <NavigationLoader delay={150}>
-            <Outlet />
-          </NavigationLoader>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8 bg-[var(--bg-page)]">
+          <div className="mx-auto w-full max-w-[1600px]">
+            <NavigationLoader delay={150}>
+              <Outlet />
+            </NavigationLoader>
+          </div>
         </main>
       </div>
 
-      {/* Global support FAB */}
       <GlobalFab />
-
-      {/* Announcement Banner (urgent/high priority) */}
       <AnnouncementBanner />
     </div>
   );

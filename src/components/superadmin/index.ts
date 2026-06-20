@@ -10,6 +10,5 @@ export {
   ReferralUsersTab,
   ReferralCommissionsTab,
   ReferralWithdrawalsTab,
-  ReferralBatchProcessor,
   ReferralCommissionFilter,
 } from "./referral";

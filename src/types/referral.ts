@@ -21,7 +21,6 @@ export interface LeaderboardEntry {
   commissionsEarned: number;
   totalOrders: number;
   totalReferred: number;
-  batchCount: number;
 }
 
 export interface PaginatedLeaderboard {
@@ -59,7 +58,7 @@ export interface ReferralAdminStats {
   activeReferrers: number;
   totalCommissionsPaid: number;
   totalOrdersFromReferrals: number;
-  totalBatches: number;
+  totalCommissions: number;
   totalReferred: number;
   referredWithOrders: number;
   referralConversionRate: number;
@@ -121,7 +120,6 @@ export interface ReferralAdminUserDetail {
   commissionAsReferrer: {
     totalEarned: number;
     totalOrders: number;
-    batchCount: number;
   };
 }
 

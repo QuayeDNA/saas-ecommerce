@@ -1,6 +1,5 @@
-import { FaUsers, FaUserTie, FaMoneyBillWave, FaUserPlus, FaBox, FaChartLine, FaLayerGroup, FaPercent } from "react-icons/fa";
+import { FaUsers, FaUserTie, FaMoneyBillWave, FaUserPlus, FaBox, FaChartLine, FaPercent } from "react-icons/fa";
 import type { ReferralAdminStats, LeaderboardEntry } from "../../../types/referral";
-import { ReferralBatchProcessor } from "./ReferralBatchProcessor";
 import { ReferralLeaderboard } from "./ReferralLeaderboard";
 import { StatsGrid, Spinner } from "../../../design-system";
 import type { StatCardProps } from "../../../design-system/components/stats-card";
@@ -9,9 +8,6 @@ interface ReferralOverviewTabProps {
   adminStats: ReferralAdminStats | null;
   commissionRate: number;
   loading: boolean;
-  processing: boolean;
-  batchResult: { success: boolean; message: string; data?: { processed: number; skipped: number; message: string; date: string } } | null;
-  onProcessBatch: () => void;
   leaderboard: LeaderboardEntry[];
   leaderboardLoading: boolean;
   leaderboardTimeframe: string;
@@ -19,7 +15,7 @@ interface ReferralOverviewTabProps {
 }
 
 export const ReferralOverviewTab = ({
-  adminStats, commissionRate, loading, processing, batchResult, onProcessBatch,
+  adminStats, commissionRate, loading,
   leaderboard, leaderboardLoading, leaderboardTimeframe, onLeaderboardTimeframeChange,
 }: ReferralOverviewTabProps) => {
   if (loading) {
@@ -38,7 +34,6 @@ export const ReferralOverviewTab = ({
   ] : [];
 
   const secondaryStats: StatCardProps[] = adminStats ? [
-    { title: "Total Batches", value: adminStats.totalBatches, icon: <FaLayerGroup />, size: "sm" as const },
     { title: "Orders from Referrals", value: adminStats.totalOrdersFromReferrals, icon: <FaBox />, size: "sm" as const },
     { title: "Referred with Orders", value: adminStats.referredWithOrders, icon: <FaChartLine />, size: "sm" as const },
     { title: "Conversion Rate", value: `${adminStats.referralConversionRate}%`, icon: <FaPercent />, size: "sm" as const },
@@ -47,7 +42,7 @@ export const ReferralOverviewTab = ({
   return (
     <div className="space-y-6">
       {adminStats && <StatsGrid stats={primaryStats} columns={4} gap="md" />}
-      {adminStats && <StatsGrid stats={secondaryStats} columns={4} gap="md" />}
+      {adminStats && <StatsGrid stats={secondaryStats} columns={3} gap="md" />}
 
       {adminStats && (
         <div
@@ -74,12 +69,6 @@ export const ReferralOverviewTab = ({
         loading={leaderboardLoading}
         timeframe={leaderboardTimeframe}
         onTimeframeChange={onLeaderboardTimeframeChange}
-      />
-
-      <ReferralBatchProcessor
-        processing={processing}
-        batchResult={batchResult}
-        onProcess={onProcessBatch}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-export type CommissionStatus = "pending" | "credited" | "cancelled";
+export type CommissionStatus = "credited" | "cancelled";
 
 export interface PopulatedUser {
   _id: string;
@@ -10,12 +10,10 @@ export interface PopulatedUser {
 export interface Commission {
   _id: string;
   referrer: string | PopulatedUser;
+  order?: string | { _id: string; orderNumber: string };
   date: string;
   amount: number;
   rate: number;
-  batchTotal: number;
-  ordersCount: number;
-  qualifiedUsersCount: number;
   status: CommissionStatus;
   createdAt: string;
   updatedAt: string;
@@ -78,7 +76,6 @@ export interface Withdrawal {
   description: string;
   metadata: {
     type: string;
-    commissionIds?: string[];
   };
   createdAt: string;
 }
