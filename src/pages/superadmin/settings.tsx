@@ -330,6 +330,51 @@ export default function SuperAdminSettingsPage() {
         </div>
       </div>
 
+      {/* Profile picture — always visible above tabs */}
+      <Card>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-md flex-shrink-0 overflow-hidden relative group" style={!authState.user?.profilePicture ? { background: "var(--gradient-primary)" } : undefined}>
+            {authState.user?.profilePicture ? (
+              <img src={authState.user.profilePicture} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span>
+                {authState.user?.fullName?.charAt(0)?.toUpperCase() ?? "A"}
+                {authState.user?.fullName?.split(" ")[1]?.charAt(0)?.toUpperCase() ?? ""}
+              </span>
+            )}
+            <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-full">
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploadingPhoto} />
+              {isUploadingPhoto ? (
+                <span className="text-xs text-white font-medium">...</span>
+              ) : (
+                <Camera className="h-5 w-5 text-white" />
+              )}
+            </label>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+              {authState.user?.fullName ?? "Admin"}
+            </p>
+            <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-muted)" }}>
+              {authState.user?.email ?? ""}
+            </p>
+            <p className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>
+              {isUploadingPhoto ? "Uploading…" : "Hover avatar to change photo"}
+            </p>
+            {hasUploadedPhoto && !isUploadingPhoto && (
+              <button
+                type="button"
+                onClick={handlePhotoRemove}
+                className="text-xs underline mt-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Remove photo
+              </button>
+            )}
+          </div>
+        </div>
+      </Card>
+
       {/* Tabs (mobile-first) */}
       <div className="">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
@@ -496,49 +541,6 @@ export default function SuperAdminSettingsPage() {
 
               <Card>
                 <SectionHeader title="User Management" subtitle="Admin & security settings" action={<Button size="sm" variant="secondary" onClick={() => setPasswordDialogOpen(true)}><KeyIcon className="w-3 h-3 mr-1" />Change Password</Button>} />
-
-                {/* Profile picture */}
-                <div className="mt-4 flex items-center gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-md flex-shrink-0 overflow-hidden relative group" style={!authState.user?.profilePicture ? { background: "var(--gradient-primary)" } : undefined}>
-                    {authState.user?.profilePicture ? (
-                      <img src={authState.user.profilePicture} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <span>
-                        {authState.user?.fullName?.charAt(0)?.toUpperCase() ?? "A"}
-                        {authState.user?.fullName?.split(" ")[1]?.charAt(0)?.toUpperCase() ?? ""}
-                      </span>
-                    )}
-                    <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-full">
-                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploadingPhoto} />
-                      {isUploadingPhoto ? (
-                        <span className="text-xs text-white font-medium">...</span>
-                      ) : (
-                        <Camera className="h-5 w-5 text-white" />
-                      )}
-                    </label>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
-                      {authState.user?.fullName ?? "Admin"}
-                    </p>
-                    <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      {authState.user?.email ?? ""}
-                    </p>
-                    <p className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>
-                      {isUploadingPhoto ? "Uploading…" : "Hover avatar to change photo"}
-                    </p>
-                    {hasUploadedPhoto && !isUploadingPhoto && (
-                      <button
-                        type="button"
-                        onClick={handlePhotoRemove}
-                        className="text-xs underline mt-1"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        Remove photo
-                      </button>
-                    )}
-                  </div>
-                </div>
 
                 <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' }}>
                   <div className="text-sm font-medium" style={{ color: 'var(--success)' }}>Admin account security</div>
