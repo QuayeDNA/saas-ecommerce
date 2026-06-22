@@ -79,7 +79,7 @@ export const WalletPage = () => {
     if ((window as any).MoMoBridge) return;
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
-      s.src = "https://momo-bridge.vercel.app/momobridge.js?v=4";
+      s.src = "https://momo-bridge.vercel.app/momobridge.js?v=5";
       s.async = true;
       s.onload = () => resolve();
       s.onerror = () => reject(new Error("Failed to load MoMo Bridge script"));
@@ -101,6 +101,8 @@ export const WalletPage = () => {
       MB.popup({
         relayUrl: config.relayUrl,
         apiKey: config.apiKey,
+        accountName: config.accountName,
+        accountNumber: config.accountNumber,
         currencySymbol: "GH₵",
         onSuccess: async (data: any) => {
           try {

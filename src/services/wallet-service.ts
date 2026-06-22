@@ -169,6 +169,8 @@ export const walletService = {
   getMomoBridgeConfig: async (): Promise<{
     relayUrl: string;
     apiKey: string;
+    accountName: string;
+    accountNumber: string;
   }> => {
     const response = await apiClient.get<{ success: boolean; data: any }>(
       `/api/wallet/momo/config`
