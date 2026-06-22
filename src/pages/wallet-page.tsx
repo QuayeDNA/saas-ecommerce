@@ -79,7 +79,7 @@ export const WalletPage = () => {
     if ((window as any).MoMoBridge) return;
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
-      s.src = "https://momo-bridge.vercel.app/momobridge.js?v=3";
+      s.src = "https://momo-bridge.vercel.app/momobridge.js?v=4";
       s.async = true;
       s.onload = () => resolve();
       s.onerror = () => reject(new Error("Failed to load MoMo Bridge script"));
