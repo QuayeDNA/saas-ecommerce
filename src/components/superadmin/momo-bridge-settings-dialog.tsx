@@ -10,7 +10,7 @@ import {
   FormField,
   Switch,
 } from "../../design-system";
-import { Smartphone, Eye, EyeOff } from "lucide-react";
+import { Smartphone, Eye, EyeOff, User, Phone } from "lucide-react";
 import {
   settingsService,
   type MomoBridgeSettings,
@@ -213,6 +213,63 @@ export const MomoBridgeSettingsDialog: React.FC<MomoBridgeSettingsDialogProps> =
                   Agents will be charged {formData.momoBridgeClaimFeePercent}% on each claim.
                 </p>
               )}
+            </div>
+
+            {/* Account Details */}
+            <div className="p-4 border rounded-lg" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--success) 8%, transparent)' }}>
+                  <User className="w-4 h-4" style={{ color: 'var(--success)' }} />
+                </div>
+                <div>
+                  <h4 className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                    Account Details (Displayed in Widget)
+                  </h4>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    The account name and number customers see when verifying payments
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <FormField>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                    Account Name
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.momoBridgeAccountName}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        momoBridgeAccountName: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g. John's Store"
+                    className="font-mono text-sm"
+                    disabled={!formData.momoBridgeEnabled}
+                    leftIcon={<User className="w-4 h-4" />}
+                  />
+                </FormField>
+                <FormField>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                    Account Number
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.momoBridgeAccountNumber}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        momoBridgeAccountNumber: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g. 024 123 4567"
+                    className="font-mono text-sm"
+                    disabled={!formData.momoBridgeEnabled}
+                    leftIcon={<Phone className="w-4 h-4" />}
+                  />
+                </FormField>
+              </div>
             </div>
 
           </div>

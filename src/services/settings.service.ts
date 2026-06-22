@@ -105,6 +105,8 @@ export interface MomoBridgeSettings {
   momoBridgeRelayUrl: string;
   momoBridgeEnabled: boolean;
   momoBridgeClaimFeePercent: number;
+  momoBridgeAccountName: string;
+  momoBridgeAccountNumber: string;
 }
 
 // =============================================================================
@@ -338,6 +340,8 @@ class SettingsService {
         momoBridgeRelayUrl: "https://momobridge-relay.onrender.com",
         momoBridgeEnabled: false,
         momoBridgeClaimFeePercent: 0,
+        momoBridgeAccountName: "",
+        momoBridgeAccountNumber: "",
       }),
       fetchOrDefault(() => this.getSignupApprovalSetting(), { requireApprovalForSignup: false }),
       fetchOrDefault(() => this.getAutoApproveStorefronts(), { autoApproveStorefronts: false }),
