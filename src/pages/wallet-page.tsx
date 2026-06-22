@@ -4,6 +4,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   type ReactNode,
 } from "react";
 import { useWallet } from "../hooks";
@@ -20,6 +21,7 @@ import {
   FaTimes,
   FaTimesCircle,
   FaReceipt,
+  FaMobileAlt,
 } from "react-icons/fa";
 import {
   Alert,
@@ -35,6 +37,7 @@ import {
 } from "../design-system";
 import { useToast } from "../design-system/components/toast";
 import { TopUpRequestModal } from "../components/wallet/TopUpRequestModal";
+import { walletService } from "../services/wallet-service";
 import { EarningsManager } from "../components/storefront/earnings-manager";
 
 
@@ -68,6 +71,73 @@ export const WalletPage = () => {
 
   const [activeTab, setActiveTab] = useState<"wallet" | "earnings">("wallet");
 
+  // ── MoMo Bridge state ───────────────────────────────────────────────────
+  const [isMomoLoading, setIsMomoLoading] = useState(false);
+  const momoClosedBySuccess = useRef(false);
+
+  const loadMomoScript = async (): Promise<void> => {
+    if ((window as any).MoMoBridge) return;
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://momo-bridge.vercel.app/momobridge.js?v=3";
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Failed to load MoMo Bridge script"));
+      document.head.appendChild(s);
+    });
+  };
+
+  const handleMomoPay = async () => {
+    setIsMomoLoading(true);
+    try {
+      const config = await walletService.getMomoBridgeConfig();
+      await loadMomoScript();
+
+      const MB = (window as any).MoMoBridge;
+      if (!MB) throw new Error("MoMo Bridge script failed to load");
+
+      momoClosedBySuccess.current = false;
+
+      MB.popup({
+        relayUrl: config.relayUrl,
+        apiKey: config.apiKey,
+        currencySymbol: "GH₵",
+        onSuccess: async (data: any) => {
+          try {
+            const ref = data.reference || data.transaction?.reference || "";
+            const result = await walletService.verifyMomoClaim(ref);
+            addToast(result.message || "Payment verified! Wallet credited.", "success", 5000);
+          } catch (verifyErr) {
+            const msg = verifyErr instanceof Error ? verifyErr.message : "Verification failed";
+            addToast(msg, "error", 8000);
+          }
+          setTimeout(() => {
+            setIsMomoLoading(false);
+            momoClosedBySuccess.current = true;
+            const overlay = document.getElementById("__mb-overlay");
+            if (overlay?.parentNode) overlay.parentNode.removeChild(overlay);
+            refreshWallet();
+          }, 4000);
+        },
+        onFailure: (data: { message?: string }) => {
+          const msg = data.message || "Payment verification declined by the store phone.";
+          addToast(msg, "error", 6000);
+          setIsMomoLoading(false);
+        },
+        onClose: () => {
+          setIsMomoLoading(false);
+          if (!momoClosedBySuccess.current) {
+            addToast("Verification window closed.", "info", 4000);
+          }
+        },
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to start MoMo Bridge";
+      addToast(message, "error");
+      setIsMomoLoading(false);
+    }
+  };
+
   // Load transactions function
   const loadTransactions = useCallback(async () => {
     setIsLoadingTransactions(true);
@@ -97,6 +167,35 @@ export const WalletPage = () => {
     txEndDate,
   ]);
 
+  // ── postMessage listener (Paystack + MoMo Bridge) ────────────────────
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as Record<string, any> | undefined;
+      if (!data) return;
+
+      if (data.type === "PAYSTACK_TOPUP") {
+        if (data.status === "success") {
+          addToast("Payment completed — wallet updated.", "success");
+          refreshWallet();
+          loadTransactions();
+        } else {
+          addToast(data.message || "Payment pending — webhook will reconcile.", "info");
+        }
+        try { window.focus(); } catch { /* ignore */ }
+        return;
+      }
+
+      if (data.type === "momo_result") {
+        refreshWallet();
+        loadTransactions();
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [refreshWallet, loadTransactions, addToast]);
+
   // Fetch transaction history on page load and when page changes or filters change
   useEffect(() => {
     loadTransactions();
@@ -106,44 +205,6 @@ export const WalletPage = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [txTypeFilter, txStartDate, txEndDate]);
-
-  // Listen for postMessage events from payment popups (Paystack)
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Only accept messages from same origin
-      if (event.origin !== window.location.origin) return;
-      const data = event.data as
-        | {
-            type?: string;
-            status?: string;
-            reference?: string;
-            message?: string;
-          }
-        | undefined;
-      if (!data || data.type !== "PAYSTACK_TOPUP") return;
-
-      if (data.status === "success") {
-        addToast("Payment completed — wallet updated.", "success");
-        // Refresh wallet and transactions
-        refreshWallet();
-        loadTransactions();
-      } else {
-        addToast(
-          data.message || "Payment pending — webhook will reconcile.",
-          "info",
-        );
-      }
-
-      try {
-        window.focus();
-      } catch {
-        /* ignore */
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [refreshWallet, loadTransactions, addToast]);
 
   // Listen for wallet balance changes and refresh transactions
   useEffect(() => {
@@ -348,7 +409,7 @@ export const WalletPage = () => {
 
           {/* Wallet Balance Card (design-system) */}
           <Card className="mb-6">
-            <CardHeader className="flex flex-col items-start justify-between">
+            <CardHeader className="flex items-start justify-between space-y-4 mb-4">
               <div>
                 <h2
                   className="text-lg sm:text-xl font-semibold"
@@ -357,16 +418,33 @@ export const WalletPage = () => {
                   Current Balance
                 </h2>
               </div>
-              <Button
-                variant="success"
-                size="md"
-                leftIcon={<FaPlus />}
-                onClick={() => setShowTopUpModal(true)}
-                isLoading={isSubmittingRequest}
-              >
-                <span className="hidden sm:inline">Request Top-up</span>
-                <span className="sm:hidden">Top-up</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="success"
+                  size="md"
+                  leftIcon={<FaPlus />}
+                  onClick={() => setShowTopUpModal(true)}
+                  isLoading={isSubmittingRequest}
+                >
+                  <span className="hidden sm:inline">Request Top-up</span>
+                  <span className="sm:hidden">Top-up</span>
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  leftIcon={<FaMobileAlt />}
+                  onClick={handleMomoPay}
+                  isLoading={isMomoLoading}
+                  style={{
+                    backgroundColor: '#0A0E1A',
+                    borderColor: '#D4A843',
+                    color: '#D4A843',
+                  }}
+                >
+                  <span className="hidden sm:inline">Instant Claim</span>
+                  <span className="sm:hidden">Instant</span>
+                </Button>
+              </div>
             </CardHeader>
             <CardBody className="py-3">
               <div
