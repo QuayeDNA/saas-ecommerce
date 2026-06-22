@@ -39,6 +39,11 @@ import {
   type UsageStats,
   type UsageLogEntry,
   type DailyCount,
+  type WebhookEndpointData,
+  type WebhookDeliveryLogData,
+  type OrderListItem,
+  type OrderDetail,
+  type PerKeyUsageData,
 } from "../../services/api-marketplace.service";
 import {
   Key,
@@ -52,6 +57,16 @@ import {
   Book,
   ExternalLink,
   Info,
+  Ban,
+  Check,
+  RefreshCw,
+  Webhook,
+  Package,
+  Eye,
+  Edit3,
+  Play,
+  Loader2,
+  Wallet,
 } from "lucide-react";
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Filler, Legend, LinearScale, LineElement, PointElement, Tooltip);
@@ -60,7 +75,108 @@ const TABS = [
   { id: "overview", label: "Overview" },
   { id: "keys", label: "API Keys" },
   { id: "usage", label: "Usage Analytics" },
+  { id: "webhooks", label: "Webhooks" },
+  { id: "wallet", label: "Wallet" },
+  { id: "orders", label: "Orders" },
 ];
+
+interface WebhookCreateDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (data: { url: string; secret: string; events: string[]; description?: string; active?: boolean }) => void;
+  availableEvents: string[];
+}
+
+function WebhookCreateDialog({ isOpen, onClose, onCreate, availableEvents }: WebhookCreateDialogProps) {
+  const [url, setUrl] = useState("");
+  const [secret, setSecret] = useState("");
+  const [description, setDescription] = useState("");
+  const [active, setActive] = useState(true);
+  const [events, setEvents] = useState<string[]>(["order.completed"]);
+  const [creating, setCreating] = useState(false);
+  const [showSecretHint, setShowSecretHint] = useState(false);
+
+  const handleToggleEvent = (ev: string) => {
+    setEvents((prev) =>
+      prev.includes(ev) ? prev.filter((e) => e !== ev) : [...prev, ev],
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!url.trim() || !secret.trim() || events.length === 0) return;
+    setCreating(true);
+    await onCreate({ url: url.trim(), secret: secret.trim(), description: description.trim(), active, events });
+    setCreating(false);
+    setUrl("");
+    setSecret("");
+    setDescription("");
+    setActive(true);
+    setEvents(["order.completed"]);
+  };
+
+  return (
+    <Dialog isOpen={isOpen} onClose={onClose} size="md">
+      <DialogHeader>Add Webhook Endpoint</DialogHeader>
+      <DialogBody className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-primary)" }}>Endpoint URL</label>
+          <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://your-server.com/webhooks/momo" />
+        </div>
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <label className="block text-sm font-medium" style={{ color: "var(--text-primary)" }}>Secret (for HMAC verification)</label>
+            <Info
+              className="w-3.5 h-3.5 cursor-help shrink-0"
+              style={{ color: "var(--text-muted)" }}
+              onClick={() => setShowSecretHint((p) => !p)}
+            />
+          </div>
+          {showSecretHint && (
+            <div
+              className="mb-2 p-2.5 rounded-lg text-xs"
+              style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--color-primary) 20%, transparent)" }}
+            >
+              <p className="font-medium mb-0.5" style={{ color: "var(--text-primary)" }}>What is HMAC?</p>
+              <p className="leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                HMAC (Hash-based Message Authentication Code) signs each webhook payload so your endpoint
+                can cryptographically verify it came from BryteLinks. Use a random string at least 16
+                characters long — like <code className="text-[10px] font-mono px-0.5">whsec_abc123def456ghi789</code>.
+              </p>
+            </div>
+          )}
+          <Input value={secret} onChange={(e) => setSecret(e.target.value)} placeholder="whsec_abc123def456ghi789" className="font-mono" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-primary)" }}>Description (optional)</label>
+          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. My order notification server" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-primary)" }}>Events</label>
+          <div className="flex flex-wrap gap-2">
+            {availableEvents.map((ev) => (
+              <label key={ev} className="flex items-center gap-1.5 cursor-pointer text-sm px-2 py-1 rounded border" style={{ borderColor: events.includes(ev) ? "var(--color-secondary)" : "var(--border-color)", backgroundColor: events.includes(ev) ? "var(--color-secondary)" : "transparent", color: events.includes(ev) ? "white" : "var(--text-primary)" }}>
+                <input type="checkbox" checked={events.includes(ev)} onChange={() => handleToggleEvent(ev)} className="sr-only" />
+                {ev}
+              </label>
+            ))}
+          </div>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="rounded" />
+          <span className="text-sm" style={{ color: "var(--text-primary)" }}>Active on creation</span>
+        </label>
+      </DialogBody>
+      <DialogFooter justify="end">
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!url.trim() || !secret.trim() || events.length === 0 || creating}>
+            {creating ? "Creating..." : "Create Webhook"}
+          </Button>
+        </div>
+      </DialogFooter>
+    </Dialog>
+  );
+}
 
 export const ApiMarketplacePage = () => {
   const { addToast } = useToast();
@@ -90,7 +206,55 @@ export const ApiMarketplacePage = () => {
   const [isRevoking, setIsRevoking] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
+  // ─── Wallet state ─────────────────────────────────────────────────────
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletCurrency, setWalletCurrency] = useState("GHS");
+  const [topupAmount, setTopupAmount] = useState("");
+  const [topupLoading, setTopupLoading] = useState(false);
+  const [topupResult, setTopupResult] = useState<{
+    success: boolean;
+    data?: { reference: string; authorizationUrl: string; amount: number };
+    message?: string;
+  } | null>(null);
+
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
+
+  // Key detail dialog
+  const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
+  const [keyDetail, setKeyDetail] = useState<ApiKeyData | null>(null);
+  const [keyDetailLoading, setKeyDetailLoading] = useState(false);
+  const [keyDetailError, setKeyDetailError] = useState<string | null>(null);
+
+  // Edit label dialog
+  const [showEditLabel, setShowEditLabel] = useState<string | null>(null);
+  const [editLabelValue, setEditLabelValue] = useState("");
+  const [isSavingLabel, setIsSavingLabel] = useState(false);
+
+  // Suspend/activate/regenerate
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Webhooks state
+  const [webhooks, setWebhooks] = useState<WebhookEndpointData[]>([]);
+  const [webhooksLoading, setWebhooksLoading] = useState(false);
+  const [webhooksError, setWebhooksError] = useState<string | null>(null);
+  const [showCreateWebhook, setShowCreateWebhook] = useState(false);
+  const [showWebhookDetail, setShowWebhookDetail] = useState<string | null>(null);
+  const [webhookDeliveryLogs, setWebhookDeliveryLogs] = useState<WebhookDeliveryLogData[]>([]);
+  const [deliveryLogsLoading, setDeliveryLogsLoading] = useState(false);
+
+  // Orders state
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersMeta, setOrdersMeta] = useState<{ total: number; page: number; limit: number; hasMore: boolean } | null>(null);
+  const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const [orderStatusFilter, setOrderStatusFilter] = useState("");
+
+  // Per-key usage
+  const [perKeyUsage, setPerKeyUsage] = useState<PerKeyUsageData[]>([]);
 
   const loadOverview = useCallback(async () => {
     try {
@@ -116,7 +280,7 @@ export const ApiMarketplacePage = () => {
       } else {
         setKeysError(result.message);
       }
-    } catch (err) {
+    } catch {
       setKeysError("Failed to load API keys");
     } finally {
       setKeysLoading(false);
@@ -152,6 +316,83 @@ export const ApiMarketplacePage = () => {
     }
   }, []);
 
+  const loadWebhooks = useCallback(async () => {
+    setWebhooksLoading(true);
+    setWebhooksError(null);
+    try {
+      const result = await apiMarketplaceService.getWebhooks();
+      if (result.success) {
+        setWebhooks(result.data);
+      } else {
+        setWebhooksError(result.message);
+      }
+    } catch {
+      setWebhooksError("Failed to load webhooks");
+    } finally {
+      setWebhooksLoading(false);
+    }
+  }, []);
+
+  const loadOrders = useCallback(async () => {
+    setOrdersLoading(true);
+    setOrdersError(null);
+    try {
+      const params: { status?: string; page: number; limit: number } = { page: ordersPage, limit: 10 };
+      if (orderStatusFilter) params.status = orderStatusFilter;
+      const result = await apiMarketplaceService.getOrders(params);
+      if (result.success) {
+        setOrders(result.data);
+        if ("meta" in result && result.meta) {
+          setOrdersMeta(result.meta as { total: number; page: number; limit: number; hasMore: boolean });
+        }
+      } else {
+        setOrdersError(result.message);
+      }
+    } catch {
+      setOrdersError("Failed to load orders");
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [ordersPage, orderStatusFilter]);
+
+  const loadPerKeyUsage = useCallback(async () => {
+    try {
+      const result = await apiMarketplaceService.getPerKeyUsageStats();
+      if (result.success) setPerKeyUsage(result.data);
+    } catch {
+      // silent
+    }
+  }, []);
+
+  const loadKeyDetail = useCallback(async (id: string) => {
+    setKeyDetailLoading(true);
+    setKeyDetailError(null);
+    try {
+      const result = await apiMarketplaceService.getKeyById(id);
+      if (result.success) {
+        setKeyDetail(result.data);
+      } else {
+        setKeyDetailError(result.message);
+      }
+    } catch {
+      setKeyDetailError("Failed to load key details");
+    } finally {
+      setKeyDetailLoading(false);
+    }
+  }, []);
+
+  const loadDeliveryLogs = useCallback(async (webhookId: string) => {
+    setDeliveryLogsLoading(true);
+    try {
+      const result = await apiMarketplaceService.getWebhookDeliveryLogs(webhookId, { limit: 20 });
+      if (result.success) setWebhookDeliveryLogs(result.data);
+    } catch {
+      // silent
+    } finally {
+      setDeliveryLogsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadOverview();
   }, [loadOverview]);
@@ -164,10 +405,59 @@ export const ApiMarketplacePage = () => {
     if (activeTab === "usage") {
       loadUsageLogs();
       loadDailyCounts();
+      loadPerKeyUsage();
       const interval = setInterval(loadUsageLogs, 15000);
       return () => clearInterval(interval);
     }
-  }, [activeTab, loadUsageLogs, loadDailyCounts]);
+  }, [activeTab, loadUsageLogs, loadDailyCounts, loadPerKeyUsage]);
+
+  useEffect(() => {
+    if (activeTab === "webhooks") loadWebhooks();
+  }, [activeTab, loadWebhooks]);
+
+  useEffect(() => {
+    if (activeTab === "orders") loadOrders();
+  }, [activeTab, loadOrders]);
+
+  useEffect(() => {
+    if (activeTab === "wallet") loadWalletBalance();
+  }, [activeTab]);
+
+  const loadWalletBalance = useCallback(async () => {
+    setWalletLoading(true);
+    try {
+      const result = await apiMarketplaceService.getWalletBalance();
+      if (result.success) {
+        setWalletBalance(result.data.balance);
+        setWalletCurrency(result.data.currency);
+      }
+    } catch {
+      // silent
+    } finally {
+      setWalletLoading(false);
+    }
+  }, []);
+
+  const handleInitiateTopup = async () => {
+    const amount = Number(topupAmount);
+    if (!amount || amount < 1) return;
+    setTopupLoading(true);
+    setTopupResult(null);
+    try {
+      const result = await apiMarketplaceService.initiateTopup(amount);
+      if (result.success) {
+        setTopupResult({ success: true, data: result.data });
+        addToast("Top-up initiated", "success");
+        loadWalletBalance();
+      } else {
+        setTopupResult({ success: false, message: result.message || "Top-up failed" });
+      }
+    } catch {
+      setTopupResult({ success: false, message: "Failed to initiate top-up" });
+    } finally {
+      setTopupLoading(false);
+    }
+  };
 
   const handleCreateKey = async () => {
     if (!newKeyLabel.trim()) return;
@@ -220,6 +510,103 @@ export const ApiMarketplacePage = () => {
     }
   };
 
+  const handleKeyAction = async (id: string, action: "suspend" | "activate" | "revoke") => {
+    setActionLoading(id);
+    try {
+      let result;
+      if (action === "suspend") result = await apiMarketplaceService.suspendKey(id);
+      else if (action === "activate") result = await apiMarketplaceService.activateKey(id);
+      else result = await apiMarketplaceService.revokeKey(id);
+      if (result.success) {
+        addToast(`Key ${action}ed successfully`, "success");
+        loadKeys();
+      } else {
+        addToast(result.message || `Failed to ${action} key`, "error");
+      }
+    } catch {
+      addToast(`Failed to ${action} key`, "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleOpenKeyDetail = async (id: string) => {
+    setSelectedKeyId(id);
+    setKeyDetail(null);
+    setKeyDetailError(null);
+    await loadKeyDetail(id);
+  };
+
+  const handleCloseKeyDetail = () => {
+    setSelectedKeyId(null);
+    setKeyDetail(null);
+    setKeyDetailError(null);
+  };
+
+  const handleEditLabelOpen = (id: string, currentLabel: string) => {
+    setShowEditLabel(id);
+    setEditLabelValue(currentLabel);
+  };
+
+  const handleSaveLabel = async () => {
+    if (!showEditLabel || !editLabelValue.trim()) return;
+    setIsSavingLabel(true);
+    try {
+      const result = await apiMarketplaceService.updateKeyLabel(showEditLabel, editLabelValue.trim());
+      if (result.success) {
+        addToast("Label updated", "success");
+        setShowEditLabel(null);
+        loadKeys();
+        if (selectedKeyId) loadKeyDetail(selectedKeyId);
+      } else {
+        addToast(result.message || "Failed to update label", "error");
+      }
+    } catch {
+      addToast("Failed to update label", "error");
+    } finally {
+      setIsSavingLabel(false);
+    }
+  };
+
+  const handleRegenerateKey = async (id: string) => {
+    if (!window.confirm("Regenerate this API key? The old key will stop working immediately.")) return;
+    setActionLoading(id);
+    try {
+      const result = await apiMarketplaceService.regenerateKey(id);
+      if (result.success) {
+        setCreatedKey(result.data);
+        addToast("Key regenerated — copy it now", "success");
+        loadKeys();
+      } else {
+        addToast(result.message || "Failed to regenerate key", "error");
+      }
+    } catch {
+      addToast("Failed to regenerate key", "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSetExpiry = async (id: string) => {
+    const daysStr = window.prompt("Set expiration (days from now, or empty for no expiry):");
+    if (daysStr === null) return;
+    const expiresAt = daysStr.trim()
+      ? new Date(Date.now() + parseInt(daysStr) * 86400000).toISOString()
+      : null;
+    try {
+      const result = await apiMarketplaceService.setKeyExpiration(id, expiresAt);
+      if (result.success) {
+        addToast(expiresAt ? "Expiration set" : "Expiration cleared", "success");
+        loadKeys();
+        if (selectedKeyId) loadKeyDetail(selectedKeyId);
+      } else {
+        addToast(result.message || "Failed to set expiration", "error");
+      }
+    } catch {
+      addToast("Failed to set expiration", "error");
+    }
+  };
+
   const handleCloseCreateModal = () => {
     setShowCreateModal(false);
     setCreatedKey(null);
@@ -235,6 +622,17 @@ export const ApiMarketplacePage = () => {
     });
   };
 
+  const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -245,6 +643,53 @@ export const ApiMarketplacePage = () => {
         return <Badge colorScheme="error">Suspended</Badge>;
       default:
         return <Badge>{status}</Badge>;
+    }
+  };
+
+  const WEBHOOK_EVENTS = ["order.placed", "order.processing", "order.completed", "order.failed"];
+
+  const handleCreateWebhook = async (data: { url: string; secret: string; events: string[]; description?: string; active?: boolean }) => {
+    try {
+      const result = await apiMarketplaceService.createWebhook(data);
+      if (result.success) {
+        addToast("Webhook created", "success");
+        setShowCreateWebhook(false);
+        loadWebhooks();
+      } else {
+        addToast(result.message || "Failed to create webhook", "error");
+      }
+    } catch {
+      addToast("Failed to create webhook", "error");
+    }
+  };
+
+  const handleDeleteWebhook = async (id: string) => {
+    if (!window.confirm("Delete this webhook endpoint? This cannot be undone.")) return;
+    try {
+      const result = await apiMarketplaceService.deleteWebhook(id);
+      if (result.success) {
+        addToast("Webhook deleted", "success");
+        loadWebhooks();
+        setShowWebhookDetail(null);
+      } else {
+        addToast(result.message || "Failed to delete webhook", "error");
+      }
+    } catch {
+      addToast("Failed to delete webhook", "error");
+    }
+  };
+
+  const handleTestWebhook = async (id: string) => {
+    try {
+      const result = await apiMarketplaceService.testWebhook(id);
+      if (result.success) {
+        addToast(`Test delivery: ${result.data.success ? "success" : "failed"} (${result.data.statusCode})`, result.data.success ? "success" : "warning");
+        loadDeliveryLogs(id);
+      } else {
+        addToast(result.message || "Test failed", "error");
+      }
+    } catch {
+      addToast("Test request failed", "error");
     }
   };
 
@@ -317,19 +762,17 @@ export const ApiMarketplacePage = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="overflow-x-auto flex justify-center -mx-1 sm:mx-0">
-          <TabsList className="inline-flex justify-center sm:grid sm:w-full sm:grid-cols-3 sm:justify-items-center gap-1 min-w-max sm:min-w-0 px-1 sm:px-0">
-            {TABS.map((tab) => (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap px-3 sm:px-4 py-2 text-sm"
-              >
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+        <TabsList className="gap-1 px-1">
+          {TABS.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              className="flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm"
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
         {/* ── Overview Tab ──────────────────────────────────────────── */}
         <TabsContent value="overview">
@@ -477,10 +920,10 @@ export const ApiMarketplacePage = () => {
                       <TableRow>
                         <TableHeaderCell>Label</TableHeaderCell>
                         <TableHeaderCell>Key Prefix</TableHeaderCell>
+                        <TableHeaderCell>Permissions</TableHeaderCell>
                         <TableHeaderCell>Status</TableHeaderCell>
                         <TableHeaderCell>Created</TableHeaderCell>
                         <TableHeaderCell>Last Used</TableHeaderCell>
-                        <TableHeaderCell>Expires</TableHeaderCell>
                         <TableHeaderCell className="text-right">Actions</TableHeaderCell>
                       </TableRow>
                     </TableHeader>
@@ -488,12 +931,26 @@ export const ApiMarketplacePage = () => {
                       {keys.map((key) => {
                         const isExpired = key.expiresAt && new Date(key.expiresAt) < new Date();
                         return (
-                          <TableRow key={key._id}>
+                          <TableRow
+                            key={key._id}
+                            className="cursor-pointer transition-colors hover:bg-[var(--bg-surface-alt)]"
+                            onClick={() => handleOpenKeyDetail(key._id)}
+                          >
                             <TableCell className="font-medium">{key.label}</TableCell>
                             <TableCell>
                               <code className="text-sm px-2 py-0.5 rounded" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
                                 {key.keyPrefix}...
                               </code>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                {key.permissions.slice(0, 2).map((p) => (
+                                  <Badge key={p} colorScheme="primary" className="text-xs">{p.split(":")[0]}</Badge>
+                                ))}
+                                {key.permissions.length > 2 && (
+                                  <Badge className="text-xs">+{key.permissions.length - 2}</Badge>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell>
                               {getStatusBadge(isExpired ? "expired" : key.status)}
@@ -504,13 +961,18 @@ export const ApiMarketplacePage = () => {
                             <TableCell className="text-sm" style={{ color: "var(--text-secondary)" }}>
                               {key.lastUsedAt ? formatDate(key.lastUsedAt) : <span className="italic" style={{ opacity: 0.6 }}>Never</span>}
                             </TableCell>
-                            <TableCell className="text-sm" style={{ color: isExpired ? "var(--error)" : "var(--text-secondary)" }}>
-                              {key.expiresAt ? formatDate(key.expiresAt) : <span className="text-xs" style={{ color: "var(--text-muted)" }}>Never</span>}
-                            </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex gap-1 justify-end">
                                 <Button
-                                  variant="secondary"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditLabelOpen(key._id, key.label)}
+                                  title="Edit label"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => handleCopyKeyFromTable(key.keyPrefix, key._id)}
                                   title="Copy key prefix"
@@ -521,14 +983,37 @@ export const ApiMarketplacePage = () => {
                                     <Copy className="w-3.5 h-3.5" />
                                   )}
                                 </Button>
+                                {key.status === "suspended" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleKeyAction(key._id, "activate")}
+                                    disabled={actionLoading === key._id}
+                                    title="Activate"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
                                 {key.status === "active" && !isExpired && (
                                   <Button
-                                    variant="danger"
+                                    variant="ghost"
                                     size="sm"
-                                    onClick={() => setShowRevokeConfirm(key._id)}
+                                    onClick={() => handleKeyAction(key._id, "suspend")}
+                                    disabled={actionLoading === key._id}
+                                    title="Suspend"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5 mr-1" />
-                                    Revoke
+                                    <Ban className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                                {key.status !== "revoked" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleKeyAction(key._id, "revoke")}
+                                    disabled={actionLoading === key._id}
+                                    title="Revoke"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </Button>
                                 )}
                               </div>
@@ -688,6 +1173,46 @@ export const ApiMarketplacePage = () => {
               </Card>
             )}
 
+            {/* Per-Key Usage */}
+            {perKeyUsage.length > 0 && (
+              <Card variant="outlined">
+                <CardHeader>
+                  <h2 className="text-base sm:text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                    Per-Key Usage (Today)
+                  </h2>
+                </CardHeader>
+                <CardBody className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHeaderCell>Key</TableHeaderCell>
+                          <TableHeaderCell>Status</TableHeaderCell>
+                          <TableHeaderCell>Requests</TableHeaderCell>
+                          <TableHeaderCell>Errors</TableHeaderCell>
+                          <TableHeaderCell>Avg Latency</TableHeaderCell>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {perKeyUsage.map((pk) => (
+                          <TableRow key={pk.apiKeyId}>
+                            <TableCell>
+                              <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{pk.label}</span>
+                              <code className="text-xs ml-2" style={{ color: "var(--color-secondary)" }}>{pk.keyPrefix}...</code>
+                            </TableCell>
+                            <TableCell>{getStatusBadge(pk.status)}</TableCell>
+                            <TableCell className="text-sm">{pk.totalRequests}</TableCell>
+                            <TableCell className="text-sm" style={{ color: pk.errorCount > 0 ? "var(--error)" : "var(--text-secondary)" }}>{pk.errorCount}</TableCell>
+                            <TableCell className="text-sm">{Math.round(pk.avgLatency)}ms</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+
             <Card variant="outlined">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -804,6 +1329,294 @@ export const ApiMarketplacePage = () => {
             </Card>
           </div>
         </TabsContent>
+
+        {/* ── Webhooks Tab ──────────────────────────────────────────── */}
+        <TabsContent value="webhooks">
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <Button className="w-full sm:w-auto" onClick={() => setShowCreateWebhook(true)}>
+                <Plus className="w-4 h-4 mr-1.5" />
+                Add Webhook
+              </Button>
+            </div>
+
+            {webhooksLoading ? (
+              <Card variant="outlined">
+                <CardBody><div className="space-y-3">{[...Array(2)].map((_, i) => (<Skeleton key={i} variant="rectangular" height="4rem" />))}</div></CardBody>
+              </Card>
+            ) : webhooksError ? (
+              <Card variant="outlined"><CardBody><Alert status="error" variant="left-accent">{webhooksError}</Alert></CardBody></Card>
+            ) : webhooks.length === 0 ? (
+              <Card variant="outlined">
+                <CardBody>
+                  <EmptyState
+                    icon={<Webhook className="w-6 h-6" />}
+                    title="No webhooks configured"
+                    description="Create a webhook endpoint to receive real-time order status updates."
+                    action={
+                      <Button className="w-full sm:w-auto" onClick={() => setShowCreateWebhook(true)}>
+                        <Plus className="w-4 h-4 mr-1.5" /> Add Webhook
+                      </Button>
+                    }
+                  />
+                </CardBody>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {webhooks.map((wh) => (
+                  <Card key={wh._id} variant="outlined">
+                    <CardBody>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge colorScheme={wh.active ? "success" : "warning"}>{wh.active ? "Active" : "Inactive"}</Badge>
+                            <span className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
+                              {wh.description || wh.url}
+                            </span>
+                          </div>
+                          <code className="text-xs font-mono block truncate" style={{ color: "var(--color-secondary)" }}>
+                            {wh.url}
+                          </code>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {wh.events.map((ev) => (
+                              <Badge key={ev} colorScheme="info" className="text-xs">{ev}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button variant="ghost" size="sm" onClick={() => handleTestWebhook(wh._id)} title="Test webhook">
+                            <Play className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => { setShowWebhookDetail(showWebhookDetail === wh._id ? null : wh._id); if (showWebhookDetail !== wh._id) loadDeliveryLogs(wh._id); }} title="View deliveries">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteWebhook(wh._id)} title="Delete">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Delivery Logs */}
+                      {showWebhookDetail === wh._id && (
+                        <div className="mt-4 pt-3 border-t" style={{ borderColor: "var(--border-color)" }}>
+                          <p className="text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>Recent Deliveries</p>
+                          {deliveryLogsLoading ? (
+                            <Skeleton variant="rectangular" height="3rem" />
+                          ) : webhookDeliveryLogs.length === 0 ? (
+                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>No delivery attempts yet.</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {webhookDeliveryLogs.slice(0, 5).map((log) => (
+                                <div key={log._id} className="flex items-center gap-2 text-xs py-1" style={{ color: "var(--text-secondary)" }}>
+                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${log.success ? "bg-green-500" : "bg-red-500"}`} />
+                                  <span className="font-mono">{log.event}</span>
+                                  <span>{log.statusCode || "—"}</span>
+                                  <span>{log.durationMs}ms</span>
+                                  <span className="text-[var(--text-muted)]">attempt {log.attempt}/{log.maxAttempts}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardBody>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ── Wallet Tab ─────────────────────────────────────────────── */}
+        <TabsContent value="wallet">
+          <div className="space-y-4">
+            <Card variant="outlined">
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>Wallet Balance</p>
+                    {walletLoading ? (
+                      <div className="h-8 w-32 rounded" style={{ backgroundColor: "var(--bg-surface-alt)" }} />
+                    ) : (
+                      <p className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+                        {walletCurrency} {walletBalance !== null ? walletBalance.toFixed(2) : "—"}
+                      </p>
+                    )}
+                  </div>
+                  <Wallet className="w-10 h-10" style={{ color: "var(--color-secondary)", opacity: 0.5 }} />
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card variant="outlined">
+              <CardHeader>
+                <h2 className="text-base sm:text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                  Top Up Wallet
+                </h2>
+              </CardHeader>
+              <CardBody className="space-y-4">
+                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                  Initiate a wallet top-up via Paystack. You'll be redirected to complete payment.
+                </p>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-primary)" }}>
+                    Amount (GHS)
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={topupAmount}
+                      onChange={(e) => setTopupAmount(e.target.value)}
+                      placeholder="e.g. 100"
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleInitiateTopup}
+                      disabled={!topupAmount || Number(topupAmount) < 1 || topupLoading}
+                    >
+                      {topupLoading ? "Processing..." : "Top Up"}
+                    </Button>
+                  </div>
+                </div>
+
+                {topupResult && (
+                  <div className="rounded-lg border p-3" style={{
+                    borderColor: topupResult.success ? "var(--success)" : "var(--error)",
+                    backgroundColor: topupResult.success ? "color-mix(in srgb, var(--success) 8%, transparent)" : "color-mix(in srgb, var(--error) 8%, transparent)",
+                  }}>
+                    {topupResult.success && topupResult.data ? (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                          Top-up initiated successfully
+                        </p>
+                        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                          Reference: <code className="font-mono">{topupResult.data.reference}</code>
+                        </p>
+                        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                          Amount: {walletCurrency} {topupResult.data!.amount.toFixed(2)}
+                        </p>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => window.open(topupResult.data!.authorizationUrl, "_blank")}
+                        >
+                          Complete Payment
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm" style={{ color: "var(--error)" }}>
+                        {topupResult.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ── Orders Tab ────────────────────────────────────────────── */}
+        <TabsContent value="orders">
+          <div className="space-y-4">
+            <Card variant="outlined">
+              <CardBody>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="w-full sm:w-48">
+                    <select
+                      value={orderStatusFilter}
+                      onChange={(e) => { setOrderStatusFilter(e.target.value); setOrdersPage(1); }}
+                      className="w-full text-sm rounded-md px-3 py-2 border"
+                      style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-color)", color: "var(--text-primary)" }}
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="pending">Pending</option>
+                      <option value="processing">Processing</option>
+                      <option value="completed">Completed</option>
+                      <option value="failed">Failed</option>
+                    </select>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {ordersLoading ? (
+              <Card variant="outlined">
+                <CardBody><div className="space-y-3">{[...Array(3)].map((_, i) => (<Skeleton key={i} variant="rectangular" height="3rem" />))}</div></CardBody>
+              </Card>
+            ) : ordersError ? (
+              <Card variant="outlined"><CardBody><Alert status="error" variant="left-accent">{ordersError}</Alert></CardBody></Card>
+            ) : orders.length === 0 ? (
+              <Card variant="outlined">
+                <CardBody>
+                  <EmptyState
+                    icon={<Package className="w-6 h-6" />}
+                    title="No orders found"
+                    description={orderStatusFilter ? "No orders match the selected status." : "Orders placed via API will appear here."}
+                  />
+                </CardBody>
+              </Card>
+            ) : (
+              <Card variant="outlined">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHeaderCell>Order #</TableHeaderCell>
+                        <TableHeaderCell>Bundle</TableHeaderCell>
+                        <TableHeaderCell>Customer</TableHeaderCell>
+                        <TableHeaderCell>Amount</TableHeaderCell>
+                        <TableHeaderCell>Status</TableHeaderCell>
+                        <TableHeaderCell>Payment</TableHeaderCell>
+                        <TableHeaderCell>Date</TableHeaderCell>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map((order) => (
+                        <TableRow
+                          key={order._id}
+                          className="cursor-pointer transition-colors hover:bg-[var(--bg-surface-alt)]"
+                          onClick={() => { setOrderDetail(order as unknown as OrderDetail); setShowOrderDetail(true); }}
+                        >
+                          <TableCell className="font-mono text-sm font-medium">{order.orderNumber}</TableCell>
+                          <TableCell className="text-sm">{order.bundle?.name || "—"}</TableCell>
+                          <TableCell className="text-sm">{order.customerPhone}</TableCell>
+                          <TableCell className="text-sm font-medium">GH₵{order.total.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge colorScheme={
+                              order.status === "completed" ? "success" :
+                              order.status === "processing" ? "info" :
+                              order.status === "failed" ? "error" : "warning"
+                            }>{order.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge colorScheme={order.paymentStatus === "paid" ? "success" : "warning"}>{order.paymentStatus}</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                            {formatDateTime(order.createdAt)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {ordersMeta && ordersMeta.total > 0 && (
+                  <div className="px-3 pb-3">
+                    <Pagination
+                      currentPage={ordersPage}
+                      totalPages={Math.ceil(ordersMeta.total / 10)}
+                      totalItems={ordersMeta.total}
+                      itemsPerPage={10}
+                      onPageChange={(p) => setOrdersPage(p)}
+                      showPerPageSelector={false}
+                      variant="compact"
+                    />
+                  </div>
+                )}
+              </Card>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* ── Create Key Modal ────────────────────────────────────────── */}
@@ -910,6 +1723,222 @@ export const ApiMarketplacePage = () => {
               {isRevoking ? "Revoking..." : "Revoke Key"}
             </Button>
           </div>
+        </DialogFooter>
+      </Dialog>
+
+      {/* ── Key Detail Dialog ────────────────────────────────────────── */}
+      <Dialog isOpen={!!selectedKeyId} onClose={handleCloseKeyDetail} size="lg">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Key className="w-5 h-5" style={{ color: "var(--color-secondary)" }} />
+              <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+                API Key Details
+              </h2>
+            </div>
+            <button onClick={handleCloseKeyDetail} className="p-1 rounded hover:bg-[var(--bg-surface-alt)]" aria-label="Close">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </DialogHeader>
+        <DialogBody>
+          {keyDetailLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--color-secondary)" }} />
+            </div>
+          ) : keyDetailError ? (
+            <div className="text-center py-8">
+              <p style={{ color: "var(--error)" }}>{keyDetailError}</p>
+              <Button variant="ghost" size="sm" className="mt-4" onClick={() => selectedKeyId && loadKeyDetail(selectedKeyId)}>
+                Retry
+              </Button>
+            </div>
+          ) : keyDetail ? (
+            <div className="space-y-5">
+              <div className="flex items-center gap-3">
+                {getStatusBadge(keyDetail.status)}
+                <code className="text-sm font-mono" style={{ color: "var(--color-secondary)" }}>{keyDetail.keyPrefix}...</code>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Key Info</h3>
+                <div className="grid grid-cols-2 gap-3 p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <div>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Label</p>
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{keyDetail.label}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Created</p>
+                    <p className="text-sm" style={{ color: "var(--text-primary)" }}>{formatDateTime(keyDetail.createdAt)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Last Used</p>
+                    <p className="text-sm" style={{ color: keyDetail.lastUsedAt ? "var(--text-primary)" : "var(--text-muted)" }}>
+                      {keyDetail.lastUsedAt ? formatDateTime(keyDetail.lastUsedAt) : "Never"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Expires</p>
+                    <p className="text-sm" style={{ color: keyDetail.expiresAt ? "var(--warning)" : "var(--text-muted)" }}>
+                      {keyDetail.expiresAt ? formatDate(keyDetail.expiresAt) : "Never"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Allowed IPs</p>
+                    <p className="text-sm" style={{ color: "var(--text-primary)" }}>
+                      {keyDetail.allowedIps?.length ? keyDetail.allowedIps.join(", ") : "Any"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Rate Limit Override</p>
+                    <p className="text-sm" style={{ color: keyDetail.rateLimitOverride ? "var(--text-primary)" : "var(--text-muted)" }}>
+                      {keyDetail.rateLimitOverride ? `${keyDetail.rateLimitOverride}/min` : "Default"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Permissions</h3>
+                <div className="flex flex-wrap gap-2">
+                  {keyDetail.permissions.map((p) => (
+                    <span key={p} className="px-2 py-1 rounded text-xs font-medium" style={{ backgroundColor: "var(--color-primary)", color: "white" }}>
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t" style={{ borderColor: "var(--border-color)" }}>
+                <Button variant="ghost" size="sm" onClick={() => handleEditLabelOpen(keyDetail._id, keyDetail.label)}>
+                  <Edit3 className="w-3.5 h-3.5 mr-1" /> Edit Label
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleRegenerateKey(keyDetail._id)} disabled={actionLoading === keyDetail._id}>
+                  <RefreshCw className="w-3.5 h-3.5 mr-1" /> Regenerate
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleSetExpiry(keyDetail._id)}>
+                  <Clock className="w-3.5 h-3.5 mr-1" /> Set Expiry
+                </Button>
+                {keyDetail.status === "suspended" && (
+                  <Button variant="ghost" size="sm" onClick={() => { handleKeyAction(keyDetail._id, "activate"); handleCloseKeyDetail(); }}>
+                    <Check className="w-3.5 h-3.5 mr-1" /> Activate
+                  </Button>
+                )}
+                {keyDetail.status === "active" && (
+                  <Button variant="ghost" size="sm" onClick={() => { handleKeyAction(keyDetail._id, "suspend"); handleCloseKeyDetail(); }}>
+                    <Ban className="w-3.5 h-3.5 mr-1" /> Suspend
+                  </Button>
+                )}
+                {keyDetail.status !== "revoked" && (
+                  <Button variant="ghost" size="sm" onClick={() => { handleKeyAction(keyDetail._id, "revoke"); handleCloseKeyDetail(); }}>
+                    <Trash2 className="w-3.5 h-3.5 mr-1" /> Revoke
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </DialogBody>
+      </Dialog>
+
+      {/* ── Edit Label Dialog ────────────────────────────────────────── */}
+      <Dialog isOpen={!!showEditLabel} onClose={() => setShowEditLabel(null)}>
+        <DialogHeader>Edit Key Label</DialogHeader>
+        <DialogBody className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-primary)" }}>
+              Label
+            </label>
+            <Input
+              value={editLabelValue}
+              onChange={(e) => setEditLabelValue(e.target.value)}
+              placeholder="e.g. Production, Staging"
+              maxLength={50}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSaveLabel(); }}
+            />
+          </div>
+        </DialogBody>
+        <DialogFooter justify="end">
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => setShowEditLabel(null)}>Cancel</Button>
+            <Button onClick={handleSaveLabel} disabled={!editLabelValue.trim() || isSavingLabel}>
+              {isSavingLabel ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </DialogFooter>
+      </Dialog>
+
+      {/* ── Create Webhook Dialog ────────────────────────────────────── */}
+      <WebhookCreateDialog
+        isOpen={showCreateWebhook}
+        onClose={() => setShowCreateWebhook(false)}
+        onCreate={handleCreateWebhook}
+        availableEvents={WEBHOOK_EVENTS}
+      />
+
+      {/* ── Order Detail Dialog ──────────────────────────────────────── */}
+      <Dialog isOpen={showOrderDetail} onClose={() => setShowOrderDetail(false)} size="md">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <Package className="w-5 h-5" style={{ color: "var(--color-secondary)" }} />
+            <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+              Order {orderDetail?.orderNumber || ""}
+            </h2>
+          </div>
+        </DialogHeader>
+        <DialogBody>
+          {orderDetail ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Status</p>
+                  <Badge colorScheme={
+                    orderDetail.status === "completed" ? "success" :
+                    orderDetail.status === "processing" ? "info" :
+                    orderDetail.status === "failed" ? "error" : "warning"
+                  }>{orderDetail.status}</Badge>
+                </div>
+                <div className="p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Payment</p>
+                  <Badge colorScheme={orderDetail.paymentStatus === "paid" ? "success" : "warning"}>{orderDetail.paymentStatus}</Badge>
+                </div>
+                <div className="p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Bundle</p>
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{orderDetail.bundle?.name || "—"}</p>
+                </div>
+                <div className="p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Quantity</p>
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{orderDetail.quantity}</p>
+                </div>
+                <div className="p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Customer</p>
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{orderDetail.customerPhone}</p>
+                </div>
+                <div className="p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Total</p>
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>GH₵{orderDetail.total.toFixed(2)}</p>
+                </div>
+                <div className="p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Created</p>
+                  <p className="text-sm" style={{ color: "var(--text-primary)" }}>{formatDateTime(orderDetail.createdAt)}</p>
+                </div>
+                <div className="p-3 rounded-lg" style={{ backgroundColor: "var(--bg-surface-alt)" }}>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Served By</p>
+                  <p className="text-sm" style={{ color: orderDetail.servedBy ? "var(--text-primary)" : "var(--text-muted)" }}>
+                    {orderDetail.servedBy || "—"}
+                  </p>
+                </div>
+              </div>
+              {orderDetail.notes && (
+                <div>
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Notes</p>
+                  <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{orderDetail.notes}</p>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </DialogBody>
+        <DialogFooter justify="end">
+          <Button variant="ghost" onClick={() => setShowOrderDetail(false)}>Close</Button>
         </DialogFooter>
       </Dialog>
 

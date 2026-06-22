@@ -59,7 +59,7 @@ export function TabsList({ children, className = "" }: TabsListProps) {
 
   const base = context.variant === "file"
     ? "flex overflow-x-auto flex-nowrap scroll-smooth text-[var(--text-secondary)]"
-    : "flex w-full overflow-x-auto flex-nowrap scroll-smooth h-10 items-center justify-center rounded-lg bg-[var(--bg-surface-alt)] p-1 text-[var(--text-secondary)]";
+    : "flex w-full overflow-x-auto flex-nowrap scroll-smooth rounded-lg bg-[var(--bg-surface-alt)] p-1 text-[var(--text-secondary)]";
 
   return (
     <div className={`${base} ${className}`} role="tablist">

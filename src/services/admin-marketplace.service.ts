@@ -23,6 +23,8 @@ export interface AdminKeyDetail {
   keyPrefix: string;
   status: 'active' | 'suspended' | 'revoked';
   permissions: string[];
+  allowedIps: string[];
+  rateLimitOverride: number | null;
   lastUsedAt: string | null;
   expiresAt: string | null;
   createdAt: string;
@@ -165,6 +167,78 @@ class AdminMarketplaceService {
 
   async revokeAllAgentKeys(agentId: string): Promise<ApiResponse<{ revokedCount: number }>> {
     const response = await apiClient.post(`/api/admin/marketplace/keys/revoke-by-agent/${agentId}`);
+    return response.data;
+  }
+
+  async updateKeyLabel(id: string, label: string): Promise<ApiResponse<AdminKeyDetail>> {
+    const response = await apiClient.put(`/api/admin/marketplace/keys/${id}`, { label });
+    return response.data;
+  }
+
+  async regenerateKey(id: string): Promise<ApiResponse<{ _id: string; keyPrefix: string; key: string }>> {
+    const response = await apiClient.post(`/api/admin/marketplace/keys/${id}/regenerate`);
+    return response.data;
+  }
+
+  async setKeyExpiration(id: string, expiresAt: string | null): Promise<ApiResponse<AdminKeyDetail>> {
+    const response = await apiClient.put(`/api/admin/marketplace/keys/${id}/expiration`, { expiresAt });
+    return response.data;
+  }
+
+  async updateKeyPermissions(id: string, permissions: string[]): Promise<ApiResponse<AdminKeyDetail>> {
+    const response = await apiClient.put(`/api/admin/marketplace/keys/${id}/permissions`, { permissions });
+    return response.data;
+  }
+
+  async updateKeyAllowedIps(id: string, allowedIps: string[]): Promise<ApiResponse<AdminKeyDetail>> {
+    const response = await apiClient.put(`/api/admin/marketplace/keys/${id}/allowed-ips`, { allowedIps });
+    return response.data;
+  }
+
+  async updateKeyRateLimitOverride(id: string, rateLimitOverride: number | null): Promise<ApiResponse<AdminKeyDetail>> {
+    const response = await apiClient.put(`/api/admin/marketplace/keys/${id}/rate-limit-override`, { rateLimitOverride });
+    return response.data;
+  }
+
+  // ─── Per-Key Usage Stats ──────────────────────────────────────────────────
+
+  async getPerKeyUsageStats(agentId?: string): Promise<ApiResponse<{ apiKeyId: string; label: string; keyPrefix: string; totalRequests: number; errorCount: number; avgLatency: number }[]>> {
+    const params = agentId ? { agentId } : {};
+    const response = await apiClient.get('/api/admin/marketplace/usage/per-key', { params });
+    return response.data;
+  }
+
+  // ─── Webhooks ─────────────────────────────────────────────────────────────
+
+  async getWebhooks(params?: {
+    agentId?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<{
+    _id: string;
+    agentId: { _id: string; name: string; email: string } | string;
+    url: string;
+    events: string[];
+    active: boolean;
+    description: string;
+    createdAt: string;
+  }[]>> {
+    const response = await apiClient.get('/api/admin/marketplace/webhooks', { params });
+    return response.data;
+  }
+
+  async getWebhookById(id: string): Promise<ApiResponse<{
+    _id: string;
+    agentId: { _id: string; name: string; email: string } | string;
+    url: string;
+    secret: string;
+    events: string[];
+    active: boolean;
+    description: string;
+    createdAt: string;
+    updatedAt: string;
+  }>> {
+    const response = await apiClient.get(`/api/admin/marketplace/webhooks/${id}`);
     return response.data;
   }
 }

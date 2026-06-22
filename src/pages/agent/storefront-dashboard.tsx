@@ -658,20 +658,18 @@ export const StorefrontDashboardPage: React.FC = () => {
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         {/* Tab bar */}
-        <div className="overflow-x-auto flex justify-center">
-          <TabsList className="inline-flex justify-center sm:grid sm:w-full sm:grid-cols-4 sm:justify-items-center gap-1 min-w-max sm:min-w-0">
-            {TABS.map((tab) => (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap px-3 sm:px-4"
-              >
-                <tab.icon className="w-4 h-4" />
-                <span className="text-sm">{tab.label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+        <TabsList className="gap-1">
+          {TABS.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              className="flex items-center gap-1.5 whitespace-nowrap px-3"
+            >
+              <tab.icon className="w-4 h-4" />
+              <span className="text-sm">{tab.label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview">

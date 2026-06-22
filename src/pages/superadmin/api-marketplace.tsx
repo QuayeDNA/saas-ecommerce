@@ -56,12 +56,14 @@ export default function SuperAdminApiMarketplacePage() {
           <TabsTrigger value="overview"><FaChartLine className="w-4 h-4 mr-1.5" /> Overview</TabsTrigger>
           <TabsTrigger value="keys"><FaKey className="w-4 h-4 mr-1.5" /> API Keys</TabsTrigger>
           <TabsTrigger value="usage"><FaCode className="w-4 h-4 mr-1.5" /> Usage Logs</TabsTrigger>
+          <TabsTrigger value="webhooks"><FaCode className="w-4 h-4 mr-1.5" /> Webhooks</TabsTrigger>
           <TabsTrigger value="settings"><FaCog className="w-4 h-4 mr-1.5" /> Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview"><OverviewTab /></TabsContent>
         <TabsContent value="keys"><KeysTab /></TabsContent>
         <TabsContent value="usage"><UsageTab /></TabsContent>
+        <TabsContent value="webhooks"><WebhooksTab /></TabsContent>
         <TabsContent value="settings"><SettingsTab /></TabsContent>
       </Tabs>
 
@@ -776,6 +778,18 @@ function KeysTab() {
                       {detail.expiresAt ? new Date(detail.expiresAt).toLocaleDateString() : "Never"}
                     </p>
                   </div>
+                  <div>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Allowed IPs</p>
+                    <p className="text-sm" style={{ color: detail.allowedIps?.length ? "var(--text-primary)" : "var(--text-muted)" }}>
+                      {detail.allowedIps?.length ? detail.allowedIps.join(", ") : "Any IP"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Rate Limit Override</p>
+                    <p className="text-sm" style={{ color: detail.rateLimitOverride ? "var(--text-primary)" : "var(--text-muted)" }}>
+                      {detail.rateLimitOverride ? `${detail.rateLimitOverride}/min` : "Default"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -1113,6 +1127,120 @@ function SettingsTab() {
             </div>
           ) : (
             <p style={{ color: "var(--text-muted)" }}>Could not load rate limit configuration.</p>
+          )}
+        </CardBody>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Webhooks Tab ───────────────────────────────────────────────────────────
+
+function WebhooksTab() {
+  const [webhooks, setWebhooks] = useState<Array<{
+    _id: string;
+    agentId: { _id: string; name: string; email: string } | string;
+    url: string;
+    events: string[];
+    active: boolean;
+    description: string;
+    createdAt: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchWebhooks = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await adminMarketplaceService.getWebhooks({ limit: 50 });
+      if (res.success) {
+        setWebhooks(res.data);
+      } else {
+        setError("Failed to load webhooks");
+      }
+    } catch {
+      setError("Failed to load webhooks");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchWebhooks(); }, [fetchWebhooks]);
+
+  const getAgentName = (wh: typeof webhooks[0]): string => {
+    if (typeof wh.agentId === "object" && wh.agentId) {
+      return wh.agentId.name || wh.agentId.email || wh.agentId._id;
+    }
+    return String(wh.agentId);
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card variant="outlined">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
+              Webhook Endpoints
+            </h2>
+            <Button variant="outline" size="sm" onClick={fetchWebhooks} disabled={loading}>
+              <FaSync className="w-3 h-3 mr-1" /> Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardBody className="p-0">
+          {loading ? (
+            <div className="flex justify-center py-12"><Spinner /></div>
+          ) : error ? (
+            <div className="text-center py-8"><p style={{ color: "var(--error)" }}>{error}</p></div>
+          ) : webhooks.length === 0 ? (
+            <div className="text-center py-12">
+              <FaCode className="mx-auto text-3xl mb-3" style={{ color: "var(--text-muted)" }} />
+              <p style={{ color: "var(--text-muted)" }}>No webhook endpoints configured yet.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: "var(--border-color)" }}>
+                    <th className="text-left py-3 px-3 font-medium" style={{ color: "var(--text-muted)" }}>Agent</th>
+                    <th className="text-left py-3 px-3 font-medium" style={{ color: "var(--text-muted)" }}>URL</th>
+                    <th className="text-left py-3 px-3 font-medium" style={{ color: "var(--text-muted)" }}>Events</th>
+                    <th className="text-center py-3 px-3 font-medium" style={{ color: "var(--text-muted)" }}>Status</th>
+                    <th className="text-right py-3 px-3 font-medium" style={{ color: "var(--text-muted)" }}>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {webhooks.map((wh) => (
+                    <tr key={wh._id} className="border-b" style={{ borderColor: "var(--border-color)" }}>
+                      <td className="py-3 px-3 text-xs" style={{ color: "var(--text-secondary)" }}>
+                        {getAgentName(wh)}
+                      </td>
+                      <td className="py-3 px-3 max-w-[250px]">
+                        <code className="text-xs truncate block" style={{ color: "var(--color-secondary)" }}>
+                          {wh.url}
+                        </code>
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="flex flex-wrap gap-1">
+                          {wh.events.map((ev) => (
+                            <span key={ev} className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: "var(--bg-surface-alt)", color: "var(--text-secondary)" }}>
+                              {ev}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <Badge colorScheme={wh.active ? "success" : "warning"}>{wh.active ? "Active" : "Inactive"}</Badge>
+                      </td>
+                      <td className="py-3 px-3 text-right text-xs" style={{ color: "var(--text-muted)" }}>
+                        {new Date(wh.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardBody>
       </Card>
