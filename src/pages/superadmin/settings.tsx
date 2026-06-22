@@ -686,6 +686,14 @@ export default function SuperAdminSettingsPage() {
                     <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Super Dealer Minimum</div>
                     <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.super_dealer}</div>
                   </div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Elite Dealer Minimum</div>
+                    <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.elite_dealer}</div>
+                  </div>
+                  <div className="p-3 rounded-lg flex justify-between" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Master Dealer Minimum</div>
+                    <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.master_dealer}</div>
+                  </div>
                   <div className="p-3 rounded-lg flex justify-between col-span-full sm:col-span-1" style={{ backgroundColor: 'var(--bg-muted)' }}>
                     <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Default Minimum</div>
                     <div className="font-medium">GH₵{data.walletSettings.minimumTopUpAmounts.default}</div>
