@@ -36,8 +36,8 @@ import {
   CardBody,
 } from "../design-system";
 import { useToast } from "../design-system/components/toast";
-import { TopUpRequestModal } from "../components/wallet/TopUpRequestModal";
 import { walletService } from "../services/wallet-service";
+import { TopUpRequestModal } from "../components/wallet/TopUpRequestModal";
 import { EarningsManager } from "../components/storefront/earnings-manager";
 
 
@@ -411,53 +411,53 @@ export const WalletPage = () => {
 
           {/* Wallet Balance Card (design-system) */}
           <Card className="mb-6">
-            <CardHeader className="flex items-start justify-between space-y-4 mb-4">
-              <div>
-                <h2
-                  className="text-lg sm:text-xl font-semibold"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  Current Balance
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="success"
-                  size="md"
-                  leftIcon={<FaPlus />}
-                  onClick={() => setShowTopUpModal(true)}
-                  isLoading={isSubmittingRequest}
-                >
-                  <span className="hidden sm:inline">Request Top-up</span>
-                  <span className="sm:hidden">Top-up</span>
-                </Button>
-                <Button
-                  variant="primary"
-                  size="md"
-                  leftIcon={<FaMobileAlt />}
-                  onClick={handleMomoPay}
-                  isLoading={isMomoLoading}
-                  style={{
-                    backgroundColor: '#0A0E1A',
-                    borderColor: '#D4A843',
-                    color: '#D4A843',
-                  }}
-                >
-                  <span className="hidden sm:inline">Instant Claim</span>
-                  <span className="sm:hidden">Instant</span>
-                </Button>
-              </div>
-            </CardHeader>
             <CardBody className="py-3">
-              <div
-                className="text-3xl sm:text-4xl font-bold mb-1"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {formatCurrency(walletBalance)}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2
+                    className="text-lg sm:text-xl font-semibold mb-1"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Current Balance
+                  </h2>
+                  <div
+                    className="text-3xl sm:text-4xl font-bold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {formatCurrency(walletBalance)}
+                  </div>
+                  <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                    Available for transactions and purchases
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Button
+                    variant="success"
+                    size="md"
+                    leftIcon={<FaPlus />}
+                    onClick={() => setShowTopUpModal(true)}
+                    isLoading={isSubmittingRequest}
+                    className="w-full sm:w-auto"
+                  >
+                    Request Top-up
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    leftIcon={<FaMobileAlt />}
+                    onClick={handleMomoPay}
+                    isLoading={isMomoLoading}
+                    className="w-full sm:w-auto"
+                    style={{
+                      backgroundColor: '#0A0E1A',
+                      borderColor: '#D4A843',
+                      color: '#D4A843',
+                    }}
+                  >
+                    Instant Claim
+                  </Button>
+                </div>
               </div>
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                Available for transactions and purchases
-              </p>
             </CardBody>
           </Card>
 
