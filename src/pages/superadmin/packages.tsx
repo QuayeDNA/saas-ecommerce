@@ -821,6 +821,26 @@ function PackagesTab() {
 
   return (
     <div className="space-y-5">
+      {/* Header */}
+      <Card>
+        <CardBody>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
+                Package Management
+              </h2>
+              <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
+                Manage data packages across providers
+              </p>
+            </div>
+            <Button onClick={handleCreate}>
+              <FaPlus className="mr-2" />
+              Add Package
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+
       <StatsGrid stats={statCards} columns={4} gap="sm" />
 
       {/* Search and Filters */}
