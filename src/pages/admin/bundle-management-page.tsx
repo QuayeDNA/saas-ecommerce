@@ -202,9 +202,12 @@ export const BundleManagementPage: React.FC = () => {
     fetchBundles();
   }, [packageId]);
 
+  useEffect(() => {
+    if (allBundles) applyFiltersToBundles(allBundles);
+  }, [status, category, search]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    applyFilters();
     if (search.trim()) {
       addToast(`Searching for bundles matching "${search}"`, "info");
     }
@@ -214,19 +217,12 @@ export const BundleManagementPage: React.FC = () => {
     setSearch("");
     setStatus("");
     setCategory("");
-    applyFilters();
     addToast("Filters cleared", "info");
-  };
-
-  const applyFilters = () => {
-    if (!allBundles) return;
-    applyFiltersToBundles(allBundles);
   };
 
   const handleFilterChange = (filterKey: string, value: string) => {
     if (filterKey === "status") setStatus(value);
     else if (filterKey === "category") setCategory(value);
-    setTimeout(() => applyFilters(), 0);
   };
 
   const handleCreate = () => {
@@ -654,46 +650,52 @@ export const BundleManagementPage: React.FC = () => {
               </Button>
             </div>
           ) : (<>
-              {someSelected && <div className="sticky top-0 z-10 p-3 sm:p-4 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/95 backdrop-blur-sm flex items-center justify-between gap-3 flex-wrap">
-                <span className="text-sm font-medium text-[var(--text-primary)]">
-                  {selectedIds.size} selected
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleBulkStatusToggle(true)}
-                    disabled={bulkActionLoading}
-                  >
-                    <FaCheckCircle className="mr-1.5" />
-                    Activate
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleBulkStatusToggle(false)}
-                    disabled={bulkActionLoading}
-                  >
-                    <FaTimes className="mr-1.5" />
-                    Deactivate
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => setShowBulkDeleteConfirm(true)}
-                    disabled={bulkActionLoading}
-                  >
-                    <FaTrash className="mr-1.5" />
-                    Delete
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={clearSelection}
-                    disabled={bulkActionLoading}
-                  >
-                    Clear
-                  </Button>
+              {someSelected && <div className="sticky top-0 z-10 p-3 sm:p-4 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/95 backdrop-blur-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-[var(--text-primary)]">
+                    {selectedIds.size} selected
+                  </span>
+                  <div className="grid grid-cols-2 sm:flex gap-1.5 sm:gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkStatusToggle(true)}
+                      disabled={bulkActionLoading}
+                      className="text-xs sm:text-sm"
+                    >
+                      <FaCheckCircle className="mr-1 sm:mr-1.5" />
+                      Activate
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkStatusToggle(false)}
+                      disabled={bulkActionLoading}
+                      className="text-xs sm:text-sm"
+                    >
+                      <FaTimes className="mr-1 sm:mr-1.5" />
+                      Deactivate
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => setShowBulkDeleteConfirm(true)}
+                      disabled={bulkActionLoading}
+                      className="text-xs sm:text-sm"
+                    >
+                      <FaTrash className="mr-1 sm:mr-1.5" />
+                      Delete
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={clearSelection}
+                      disabled={bulkActionLoading}
+                      className="text-xs sm:text-sm"
+                    >
+                      Clear
+                    </Button>
+                  </div>
                 </div>
               </div>}
 
