@@ -14,6 +14,7 @@ import {
   FaCheckCircle,
   FaDatabase,
   FaDollarSign,
+  FaTimes,
 } from "react-icons/fa";
 import {
   Button,
@@ -45,13 +46,6 @@ const categoryOptions = [
   { value: "monthly", label: "Monthly" },
   { value: "unlimited", label: "Unlimited" },
   { value: "custom", label: "Custom" },
-];
-
-const dataUnitOptions = [
-  { value: "", label: "All Units" },
-  { value: "MB", label: "MB" },
-  { value: "GB", label: "GB" },
-  { value: "TB", label: "TB" },
 ];
 
 const PROVIDER_INITIALS: Record<string, string> = {
@@ -107,8 +101,10 @@ export const BundleManagementPage: React.FC = () => {
 
   const [status, setStatus] = useState("");
   const [category, setCategory] = useState("");
-  const [dataUnit, setDataUnit] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   const filterOptions = {
     status: {
@@ -122,12 +118,6 @@ export const BundleManagementPage: React.FC = () => {
       options: categoryOptions,
       label: "Category",
       placeholder: "All Categories",
-    },
-    dataUnit: {
-      value: dataUnit,
-      options: dataUnitOptions,
-      label: "Data Unit",
-      placeholder: "All Units",
     },
   };
 
@@ -170,12 +160,6 @@ export const BundleManagementPage: React.FC = () => {
       );
     }
 
-    if (dataUnit) {
-      filteredBundles = filteredBundles.filter(
-        (bundle) => bundle.dataUnit === dataUnit
-      );
-    }
-
     if (search.trim()) {
       const searchTerm = search.trim().toLowerCase();
       filteredBundles = filteredBundles.filter(
@@ -193,7 +177,7 @@ export const BundleManagementPage: React.FC = () => {
 
     if (
       filteredBundles.length === 0 &&
-      (status || category || dataUnit || search.trim())
+      (status || category || search.trim())
     ) {
       addToast("No bundles found matching your criteria", "info");
     }
@@ -230,7 +214,6 @@ export const BundleManagementPage: React.FC = () => {
     setSearch("");
     setStatus("");
     setCategory("");
-    setDataUnit("");
     applyFilters();
     addToast("Filters cleared", "info");
   };
@@ -243,7 +226,6 @@ export const BundleManagementPage: React.FC = () => {
   const handleFilterChange = (filterKey: string, value: string) => {
     if (filterKey === "status") setStatus(value);
     else if (filterKey === "category") setCategory(value);
-    else if (filterKey === "dataUnit") setDataUnit(value);
     setTimeout(() => applyFilters(), 0);
   };
 
@@ -290,6 +272,75 @@ export const BundleManagementPage: React.FC = () => {
     setShowPricingModal(false);
     setPricingBundle(null);
     addToast("Pricing updated successfully", "success");
+  };
+
+  const allSelected = bundles.length > 0 && selectedIds.size === bundles.length;
+  const someSelected = selectedIds.size > 0;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(bundles.map((b) => b._id!)));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkStatusToggle = async (activate: boolean) => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const result = await bundleService.updateBulkBundles(
+        ids.map((id) => ({ id, isActive: activate }))
+      );
+      addToast(
+        `${result.updated} bundle${result.updated !== 1 ? "s" : ""} ${activate ? "activated" : "deactivated"}`,
+        "success"
+      );
+      if (result.failed > 0) {
+        addToast(`${result.failed} bundle${result.failed !== 1 ? "s" : ""} failed`, "error");
+      }
+      clearSelection();
+      await fetchBundles();
+    } catch {
+      addToast("Failed to update bundles", "error");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const result = await bundleService.deleteBulkBundles(ids);
+      addToast(
+        `${result.deleted} bundle${result.deleted !== 1 ? "s" : ""} deleted`,
+        "success"
+      );
+      if (result.failed > 0) {
+        addToast(`${result.failed} bundle${result.failed !== 1 ? "s" : ""} failed to delete`, "error");
+      }
+      setShowBulkDeleteConfirm(false);
+      clearSelection();
+      await fetchBundles();
+    } catch {
+      addToast("Failed to delete bundles", "error");
+    } finally {
+      setBulkActionLoading(false);
+    }
   };
 
   const handleBulkPricing = () => {
@@ -593,7 +644,7 @@ export const BundleManagementPage: React.FC = () => {
             <div className="p-8 sm:p-10 text-center">
               <FaCube className="mx-auto text-3xl sm:text-4xl text-[var(--text-muted)] mb-4" />
               <p className="text-sm text-[var(--text-muted)] mb-4">
-                {status || category || dataUnit || search.trim()
+                {status || category || search.trim()
                   ? "No bundles found matching your criteria."
                   : "No bundles yet."}
               </p>
@@ -602,40 +653,116 @@ export const BundleManagementPage: React.FC = () => {
                 Create Your First Bundle
               </Button>
             </div>
-          ) : (
+          ) : (<>
+              {someSelected && <div className="sticky top-0 z-10 p-3 sm:p-4 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/95 backdrop-blur-sm flex items-center justify-between gap-3 flex-wrap">
+                <span className="text-sm font-medium text-[var(--text-primary)]">
+                  {selectedIds.size} selected
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleBulkStatusToggle(true)}
+                    disabled={bulkActionLoading}
+                  >
+                    <FaCheckCircle className="mr-1.5" />
+                    Activate
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleBulkStatusToggle(false)}
+                    disabled={bulkActionLoading}
+                  >
+                    <FaTimes className="mr-1.5" />
+                    Deactivate
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => setShowBulkDeleteConfirm(true)}
+                    disabled={bulkActionLoading}
+                  >
+                    <FaTrash className="mr-1.5" />
+                    Delete
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={clearSelection}
+                    disabled={bulkActionLoading}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 sm:p-5">
-              {bundles.map((bundle) => (
+              {/* Select-all card */}
+              {bundles.length > 0 && (
+                <div
+                  className="relative overflow-hidden rounded-xl flex items-center justify-center p-4 cursor-pointer transition-all duration-200 border-2 border-dashed"
+                  style={{
+                    borderColor: "var(--border-color)",
+                    backgroundColor: "var(--bg-surface)",
+                  }}
+                  onClick={toggleSelectAll}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      readOnly
+                      className="w-5 h-5 accent-[var(--color-primary)]"
+                    />
+                    <span className="text-sm font-medium text-[var(--text-secondary)]">
+                      {allSelected ? "Deselect all" : "Select all"}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {bundles.map((bundle) => {
+                const isSelected = selectedIds.has(bundle._id!);
+                return (
                 <div
                   key={bundle._id}
                   className={`relative overflow-hidden rounded-xl flex flex-col gap-3 transition-all duration-200 ${
                     !bundle.isActive ? "opacity-55" : ""
-                  }`}
+                  } ${isSelected ? "ring-2 ring-[var(--color-primary)]" : ""}`}
                   style={{
                     backgroundColor: getBundleBrand(bundle).primary,
                     color: getBundleBrand(bundle).text,
                   }}
                 >
-                  {/* Top row: provider avatar + data/validity pills */}
-                  <div className="p-4 pb-0 flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
-                      {(() => {
-                        const logoUrl = getProviderLogo(bundle);
-                        if (logoUrl && !imageErrors[bundle._id!]) {
+                  {/* Checkbox + Top row */}
+                  <div className="p-4 pb-0 flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(bundle._id!)}
+                        className="w-5 h-5 accent-white/80 shrink-0 mt-0.5 cursor-pointer"
+                      />
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                        {(() => {
+                          const logoUrl = getProviderLogo(bundle);
+                          if (logoUrl && !imageErrors[bundle._id!]) {
+                            return (
+                              <img
+                                src={logoUrl}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={() => handleImageError(bundle._id!)}
+                              />
+                            );
+                          }
                           return (
-                            <img
-                              src={logoUrl}
-                              alt=""
-                              className="w-full h-full object-cover"
-                              onError={() => handleImageError(bundle._id!)}
-                            />
+                            <span className="text-sm font-bold text-white">
+                              {PROVIDER_INITIALS[pkg?.provider || ""] || "?"}
+                            </span>
                           );
-                        }
-                        return (
-                          <span className="text-sm font-bold text-white">
-                            {PROVIDER_INITIALS[pkg?.provider || ""] || "?"}
-                          </span>
-                        );
-                      })()}
+                        })()}
+                      </div>
                     </div>
                     <div className="flex gap-1.5">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/15 text-white">
@@ -715,9 +842,10 @@ export const BundleManagementPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
-          )}
+          </>)}
         </CardBody>
       </Card>
 
@@ -735,7 +863,7 @@ export const BundleManagementPage: React.FC = () => {
         providerCode={pkg?.provider}
       />
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal (single) */}
       <Dialog
         isOpen={showDeleteModal}
         onClose={() => {
@@ -770,6 +898,41 @@ export const BundleManagementPage: React.FC = () => {
             disabled={actionLoading}
           >
             {actionLoading ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Modal */}
+      <Dialog
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => {
+          if (!bulkActionLoading) setShowBulkDeleteConfirm(false);
+        }}
+      >
+        <DialogHeader>
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">Delete Bundles</h2>
+        </DialogHeader>
+        <DialogBody>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-[var(--error)]">{selectedIds.size}</span>{" "}
+            selected bundles? This action cannot be undone.
+          </p>
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowBulkDeleteConfirm(false)}
+            disabled={bulkActionLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleBulkDelete}
+            disabled={bulkActionLoading}
+          >
+            {bulkActionLoading ? "Deleting..." : "Delete All"}
           </Button>
         </DialogFooter>
       </Dialog>
