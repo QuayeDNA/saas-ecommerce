@@ -361,8 +361,9 @@ export const EarningsManager: React.FC<EarningsManagerProps> = ({
       setShowRequestDialog(false);
       addToast(result.autoPayoutEnabled ? 'Withdrawal sent successfully' : 'Payout request submitted', 'success');
       await load();
-    } catch {
-      addToast('Failed to submit payout request', 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to submit payout request';
+      addToast(msg, 'error');
     } finally {
       setSubmitting(false);
     }

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import axios from "axios";
 import { apiClient } from "../utils/api-client";
 import type {
   WalletInfo,
@@ -12,6 +13,14 @@ import type {
   ConvertEarningsResponse,
 } from "../types/wallet";
 import { canHaveWallet } from "../utils/userTypeHelpers";
+
+function extractApiError(err: unknown): string {
+  if (axios.isAxiosError(err) && err.response?.data) {
+    return err.response.data.error || err.response.data.message || err.message || "Request failed";
+  }
+  if (err instanceof Error) return err.message;
+  return "Request failed";
+}
 
 // Use the consolidated apiClient for all wallet operations
 export const walletService = {
@@ -341,23 +350,27 @@ export const walletService = {
     mode?: "auto" | "semi_auto" | "manual";
   }> => {
     const payload = destination ? { amount, destination } : { amount };
-    const response = await apiClient.post<{
-      success: boolean;
-      data: PayoutRequestItem;
-      autoPayoutEnabled?: boolean;
-      mode?: "auto" | "semi_auto" | "manual";
-    }>("/api/wallet/payouts/request", payload);
+    try {
+      const response = await apiClient.post<{
+        success: boolean;
+        data: PayoutRequestItem;
+        autoPayoutEnabled?: boolean;
+        mode?: "auto" | "semi_auto" | "manual";
+      }>("/api/wallet/payouts/request", payload);
 
-    const autoPayoutEnabled =
-      typeof response.data.autoPayoutEnabled === "boolean"
-        ? response.data.autoPayoutEnabled
-        : response.data.mode === "auto";
+      const autoPayoutEnabled =
+        typeof response.data.autoPayoutEnabled === "boolean"
+          ? response.data.autoPayoutEnabled
+          : response.data.mode === "auto";
 
-    return {
-      data: response.data.data,
-      autoPayoutEnabled,
-      mode: response.data.mode,
-    };
+      return {
+        data: response.data.data,
+        autoPayoutEnabled,
+        mode: response.data.mode,
+      };
+    } catch (err: unknown) {
+      throw new Error(extractApiError(err));
+    }
   },
 
   /* Admin: payout queue & actions */
