@@ -22,8 +22,9 @@ import {
   type PointerEvent as ReactPointerEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { X } from "lucide-react";
-import { FaUsers, FaWhatsapp } from "react-icons/fa";
+import { MessageCircle, Users } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
+import { Dialog, DialogBody } from "../../design-system";
 import { CONTACTS } from "../../config/contacts";
 
 /* ─── Types ────────────────────────────────────────────────────────────── */
@@ -96,25 +97,6 @@ function dockedTranslate(edge: Edge): string {
     case "right":  return `translateX(${hide}px)`;
     case "top":    return `translateY(-${hide}px)`;
     case "bottom": return `translateY(${hide}px)`;
-  }
-}
-
-function menuDirection(edge: Edge): string {
-  switch (edge) {
-    case "right":  return "flex-col items-end";
-    case "left":   return "flex-col items-start";
-    case "top":    return "flex-col items-center";
-    case "bottom": return "flex-col-reverse items-center";
-  }
-}
-
-function menuOffset(edge: Edge): React.CSSProperties {
-  const gap = 10;
-  switch (edge) {
-    case "right":  return { right: FAB_SIZE + gap, top: 0 };
-    case "left":   return { left: FAB_SIZE + gap, top: 0 };
-    case "top":    return { top: FAB_SIZE + gap, left: "50%", transform: "translateX(-50%)" };
-    case "bottom": return { bottom: FAB_SIZE + gap, left: "50%", transform: "translateX(-50%)" };
   }
 }
 
@@ -219,17 +201,10 @@ export function GlobalFab() {
       setPos(snapped);
       startPeekTimer();
     } else {
-      // It was a tap/click — toggle menu
-      setOpen((v) => {
-        const next = !v;
-        if (next) {
-          clearPeekTimer();
-          setDocked(false);
-        } else {
-          startPeekTimer();
-        }
-        return next;
-      });
+      // It was a tap/click — open help modal
+      clearPeekTimer();
+      setDocked(false);
+      setOpen(true);
     }
   }, [startPeekTimer, clearPeekTimer]);
 
@@ -250,22 +225,11 @@ export function GlobalFab() {
         y: Math.max(0, Math.min(vh() - FAB_SIZE, p.y + dy)),
       }));
     }
-    if (e.key === "Escape") {
-      setOpen(false);
-      resetPeekTimer();
-    }
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      setOpen((v) => {
-        const next = !v;
-        if (next) {
-          clearPeekTimer();
-          setDocked(false);
-        } else {
-          startPeekTimer();
-        }
-        return next;
-      });
+      clearPeekTimer();
+      setDocked(false);
+      setOpen(true);
     }
   }, [resetPeekTimer, clearPeekTimer, startPeekTimer]);
 
@@ -308,24 +272,6 @@ export function GlobalFab() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  /* ── Click-outside to close menu ──────────────────────────────────── */
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        startPeekTimer();
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler);
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, [open, startPeekTimer]);
-
   /* ── Derived visual values ─────────────────────────────────────────── */
 
   const shouldDock = docked && !hovered && !open && !dragging;
@@ -345,18 +291,8 @@ export function GlobalFab() {
         }
         .fab-pulse { animation: fab-pulse 2.4s ease-in-out infinite; }
 
-        @keyframes fab-item-in {
-          from { opacity: 0; transform: scale(0.88) translateY(6px); }
-          to   { opacity: 1; transform: scale(1)    translateY(0); }
-        }
-        .fab-item {
-          animation: fab-item-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-        }
-        .fab-item:nth-child(1) { animation-delay: 0.04s; }
-        .fab-item:nth-child(2) { animation-delay: 0.1s;  }
-
         @media (prefers-reduced-motion: reduce) {
-          .fab-pulse, .fab-item { animation: none !important; }
+          .fab-pulse { animation: none !important; }
         }
       `}</style>
 
@@ -386,69 +322,10 @@ export function GlobalFab() {
           transition,
         }}
       >
-        {/* ── Action menu ───────────────────────────────────────────── */}
-        {open && (
-          <div
-            role="menu"
-            aria-label="Contact options"
-            className={[
-              "absolute flex gap-2.5 pointer-events-auto",
-              menuDirection(edge),
-            ].join(" ")}
-            style={{ ...menuOffset(edge), width: "max-content" }}
-          >
-            <a
-              href={CONTACTS.community.waGroupLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              role="menuitem"
-              onClick={() => { setOpen(false); startPeekTimer(); }}
-              className={[
-                "fab-item",
-                "flex items-center gap-2 rounded-full px-3.5 py-2",
-                "text-xs font-semibold whitespace-nowrap",
-                "border border-[var(--border-color)] bg-[var(--bg-surface)]",
-                "text-[var(--text-secondary)]",
-                "shadow-lg shadow-black/10",
-                "hover:bg-[var(--bg-surface-alt)] hover:border-[var(--border-color-strong)]",
-                "transition-colors duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]",
-              ].join(" ")}
-            >
-              <FaUsers className="text-[var(--color-secondary)] text-sm flex-shrink-0" aria-hidden="true" />
-              Community
-            </a>
-
-            <a
-              href={CONTACTS.support.waLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              role="menuitem"
-              onClick={() => { setOpen(false); startPeekTimer(); }}
-              className={[
-                "fab-item",
-                "flex items-center gap-2 rounded-full px-3.5 py-2",
-                "text-xs font-semibold whitespace-nowrap",
-                "border border-[var(--border-color)] bg-[var(--bg-surface)]",
-                "text-[var(--text-secondary)]",
-                "shadow-lg shadow-black/10",
-                "hover:bg-[var(--bg-surface-alt)] hover:border-[var(--border-color-strong)]",
-                "transition-colors duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-              ].join(" ")}
-            >
-              <FaWhatsapp className="text-emerald-500 text-sm flex-shrink-0" aria-hidden="true" />
-              Support
-            </a>
-          </div>
-        )}
-
         {/* ── Handle button ──────────────────────────────────────────── */}
         <button
           type="button"
-          aria-expanded={open}
-          aria-haspopup="menu"
-          aria-label={open ? "Close contact menu" : "Open contact menu"}
+          aria-label="Open help menu"
           className={[
             "flex h-full w-full items-center justify-center rounded-full",
             "pointer-events-none",
@@ -461,15 +338,11 @@ export function GlobalFab() {
             boxShadow: showPulse ? undefined : "0 4px 20px rgba(0,0,0,0.25)",
           }}
         >
-          {open ? (
-            <X className="h-5 w-5 text-white" aria-hidden="true" />
-          ) : (
-            <FaWhatsapp className="h-5 w-5 text-white" aria-hidden="true" />
-          )}
+          <FaWhatsapp className="h-5 w-5 text-white" aria-hidden="true" />
         </button>
 
         {/* ── Dock edge indicator ────────────────────────────────────── */}
-        {!open && !dragging && (
+        {!dragging && (
           <span
             aria-hidden="true"
             className={[
@@ -482,6 +355,78 @@ export function GlobalFab() {
           />
         )}
       </div>
+
+      {/* ── Help modal ──────────────────────────────────────────────── */}
+      <Dialog
+        isOpen={open}
+        onClose={() => { setOpen(false); startPeekTimer(); }}
+        size="sm"
+      >
+        <DialogBody>
+          <div className="flex flex-col items-center text-center pt-8 pb-6 space-y-5">
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded-full shadow-lg"
+              style={{ background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)" }}
+            >
+              <MessageCircle className="h-6 w-6 text-white" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-lg font-semibold">Need Help?</h2>
+              <p className="text-sm text-[var(--text-muted)]">
+                Connect with us through WhatsApp in one tap.
+              </p>
+            </div>
+
+            <div className="w-full space-y-2">
+              <a
+                href={CONTACTS.community.waGroupLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => { setOpen(false); startPeekTimer(); }}
+                className={[
+                  "flex items-center gap-3 rounded-xl p-3 w-full",
+                  "hover:bg-[var(--bg-surface-alt)]",
+                  "transition-colors duration-150",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]",
+                ].join(" ")}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-secondary)]/10">
+                  <Users className="h-5 w-5 text-[var(--color-secondary)]" />
+                </div>
+                <span className="text-sm font-semibold">Join Community</span>
+              </a>
+
+              <a
+                href={CONTACTS.support.waLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => { setOpen(false); startPeekTimer(); }}
+                className={[
+                  "flex items-center gap-3 rounded-xl p-3 w-full",
+                  "hover:bg-[var(--bg-surface-alt)]",
+                  "transition-colors duration-150",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]",
+                ].join(" ")}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{ background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)" }}>
+                  <FaWhatsapp className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-sm font-semibold">Contact Support</span>
+              </a>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setOpen(false); startPeekTimer(); }}
+              className="text-sm text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </DialogBody>
+      </Dialog>
     </>
   );
 }

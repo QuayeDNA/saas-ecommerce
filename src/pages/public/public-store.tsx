@@ -543,11 +543,17 @@ const PublicStore: React.FC = () => {
 
   const confirmDetails = useCallback(() => {
     if (!activeOrder) return;
+    const isAfa = activeOrder.bundle.provider?.toUpperCase() === "AFA";
     setActiveOrder((prev) =>
-      prev ? { ...prev, customerPhone: orderPhone } : null,
+      prev ? {
+        ...prev,
+        customerPhone: orderPhone,
+        customerName: isAfa ? orderCustomerName : undefined,
+        ghanaCardNumber: isAfa ? orderGhanaCard : undefined,
+      } : null,
     );
     setOrderStep("payment");
-  }, [activeOrder, orderPhone]);
+  }, [activeOrder, orderPhone, orderCustomerName, orderGhanaCard]);
 
   const openPaystackInline = useCallback(
     async (_reference: string, _amountGhs: number, accessCode: string) => {
