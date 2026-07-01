@@ -131,9 +131,9 @@ export const StoreToolbar = memo(
               <div
                 className="rounded-xl p-3 text-sm"
                 style={{
-                  backgroundColor: "color-mix(in srgb, var(--warning) 10%, transparent)",
-                  border: "1px solid color-mix(in srgb, var(--warning) 30%, transparent)",
-                  color: "var(--text-primary)",
+                  backgroundColor: "color-mix(in srgb, var(--warning) 25%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--warning) 45%, transparent)",
+                  color: "#fff",
                 }}
               >
                 <strong
@@ -150,9 +150,9 @@ export const StoreToolbar = memo(
               <div
                 className="rounded-xl p-3 text-sm"
                 style={{
-                  backgroundColor: "color-mix(in srgb, var(--warning) 10%, transparent)",
-                  border: "1px solid color-mix(in srgb, var(--warning) 30%, transparent)",
-                  color: "var(--text-primary)",
+                  backgroundColor: "color-mix(in srgb, var(--warning) 25%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--warning) 45%, transparent)",
+                  color: "#fff",
                 }}
               >
                 <strong
@@ -170,7 +170,7 @@ export const StoreToolbar = memo(
               <div className="relative flex-1">
                 <FaMagnifyingGlass
                   className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
-                  style={{ color: "var(--text-secondary)" }}
+                  style={{ color: isStuck ? "var(--text-secondary)" : "rgba(255,255,255,0.55)" }}
                 />
                 <input
                   type="search"
@@ -179,9 +179,9 @@ export const StoreToolbar = memo(
                   onChange={(e) => onSearchChange(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm transition"
                   style={{
-                    backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
-                    border: "1px solid var(--border-color)",
-                    color: "var(--text-primary)",
+                    backgroundColor: isStuck ? "var(--bg-muted)" : "rgba(255,255,255,0.08)",
+                    border: isStuck ? "1px solid var(--border-color)" : "1px solid rgba(255,255,255,0.25)",
+                    color: isStuck ? "var(--text-primary)" : "#fff",
                     outline: "none",
                   }}
                   onFocus={(e) => {
@@ -189,7 +189,7 @@ export const StoreToolbar = memo(
                     e.currentTarget.style.boxShadow = `0 0 0 3px ${theme.primary}20`;
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border-color)";
+                    e.currentTarget.style.borderColor = isStuck ? "var(--border-color)" : "rgba(255,255,255,0.25)";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
@@ -201,16 +201,16 @@ export const StoreToolbar = memo(
                 className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition"
                 style={{
                   backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
-                  border: "1px solid var(--border-color)",
-                  color: "var(--text-primary)",
+                  border: isStuck ? "1px solid var(--border-color)" : "1px solid rgba(255,255,255,0.25)",
+                  color: isStuck ? "var(--text-primary)" : "#fff",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = theme.primary;
-                  e.currentTarget.style.color = theme.primary;
+                  e.currentTarget.style.color = isStuck ? theme.primary : "#fff";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-color)";
-                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.borderColor = isStuck ? "var(--border-color)" : "rgba(255,255,255,0.25)";
+                  e.currentTarget.style.color = isStuck ? "var(--text-primary)" : "#fff";
                 }}
               >
                 <FaBoxOpen className="w-3.5 h-3.5" />
@@ -236,8 +236,8 @@ export const StoreToolbar = memo(
                           }
                         : {
                             backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
-                            border: "2px solid var(--border-color)",
-                            color: "var(--text-primary)",
+                            border: isStuck ? "2px solid var(--border-color)" : "2px solid rgba(255,255,255,0.25)",
+                            color: isStuck ? "var(--text-primary)" : "#fff",
                           }
                     }
                   >
@@ -269,8 +269,8 @@ export const StoreToolbar = memo(
                               }
                             : {
                                 backgroundColor: isStuck ? "var(--bg-muted)" : "transparent",
-                                border: "2px solid var(--border-color)",
-                                color: "var(--text-primary)",
+                                border: isStuck ? "2px solid var(--border-color)" : "2px solid rgba(255,255,255,0.25)",
+                                color: isStuck ? "var(--text-primary)" : "#fff",
                               }
                         }
                       >
@@ -300,17 +300,28 @@ export const StoreToolbar = memo(
 
         <style>{`
           .store-toolbar {
+            background: rgba(0, 0, 0, 0.25);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
             transition: background 350ms ease,
                         border-color 350ms ease,
                         box-shadow 350ms ease;
           }
 
+          .store-toolbar input::placeholder {
+            color: rgba(255, 255, 255, 0.45);
+          }
+
+          .store-toolbar--stuck input::placeholder {
+            color: var(--text-tertiary, #94A3B8);
+          }
+
           .store-toolbar--stuck {
-            background: color-mix(in srgb, var(--bg-surface, #FFFFFF) 65%, transparent);
-            backdrop-filter: blur(16px) saturate(180%);
-            -webkit-backdrop-filter: blur(16px) saturate(180%);
-            border-bottom: 1px solid color-mix(in srgb, var(--border-color, #E2E8F0) 40%, transparent);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            background: var(--bg-surface, #FFFFFF);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-bottom: 1px solid var(--border-color, #E2E8F0);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
           }
 
           @media (prefers-reduced-motion: reduce) {
