@@ -87,9 +87,8 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
   // Get provider colors for branding
   const providerCode = provider
-    || (typeof bundle.provider === "object" && bundle.provider?.code)
-    || (typeof bundle.providerId === "object" && bundle.providerId !== null && "code" in bundle.providerId
-      ? (bundle.providerId as { code: string }).code
+    || (typeof bundle.providerId === "object" && bundle.providerId !== null
+      ? bundle.providerId.code
       : undefined)
     || "MTN";
   const providerColors = getProviderColors(providerCode);

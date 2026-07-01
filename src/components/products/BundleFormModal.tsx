@@ -48,16 +48,12 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
   useEffect(() => {
     if (open) {
       if (initialData) {
-        let providerIdValue: string | undefined = initialData.providerId;
-        if (typeof initialData.providerId === 'object' && initialData.providerId !== null) {
-          const providerObj = initialData.providerId as { _id?: string; id?: string };
-          if (providerObj._id) {
-            providerIdValue = providerObj._id;
-          } else if (providerObj.id) {
-            providerIdValue = providerObj.id;
-          } else {
-            providerIdValue = '';
-          }
+        const pid = initialData.providerId;
+        let providerIdValue: string | undefined;
+        if (typeof pid === "object" && pid !== null) {
+          providerIdValue = pid._id;
+        } else {
+          providerIdValue = pid;
         }
 
         setFormData({
@@ -91,7 +87,7 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
         }
 
         if (formData.validityUnit === 'unlimited') {
-          formData.validity = 'unlimited';
+          setFormData(prev => ({ ...prev, validity: 'unlimited' }));
         } else if (!formData.validity || (typeof formData.validity === 'number' && formData.validity <= 0)) {
           throw new Error('Validity must be greater than 0');
         }
@@ -104,7 +100,15 @@ export const BundleFormModal: React.FC<BundleFormModalProps> = ({
       await onSubmit(formData as Bundle);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save bundle');
+      const message =
+        err instanceof Error ? err.message : 'Failed to save bundle';
+      const detail =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        (err as any).response?.data?.message;
+      console.error('[BundleForm] submit failed:', err);
+      setError(detail || message);
     } finally {
       setLoading(false);
     }

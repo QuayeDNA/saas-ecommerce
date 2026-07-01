@@ -18,6 +18,19 @@ export interface Package {
   updatedAt?: Date;
 }
 
+export interface PopulatedPackage {
+  _id: string;
+  name: string;
+  description?: string;
+}
+
+export interface PopulatedProvider {
+  _id: string;
+  name: string;
+  code: string;
+  logo?: { url?: string };
+}
+
 export interface Bundle {
   _id?: string;
   name: string;
@@ -50,9 +63,9 @@ export interface Bundle {
     default?: number;
   };
 
-  // Relationships
-  packageId: string;
-  providerId: string;
+  // Relationships — backend populates these refs as objects in GET responses
+  packageId: string | PopulatedPackage;
+  providerId: string | PopulatedProvider;
 
   // Multi-tenant and audit — DTO strips these from non-admin responses
   tenantId?: string;
@@ -68,10 +81,6 @@ export interface Bundle {
   isAvailable?: boolean;
   formattedDataVolume?: string;
   formattedValidity?: string;
-
-  // Populated fields
-  package?: Package;
-  provider?: Provider;
 }
 
 // Provider interface

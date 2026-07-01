@@ -8,7 +8,7 @@ import {
   getPriceForUserType,
   formatCurrency,
 } from "../../utils/pricingHelpers";
-import type { Bundle } from "../../types/package";
+import type { Bundle, PopulatedProvider } from "../../types/package";
 import { FaBox, FaExclamationCircle, FaPlus } from "react-icons/fa";
 
 export interface PackageListProps {
@@ -280,7 +280,11 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {(currentItems || []).map((item) => {
                   const providerColors = getProviderColors(
-                    (item.provider || (item as Bundle).providerId) as string
+                    "provider" in item && typeof item.provider === "string"
+                      ? item.provider
+                      : typeof (item as Bundle).providerId === "object" && (item as Bundle).providerId !== null
+                        ? ((item as Bundle).providerId as PopulatedProvider).code
+                        : "Unknown"
                   );
 
                   return (
@@ -305,7 +309,11 @@ export const PackageList: React.FC<PackageListProps> = ({ provider }) => {
                             color: providerColors.text,
                           }}
                         >
-                          {String(item.provider || "Unknown")}
+                          {"provider" in item && typeof item.provider === "string"
+                            ? item.provider
+                            : typeof (item as Bundle).providerId === "object" && (item as Bundle).providerId !== null
+                              ? ((item as Bundle).providerId as PopulatedProvider).code
+                              : "Unknown"}
                         </span>
                       </td>
                       {viewMode === "bundles" && (
