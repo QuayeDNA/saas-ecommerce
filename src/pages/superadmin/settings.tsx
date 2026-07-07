@@ -7,7 +7,7 @@ import { Spinner, Tabs, TabsList, TabsTrigger, Switch } from "../../design-syste
 import { useToast } from "../../design-system/components/toast";
 import { useAuth, useProfilePhoto } from "../../hooks";
 import { DarkModeToggle } from "../../components/common/dark-mode-toggle";
-import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type BryteLinksSettings, type MomoBridgeSettings, type SystemInfo } from "../../services/settings.service";
+import { settingsService, type SiteSettings, type ApiSettings, type WalletSettings, type FeeSettings, type BryteLinksSettings, type MomoBridgeSettings, type MtnRestrictionSettings, type SystemInfo } from "../../services/settings.service";
 import pushNotificationService from "../../services/pushNotificationService";
 import { SiteSettingsDialog, ApiSettingsDialog, WalletSettingsDialog, AdminPasswordDialog, MomoBridgeSettingsDialog } from "../../components/superadmin";
 import { FeeSettingsDialog } from "../../components/superadmin/fee-settings-dialog";
@@ -21,6 +21,7 @@ export default function SuperAdminSettingsPage() {
     walletSettings: WalletSettings;
     bryteLinksSettings: BryteLinksSettings;
     momoBridgeSettings: MomoBridgeSettings;
+    mtnRestriction: MtnRestrictionSettings;
     signupApproval: { requireApprovalForSignup: boolean };
     autoApproveStorefronts: { autoApproveStorefronts: boolean };
     systemInfo: SystemInfo;
@@ -39,6 +40,7 @@ export default function SuperAdminSettingsPage() {
   const [feeDialogOpen, setFeeDialogOpen] = useState(false);
   const [feeSettings, setFeeSettings] = useState<FeeSettings | null>(null);
   const [testPushLoading, setTestPushLoading] = useState(false);
+  const [mtnNumbersCount, setMtnNumbersCount] = useState<number | null>(null);
   const { upload: uploadPhoto, remove: removePhoto, isUploading: isUploadingPhoto, photoError } = useProfilePhoto();
   const { authState, refreshAuth } = useAuth();
 
@@ -59,6 +61,14 @@ export default function SuperAdminSettingsPage() {
         if (mounted) addToast("Failed to load settings", "error");
       } finally {
         if (mounted) setLoading(false);
+      }
+
+      // Load MTN number stats in background
+      try {
+        const stats = await settingsService.getMtnNumberStats();
+        if (mounted) setMtnNumbersCount(stats.totalKnownNumbers);
+      } catch {
+        // Non-critical — stats are informational
       }
     })();
     return () => { mounted = false; };
@@ -193,6 +203,22 @@ export default function SuperAdminSettingsPage() {
       setBusy("inactivityDaysSave", false);
     }
   }, [data, setBusy, addToast]);
+  const handleToggleMtnRestriction = useCallback(async () => {
+    if (!data) return;
+    const prev = data.mtnRestriction.mtnOrderRestrictionEnabled;
+    setData(d => d ? { ...d, mtnRestriction: { mtnOrderRestrictionEnabled: !prev } } : d);
+    setBusy("mtnRestriction", true);
+    try {
+      await settingsService.updateMtnRestriction({ mtnOrderRestrictionEnabled: !prev });
+      addToast(`MTN order restriction ${!prev ? "enabled" : "disabled"}`, "success");
+    } catch {
+      setData(d => d ? { ...d, mtnRestriction: { mtnOrderRestrictionEnabled: prev } } : d);
+      addToast("Failed to update MTN restriction", "error");
+    } finally {
+      setBusy("mtnRestriction", false);
+    }
+  }, [data, setBusy, addToast]);
+
   const handleSiteSettingsSuccess = useCallback((settings: SiteSettings) => {
     setData(d => d ? { ...d, siteSettings: settings } : d);
     addToast("Site settings updated", "success");
@@ -274,6 +300,7 @@ export default function SuperAdminSettingsPage() {
   const paymentGate = data?.bryteLinksSettings?.requirePaymentForStorefrontCreation ?? false;
   const creationFee = data?.bryteLinksSettings?.storefrontCreationFee ?? 50;
   const autoSuspend = data?.bryteLinksSettings?.autoSuspendInactiveStores ?? false;
+  const mtnRestrictionEnabled = data?.mtnRestriction?.mtnOrderRestrictionEnabled ?? false;
   const inactivityDays = data?.bryteLinksSettings?.inactivityThresholdDays ?? 14;
 
   // compact responsive layout pieces
@@ -535,6 +562,55 @@ export default function SuperAdminSettingsPage() {
                       />
                       <Button size="sm" variant="secondary" onClick={handleSaveInactivityThreshold} isLoading={!!busyKeys['inactivityDaysSave']}>Save</Button>
                     </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* MTN Order Restriction */}
+              <Card>
+                <SectionHeader title="MTN Order Restriction" subtitle="Block new (unseen) MTN numbers from processing" />
+                <div className="mt-4 space-y-4">
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Restriction status</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                        {mtnRestrictionEnabled
+                          ? 'Orders from unknown MTN numbers will be blocked'
+                          : 'All MTN numbers allowed (no restriction)'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium" style={{ color: mtnRestrictionEnabled ? 'var(--success)' : 'var(--text-secondary)' }}>
+                        {mtnRestrictionEnabled ? 'On' : 'Off'}
+                      </span>
+                      <Switch checked={mtnRestrictionEnabled} onCheckedChange={handleToggleMtnRestriction} isDisabled={!!busyKeys['mtnRestriction']} />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                    <div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Known numbers</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                        {mtnNumbersCount !== null
+                          ? `${mtnNumbersCount.toLocaleString()} numbers in the allowlist`
+                          : 'Loading...'}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={async () => {
+                        try {
+                          const stats = await settingsService.getMtnNumberStats();
+                          setMtnNumbersCount(stats.totalKnownNumbers);
+                          addToast("Stats refreshed", "success");
+                        } catch {
+                          addToast("Failed to refresh stats", "error");
+                        }
+                      }}
+                    >
+                      Refresh
+                    </Button>
                   </div>
                 </div>
               </Card>

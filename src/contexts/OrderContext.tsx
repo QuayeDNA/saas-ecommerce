@@ -66,7 +66,14 @@ interface OrderContextType {
   ) => Promise<void>;
   createBulkOrder: (
     orderData: CreateBulkOrderData & { forceOverride?: boolean }
-  ) => Promise<void>;
+  ) => Promise<{
+    orderId: string;
+    orderNumber: string;
+    totalItems: number;
+    items: Array<{ customerPhone: string; bundleSize?: { value: number; unit: string }; status: string }>;
+    failedCount?: number;
+    failedRecords?: Array<{ index: number; row: unknown; error: string }>;
+  }>;
   processOrderItem: (orderId: string, itemId: string) => Promise<void>;
   processBulkOrder: (orderId: string) => Promise<void>;
   bulkProcessOrders: (
@@ -501,8 +508,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       fetchOrders,
       fetchReportedOrders,
       createSingleOrder,
-      // @ts-expect-error: createBulkOrder returns a value, but context type expects void.
-      // This is intentional to allow consumers to use the returned data.
       createBulkOrder,
       processOrderItem,
       processBulkOrder,
@@ -573,7 +578,7 @@ export const useOrder = () => {
       fetchOrders: async () => {},
       fetchReportedOrders: async () => {},
       createSingleOrder: async () => {},
-      createBulkOrder: async () => {},
+      createBulkOrder: async () => ({ orderId: "", orderNumber: "", totalItems: 0, items: [], failedCount: 0, failedRecords: [] }),
       processOrderItem: async () => {},
       processBulkOrder: async () => {},
       bulkProcessOrders: async () => {},

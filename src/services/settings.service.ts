@@ -100,6 +100,14 @@ export interface BryteLinksSettings {
   inactivityThresholdDays: number;
 }
 
+export interface MtnRestrictionSettings {
+  mtnOrderRestrictionEnabled: boolean;
+}
+
+export interface MtnNumberStats {
+  totalKnownNumbers: number;
+}
+
 export interface MomoBridgeSettings {
   momoBridgeApiKey: string;
   momoBridgeRelayUrl: string;
@@ -275,6 +283,34 @@ class SettingsService {
     return response.data.data ?? response.data;
   }
 
+  // ── MTN Order Restriction ─────────────────────────────────────────────────
+
+  async getMtnRestriction(): Promise<MtnRestrictionSettings> {
+    const response = await apiClient.get("/api/settings/mtn-restriction");
+    return response.data.data ?? response.data;
+  }
+
+  async updateMtnRestriction(
+    data: Partial<MtnRestrictionSettings>
+  ): Promise<MtnRestrictionSettings> {
+    const response = await apiClient.put("/api/settings/mtn-restriction", data);
+    this._allSettingsCache = null;
+    return response.data.data ?? response.data;
+  }
+
+  async getMtnNumberStats(): Promise<MtnNumberStats> {
+    const response = await apiClient.get("/api/settings/mtn-numbers/stats");
+    return response.data.data;
+  }
+
+  async importMtnNumbers(rawText: string): Promise<{ imported: number; skipped: number; total: number }> {
+    const response = await apiClient.post("/api/settings/mtn-numbers/import", rawText, {
+      headers: { "Content-Type": "text/plain" },
+    });
+    this._allSettingsCache = null;
+    return response.data.data;
+  }
+
   // ── MoMo Bridge — Mobile Money Payment Verification ──────────────────────────
 
   async getMomoBridgeSettings(): Promise<MomoBridgeSettings> {
@@ -302,6 +338,7 @@ class SettingsService {
     feeSettings: FeeSettings | null;
     bryteLinksSettings: BryteLinksSettings;
     momoBridgeSettings: MomoBridgeSettings;
+    mtnRestriction: MtnRestrictionSettings;
     signupApproval: { requireApprovalForSignup: boolean };
     autoApproveStorefronts: { autoApproveStorefronts: boolean };
     systemInfo: SystemInfo;
@@ -326,6 +363,7 @@ class SettingsService {
       feeSettings,
       bryteLinksSettings,
       momoBridgeSettings,
+      mtnRestriction,
       signupApproval,
       autoApproveStorefronts,
       systemInfo,
@@ -343,12 +381,13 @@ class SettingsService {
         momoBridgeAccountName: "",
         momoBridgeAccountNumber: "",
       }),
+      fetchOrDefault(() => this.getMtnRestriction(), { mtnOrderRestrictionEnabled: false }),
       fetchOrDefault(() => this.getSignupApprovalSetting(), { requireApprovalForSignup: false }),
       fetchOrDefault(() => this.getAutoApproveStorefronts(), { autoApproveStorefronts: false }),
       fetchOrDefault(() => this.getSystemInfo(), {} as SystemInfo),
     ]);
 
-    const combined = { siteSettings, apiSettings, walletSettings, feeSettings, bryteLinksSettings, momoBridgeSettings, signupApproval, autoApproveStorefronts, systemInfo };
+    const combined = { siteSettings, apiSettings, walletSettings, feeSettings, bryteLinksSettings, momoBridgeSettings, mtnRestriction, signupApproval, autoApproveStorefronts, systemInfo };
     this._allSettingsCache = { ts: Date.now(), data: combined };
     return combined;
   }

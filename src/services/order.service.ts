@@ -52,6 +52,8 @@ class OrderService {
       bundleSize?: { value: number; unit: string };
       status: string;
     }>;
+    failedCount?: number;
+    failedRecords?: Array<{ index: number; row: unknown; error: string }>;
   }> {
     try {
       const response = await apiClient.post("/api/orders/bulk", orderData);
@@ -60,6 +62,8 @@ class OrderService {
         orderNumber: response.data.orderNumber,
         totalItems: response.data.totalItems,
         items: response.data.items,
+        failedCount: response.data.failedCount,
+        failedRecords: response.data.failedRecords,
       };
     } catch (error: unknown) {
       // Check if this is a duplicate order error from the backend

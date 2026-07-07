@@ -251,7 +251,20 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
         (item) => `${item.customerPhone},${item.dataVolume}GB`
       );
       const orderData = { items, packageId, forceOverride };
-      await createBulkOrder(orderData);
+      const result = await createBulkOrder(orderData);
+
+      if (result?.failedCount && result.failedCount > 0) {
+        const mtnCount = result.failedRecords?.filter(
+          (r) => r.error && r.error.includes("Due to updated provider policies")
+        ).length ?? 0;
+        if (mtnCount > 0) {
+          addToast(
+            `${mtnCount} order${mtnCount > 1 ? "s" : ""} skipped due to MTN provider restrictions`,
+            "warning"
+          );
+        }
+      }
+
       addToast(
         "Bulk order created successfully! Amount deducted from wallet. Automatic refund if order fails or is cancelled.",
         "success"
