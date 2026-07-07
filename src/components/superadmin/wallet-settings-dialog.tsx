@@ -32,21 +32,14 @@ export const WalletSettingsDialog: React.FC<WalletSettingsDialogProps> = ({
   onSuccess,
 }) => {
   const [formData, setFormData] = useState<WalletSettings>(currentSettings);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // ensure the new field exists when dialog opens
   useEffect(() => {
     if (isOpen) {
       setFormData({
         ...currentSettings,
         paystackMinimumTopUpAmount: currentSettings.paystackMinimumTopUpAmount || 0,
       });
-    }
-  }, [isOpen, currentSettings]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setFormData(currentSettings);
     }
   }, [isOpen, currentSettings]);
 

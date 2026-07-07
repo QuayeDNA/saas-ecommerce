@@ -83,22 +83,15 @@ export const SiteSettingsDialog: React.FC<SiteSettingsDialogProps> = ({
                   <span className="text-sm font-medium" style={{ color: formData.isSiteOpen ? 'var(--success)' : 'var(--error)' }}>
                     {formData.isSiteOpen ? "Open" : "Closed"}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() =>
+                  <Switch
+                    checked={formData.isSiteOpen}
+                    onCheckedChange={(checked) =>
                       setFormData((prev) => ({
                         ...prev,
-                        isSiteOpen: !prev.isSiteOpen,
+                        isSiteOpen: checked,
                       }))
                     }
-                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-                    style={{ backgroundColor: formData.isSiteOpen ? 'var(--success)' : 'var(--border-color)' }}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isSiteOpen ? "translate-x-6" : "translate-x-1"
-                        }`}
-                    />
-                  </button>
+                  />
                 </div>
               </div>
             </div>

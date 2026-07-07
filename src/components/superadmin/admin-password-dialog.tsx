@@ -106,7 +106,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
     <Dialog isOpen={isOpen} onClose={handleClose} size="md">
       <DialogHeader>
         <h2 className="text-xl font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <span className="w-8 h-8 bg-error/20 rounded-lg flex items-center justify-center">
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 20%, transparent)' }}>
             🔒
           </span>
           Change Admin Password
@@ -116,12 +116,12 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
       <Form onSubmit={handleSubmit}>
         <DialogBody>
           <div className="space-y-4">
-            <div className="bg-error/10 rounded-lg p-4">
+            <div className="p-4 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 10%, transparent)' }}>
               <div className="flex items-start gap-3">
-                <span className="text-error mt-0.5">⚠️</span>
+                <span className="mt-0.5" style={{ color: 'var(--error)' }}>⚠️</span>
                 <div>
-                  <h4 className="font-medium text-error">Security Notice</h4>
-                  <p className="text-sm text-error/80 mt-1">
+                  <h4 className="font-medium" style={{ color: 'var(--error)' }}>Security Notice</h4>
+                  <p className="text-sm mt-1" style={{ color: 'color-mix(in srgb, var(--error) 80%, transparent)' }}>
                     Changing your admin password will require you to log in
                     again with the new password.
                   </p>
@@ -130,7 +130,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
             </div>
 
             {errors.submit && (
-              <div className="bg-error/10 border border-error/30 text-error px-4 py-3 rounded-lg">
+              <div className="px-4 py-3 rounded-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--error) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--error) 30%, transparent)', color: 'var(--error)' }}>
                 {errors.submit}
               </div>
             )}
@@ -152,6 +152,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
                   type="button"
                   onClick={() => togglePasswordVisibility("current")}
                   className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  aria-label={showPasswords.current ? "Hide current password" : "Show current password"}
                 >
                   {showPasswords.current ? "🙈" : "👁️"}
                 </button>
@@ -175,6 +176,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
                   type="button"
                   onClick={() => togglePasswordVisibility("new")}
                   className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  aria-label={showPasswords.new ? "Hide new password" : "Show new password"}
                 >
                   {showPasswords.new ? "🙈" : "👁️"}
                 </button>
@@ -201,6 +203,7 @@ export const AdminPasswordDialog: React.FC<AdminPasswordDialogProps> = ({
                   type="button"
                   onClick={() => togglePasswordVisibility("confirm")}
                   className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  aria-label={showPasswords.confirm ? "Hide confirm password" : "Show confirm password"}
                 >
                   {showPasswords.confirm ? "🙈" : "👁️"}
                 </button>

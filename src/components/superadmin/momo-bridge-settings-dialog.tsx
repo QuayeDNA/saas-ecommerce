@@ -65,8 +65,8 @@ export const MomoBridgeSettingsDialog: React.FC<MomoBridgeSettingsDialogProps> =
     <Dialog isOpen={isOpen} onClose={handleClose} size="lg">
       <DialogHeader>
         <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-          <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, #d4a843 15%, transparent)' }}>
-            <Smartphone className="w-4 h-4" style={{ color: '#d4a843' }} />
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 15%, transparent)' }}>
+            <Smartphone className="w-4 h-4" style={{ color: 'var(--warning)' }} />
           </span>
           MoMo Bridge Configuration
         </h2>
@@ -99,8 +99,8 @@ export const MomoBridgeSettingsDialog: React.FC<MomoBridgeSettingsDialogProps> =
             {/* API Key */}
             <div className="p-4 border rounded-lg" style={{ borderColor: 'var(--border-color)' }}>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, #d4a843 15%, transparent)' }}>
-                  <Smartphone className="w-4 h-4" style={{ color: '#d4a843' }} />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 15%, transparent)' }}>
+                  <Smartphone className="w-4 h-4" style={{ color: 'var(--warning)' }} />
                 </div>
                 <div>
                   <h4 className="font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -288,7 +288,7 @@ export const MomoBridgeSettingsDialog: React.FC<MomoBridgeSettingsDialogProps> =
             type="submit"
             disabled={isLoading}
             isLoading={isLoading}
-            style={{ backgroundColor: '#d4a843', borderColor: '#d4a843', color: '#0a0e1a' }}
+            style={{ backgroundColor: 'var(--warning)', borderColor: 'var(--warning)', color: '#0a0e1a' }}
           >
             {isLoading ? "Saving..." : "Save MoMo Bridge Settings"}
           </Button>
