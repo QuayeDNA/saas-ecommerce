@@ -46,9 +46,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
 
   // Processing dialog state
   const [showProcessDialog, setShowProcessDialog] = useState(false);
-  const [processingType, setProcessingType] = useState<
-    "afa" | "data" | "mtn" | "telecel" | "at" | null
-  >(null);
+  const [processingPackage, setProcessingPackage] = useState<string | null>(null);
   const [batchSize, setBatchSize] = useState(10);
   const [statusUpdate, setStatusUpdate] = useState<
     "none" | "processing" | "completed"
@@ -62,6 +60,14 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
     currentBatch: 0,
     totalBatches: 0,
   });
+
+  // Provider color mapping for package buttons
+  const providerColorMap: Record<string, { bg: string; hover: string }> = {
+    AFA: { bg: "bg-[var(--color-navy)]", hover: "hover:bg-[var(--color-navy-dark)]" },
+    MTN: { bg: "bg-yellow-500", hover: "hover:bg-yellow-600" },
+    TELECEL: { bg: "bg-red-600", hover: "hover:bg-red-700" },
+    AT: { bg: "bg-blue-600", hover: "hover:bg-blue-700" },
+  };
 
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -124,52 +130,26 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
     return chunks;
   };
 
-  // Handle opening process dialog for AFA orders
-  const handleCopyProcessAFAOrders = () => {
-    if (selectedAFAOrders.length === 0) {
-      showAlert("warning", "No AFA orders selected.");
+  // Handle opening process dialog for a specific package
+  const handleCopyProcessPackage = (packageName: string) => {
+    const pkgOrders = selectedPackages.find(([name]) => name === packageName)?.[1];
+    if (!pkgOrders || pkgOrders.length === 0) {
+      showAlert("warning", `No "${packageName}" orders selected.`);
       return;
     }
-    setProcessingType("afa");
-    setShowProcessDialog(true);
-  };
-
-  // Handle opening process dialog for MTN Data orders
-  const handleCopyProcessMTNOrders = () => {
-    if (selectedMTNOrders.length === 0) {
-      showAlert("warning", "No MTN orders selected.");
-      return;
-    }
-    setProcessingType("mtn");
-    setShowProcessDialog(true);
-  };
-
-  // Handle opening process dialog for TELECEL Data orders
-  const handleCopyProcessTelecelOrders = () => {
-    if (selectedTelecelOrders.length === 0) {
-      showAlert("warning", "No TELECEL orders selected.");
-      return;
-    }
-    setProcessingType("telecel");
-    setShowProcessDialog(true);
-  };
-
-  // Handle opening process dialog for AT (AirtelTigo) Data orders
-  const handleCopyProcessATOrders = () => {
-    if (selectedATOrders.length === 0) {
-      showAlert("warning", "No AT orders selected.");
-      return;
-    }
-    setProcessingType("at");
+    setProcessingPackage(packageName);
     setShowProcessDialog(true);
   };
 
   // Process orders with batch size and status update
   const processOrders = async (
     orders: Order[],
-    type: "afa" | "data" | "mtn" | "telecel" | "at",
+    packageName: string,
     copyOnly: boolean = false,
   ) => {
+    // Determine provider from the first order to pick the right format
+    const provider = orders[0]?.items[0]?.packageDetails?.provider || "";
+    const isAfa = provider === "AFA";
     // Filter out locked orders
     const actionableOrders = orders.filter((o) => !isOrderLocked(o));
     if (actionableOrders.length === 0) {
@@ -193,28 +173,16 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
       // Format orders for clipboard
       const formattedData = actionableOrders
         .map((order) =>
-          type === "afa" ? formatAFAOrder(order) : formatDataOrder(order),
+          isAfa ? formatAFAOrder(order) : formatDataOrder(order),
         )
         .join("\n");
-
-      // Determine provider name for display
-      const providerName =
-        type === "afa"
-          ? "AFA"
-          : type === "mtn"
-            ? "MTN"
-            : type === "telecel"
-              ? "TELECEL"
-              : type === "at"
-                ? "AT"
-                : "Data";
 
       // Copy to clipboard
       try {
         await navigator.clipboard.writeText(formattedData);
         showAlert(
           "success",
-          `Copied ${actionableOrders.length} ${providerName} orders to clipboard!`,
+          `Copied ${actionableOrders.length} ${packageName} orders to clipboard!`,
         );
       } catch {
         // Fallback for older browsers
@@ -276,7 +244,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
         setShowProgressDialog(false);
         showAlert(
           "success",
-          `Successfully updated ${actionableOrders.length} orders to ${statusUpdate}!`,
+          `Successfully updated ${actionableOrders.length} ${packageName} orders to ${statusUpdate}!`,
         );
 
         // Clear selection after successful processing
@@ -313,46 +281,22 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
     setSelectedOrderIds([]);
   };
 
-  // Get selected orders grouped by type
-  const selectedAFAOrders = useMemo(() => {
-    return orders.filter(
-      (order) =>
-        selectedOrderIds.includes(order._id || "") &&
-        order.items[0]?.packageDetails?.provider === "AFA",
-    );
-  }, [orders, selectedOrderIds]);
+  const getPackageName = (order: Order): string => {
+    const pg = order.items[0]?.packageGroup;
+    if (pg && typeof pg === "object") return pg.name;
+    return order.items[0]?.packageDetails?.provider || "Unknown";
+  };
 
-  const selectedDataOrders = useMemo(() => {
-    return orders.filter(
-      (order) =>
-        selectedOrderIds.includes(order._id || "") &&
-        order.items[0]?.packageDetails?.provider !== "AFA",
-    );
-  }, [orders, selectedOrderIds]);
-
-  // Provider-specific data orders
-  const selectedMTNOrders = useMemo(() => {
-    return orders.filter(
-      (order) =>
-        selectedOrderIds.includes(order._id || "") &&
-        order.items[0]?.packageDetails?.provider === "MTN",
-    );
-  }, [orders, selectedOrderIds]);
-
-  const selectedTelecelOrders = useMemo(() => {
-    return orders.filter(
-      (order) =>
-        selectedOrderIds.includes(order._id || "") &&
-        order.items[0]?.packageDetails?.provider === "TELECEL",
-    );
-  }, [orders, selectedOrderIds]);
-
-  const selectedATOrders = useMemo(() => {
-    return orders.filter(
-      (order) =>
-        selectedOrderIds.includes(order._id || "") &&
-        order.items[0]?.packageDetails?.provider === "AT",
-    );
+  // Get selected orders grouped by package name
+  const selectedPackages = useMemo(() => {
+    const map = new Map<string, Order[]>();
+    for (const order of orders) {
+      if (!selectedOrderIds.includes(order._id || "")) continue;
+      const name = getPackageName(order);
+      if (!map.has(name)) map.set(name, []);
+      map.get(name)!.push(order);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [orders, selectedOrderIds]);
 
   // Define columns with selection
@@ -658,120 +602,32 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
           </button>
         </div>
 
-        {/* Action Buttons — one per provider */}
+        {/* Action Buttons — one per package */}
         <div className="flex flex-wrap gap-2">
-          {/* AFA */}
-          <button
-            onClick={handleCopyProcessAFAOrders}
-            disabled={isProcessing || selectedAFAOrders.length === 0}
-            title={
-              selectedAFAOrders.length === 0
-                ? "Select AFA orders first"
-                : undefined
-            }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-              isProcessing || selectedAFAOrders.length === 0
-                ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-color)]"
-                : "bg-[var(--color-navy)] hover:bg-[var(--color-navy-dark)] text-white"
-            }`}
-          >
-            <FaCopy className="text-xs" />
-            AFA
-            <span
-              className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
-                selectedAFAOrders.length === 0
-                  ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]"
-                  : "bg-white/20 text-white"
-              }`}
-            >
-              {selectedAFAOrders.length}
+          {selectedPackages.map(([name, pkgOrders]) => {
+            const count = pkgOrders.length;
+            const provider = pkgOrders[0]?.items[0]?.packageDetails?.provider || "";
+            const colors = providerColorMap[provider] || { bg: "bg-gray-600", hover: "hover:bg-gray-700" };
+            return (
+              <button
+                key={name}
+                onClick={() => handleCopyProcessPackage(name)}
+                disabled={isProcessing}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isProcessing ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-color)]" : `${colors.bg} ${colors.hover} text-white`}`}
+              >
+                <FaCopy className="text-xs" />
+                {name}
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${isProcessing ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]" : "bg-white/20 text-white"}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+          {selectedPackages.length === 0 && selectedOrderIds.length > 0 && (
+            <span className="text-xs text-[var(--text-muted)] italic px-2 py-2">
+              No package info found for selected orders
             </span>
-          </button>
-
-          {/* MTN */}
-          <button
-            onClick={handleCopyProcessMTNOrders}
-            disabled={isProcessing || selectedMTNOrders.length === 0}
-            title={
-              selectedMTNOrders.length === 0
-                ? "Select MTN orders first"
-                : undefined
-            }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-              isProcessing || selectedMTNOrders.length === 0
-                ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-color)]"
-                : "bg-yellow-500 hover:bg-yellow-600 text-white"
-            }`}
-          >
-            <FaCopy className="text-xs" />
-            MTN
-            <span
-              className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
-                selectedMTNOrders.length === 0
-                  ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]"
-                  : "bg-[var(--bg-surface)]/20 text-white"
-              }`}
-            >
-              {selectedMTNOrders.length}
-            </span>
-          </button>
-
-          {/* TELECEL */}
-          <button
-            onClick={handleCopyProcessTelecelOrders}
-            disabled={isProcessing || selectedTelecelOrders.length === 0}
-            title={
-              selectedTelecelOrders.length === 0
-                ? "Select TELECEL orders first"
-                : undefined
-            }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-              isProcessing || selectedTelecelOrders.length === 0
-                ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-color)]"
-                : "bg-red-600 hover:bg-red-700 text-white"
-            }`}
-          >
-            <FaCopy className="text-xs" />
-            TELECEL
-            <span
-              className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
-                selectedTelecelOrders.length === 0
-                  ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]"
-                  : "bg-[var(--bg-surface)]/20 text-white"
-              }`}
-            >
-              {selectedTelecelOrders.length}
-            </span>
-          </button>
-
-          {/* AT */}
-          <button
-            onClick={handleCopyProcessATOrders}
-            disabled={isProcessing || selectedATOrders.length === 0}
-            title={
-              selectedATOrders.length === 0
-                ? "Select AT orders first"
-                : undefined
-            }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-              isProcessing || selectedATOrders.length === 0
-                ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-color)]"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
-            }`}
-          >
-            <FaCopy className="text-xs" />
-            AT
-            <span
-              className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
-                selectedATOrders.length === 0
-                  ? "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]"
-                  : "bg-[var(--bg-surface)]/20 text-white"
-              }`}
-            >
-              {selectedATOrders.length}
-            </span>
-          </button>
-
+          )}
           <button
             onClick={handleExport}
             className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium ml-auto"
@@ -832,220 +688,125 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
         size="lg"
       >
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-shrink-0 w-10 h-10 bg-[var(--color-accent-soft)] rounded-full flex items-center justify-center">
-              <FaCopy className="text-[var(--color-secondary)] text-lg" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">
-                Process{" "}
-                {processingType === "afa"
-                  ? "AFA"
-                  : processingType === "mtn"
-                    ? "MTN"
-                    : processingType === "telecel"
-                      ? "TELECEL"
-                      : processingType === "at"
-                        ? "AT"
-                        : "Data"}{" "}
-                Orders
-              </h3>
-              <p className="text-sm text-[var(--text-muted)]">
-                {processingType === "afa"
-                  ? `Selected: ${selectedAFAOrders.length} AFA orders`
-                  : processingType === "mtn"
-                    ? `Selected: ${selectedMTNOrders.length} MTN orders`
-                    : processingType === "telecel"
-                      ? `Selected: ${selectedTelecelOrders.length} TELECEL orders`
-                      : processingType === "at"
-                        ? `Selected: ${selectedATOrders.length} AT orders`
-                        : `Selected: ${selectedDataOrders.length} Data orders`}
-              </p>
-            </div>
-          </div>
+          {(() => {
+            const pkgOrders = selectedPackages.find(([n]) => n === processingPackage)?.[1] || [];
+            const count = pkgOrders.length;
+            const provider = pkgOrders[0]?.items[0]?.packageDetails?.provider || "";
+            const isAfa = provider === "AFA";
+            return (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-shrink-0 w-10 h-10 bg-[var(--color-accent-soft)] rounded-full flex items-center justify-center">
+                    <FaCopy className="text-[var(--color-secondary)] text-lg" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                      Process {processingPackage} Orders
+                    </h3>
+                    <p className="text-sm text-[var(--text-muted)]">
+                      Selected: {count} {processingPackage} orders
+                    </p>
+                  </div>
+                </div>
 
-          {/* Copy Format Preview */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-              Copy Format Preview:
-            </label>
-            <div className="bg-[var(--bg-surface-alt)] border border-[var(--border-color)] rounded-lg p-3 max-h-40 overflow-y-auto">
-              <pre className="text-xs font-mono text-[var(--text-secondary)] whitespace-pre-wrap">
-                {processingType === "afa"
-                  ? selectedAFAOrders.slice(0, 3).map(formatAFAOrder).join("\n")
-                  : processingType === "mtn"
-                    ? selectedMTNOrders
-                        .slice(0, 3)
-                        .map(formatDataOrder)
-                        .join("\n")
-                    : processingType === "telecel"
-                      ? selectedTelecelOrders
-                          .slice(0, 3)
-                          .map(formatDataOrder)
-                          .join("\n")
-                      : processingType === "at"
-                        ? selectedATOrders
-                            .slice(0, 3)
-                            .map(formatDataOrder)
-                            .join("\n")
-                        : selectedDataOrders
-                            .slice(0, 3)
-                            .map(formatDataOrder)
-                            .join("\n")}
-                {(processingType === "afa"
-                  ? selectedAFAOrders.length
-                  : processingType === "mtn"
-                    ? selectedMTNOrders.length
-                    : processingType === "telecel"
-                      ? selectedTelecelOrders.length
-                      : processingType === "at"
-                        ? selectedATOrders.length
-                        : selectedDataOrders.length) > 3 &&
-                  `\n... and ${
-                    (processingType === "afa"
-                      ? selectedAFAOrders.length
-                      : processingType === "mtn"
-                        ? selectedMTNOrders.length
-                        : processingType === "telecel"
-                          ? selectedTelecelOrders.length
-                          : processingType === "at"
-                            ? selectedATOrders.length
-                            : selectedDataOrders.length) - 3
-                  } more`}
-              </pre>
-            </div>
-          </div>
+                {/* Copy Format Preview */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                    Copy Format Preview:
+                  </label>
+                  <div className="bg-[var(--bg-surface-alt)] border border-[var(--border-color)] rounded-lg p-3 max-h-40 overflow-y-auto">
+                    <pre className="text-xs font-mono text-[var(--text-secondary)] whitespace-pre-wrap">
+                      {pkgOrders.slice(0, 3).map(isAfa ? formatAFAOrder : formatDataOrder).join("\n")}
+                      {count > 3 && `\n... and ${count - 3} more`}
+                    </pre>
+                  </div>
+                </div>
 
-          {/* Status Update Options */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-              Update Status After Copy:
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="statusUpdate"
-                  value="none"
-                  checked={statusUpdate === "none"}
-                  onChange={(e) =>
-                    setStatusUpdate(
-                      e.target.value as "none" | "processing" | "completed",
-                    )
-                  }
-                  className="text-[var(--color-primary)] focus:ring-[var(--color-secondary)]"
-                />
-                <span className="text-sm text-[var(--text-secondary)]">
-                  Don't update status
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="statusUpdate"
-                  value="processing"
-                  checked={statusUpdate === "processing"}
-                  onChange={(e) =>
-                    setStatusUpdate(
-                      e.target.value as "none" | "processing" | "completed",
-                    )
-                  }
-                  className="text-[var(--color-primary)] focus:ring-[var(--color-secondary)]"
-                />
-                <span className="text-sm text-[var(--text-secondary)]">
-                  Mark as Processing
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="statusUpdate"
-                  value="completed"
-                  checked={statusUpdate === "completed"}
-                  onChange={(e) =>
-                    setStatusUpdate(
-                      e.target.value as "none" | "processing" | "completed",
-                    )
-                  }
-                  className="text-[var(--color-primary)] focus:ring-[var(--color-secondary)]"
-                />
-                <span className="text-sm text-[var(--text-secondary)]">
-                  Mark as Completed
-                </span>
-              </label>
-            </div>
-          </div>
+                {/* Status Update Options */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                    Update Status After Copy:
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="statusUpdate"
+                        value="none"
+                        checked={statusUpdate === "none"}
+                        onChange={(e) => setStatusUpdate(e.target.value as "none" | "processing" | "completed")}
+                        className="text-[var(--color-primary)] focus:ring-[var(--color-secondary)]"
+                      />
+                      <span className="text-sm text-[var(--text-secondary)]">Don't update status</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="statusUpdate"
+                        value="processing"
+                        checked={statusUpdate === "processing"}
+                        onChange={(e) => setStatusUpdate(e.target.value as "none" | "processing" | "completed")}
+                        className="text-[var(--color-primary)] focus:ring-[var(--color-secondary)]"
+                      />
+                      <span className="text-sm text-[var(--text-secondary)]">Mark as Processing</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="statusUpdate"
+                        value="completed"
+                        checked={statusUpdate === "completed"}
+                        onChange={(e) => setStatusUpdate(e.target.value as "none" | "processing" | "completed")}
+                        className="text-[var(--color-primary)] focus:ring-[var(--color-secondary)]"
+                      />
+                      <span className="text-sm text-[var(--text-secondary)]">Mark as Completed</span>
+                    </label>
+                  </div>
+                </div>
 
-          {/* Batch Size */}
-          {statusUpdate !== "none" && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                Batch Size: {batchSize} orders at a time
-              </label>
-              <input
-                type="range"
-                min="5"
-                max="50"
-                step="5"
-                value={batchSize}
-                onChange={(e) => setBatchSize(Number(e.target.value))}
-                className="w-full"
-              />
-              <p className="text-xs text-[var(--text-muted)] mt-1">
-                Smaller batches work better on slow networks
-              </p>
-            </div>
-          )}
+                {/* Batch Size */}
+                {statusUpdate !== "none" && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                      Batch Size: {batchSize} orders at a time
+                    </label>
+                    <input
+                      type="range"
+                      min="5"
+                      max="50"
+                      step="5"
+                      value={batchSize}
+                      onChange={(e) => setBatchSize(Number(e.target.value))}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-[var(--text-muted)] mt-1">Smaller batches work better on slow networks</p>
+                  </div>
+                )}
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              onClick={() => setShowProcessDialog(false)}
-              className="flex-1 px-4 py-2.5 bg-[var(--bg-surface-alt)] text-[var(--text-secondary)] rounded-lg hover:bg-[var(--border-color)] transition-colors text-sm font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() =>
-                processOrders(
-                  processingType === "afa"
-                    ? selectedAFAOrders
-                    : processingType === "mtn"
-                      ? selectedMTNOrders
-                      : processingType === "telecel"
-                        ? selectedTelecelOrders
-                        : processingType === "at"
-                          ? selectedATOrders
-                          : selectedDataOrders,
-                  processingType!,
-                  true,
-                )
-              }
-              className="flex-1 px-4 py-2.5 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors text-sm font-medium"
-            >
-              Copy Only
-            </button>
-            <button
-              onClick={() =>
-                processOrders(
-                  processingType === "afa"
-                    ? selectedAFAOrders
-                    : processingType === "mtn"
-                      ? selectedMTNOrders
-                      : processingType === "telecel"
-                        ? selectedTelecelOrders
-                        : processingType === "at"
-                          ? selectedATOrders
-                          : selectedDataOrders,
-                  processingType!,
-                  false,
-                )
-              }
-              className="flex-1 px-4 py-2.5 bg-[var(--success)] text-white rounded-lg hover:brightness-90 transition-colors text-sm font-medium"
-            >
-              Copy &amp; Process
-            </button>
-          </div>
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={() => setShowProcessDialog(false)}
+                    className="flex-1 px-4 py-2.5 bg-[var(--bg-surface-alt)] text-[var(--text-secondary)] rounded-lg hover:bg-[var(--border-color)] transition-colors text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => processOrders(pkgOrders, processingPackage!, true)}
+                    className="flex-1 px-4 py-2.5 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors text-sm font-medium"
+                  >
+                    Copy Only
+                  </button>
+                  <button
+                    onClick={() => processOrders(pkgOrders, processingPackage!, false)}
+                    className="flex-1 px-4 py-2.5 bg-[var(--success)] text-white rounded-lg hover:brightness-90 transition-colors text-sm font-medium"
+                  >
+                    Copy &amp; Process
+                  </button>
+                </div>
+              </>
+            );
+          })()}
         </div>
       </Dialog>
 

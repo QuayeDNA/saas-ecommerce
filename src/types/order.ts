@@ -46,7 +46,7 @@ export interface DuplicateOrderError extends Error {
 
 export interface OrderItem {
   _id?: string;
-  packageGroup: string;
+  packageGroup: string | { _id: string; name: string; provider: string };
   packageItem: string;
   packageDetails: {
     name: string;
