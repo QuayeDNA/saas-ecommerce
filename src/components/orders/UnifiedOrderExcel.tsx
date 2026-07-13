@@ -194,7 +194,7 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
         document.body.removeChild(textArea);
         showAlert(
           "success",
-          `Copied ${actionableOrders.length} ${type.toUpperCase()} orders to clipboard!`,
+          `Copied ${actionableOrders.length} ${packageName} orders to clipboard!`,
         );
       }
 
