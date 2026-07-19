@@ -758,6 +758,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           { value: ORDER_STATUS.CONFIRMED, label: getStatusLabel(ORDER_STATUS.CONFIRMED) },
           { value: ORDER_STATUS.PROCESSING, label: getStatusLabel(ORDER_STATUS.PROCESSING) },
           { value: ORDER_STATUS.COMPLETED, label: getStatusLabel(ORDER_STATUS.COMPLETED) },
+          { value: ORDER_STATUS.WORK_IN_PROGRESS, label: getStatusLabel(ORDER_STATUS.WORK_IN_PROGRESS) },
           { value: ORDER_STATUS.CANCELLED, label: getStatusLabel(ORDER_STATUS.CANCELLED) },
           { value: ORDER_STATUS.FAILED, label: getStatusLabel(ORDER_STATUS.FAILED) },
         ],

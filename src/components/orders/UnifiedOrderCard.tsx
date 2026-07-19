@@ -114,6 +114,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
       case ORDER_STATUS.PENDING: return "border-l-[var(--warning)]";
       case ORDER_STATUS.CONFIRMED: return "border-l-[var(--color-secondary)]";
       case ORDER_STATUS.DRAFT: return "border-l-[var(--text-muted)]";
+      case ORDER_STATUS.WORK_IN_PROGRESS: return "border-l-[var(--warning)]";
       default: return "border-l-[var(--border-color)]";
     }
   };
@@ -144,7 +145,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      await onUpdateStatus(order._id!, newStatus);
+      onUpdateStatus(order._id!, newStatus);
       setStatusDropdownOpen(false);
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -237,7 +238,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   };
 
   const canCancel = (status: string) =>
-    ([ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.DRAFT] as string[]).includes(status);
+    ([ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.DRAFT, ORDER_STATUS.WORK_IN_PROGRESS] as string[]).includes(status);
 
   const canUserCancelOrder = (order: Order) => {
     if (isOrderLocked(order)) return false;
