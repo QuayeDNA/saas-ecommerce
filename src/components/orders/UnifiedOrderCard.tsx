@@ -18,6 +18,7 @@ import { ReportModal } from "./ReportModal";
 import type { Order } from "../../types/order";
 import { apiClient } from "../../utils/api-client";
 import { isOrderLocked } from "../../utils/order-lock";
+import { ORDER_STATUS, getStatusColor, getStatusLabel } from "../../constants/orderStatuses";
 
 interface UnifiedOrderCardProps {
   order: Order;
@@ -95,63 +96,23 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
   // Available status options (excluding 'failed' as it's system-controlled)
   const statusOptions = [
-    {
-      value: "pending",
-      label: "Pending",
-      color: "bg-[var(--warning-lighter)] text-[var(--warning)]",
-    },
-    {
-      value: "confirmed",
-      label: "Confirmed",
-      color: "bg-[var(--color-accent-soft)] text-[var(--color-secondary)]",
-    },
-    {
-      value: "processing",
-      label: "Processing",
-      color: "bg-[var(--color-accent-soft)] text-[var(--color-secondary)]",
-    },
-    {
-      value: "completed",
-      label: "Completed",
-      color: "bg-[var(--success-lighter)] text-[var(--success)]",
-    },
-    {
-      value: "cancelled",
-      label: "Cancelled",
-      color: "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]",
-    },
+    { value: ORDER_STATUS.PENDING, label: getStatusLabel(ORDER_STATUS.PENDING), color: getStatusColor(ORDER_STATUS.PENDING) },
+    { value: ORDER_STATUS.CONFIRMED, label: getStatusLabel(ORDER_STATUS.CONFIRMED), color: getStatusColor(ORDER_STATUS.CONFIRMED) },
+    { value: ORDER_STATUS.PROCESSING, label: getStatusLabel(ORDER_STATUS.PROCESSING), color: getStatusColor(ORDER_STATUS.PROCESSING) },
+    { value: ORDER_STATUS.COMPLETED, label: getStatusLabel(ORDER_STATUS.COMPLETED), color: getStatusColor(ORDER_STATUS.COMPLETED) },
+    { value: ORDER_STATUS.CANCELLED, label: getStatusLabel(ORDER_STATUS.CANCELLED), color: getStatusColor(ORDER_STATUS.CANCELLED) },
+    { value: ORDER_STATUS.WORK_IN_PROGRESS, label: getStatusLabel(ORDER_STATUS.WORK_IN_PROGRESS), color: getStatusColor(ORDER_STATUS.WORK_IN_PROGRESS) },
   ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-[var(--success)] text-white";
-      case "processing":
-        return "bg-[var(--info)] text-white";
-      case "failed":
-        return "bg-[var(--error)] text-white";
-      case "cancelled":
-        return "bg-[var(--text-muted)] text-white";
-      case "pending":
-        return "bg-[var(--warning)] text-white";
-      case "confirmed":
-        return "bg-[var(--color-secondary)] text-white";
-      case "draft":
-        return "bg-[var(--text-muted)] text-white";
-      default:
-        return "bg-[var(--text-muted)] text-white";
-    }
-  };
 
   const getStatusBorderColor = (status: string) => {
     switch (status) {
-      case "completed": return "border-l-[var(--success)]";
-      case "processing": return "border-l-[var(--info)]";
-      case "failed": return "border-l-[var(--error)]";
-      case "cancelled": return "border-l-[var(--text-muted)]";
-      case "pending": return "border-l-[var(--warning)]";
-      case "confirmed": return "border-l-[var(--color-secondary)]";
-      case "draft": return "border-l-[var(--text-muted)]";
+      case ORDER_STATUS.COMPLETED: return "border-l-[var(--success)]";
+      case ORDER_STATUS.PROCESSING: return "border-l-[var(--info)]";
+      case ORDER_STATUS.FAILED: return "border-l-[var(--error)]";
+      case ORDER_STATUS.CANCELLED: return "border-l-[var(--text-muted)]";
+      case ORDER_STATUS.PENDING: return "border-l-[var(--warning)]";
+      case ORDER_STATUS.CONFIRMED: return "border-l-[var(--color-secondary)]";
+      case ORDER_STATUS.DRAFT: return "border-l-[var(--text-muted)]";
       default: return "border-l-[var(--border-color)]";
     }
   };
@@ -275,7 +236,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   };
 
   const canCancel = (status: string) =>
-    ["pending", "confirmed", "processing", "draft"].includes(status);
+    [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.DRAFT].includes(status);
 
   const canUserCancelOrder = (order: Order) => {
     if (isOrderLocked(order)) return false;
@@ -286,7 +247,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
     // Agents can cancel their own draft or pending orders
     if (
-      (order.status === "draft" || order.status === "pending") &&
+      (order.status === ORDER_STATUS.DRAFT || order.status === ORDER_STATUS.PENDING) &&
       currentUserId
     ) {
       const createdById =
@@ -308,7 +269,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
   const canUserReportOrder = (order: Order) => {
     // Only completed orders can be reported
-    if (order.status !== "completed") return false;
+    if (order.status !== ORDER_STATUS.COMPLETED) return false;
 
     // Check if order is already reported
     if (order.reported) return false;
@@ -362,7 +323,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
 
   const shouldShowReceptionStatusDisplay = (order: Order) => {
     // Only show reception status display for completed orders with reception status
-    if (order.status !== "completed" || !order.receptionStatus) return false;
+    if (order.status !== ORDER_STATUS.COMPLETED || !order.receptionStatus) return false;
 
     // If the order is not resolved, check if it's been more than 24 hours since reporting
     if (order.receptionStatus !== "resolved") {
@@ -588,7 +549,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                 className="text-[var(--error)] hover:text-[var(--error)] border-[var(--error)]/30 hover:border-[var(--error)]/50 px-3 py-1 text-xs"
               >
                 <FaTimes className="w-3 h-3 mr-1" />
-                {order.status === "draft" ? "Delete Draft" : "Cancel Order"}
+                {order.status === ORDER_STATUS.DRAFT ? "Delete Draft" : "Cancel Order"}
               </Button>
             )}
 
@@ -639,7 +600,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
           )}
 
         {/* Reception Status Badge - Bottom Right */}
-        {order.status === "completed" &&
+        {order.status === ORDER_STATUS.COMPLETED &&
           order.receptionStatus &&
           shouldShowReceptionStatusDisplay(order) && (
             <div className="flex justify-end mt-3">

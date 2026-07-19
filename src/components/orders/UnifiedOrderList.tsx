@@ -38,6 +38,7 @@ import { SearchAndFilter } from "../common/SearchAndFilter";
 import { DraftOrdersHandler } from "./DraftOrdersHandler";
 import { SmartSelectDialog } from "./SmartSelectDialog";
 import { isOrderLocked } from "../../utils/order-lock";
+import { ORDER_STATUS, getStatusLabel } from "../../constants/orderStatuses";
 
 interface UnifiedOrderListProps {
   isAdmin: boolean;
@@ -563,7 +564,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   }, []);
 
   // Calculate draft orders
-  const draftOrders = orders.filter((order) => order.status === "draft");
+  const draftOrders = orders.filter((order) => order.status === ORDER_STATUS.DRAFT);
   const hasDraftOrders = draftOrders.length > 0;
 
   // Handle draft orders notification
@@ -588,13 +589,13 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       status: {
         value: statusFilter,
         options: [
-          { value: "draft", label: "Draft" },
-          { value: "pending", label: "Pending" },
-          { value: "confirmed", label: "Confirmed" },
-          { value: "processing", label: "Processing" },
-          { value: "completed", label: "Completed" },
-          { value: "cancelled", label: "Cancelled" },
-          { value: "failed", label: "Failed" },
+          { value: ORDER_STATUS.DRAFT, label: getStatusLabel(ORDER_STATUS.DRAFT) },
+          { value: ORDER_STATUS.PENDING, label: getStatusLabel(ORDER_STATUS.PENDING) },
+          { value: ORDER_STATUS.CONFIRMED, label: getStatusLabel(ORDER_STATUS.CONFIRMED) },
+          { value: ORDER_STATUS.PROCESSING, label: getStatusLabel(ORDER_STATUS.PROCESSING) },
+          { value: ORDER_STATUS.COMPLETED, label: getStatusLabel(ORDER_STATUS.COMPLETED) },
+          { value: ORDER_STATUS.CANCELLED, label: getStatusLabel(ORDER_STATUS.CANCELLED) },
+          { value: ORDER_STATUS.FAILED, label: getStatusLabel(ORDER_STATUS.FAILED) },
         ],
         label: "Status",
         placeholder: "All Status",

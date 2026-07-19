@@ -1,16 +1,5 @@
 import type { Order } from "../types/order";
-
-/**
- * Terminal statuses after which an order should become locked (non-updatable)
- * once 24 hours have passed — unless the order has been reported and is in
- * an active investigation status (not_received / checking).
- */
-const TERMINAL_STATUSES = [
-  "completed",
-  "cancelled",
-  "failed",
-  "partially_completed",
-] as const;
+import { TERMINAL_STATUSES } from "../constants/orderStatuses";
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 

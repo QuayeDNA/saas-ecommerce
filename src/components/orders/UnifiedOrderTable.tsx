@@ -12,6 +12,7 @@ import {
 } from "react-icons/fa";
 import type { Order } from "../../types/order";
 import { isOrderLocked } from "../../utils/order-lock";
+import { ORDER_STATUS, getStatusColor, getStatusLabel } from "../../constants/orderStatuses";
 import { ReportModal } from "./ReportModal";
 import { apiClient } from "../../utils/api-client";
 
@@ -152,37 +153,20 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     };
   }, [statusDropdowns]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "text-[var(--success)] bg-[var(--success-lighter)]";
-      case "processing":
-        return "text-[var(--info)] bg-[var(--color-accent-soft)]";
-      case "failed":
-        return "text-[var(--error)] bg-[var(--error-lighter)]";
-      case "cancelled":
-        return "text-[var(--text-muted)] bg-[var(--bg-surface-alt)]";
-      case "pending":
-        return "text-[var(--warning)] bg-[var(--warning-lighter)]";
-      case "confirmed":
-        return "text-[var(--color-secondary)] bg-[var(--color-accent-soft)]";
-      default:
-        return "text-[var(--text-muted)] bg-[var(--bg-surface-alt)]";
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
+      case ORDER_STATUS.COMPLETED:
         return <FaCheck className="text-[var(--success)]" />;
-      case "processing":
+      case ORDER_STATUS.PROCESSING:
         return <FaClock className="text-[var(--info)]" />;
-      case "failed":
+      case ORDER_STATUS.FAILED:
         return <FaTimes className="text-[var(--error)]" />;
-      case "pending":
+      case ORDER_STATUS.PENDING:
         return <FaClock className="text-[var(--warning)]" />;
-      case "confirmed":
+      case ORDER_STATUS.CONFIRMED:
         return <FaCheck className="text-[var(--color-secondary)]" />;
+      case ORDER_STATUS.WORK_IN_PROGRESS:
+        return <FaClock className="text-[var(--warning)]" />;
       default:
         return <FaClock className="text-[var(--text-muted)]" />;
     }
@@ -310,7 +294,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   };
 
   const canCancel = (status: string) =>
-    ["pending", "confirmed", "processing", "draft"].includes(status);
+    [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.DRAFT].includes(status);
 
   const canUserCancelOrder = (order: Order) => {
     if (isOrderLocked(order)) return false;
@@ -320,7 +304,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
     if (isAdmin) return true;
 
     // Agents can only cancel their own draft orders
-    if (order.status === "draft" && currentUserId) {
+    if (order.status === ORDER_STATUS.DRAFT && currentUserId) {
       const createdById =
         typeof order.createdBy === "string"
           ? order.createdBy
@@ -334,7 +318,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   };
 
   const canUserReportOrder = (order: Order) => {
-    if (order.status !== "completed") return false;
+    if (order.status !== ORDER_STATUS.COMPLETED) return false;
     if (order.reported) return false;
 
     const orderDate = new Date(order.createdAt);
@@ -360,12 +344,12 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   };
 
   const statusOptions = [
-    { value: "pending", label: "Pending" },
-    { value: "confirmed", label: "Confirmed" },
-    { value: "processing", label: "Processing" },
-
-    { value: "completed", label: "Completed" },
-    { value: "cancelled", label: "Cancelled" },
+    { value: ORDER_STATUS.PENDING, label: getStatusLabel(ORDER_STATUS.PENDING) },
+    { value: ORDER_STATUS.CONFIRMED, label: getStatusLabel(ORDER_STATUS.CONFIRMED) },
+    { value: ORDER_STATUS.PROCESSING, label: getStatusLabel(ORDER_STATUS.PROCESSING) },
+    { value: ORDER_STATUS.COMPLETED, label: getStatusLabel(ORDER_STATUS.COMPLETED) },
+    { value: ORDER_STATUS.CANCELLED, label: getStatusLabel(ORDER_STATUS.CANCELLED) },
+    { value: ORDER_STATUS.WORK_IN_PROGRESS, label: getStatusLabel(ORDER_STATUS.WORK_IN_PROGRESS) },
   ];
 
   return (
@@ -547,7 +531,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                     </td>
                     {isAdmin && (
                       <td className="px-6 py-4">
-                        {order.status === "completed" ? (
+                        {order.status === ORDER_STATUS.COMPLETED ? (
                           <ReceptionStatusDropdown
                             orderId={order._id!}
                             currentStatus={
@@ -572,7 +556,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
                             variant="danger"
                             onClick={() => onCancel(order._id!)}
                             title={
-                              order.status === "draft"
+                              order.status === ORDER_STATUS.DRAFT
                                 ? "Delete Draft Order"
                                 : "Cancel Order"
                             }

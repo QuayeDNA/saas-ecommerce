@@ -50,6 +50,7 @@ export const ORDER_STATUS_CFG: Record<
   partially_completed: { label: "Partial", bg: "#FEF9C3", color: "#713F12" },
   failed: { label: "Failed", bg: "#FEE2E2", color: "#7F1D1D" },
   cancelled: { label: "Cancelled", bg: "#F3F4F6", color: "#374151" },
+  work_in_progress: { label: "WIP", bg: "#FEF3C7", color: "#92400E" },
 };
 
 export function getSystemFooterText(businessName: string): string {
