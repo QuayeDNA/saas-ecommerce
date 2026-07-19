@@ -20,6 +20,7 @@ import { isOrderLocked } from "../../utils/order-lock";
 interface UnifiedOrderExcelProps {
   orders: Order[];
   loading?: boolean;
+  onBulkProcess?: (orderIds: string[], action: "processing" | "completed") => Promise<unknown>;
 }
 
 interface ExcelRow {
@@ -38,6 +39,7 @@ interface ExcelRow {
 export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
   orders,
   loading = false,
+  onBulkProcess,
 }) => {
   const { bulkProcessOrders } = useOrder();
 
@@ -229,7 +231,11 @@ export const UnifiedOrderExcel: React.FC<UnifiedOrderExcelProps> = ({
             .map((order) => order._id || "")
             .filter(Boolean);
 
-          await bulkProcessOrders(orderIds, statusUpdate);
+          if (onBulkProcess) {
+            await onBulkProcess(orderIds, statusUpdate);
+          } else {
+            await bulkProcessOrders(orderIds, statusUpdate);
+          }
 
           // Update progress count after batch completion
           setProcessingProgress((prev) => ({

@@ -14,7 +14,6 @@ import type { Order } from "../../types/order";
 import { isOrderLocked } from "../../utils/order-lock";
 import { ORDER_STATUS, getStatusColor, getStatusLabel } from "../../constants/orderStatuses";
 import { ReportModal } from "./ReportModal";
-import { apiClient } from "../../utils/api-client";
 
 interface ReceptionStatusDropdownProps {
   orderId: string;
@@ -101,6 +100,7 @@ interface UnifiedOrderTableProps {
   onUpdateStatus: (orderId: string, status: string, notes?: string) => void;
   onUpdateReceptionStatus?: (orderId: string, receptionStatus: string) => void;
   onCancel: (orderId: string) => void;
+  onReport?: (orderId: string, description?: string) => Promise<void>;
   onSelect?: (orderId: string) => void;
   selectedOrders: string[];
   onSelectAll: () => void;
@@ -115,6 +115,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   onUpdateStatus,
   onUpdateReceptionStatus,
   onCancel,
+  onReport,
   onSelect,
   selectedOrders,
   onSelectAll,
@@ -211,11 +212,11 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   };
 
   const handleReportSubmit = async () => {
-    if (!selectedReportOrder?._id) return;
+    if (!selectedReportOrder?._id || !onReport) return;
 
     setIsReporting(true);
     try {
-      await apiClient.post(`/api/orders/${selectedReportOrder._id}/report`, {});
+      await onReport(selectedReportOrder._id);
       setReportModalOpen(false);
       setSelectedReportOrder(null);
       if (onRefresh) {

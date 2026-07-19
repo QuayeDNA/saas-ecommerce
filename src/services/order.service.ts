@@ -359,6 +359,15 @@ class OrderService {
     return response.data.order;
   }
 
+  async reportCrossAppOrder(appId: string, orderId: string, description?: string): Promise<void> {
+    await apiClient.post(`/api/orders/app/${appId}/${orderId}/report`, { description });
+  }
+
+  async getCrossAppAnalytics(appId: string, timeframe = "30d"): Promise<OrderAnalytics> {
+    const response = await apiClient.get(`/api/orders/app/${appId}/analytics`, { params: { timeframe } });
+    return response.data.analytics;
+  }
+
   async updateCrossAppOrderStatus(appId: string, orderId: string, status: string, notes?: string): Promise<Order> {
     const response = await apiClient.patch(`/api/orders/app/${appId}/${orderId}/status`, { status, notes });
     return response.data.order;

@@ -41,6 +41,7 @@ import { isOrderLocked } from "../../utils/order-lock";
 import { ORDER_STATUS, getStatusLabel } from "../../constants/orderStatuses";
 import { orderService } from "../../services/order.service";
 import { settingsService, type ConnectedApp } from "../../services/settings.service";
+import { apiClient } from "../../utils/api-client";
 
 interface UnifiedOrderListProps {
   isAdmin: boolean;
@@ -113,6 +114,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [crossAppReportedPagination, setCrossAppReportedPagination] = useState<OrderResponse['pagination']>({ page: 1, pages: 0, total: 0, limit: 50 });
   const [crossAppReportedLoading, setCrossAppReportedLoading] = useState(false);
   const [crossAppReportedError, setCrossAppReportedError] = useState<string | null>(null);
+  const [crossAppAnalytics, setCrossAppAnalytics] = useState<unknown>(null);
+  const [crossAppAnalyticsLoading, setCrossAppAnalyticsLoading] = useState(false);
 
   // Draft orders handler state
   const [showDraftHandler, setShowDraftHandler] = useState(false);
@@ -170,8 +173,36 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     }
   }, []);
 
-  // Derive analytics data from React Query based on role
+  // Derive analytics data from React Query based on role (or cross-app)
   const analyticsData = useMemo(() => {
+    if (sourceApp !== "this-app" && crossAppAnalytics) {
+      const a = crossAppAnalytics as any;
+      return {
+        totalOrders: a.orders?.total || 0,
+        todayOrders: a.orders?.today?.total || 0,
+        thisMonthOrders: a.orders?.thisMonth?.total || 0,
+        totalRevenue: a.revenue?.total || 0,
+        todayRevenue: a.revenue?.today || 0,
+        monthlyRevenue: a.revenue?.thisMonth || 0,
+        todayCompletedOrders: a.orders?.today?.completed || 0,
+        todayProcessingOrders: a.orders?.today?.processing || 0,
+        todayPendingOrders: a.orders?.today?.pending || 0,
+        todayCancelledOrders: a.orders?.today?.cancelled || 0,
+        statusCounts: {
+          processing: a.orders?.processing || 0,
+          pending: a.orders?.pending || 0,
+          confirmed: a.orders?.confirmed || 0,
+          cancelled: a.orders?.cancelled || 0,
+          partiallyCompleted: a.orders?.partiallyCompleted || 0,
+        },
+        receptionCounts: {
+          received: a.orders?.completed || 0,
+          not_received: a.orders?.failed || 0,
+          checking: a.orders?.processing || 0,
+          resolved: a.orders?.completed || 0,
+        },
+      };
+    }
     if (isAdmin && adminAnalytics) {
       return {
         totalOrders: adminAnalytics.orders.total || 0,
@@ -227,7 +258,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       };
     }
     return null;
-  }, [isAdmin, adminAnalytics, isAgent, agentAnalytics]);
+  }, [isAdmin, adminAnalytics, isAgent, agentAnalytics, sourceApp, crossAppAnalytics]);
 
   // Shared cross-app fetch helper — eliminates duplicated fetch logic
   const fetchCrossAppOrders = useCallback(
@@ -288,6 +319,19 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       setSourceApp("this-app");
     }
   }, [connectedApps, sourceApp]);
+
+  // Fetch cross-app analytics when viewing a connected app
+  useEffect(() => {
+    if (sourceApp !== "this-app" && isAdmin) {
+      setCrossAppAnalyticsLoading(true);
+      orderService.getCrossAppAnalytics(sourceApp, "30d")
+        .then((data) => setCrossAppAnalytics(data))
+        .catch(() => setCrossAppAnalytics(null))
+        .finally(() => setCrossAppAnalyticsLoading(false));
+    } else {
+      setCrossAppAnalytics(null);
+    }
+  }, [sourceApp, isAdmin]);
 
   // WebSocket real-time updates with intelligent debouncing
   useEffect(() => {
@@ -498,6 +542,21 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       } catch {
         addToast("Failed to cancel order", "error");
       }
+    }
+  };
+
+  const handleReport = async (orderId: string) => {
+    try {
+      if (sourceApp !== "this-app") {
+        await orderService.reportCrossAppOrder(sourceApp, orderId);
+        fetchCrossAppOrders(activeTab === "reported");
+      } else {
+        await apiClient.post(`/api/orders/${orderId}/report`, {});
+        fetchOrders();
+      }
+      addToast("Order reported successfully", "success");
+    } catch {
+      addToast("Failed to report order", "error");
     }
   };
 
@@ -791,6 +850,36 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Source App Tabs — sticky at top, super_admin only */}
+      {isAdmin && connectedApps.length > 0 && (
+        <Card className="sticky top-0 z-20">
+          <CardBody className="flex gap-0 max-w-full overflow-x-auto">
+            <button
+              onClick={() => setSourceApp("this-app")}
+              className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                sourceApp === "this-app"
+                  ? "border-[var(--color-secondary)] text-[var(--color-secondary)]"
+                  : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-color)]"
+              }`}
+            >
+              This App
+            </button>
+            {connectedApps.map((app) => (
+              <button
+                key={app.appId}
+                onClick={() => setSourceApp(app.appId)}
+                className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  sourceApp === app.appId
+                    ? "border-[var(--color-secondary)] text-[var(--color-secondary)]"
+                    : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-color)]"
+                }`}
+              >
+                {app.name}
+              </button>
+            ))}
+          </CardBody>
+        </Card>
+      )}
       {/* Header */}
       <Card>
         <CardBody>
@@ -822,9 +911,11 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => {
-                sourceApp !== "this-app"
-                  ? fetchCrossAppOrders(activeTab === "reported")
-                  : fetchOrders();
+                if (sourceApp !== "this-app") {
+                  fetchCrossAppOrders(activeTab === "reported");
+                } else {
+                  fetchOrders();
+                }
               }}>
                 <FaSync className="mr-2" />
                 Refresh
@@ -836,8 +927,8 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       {/* Analytics Section - Only show for admin and agents */}
       {(isAdmin || isAgent) && (
         <OrderAnalytics
-          analyticsData={sourceApp !== "this-app" ? null : analyticsData}
-          loading={sourceApp !== "this-app" ? false : analyticsLoading}
+          analyticsData={analyticsData}
+          loading={sourceApp !== "this-app" ? crossAppAnalyticsLoading : analyticsLoading}
           error={sourceApp !== "this-app" ? null : analyticsError}
           isAdmin={isAdmin}
           isAgent={isAgent}
@@ -1079,38 +1170,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </CardBody>
         </Card>
       )}
-      {/* Source App Tabs — super_admin only */}
-      {isAdmin && connectedApps.length > 0 && (
-        <Card>
-          <CardBody>
-            <div className="flex border-b border-[var(--border-color)]">
-              <button
-                onClick={() => setSourceApp("this-app")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                  sourceApp === "this-app"
-                    ? "border-[var(--color-secondary)] text-[var(--color-secondary)]"
-                    : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-color)]"
-                }`}
-              >
-                This App
-              </button>
-              {connectedApps.map((app) => (
-                <button
-                  key={app.appId}
-                  onClick={() => setSourceApp(app.appId)}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                    sourceApp === app.appId
-                      ? "border-[var(--color-secondary)] text-[var(--color-secondary)]"
-                      : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-color)]"
-                  }`}
-                >
-                  {app.name}
-                </button>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      )}
       {/* Orders Display */}
       {currentLoading ? (
         <Card>
@@ -1159,12 +1218,17 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               currentUserId={authState.user?._id}
               onUpdateStatus={handleStatusUpdate}
               onCancel={handleCancelOrder}
+              onReport={handleReport}
               onSelect={handleSelectOrder}
               isSelected={selectedOrders.includes(order._id || "")}
               onRefresh={() => {
-                sourceApp !== "this-app"
-                  ? fetchCrossAppOrders(activeTab === "reported")
-                  : (activeTab === "reported" ? fetchReportedOrders() : fetchOrders(filters));
+                if (sourceApp !== "this-app") {
+                  fetchCrossAppOrders(activeTab === "reported");
+                } else if (activeTab === "reported") {
+                  fetchReportedOrders();
+                } else {
+                  fetchOrders(filters);
+                }
               }}
               onUpdateReceptionStatus={handleReceptionStatusUpdate}
             />
@@ -1179,19 +1243,28 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
             onUpdateStatus={handleStatusUpdate}
             onUpdateReceptionStatus={handleReceptionStatusUpdate}
             onCancel={handleCancelOrder}
+            onReport={handleReport}
             onSelect={handleSelectOrder}
             selectedOrders={selectedOrders}
             onSelectAll={handleSelectAll}
             onRefresh={() => {
-              sourceApp !== "this-app"
-                ? fetchCrossAppOrders(activeTab === "reported")
-                : (activeTab === "reported" ? fetchReportedOrders() : fetchOrders(filters));
+              if (sourceApp !== "this-app") {
+                fetchCrossAppOrders(activeTab === "reported");
+              } else if (activeTab === "reported") {
+                fetchReportedOrders();
+              } else {
+                fetchOrders(filters);
+              }
             }}
             loading={currentLoading}
           />
         </div>
       ) : (
-        <UnifiedOrderExcel orders={currentOrders} loading={currentLoading} />
+        <UnifiedOrderExcel
+          orders={currentOrders}
+          loading={currentLoading}
+          onBulkProcess={sourceApp !== "this-app" ? (orderIds, action) => orderService.bulkProcessCrossAppOrders(sourceApp, orderIds, action) : undefined}
+        />
       )}{" "}
       {/* Pagination */}
       {currentPagination.pages > 1 && (
@@ -1203,14 +1276,22 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
               totalItems={currentPagination.total}
               itemsPerPage={currentPagination.limit}
               onPageChange={(page) => {
-                sourceApp !== "this-app"
-                  ? fetchCrossAppOrders(activeTab === "reported", {}, { page })
-                  : (activeTab === "reported" ? fetchReportedOrders({}, { page }) : fetchOrders(filters, { page }));
+                if (sourceApp !== "this-app") {
+                  fetchCrossAppOrders(activeTab === "reported", {}, { page });
+                } else if (activeTab === "reported") {
+                  fetchReportedOrders({}, { page });
+                } else {
+                  fetchOrders(filters, { page });
+                }
               }}
               onItemsPerPageChange={(limit) => {
-                sourceApp !== "this-app"
-                  ? fetchCrossAppOrders(activeTab === "reported", {}, { page: 1, limit })
-                  : (activeTab === "reported" ? fetchReportedOrders({}, { page: 1, limit }) : fetchOrders(filters, { page: 1, limit }));
+                if (sourceApp !== "this-app") {
+                  fetchCrossAppOrders(activeTab === "reported", {}, { page: 1, limit });
+                } else if (activeTab === "reported") {
+                  fetchReportedOrders({}, { page: 1, limit });
+                } else {
+                  fetchOrders(filters, { page: 1, limit });
+                }
               }}
               showInfo={true}
               showPerPageSelector={true}

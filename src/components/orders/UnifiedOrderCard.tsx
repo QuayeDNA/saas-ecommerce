@@ -16,7 +16,6 @@ import { Button } from "../../design-system";
 import { Select } from "../../design-system/components/select";
 import { ReportModal } from "./ReportModal";
 import type { Order } from "../../types/order";
-import { apiClient } from "../../utils/api-client";
 import { isOrderLocked } from "../../utils/order-lock";
 import { ORDER_STATUS, getStatusColor, getStatusLabel } from "../../constants/orderStatuses";
 
@@ -26,6 +25,7 @@ interface UnifiedOrderCardProps {
   currentUserId?: string;
   onUpdateStatus: (orderId: string, status: string, notes?: string) => void;
   onCancel: (orderId: string) => void;
+  onReport?: (orderId: string, description?: string) => Promise<void>;
   onSelect?: (orderId: string) => void;
   isSelected?: boolean;
   onRefresh?: () => void;
@@ -38,6 +38,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   currentUserId,
   onUpdateStatus,
   onCancel,
+  onReport,
   onSelect,
   isSelected = false,
   onRefresh,
@@ -349,19 +350,18 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   };
 
   const handleReportSubmit = async () => {
+    if (!onReport) return;
     setIsReporting(true);
     try {
-      await apiClient.post(`/api/orders/${order._id}/report`, {});
+      await onReport(order._id!);
 
       setReportModalOpen(false);
-      // Refresh the order list after successful reporting
       if (onRefresh) {
         onRefresh();
       }
     } catch (error) {
       console.error("Error submitting report:", error);
-      // You might want to show an error toast here
-      throw error; // Re-throw so the modal can handle it
+      throw error;
     } finally {
       setIsReporting(false);
     }
