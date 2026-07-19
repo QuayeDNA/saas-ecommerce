@@ -311,6 +311,39 @@ class SettingsService {
     return response.data.data;
   }
 
+  async listMtnNumbers(
+    page: number = 1,
+    limit: number = 20,
+    search: string = ""
+  ): Promise<{
+    numbers: Array<{ _id: string; phone: string; importedAt: string }>;
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set("search", search);
+    const response = await apiClient.get(`/api/settings/mtn-numbers?${params}`);
+    return response.data;
+  }
+
+  async addMtnNumber(phone: string): Promise<{ phone: string }> {
+    const response = await apiClient.post("/api/settings/mtn-numbers", { phone });
+    this._allSettingsCache = null;
+    return response.data.number ?? response.data;
+  }
+
+  async deleteMtnNumber(id: string): Promise<void> {
+    await apiClient.delete(`/api/settings/mtn-numbers/${id}`);
+    this._allSettingsCache = null;
+  }
+
+  async bulkDeleteMtnNumbers(ids: string[]): Promise<{ deletedCount: number }> {
+    const response = await apiClient.post("/api/settings/mtn-numbers/bulk-delete", { ids });
+    this._allSettingsCache = null;
+    return response.data;
+  }
+
   // ── MoMo Bridge — Mobile Money Payment Verification ──────────────────────────
 
   async getMomoBridgeSettings(): Promise<MomoBridgeSettings> {

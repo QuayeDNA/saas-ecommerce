@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Edit, Key as KeyIcon } from "lucide-react";
 import { Button } from "../../../design-system/components/button";
 import { Card } from "../../../design-system/components/card";
 import { Switch } from "../../../design-system";
 import { SectionHeader } from "./components/section-header";
 import { SettingRow } from "./components/setting-row";
+import KnownNumbersDialog from "./components/KnownNumbersDialog";
 import type { SiteSettings, BryteLinksSettings, MtnRestrictionSettings } from "../../../services/settings.service";
 
 interface GeneralTabProps {
@@ -47,6 +48,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   const autoSuspend = data.bryteLinksSettings.autoSuspendInactiveStores ?? false;
   const mtnRestrictionEnabled = data.mtnRestriction.mtnOrderRestrictionEnabled ?? false;
   const inactivityDays = data.bryteLinksSettings.inactivityThresholdDays ?? 14;
+  const [showKnownNumbers, setShowKnownNumbers] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -210,7 +212,12 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
                 {mtnNumbersCount !== null ? `${mtnNumbersCount.toLocaleString()} numbers in the allowlist` : "Loading..."}
               </div>
             </div>
-            <Button size="sm" variant="secondary" onClick={onRefreshMtnStats}>Refresh</Button>
+            <button
+              onClick={() => setShowKnownNumbers(true)}
+              className="px-3 py-1.5 text-sm border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-surface-alt)]"
+            >
+              Manage
+            </button>
           </div>
         </div>
       </Card>
@@ -226,6 +233,12 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
           <div className="text-xs mt-1 text-[var(--success)]">Change your admin password regularly. You'll be required to log in again after changing it.</div>
         </div>
       </Card>
+
+      <KnownNumbersDialog
+        isOpen={showKnownNumbers}
+        onClose={() => setShowKnownNumbers(false)}
+        onStatsChange={onRefreshMtnStats}
+      />
     </div>
   );
 };
