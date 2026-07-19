@@ -137,9 +137,11 @@ export interface Order {
     | "pending_payment"
     | "confirmed"
     | "processing"
+    | "partially_completed"
     | "completed"
     | "cancelled"
-    | "failed";
+    | "failed"
+    | "work_in_progress";
   receptionStatus?: "not_received" | "received" | "checking" | "resolved";
   reported?: boolean;
   reportedAt?: Date;
