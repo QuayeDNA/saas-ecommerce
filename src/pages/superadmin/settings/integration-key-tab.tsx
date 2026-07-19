@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Copy, RefreshCw, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Copy, RefreshCw, Loader2 } from "lucide-react";
 import { Button, Dialog, DialogHeader, DialogBody, DialogFooter } from "../../../design-system";
 import { Card } from "../../../design-system/components/card";
 import { useToast } from "../../../design-system/components/toast";
@@ -84,7 +84,6 @@ export const IntegrationKeyTab: React.FC = () => {
   return (
     <div className="space-y-4">
       <Card>
-        <div className="p-6">
           <h3 className="text-lg font-semibold text-[var(--text-primary)]">Your Integration Key</h3>
           <p className="text-sm text-[var(--text-secondary)] mt-1">Use this key to authenticate external integrations</p>
 
@@ -144,7 +143,6 @@ export const IntegrationKeyTab: React.FC = () => {
               Regenerate Key
             </Button>
           </div>
-        </div>
       </Card>
 
       <Dialog isOpen={confirmOpen} onClose={() => setConfirmOpen(false)} size="sm">

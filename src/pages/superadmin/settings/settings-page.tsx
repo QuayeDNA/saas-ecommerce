@@ -66,10 +66,10 @@ export default function SuperAdminSettingsPage() {
       try {
         const stats = await settingsService.getMtnNumberStats();
         if (mounted) setMtnNumbersCount(stats.totalKnownNumbers);
-      } catch {}
+      } catch {/** */}
     })();
     return () => { mounted = false; };
-  }, []);
+  });
 
   const setBusy = useCallback((key: string, v: boolean) => setBusyKeys(prev => ({ ...prev, [key]: v })), []);
 

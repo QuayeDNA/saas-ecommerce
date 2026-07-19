@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, Wifi, WifiOff, RefreshCw, Edit, X, Loader2 } from "lucide-react";
+import { Plus, Trash2, Wifi, WifiOff, RefreshCw, Edit, Loader2 } from "lucide-react";
 import { Button, Dialog, DialogHeader, DialogBody, DialogFooter, Badge } from "../../../design-system";
 import { Card } from "../../../design-system/components/card";
 import { useToast } from "../../../design-system/components/toast";
@@ -128,7 +128,7 @@ export const ConnectedAppsTab: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items:start sm:items-center justify-between space-y-4">
         <div>
           <h3 className="text-lg font-semibold text-[var(--text-primary)]">Connected Apps</h3>
           <p className="text-sm text-[var(--text-secondary)]">Manage external application connections</p>
