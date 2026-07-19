@@ -294,7 +294,7 @@ export const UnifiedOrderTable: React.FC<UnifiedOrderTableProps> = ({
   };
 
   const canCancel = (status: string) =>
-    [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.DRAFT].includes(status);
+    ([ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.DRAFT] as string[]).includes(status);
 
   const canUserCancelOrder = (order: Order) => {
     if (isOrderLocked(order)) return false;
