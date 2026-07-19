@@ -230,33 +230,36 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   }, [isAdmin, adminAnalytics, isAgent, agentAnalytics]);
 
   // Shared cross-app fetch helper — eliminates duplicated fetch logic
-  const fetchCrossAppOrders = async (
-    isReported: boolean,
-    filters: any = {},
-    pagination: any = {},
-  ) => {
-    const setLoading = isReported ? setCrossAppReportedLoading : setCrossAppLoading;
-    const setErr = isReported ? setCrossAppReportedError : setCrossAppError;
-    const setOrders = isReported ? setCrossAppReportedOrders : setCrossAppOrders;
-    const setPg = isReported ? setCrossAppReportedPagination : setCrossAppPagination;
+  const fetchCrossAppOrders = useCallback(
+    async (
+      isReported: boolean,
+      filters: any = {},
+      pagination: any = {},
+    ) => {
+      const setLoading = isReported ? setCrossAppReportedLoading : setCrossAppLoading;
+      const setErr = isReported ? setCrossAppReportedError : setCrossAppError;
+      const setOrders = isReported ? setCrossAppReportedOrders : setCrossAppOrders;
+      const setPg = isReported ? setCrossAppReportedPagination : setCrossAppPagination;
 
-    setLoading(true);
-    setErr(null);
-    try {
-      const method = isReported
-        ? orderService.getCrossAppReportedOrders
-        : orderService.getCrossAppOrders;
-      const res = await method(sourceApp, filters, pagination);
-      setOrders(res.orders);
-      setPg(res.pagination);
-    } catch {
-      setErr(isReported
-        ? "Failed to load reported orders from connected app"
-        : "Failed to load orders from connected app");
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      setErr(null);
+      try {
+        const method = isReported
+          ? orderService.getCrossAppReportedOrders
+          : orderService.getCrossAppOrders;
+        const res = await method(sourceApp, filters, pagination);
+        setOrders(res.orders);
+        setPg(res.pagination);
+      } catch {
+        setErr(isReported
+          ? "Failed to load reported orders from connected app"
+          : "Failed to load orders from connected app");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sourceApp],
+  );
 
   useEffect(() => {
     fetchOrders();
