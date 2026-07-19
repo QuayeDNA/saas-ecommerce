@@ -326,6 +326,74 @@ class OrderService {
     });
     return response.data.orders || response.data.data || [];
   }
+
+  // ── Cross-App Order Bridge ──────────────────────────────────────────────
+
+  async getCrossAppOrders(
+    appId: string,
+    filters: OrderFilters = {},
+    pagination: Partial<OrderPagination> = {}
+  ): Promise<OrderResponse> {
+    const params = { ...filters, ...pagination };
+    const response = await apiClient.get(`/api/orders/app/${appId}`, { params });
+    return response.data;
+  }
+
+  async getCrossAppReportedOrders(
+    appId: string,
+    filters: OrderFilters = {},
+    pagination: Partial<OrderPagination> = {}
+  ): Promise<OrderResponse> {
+    const params = { ...filters, ...pagination };
+    const response = await apiClient.get(`/api/orders/app/${appId}/reported`, { params });
+    return response.data;
+  }
+
+  async processCrossAppOrderItem(appId: string, orderId: string, itemId: string): Promise<Order> {
+    const response = await apiClient.post(`/api/orders/app/${appId}/${orderId}/items/${itemId}/process`);
+    return response.data.order;
+  }
+
+  async cancelCrossAppOrder(appId: string, orderId: string, reason?: string): Promise<Order> {
+    const response = await apiClient.post(`/api/orders/app/${appId}/${orderId}/cancel`, { reason });
+    return response.data.order;
+  }
+
+  async updateCrossAppOrderStatus(appId: string, orderId: string, status: string, notes?: string): Promise<Order> {
+    const response = await apiClient.patch(`/api/orders/app/${appId}/${orderId}/status`, { status, notes });
+    return response.data.order;
+  }
+
+  async updateCrossAppReceptionStatus(appId: string, orderId: string, receptionStatus: string): Promise<Order> {
+    const response = await apiClient.patch(`/api/orders/app/${appId}/${orderId}/reception-status`, { receptionStatus });
+    return response.data.order;
+  }
+
+  async bulkProcessCrossAppOrders(
+    appId: string,
+    orderIds: string[],
+    action: "processing" | "completed"
+  ): Promise<{
+    successful: Array<{ orderId: string; orderNumber: string; newStatus: string }>;
+    failed: Array<{ orderId: string; reason: string }>;
+    total: number;
+  }> {
+    const response = await apiClient.post(`/api/orders/app/${appId}/bulk-process`, { orderIds, action });
+    return response.data.results;
+  }
+
+  async bulkUpdateCrossAppReceptionStatus(
+    appId: string,
+    orderIds: string[],
+    receptionStatus: "not_received" | "received" | "checking" | "resolved"
+  ): Promise<{
+    successful: Array<{ orderId: string; orderNumber: string; newReceptionStatus: string }>;
+    failed: Array<{ orderId: string; reason: string }>;
+    total: number;
+  }> {
+    const response = await apiClient.post(`/api/orders/app/${appId}/bulk-reception-status`, { orderIds, receptionStatus });
+    return response.data.results;
+  }
 }
 
 export const orderService = new OrderService();
