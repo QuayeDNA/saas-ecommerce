@@ -108,6 +108,23 @@ export interface MtnNumberStats {
   totalKnownNumbers: number;
 }
 
+export interface ConnectedApp {
+  appId: string;
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+  enabled: boolean;
+  connectedAt: string;
+  lastTestedAt?: string;
+}
+
+export interface IntegrationKeyInfo {
+  label: string;
+  createdAt: string;
+  regeneratedAt: string | null;
+  keyPreview: string | null;
+}
+
 export interface MomoBridgeSettings {
   momoBridgeApiKey: string;
   momoBridgeRelayUrl: string;
@@ -357,6 +374,44 @@ class SettingsService {
     const response = await apiClient.put("/api/settings/momobridge", settings);
     this._allSettingsCache = null;
     return response.data.data ?? response.data;
+  }
+
+  // ── Connected Apps ─────────────────────────────────────────────────
+
+  async getConnectedApps(): Promise<ConnectedApp[]> {
+    const response = await apiClient.get("/api/settings/connected-apps");
+    return response.data.data ?? response.data;
+  }
+
+  async addConnectedApp(data: { appId: string; name: string; baseUrl: string; apiKey: string }): Promise<ConnectedApp> {
+    const response = await apiClient.post("/api/settings/connected-apps", data);
+    return response.data.data ?? response.data;
+  }
+
+  async updateConnectedApp(appId: string, data: Partial<ConnectedApp>): Promise<ConnectedApp> {
+    const response = await apiClient.put(`/api/settings/connected-apps/${appId}`, data);
+    return response.data.data ?? response.data;
+  }
+
+  async removeConnectedApp(appId: string): Promise<void> {
+    await apiClient.delete(`/api/settings/connected-apps/${appId}`);
+  }
+
+  async testConnectedApp(appId: string): Promise<{ verified: boolean }> {
+    const response = await apiClient.post(`/api/settings/connected-apps/${appId}/test`);
+    return response.data;
+  }
+
+  // ── Integration Key ─────────────────────────────────────────────────
+
+  async getIntegrationKey(): Promise<IntegrationKeyInfo> {
+    const response = await apiClient.get("/api/settings/integration-key");
+    return response.data;
+  }
+
+  async regenerateIntegrationKey(): Promise<{ key: string }> {
+    const response = await apiClient.post("/api/settings/integration-key/regenerate");
+    return response.data;
   }
 
   /**

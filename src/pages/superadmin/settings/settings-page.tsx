@@ -12,6 +12,8 @@ import { GeneralTab } from "./general-tab";
 import { ApiTab } from "./api-tab";
 import { FinanceTab } from "./finance-tab";
 import { SystemTab } from "./system-tab";
+import { IntegrationKeyTab } from "./integration-key-tab";
+import { ConnectedAppsTab } from "./connected-apps-tab";
 
 interface PageData {
   siteSettings: SiteSettings;
@@ -284,11 +286,11 @@ export default function SuperAdminSettingsPage() {
   });
   const toggleRevealKey = (k: string) => setRevealKeys(p => ({ ...p, [k]: !p[k] }));
 
-  const [activeTab, setActiveTab] = useState<'general' | 'api' | 'finance' | 'system'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'api' | 'finance' | 'system' | 'integration' | 'connected-apps'>('general');
   const [visitedTabs, setVisitedTabs] = useState<Record<string, boolean>>({ general: true });
   const handleTabChange = (value: string) => {
-    if (value === 'general' || value === 'api' || value === 'finance' || value === 'system') {
-      setActiveTab(value);
+    if (['general', 'api', 'finance', 'system', 'integration', 'connected-apps'].includes(value)) {
+      setActiveTab(value as any);
       setVisitedTabs(prev => ({ ...prev, [value]: true }));
     }
   };
@@ -358,6 +360,8 @@ export default function SuperAdminSettingsPage() {
           <TabsTrigger value="api">API</TabsTrigger>
           <TabsTrigger value="finance">Finance</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
+          <TabsTrigger value="integration">Integration</TabsTrigger>
+          <TabsTrigger value="connected-apps">Connected Apps</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -416,6 +420,14 @@ export default function SuperAdminSettingsPage() {
             onSendTestPush={handleSendTestPush}
           />
         )}
+      </div>
+
+      <div className={activeTab === 'integration' ? '' : 'hidden'}>
+        {visitedTabs.integration && <IntegrationKeyTab />}
+      </div>
+
+      <div className={activeTab === 'connected-apps' ? '' : 'hidden'}>
+        {visitedTabs['connected-apps'] && <ConnectedAppsTab />}
       </div>
 
       <SiteSettingsDialog isOpen={siteDialogOpen} onClose={() => setSiteDialogOpen(false)} currentSettings={data.siteSettings} onSuccess={dialogSuccess.site} />
