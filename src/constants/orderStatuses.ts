@@ -1,5 +1,4 @@
 export const ORDER_STATUS = {
-  DRAFT: "draft",
   PENDING: "pending",
   PENDING_PAYMENT: "pending_payment",
   CONFIRMED: "confirmed",
@@ -14,7 +13,6 @@ export const ORDER_STATUS = {
 export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {
-  [ORDER_STATUS.DRAFT]: "Draft",
   [ORDER_STATUS.PENDING]: "Pending",
   [ORDER_STATUS.PENDING_PAYMENT]: "Awaiting Payment",
   [ORDER_STATUS.CONFIRMED]: "Confirmed",
@@ -27,7 +25,6 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
 };
 
 export const ORDER_STATUS_COLORS: Record<string, string> = {
-  [ORDER_STATUS.DRAFT]: "bg-[var(--bg-surface-alt)] text-[var(--text-muted)]",
   [ORDER_STATUS.PENDING]: "bg-[var(--warning-lighter)] text-[var(--warning)]",
   [ORDER_STATUS.PENDING_PAYMENT]: "bg-[var(--warning-lighter)] text-[var(--warning)]",
   [ORDER_STATUS.CONFIRMED]: "bg-[var(--color-accent-soft)] text-[var(--color-secondary)]",
@@ -49,7 +46,6 @@ export const TERMINAL_STATUSES: readonly string[] = [
 export const CANCELLABLE_STATUSES: readonly string[] = [
   ORDER_STATUS.PENDING,
   ORDER_STATUS.CONFIRMED,
-  ORDER_STATUS.DRAFT,
   ORDER_STATUS.WORK_IN_PROGRESS,
 ];
 

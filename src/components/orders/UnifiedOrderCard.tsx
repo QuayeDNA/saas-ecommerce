@@ -113,7 +113,6 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
       case ORDER_STATUS.CANCELLED: return "border-l-[var(--text-muted)]";
       case ORDER_STATUS.PENDING: return "border-l-[var(--warning)]";
       case ORDER_STATUS.CONFIRMED: return "border-l-[var(--color-secondary)]";
-      case ORDER_STATUS.DRAFT: return "border-l-[var(--text-muted)]";
       case ORDER_STATUS.WORK_IN_PROGRESS: return "border-l-[var(--warning)]";
       default: return "border-l-[var(--border-color)]";
     }
@@ -238,7 +237,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
   };
 
   const canCancel = (status: string) =>
-    ([ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.DRAFT, ORDER_STATUS.WORK_IN_PROGRESS] as string[]).includes(status);
+    ([ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PROCESSING, ORDER_STATUS.WORK_IN_PROGRESS] as string[]).includes(status);
 
   const canUserCancelOrder = (order: Order) => {
     if (isOrderLocked(order)) return false;
@@ -247,9 +246,9 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
     // Admins can cancel any order
     if (isAdmin) return true;
 
-    // Agents can cancel their own draft or pending orders
+    // Agents can cancel their own pending orders
     if (
-      (order.status === ORDER_STATUS.DRAFT || order.status === ORDER_STATUS.PENDING) &&
+      order.status === ORDER_STATUS.PENDING &&
       currentUserId
     ) {
       const createdById =
@@ -550,7 +549,7 @@ export const UnifiedOrderCard: React.FC<UnifiedOrderCardProps> = ({
                 className="text-[var(--error)] hover:text-[var(--error)] border-[var(--error)]/30 hover:border-[var(--error)]/50 px-3 py-1 text-xs"
               >
                 <FaTimes className="w-3 h-3 mr-1" />
-                {order.status === ORDER_STATUS.DRAFT ? "Delete Draft" : "Cancel Order"}
+                Cancel Order
               </Button>
             )}
 

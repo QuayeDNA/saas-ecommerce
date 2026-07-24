@@ -208,9 +208,9 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
       await createSingleOrder(orderData);
 
-      // Order created successfully (including draft orders)
+      // Order created successfully
       addToast(
-        "Order created successfully! Amount deducted from wallet. Automatic refund if order fails or is cancelled.",
+        "Order created successfully! Amount deducted from wallet.",
         "success"
       );
       onSuccess();
@@ -248,20 +248,6 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
       if (err instanceof Error) {
         const errorMessage = err.message;
-
-        // Check if this is a draft order (insufficient wallet balance)
-        if (
-          errorMessage.includes("draft") ||
-          errorMessage.includes("insufficient")
-        ) {
-          setError(errorMessage);
-          addToast(
-            "Order created as draft due to insufficient wallet balance",
-            "warning"
-          );
-          // Don't close modal, let user see the error and potentially top up wallet
-          return;
-        }
 
         // Check if site is closed
         if (
@@ -301,7 +287,7 @@ export const SingleOrderModal: React.FC<SingleOrderModalProps> = ({
 
         // Order created successfully
         addToast(
-          "Order created successfully! Amount deducted from wallet. Automatic refund if order fails or is cancelled.",
+          "Order created successfully! Amount deducted from wallet.",
           "success"
         );
         onSuccess();

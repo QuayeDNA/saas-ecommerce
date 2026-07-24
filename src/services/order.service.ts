@@ -185,42 +185,6 @@ class OrderService {
   }
 
   // Check wallet balance before processing
-  async checkWalletBalance(): Promise<{
-    balance: number;
-    sufficient: boolean;
-    required?: number;
-  }> {
-    const response = await apiClient.get("/api/wallet/info");
-    return {
-      balance: response.data.wallet.balance,
-      sufficient: true, // Will be updated based on order requirements
-    };
-  }
-
-  // Process draft orders when wallet is topped up
-  async processDraftOrders(): Promise<{
-    processed: number;
-    message: string;
-    totalAmount: number;
-  }> {
-    const response = await apiClient.post("/api/orders/process-drafts");
-    return response.data;
-  }
-
-  // Process single draft order
-  async processSingleDraftOrder(orderId: string): Promise<{
-    processed: number;
-    message: string;
-    totalAmount: number;
-    order: any;
-  }> {
-    const response = await apiClient.post(
-      `/api/orders/process-draft/${orderId}`
-    );
-    return response.data;
-  }
-
-  // Get analytics
   async getAnalytics(timeframe = "30d"): Promise<OrderAnalytics> {
     const response = await apiClient.get("/api/orders/analytics/summary", {
       params: { timeframe },

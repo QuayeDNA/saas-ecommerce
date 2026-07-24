@@ -94,19 +94,6 @@ interface OrderContextType {
     orderId: string,
     receptionStatus: string
   ) => Promise<void>;
-  processDraftOrders: () => Promise<{
-    processed: number;
-    message: string;
-    totalAmount: number;
-  }>;
-  processSingleDraftOrder: (orderId: string) => Promise<{
-    processed: number;
-    message: string;
-    totalAmount: number;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    order: any;
-  }>;
-
   setFilters: (filters: OrderFilters) => void;
   clearError: () => void;
   isInitialized: boolean;
@@ -223,15 +210,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const order = await orderService.createSingleOrder(orderData);
 
-        // Check if order was created as draft
-        if (order.status === "draft") {
-          const message = `Order created as draft due to insufficient wallet balance. Please top up your wallet to process this order.`;
-          setError(message);
-          // Toast notification removed - handled by component
-          await fetchOrders(filters);
-          return; // Don't throw error, just return
-        }
-
         // Update daily spending if order was successfully created with valid total
         if (order.total && order.total > 0) {
           const userId = authState.user?.id || authState.user?._id;
@@ -275,7 +253,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
         if (summary.orderId) {
           try {
             const orderDetails = await orderService.getOrder(summary.orderId);
-            if (orderDetails.total && orderDetails.status !== "draft") {
+            if (orderDetails.total) {
               const userId = authState.user?.id || authState.user?._id;
               triggerDailySpendingRefresh(userId);
             }
@@ -452,43 +430,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     [fetchOrders, filters]
   );
 
-  const processDraftOrders = useCallback(async () => {
-    try {
-      const result = await orderService.processDraftOrders();
-      // Removed toast notification - handled by component
-      await fetchOrders(filters);
-      return result;
-    } catch (err: unknown) {
-      const message = extractErrorMessage(
-        err,
-        "Failed to process draft orders"
-      );
-      setError(message);
-      // Removed toast notification - handled by component
-      throw new Error(message);
-    }
-  }, [fetchOrders, filters]);
-
-  const processSingleDraftOrder = useCallback(
-    async (orderId: string) => {
-      try {
-        const result = await orderService.processSingleDraftOrder(orderId);
-        // Removed toast notification - handled by component
-        await fetchOrders(filters);
-        return result;
-      } catch (err: unknown) {
-        const message = extractErrorMessage(
-          err,
-          "Failed to process draft order"
-        );
-        setError(message);
-        // Removed toast notification - handled by component
-        throw new Error(message);
-      }
-    },
-    [fetchOrders, filters]
-  );
-
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -516,8 +457,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       cancelOrder,
       updateOrderStatus,
       updateReceptionStatus,
-      processDraftOrders,
-      processSingleDraftOrder,
       setFilters,
       clearError,
       isInitialized,
@@ -544,8 +483,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       cancelOrder,
       updateOrderStatus,
       updateReceptionStatus,
-      processDraftOrders,
-      processSingleDraftOrder,
       setFilters,
       clearError,
       isInitialized,
@@ -586,17 +523,6 @@ export const useOrder = () => {
       cancelOrder: async () => {},
       updateOrderStatus: async () => {},
       updateReceptionStatus: async () => {},
-      processDraftOrders: async () => ({
-        processed: 0,
-        message: "",
-        totalAmount: 0,
-      }),
-      processSingleDraftOrder: async () => ({
-        processed: 0,
-        message: "",
-        totalAmount: 0,
-        order: null,
-      }),
       setFilters: () => {},
       clearError: () => {},
       isInitialized: false,

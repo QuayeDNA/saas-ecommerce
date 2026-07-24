@@ -25,7 +25,6 @@ import {
   FaClock,
   FaChartBar,
   FaSync,
-  FaExclamationTriangle,
   FaCheckSquare,
 } from "react-icons/fa";
 import type { Order, OrderResponse, OrderFilters } from "../../types/order";
@@ -35,7 +34,6 @@ import { UnifiedOrderTable } from "./UnifiedOrderTable";
 import { UnifiedOrderExcel } from "./UnifiedOrderExcel";
 import { OrderAnalytics } from "./OrderAnalytics";
 import { SearchAndFilter } from "../common/SearchAndFilter";
-import { DraftOrdersHandler } from "./DraftOrdersHandler";
 import { SmartSelectDialog } from "./SmartSelectDialog";
 import { isOrderLocked } from "../../utils/order-lock";
 import { ORDER_STATUS, getStatusLabel } from "../../constants/orderStatuses";
@@ -116,9 +114,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   const [crossAppReportedError, setCrossAppReportedError] = useState<string | null>(null);
   const [crossAppAnalytics, setCrossAppAnalytics] = useState<unknown>(null);
   const [crossAppAnalyticsLoading, setCrossAppAnalyticsLoading] = useState(false);
-
-  // Draft orders handler state
-  const [showDraftHandler, setShowDraftHandler] = useState(false);
 
   // Smart select dialog state
   const [showSmartSelectDialog, setShowSmartSelectDialog] = useState(false);
@@ -727,21 +722,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
     );
   }, []);
 
-  // Calculate draft orders
-  const draftOrders = orders.filter((order) => order.status === ORDER_STATUS.DRAFT);
-  const hasDraftOrders = draftOrders.length > 0;
-
-  // Handle draft orders notification
-  const handleOpenDraftHandler = () => {
-    setShowDraftHandler(true);
-  };
-
-  const handleCloseDraftHandler = () => {
-    setShowDraftHandler(false);
-    // Refresh orders after handling drafts
-    fetchOrders();
-  };
-
   // Define search and filter configuration
   const searchAndFilterConfig = {
     searchTerm,
@@ -753,7 +733,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
       status: {
         value: statusFilter,
         options: [
-          { value: ORDER_STATUS.DRAFT, label: getStatusLabel(ORDER_STATUS.DRAFT) },
           { value: ORDER_STATUS.PENDING, label: getStatusLabel(ORDER_STATUS.PENDING) },
           { value: ORDER_STATUS.CONFIRMED, label: getStatusLabel(ORDER_STATUS.CONFIRMED) },
           { value: ORDER_STATUS.PROCESSING, label: getStatusLabel(ORDER_STATUS.PROCESSING) },
@@ -934,40 +913,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           isAdmin={isAdmin}
           isAgent={isAgent}
         />
-      )}
-      {/* Draft Orders Notification - Only show for agents when there are draft orders */}
-      {(isAgent || !isAdmin) && hasDraftOrders && (
-        <Card className="border-[var(--warning)] bg-[var(--warning-lighter)]">
-          <CardBody>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <FaExclamationTriangle className="text-[var(--warning)] text-xl flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-[var(--warning)] mb-1">
-                    Draft Orders Need Attention
-                  </h3>
-                  <p className="text-[var(--warning)] text-sm">
-                    You have {draftOrders.length} draft order
-                    {draftOrders.length !== 1 ? "s" : ""} waiting to be
-                    processed. These orders require sufficient wallet balance to
-                    complete.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Button
-                  onClick={handleOpenDraftHandler}
-                  variant="primary"
-                  size="sm"
-                  className="flex-1 sm:flex-none"
-                >
-                  <FaExclamationTriangle className="mr-2" />
-                  Review Drafts ({draftOrders.length})
-                </Button>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
       )}
       {/* Search and Filters */}
       <SearchAndFilter {...searchAndFilterConfig} />
@@ -1487,11 +1432,6 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
           </div>
         </DialogFooter>
       </Dialog>
-      {/* Draft Orders Handler Modal */}
-      <DraftOrdersHandler
-        isOpen={showDraftHandler}
-        onClose={handleCloseDraftHandler}
-      />
       {/* Smart Select Dialog */}
       <SmartSelectDialog
         isOpen={showSmartSelectDialog}
