@@ -26,6 +26,8 @@ import {
   FaChartBar,
   FaSync,
   FaCheckSquare,
+  FaHome,
+  FaServer,
 } from "react-icons/fa";
 import type { Order, OrderResponse, OrderFilters } from "../../types/order";
 import type { Provider } from "../../types/package";
@@ -829,37 +831,7 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Source App Tabs — sticky at top, super_admin only */}
-      {isAdmin && connectedApps.length > 0 && (
-        <Card className="sticky top-0 z-20">
-          <CardBody className="flex gap-0 max-w-full overflow-x-auto">
-            <button
-              onClick={() => setSourceApp("this-app")}
-              className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                sourceApp === "this-app"
-                  ? "border-[var(--color-secondary)] text-[var(--color-secondary)]"
-                  : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-color)]"
-              }`}
-            >
-              This App
-            </button>
-            {connectedApps.map((app) => (
-              <button
-                key={app.appId}
-                onClick={() => setSourceApp(app.appId)}
-                className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  sourceApp === app.appId
-                    ? "border-[var(--color-secondary)] text-[var(--color-secondary)]"
-                    : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-color)]"
-                }`}
-              >
-                {app.name}
-              </button>
-            ))}
-          </CardBody>
-        </Card>
-      )}
+    <div className="space-y-6 pb-12">
       {/* Header */}
       <Card>
         <CardBody>
@@ -1442,6 +1414,38 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         onSwitchToExcel={() => setViewMode("excel")}
         currentViewMode={viewMode}
       />
+      {/* Bottom Navigation — Source App Switcher */}
+      {isAdmin && connectedApps.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 md:left-64 bg-[var(--bg-surface)] border-t border-[var(--border-color)] pb-[env(safe-area-inset-bottom)]">
+          <div className="flex items-center justify-around max-w-lg mx-auto">
+            <button
+              onClick={() => setSourceApp("this-app")}
+              className={`flex flex-col items-center gap-0.5 py-2.5 px-3 text-[11px] font-medium transition-colors ${
+                sourceApp === "this-app"
+                  ? "text-[var(--color-secondary)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              <FaHome className="text-base" />
+              This App
+            </button>
+            {connectedApps.map((app) => (
+              <button
+                key={app.appId}
+                onClick={() => setSourceApp(app.appId)}
+                className={`flex flex-col items-center gap-0.5 py-2.5 px-3 text-[11px] font-medium transition-colors ${
+                  sourceApp === app.appId
+                    ? "text-[var(--color-secondary)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <FaServer className="text-base" />
+                {app.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
