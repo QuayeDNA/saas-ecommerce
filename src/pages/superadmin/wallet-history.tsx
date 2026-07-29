@@ -26,8 +26,11 @@ import {
 } from "../../design-system";
 import { Modal } from "../../design-system/components/modal";
 import { SearchAndFilter } from "../../components/common/SearchAndFilter";
+import { CrossAppSwitcher } from "../../components/common/CrossAppSwitcher";
+import { settingsService } from "../../services/settings.service";
 import type { WalletTransaction } from "../../types/wallet";
 import { walletService } from "../../services/wallet-service";
+import type { ConnectedApp } from "../../services/settings.service";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -82,6 +85,8 @@ export default function WalletHistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
+  const [sourceAppId, setSourceAppId] = useState("local");
+  const [connectedApps, setConnectedApps] = useState<ConnectedApp[]>([]);
 
   // Detail modal
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
@@ -96,14 +101,24 @@ export default function WalletHistoryPage() {
   const fetchTransactions = useCallback(async (page = 1) => {
     setLoading(true);
     try {
-      const resp = await walletService.getAdminTransactions(
-        page,
-        pagination.limit,
-        (typeFilter as "credit" | "debit") || undefined,
-        dateRange.startDate || undefined,
-        dateRange.endDate || undefined,
-        searchTerm || undefined
-      );
+      let resp: TransactionHistoryResponse;
+      if (sourceAppId === "local") {
+        resp = await walletService.getAdminTransactions(
+          page,
+          pagination.limit,
+          (typeFilter as "credit" | "debit") || undefined,
+          dateRange.startDate || undefined,
+          dateRange.endDate || undefined,
+          searchTerm || undefined
+        );
+      } else {
+        resp = await walletService.crossAppGetTransactions(
+          sourceAppId,
+          page,
+          pagination.limit,
+          (typeFilter as "credit" | "debit") || undefined
+        );
+      }
       setTransactions(resp.transactions);
       setPagination(resp.pagination);
     } catch {
@@ -111,11 +126,19 @@ export default function WalletHistoryPage() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.limit, typeFilter, dateRange, searchTerm, addToast]);
+  }, [pagination.limit, typeFilter, dateRange, searchTerm, sourceAppId, addToast]);
 
   useEffect(() => {
     fetchTransactions(1);
   }, [fetchTransactions]);
+
+  useEffect(() => {
+    settingsService.getConnectedApps().then(apps => setConnectedApps(apps)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setPagination((p) => ({ ...p, page: 1 }));
+  }, [sourceAppId]);
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "type") setTypeFilter(value);
@@ -651,6 +674,15 @@ export default function WalletHistoryPage() {
           );
         })()}
       </Modal>
+
+      {/* ── Source App Switcher ──────────────────────────────────────────── */}
+      <CrossAppSwitcher
+        activeApp={sourceAppId}
+        onChange={(v: string) => setSourceAppId(v)}
+        apps={connectedApps}
+        isAdmin={true}
+        thisAppValue="local"
+      />
     </div>
   );
 }

@@ -500,4 +500,131 @@ export const walletService = {
       pagination: response.data.pagination,
     };
   },
+
+  // ---------------------------------------------------------------------------
+  // Cross-app wallet management (super admin)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Cross-app: Get transactions from a connected app
+   */
+  crossAppGetTransactions: async (
+    appId: string,
+    page = 1,
+    limit = 20,
+    type?: "credit" | "debit"
+  ): Promise<TransactionHistoryResponse> => {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+    if (type) params.append("type", type);
+    const response = await apiClient.get<{
+      success: boolean;
+      transactions: WalletTransaction[];
+      pagination: { total: number; page: number; limit: number; pages: number };
+    }>(`/api/wallet/app/${appId}/transactions?${params.toString()}`);
+    return { transactions: response.data.transactions, pagination: response.data.pagination };
+  },
+
+  /**
+   * Cross-app: Get analytics from a connected app
+   */
+  crossAppGetAnalytics: async (appId: string): Promise<WalletAnalytics> => {
+    const response = await apiClient.get<{ success: boolean; analytics: WalletAnalytics }>(
+      `/api/wallet/app/${appId}/analytics`
+    );
+    return response.data.analytics;
+  },
+
+  /**
+   * Cross-app: Get pending top-up requests from a connected app
+   */
+  crossAppGetPendingRequests: async (
+    appId: string,
+    page = 1,
+    limit = 20
+  ): Promise<TransactionHistoryResponse> => {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+    const response = await apiClient.get<{
+      success: boolean;
+      requests: WalletTransaction[];
+      pagination: { total: number; page: number; limit: number; pages: number };
+    }>(`/api/wallet/app/${appId}/pending-requests?${params.toString()}`);
+    return { transactions: response.data.requests, pagination: response.data.pagination };
+  },
+
+  /**
+   * Cross-app: Top up wallet on a connected app
+   */
+  crossAppTopUpWallet: async (
+    appId: string,
+    userId: string,
+    amount: number,
+    description = "Wallet top-up via cross-app"
+  ): Promise<WalletTransaction> => {
+    const response = await apiClient.post<{ success: boolean; transaction: WalletTransaction }>(
+      `/api/wallet/app/${appId}/top-up`,
+      { userId, amount, description }
+    );
+    return response.data.transaction;
+  },
+
+  /**
+   * Cross-app: Debit wallet on a connected app
+   */
+  crossAppDebitWallet: async (
+    appId: string,
+    userId: string,
+    amount: number,
+    description = "Wallet debit via cross-app"
+  ): Promise<WalletTransaction> => {
+    const response = await apiClient.post<{ success: boolean; transaction: WalletTransaction }>(
+      `/api/wallet/app/${appId}/debit`,
+      { userId, amount, description }
+    );
+    return response.data.transaction;
+  },
+
+  /**
+   * Cross-app: Process top-up request on a connected app
+   */
+  crossAppProcessTopUpRequest: async (
+    appId: string,
+    transactionId: string,
+    approve: boolean
+  ): Promise<WalletTransaction> => {
+    const response = await apiClient.post<{ success: boolean; transaction: WalletTransaction }>(
+      `/api/wallet/app/${appId}/requests/${transactionId}/process`,
+      { approve }
+    );
+    return response.data.transaction;
+  },
+
+  /**
+   * Cross-app: Get users with wallet info from a connected app
+   */
+  crossAppGetUsers: async (
+    appId: string,
+    page = 1,
+    limit = 20,
+    search?: string,
+    userType?: string,
+    status?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<{ users: any[]; pagination: { total: number; page: number; limit: number; pages: number } }> => {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+    if (search) params.append("search", search);
+    if (userType) params.append("userType", userType);
+    if (status) params.append("status", status);
+    const response = await apiClient.get<{
+      success: boolean;
+      users: any[];
+      pagination: { total: number; page: number; limit: number; pages: number };
+    }>(`/api/wallet/app/${appId}/users?${params.toString()}`);
+    return { users: response.data.users, pagination: response.data.pagination };
+  },
 };

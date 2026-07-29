@@ -26,8 +26,6 @@ import {
   FaChartBar,
   FaSync,
   FaCheckSquare,
-  FaHome,
-  FaServer,
 } from "react-icons/fa";
 import type { Order, OrderResponse, OrderFilters } from "../../types/order";
 import type { Provider } from "../../types/package";
@@ -42,6 +40,7 @@ import { ORDER_STATUS, getStatusLabel } from "../../constants/orderStatuses";
 import { orderService } from "../../services/order.service";
 import { settingsService, type ConnectedApp } from "../../services/settings.service";
 import { apiClient } from "../../utils/api-client";
+import { CrossAppSwitcher } from "../common/CrossAppSwitcher";
 
 interface UnifiedOrderListProps {
   isAdmin: boolean;
@@ -1415,37 +1414,12 @@ export const UnifiedOrderList: React.FC<UnifiedOrderListProps> = ({
         currentViewMode={viewMode}
       />
       {/* Bottom Navigation — Source App Switcher */}
-      {isAdmin && connectedApps.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 md:left-64 bg-[var(--bg-surface)] border-t border-[var(--border-color)] pb-[env(safe-area-inset-bottom)]">
-          <div className="flex items-center justify-around max-w-lg mx-auto">
-            <button
-              onClick={() => setSourceApp("this-app")}
-              className={`flex flex-col items-center gap-0.5 py-2.5 px-3 text-[11px] font-medium transition-colors ${
-                sourceApp === "this-app"
-                  ? "text-[var(--color-secondary)]"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              <FaHome className="text-base" />
-              This App
-            </button>
-            {connectedApps.map((app) => (
-              <button
-                key={app.appId}
-                onClick={() => setSourceApp(app.appId)}
-                className={`flex flex-col items-center gap-0.5 py-2.5 px-3 text-[11px] font-medium transition-colors ${
-                  sourceApp === app.appId
-                    ? "text-[var(--color-secondary)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                }`}
-              >
-                <FaServer className="text-base" />
-                {app.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <CrossAppSwitcher
+        activeApp={sourceApp}
+        onChange={setSourceApp}
+        apps={connectedApps}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 };

@@ -30,6 +30,7 @@ import {
 import type { StatCardProps } from "../../design-system/components/stats-card";
 import { Modal } from "../../design-system/components/modal";
 import { SearchAndFilter } from "../../components/common/SearchAndFilter";
+import { CrossAppSwitcher } from "../../components/common/CrossAppSwitcher";
 import type { WalletTransaction, WalletAnalytics } from "../../types/wallet";
 import { walletService } from "../../services/wallet-service";
 import { websocketService } from "../../services/websocket.service";
@@ -39,6 +40,8 @@ import {
   USER_TYPE_LABELS,
   getUserTypeColor,
 } from "../../utils/userTypeHelpers";
+import { settingsService } from "../../services/settings.service";
+import type { ConnectedApp } from "../../services/settings.service";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS" }).format(n);
@@ -240,6 +243,8 @@ export default function WalletTopUpsPage() {
   const [userTypeFilter, setUserTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [sourceAppId, setSourceAppId] = useState("local");
+  const [connectedApps, setConnectedApps] = useState<ConnectedApp[]>([]);
 
   // ---------------------------------------------------------------------------
   // Data fetching
@@ -248,14 +253,27 @@ export default function WalletTopUpsPage() {
   const fetchUsers = useCallback(async (page = 1) => {
     setLoading(true);
     try {
-      const resp = await userService.getUsers({
-        page,
-        limit: itemsPerPage,
-        search: searchTerm || undefined,
-        userType: userTypeFilter || undefined,
-        status: statusFilter || undefined,
-      });
-      setUsers(resp.users);
+      let resp: { users: any[]; pagination: { total: number; page: number; limit: number; pages: number } };
+      if (sourceAppId === "local") {
+        resp = await userService.getUsers({
+          page,
+          limit: itemsPerPage,
+          search: searchTerm || undefined,
+          userType: userTypeFilter || undefined,
+          status: statusFilter || undefined,
+        });
+      } else {
+        resp = await walletService.crossAppGetUsers(
+          sourceAppId,
+          page,
+          itemsPerPage,
+          searchTerm || undefined,
+          userTypeFilter || undefined,
+          statusFilter || undefined
+        );
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setUsers(resp.users as any);
       setPagination({
         page: resp.pagination.page,
         limit: resp.pagination.limit,
@@ -267,26 +285,34 @@ export default function WalletTopUpsPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, userTypeFilter, statusFilter, itemsPerPage, addToast]);
+  }, [searchTerm, userTypeFilter, statusFilter, itemsPerPage, sourceAppId, addToast]);
 
   const fetchAnalytics = useCallback(async () => {
     try {
-      const data = await walletService.getWalletAnalytics();
+      const data = sourceAppId === "local"
+        ? await walletService.getWalletAnalytics()
+        : await walletService.crossAppGetAnalytics(sourceAppId);
       setAnalytics(data);
     } catch { /* silent */ }
-  }, []);
+  }, [sourceAppId]);
 
   const fetchPendingRequests = useCallback(async () => {
     try {
-      const resp = await walletService.getPendingRequests();
+      const resp = sourceAppId === "local"
+        ? await walletService.getPendingRequests()
+        : await walletService.crossAppGetPendingRequests(sourceAppId);
       setPendingRequests(resp.transactions);
     } catch { /* silent */ }
-  }, []);
+  }, [sourceAppId]);
 
   useEffect(() => {
     fetchUsers(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, userTypeFilter, statusFilter, itemsPerPage]);
+  }, [searchTerm, userTypeFilter, statusFilter, itemsPerPage, sourceAppId]);
+
+  useEffect(() => {
+    settingsService.getConnectedApps().then(apps => setConnectedApps(apps)).catch(() => {});
+  }, []);
 
   const handleWalletUpdate = useCallback((data: unknown) => {
     if (data && typeof data === "object" && "userId" in data) {
@@ -313,12 +339,22 @@ export default function WalletTopUpsPage() {
     description: string,
     mode: "credit" | "debit"
   ) => {
-    if (mode === "credit") {
-      await walletService.adminTopUpWallet(userId, amount, description);
-      addToast(`Credited ${fmt(amount)} to wallet`, "success");
+    if (sourceAppId === "local") {
+      if (mode === "credit") {
+        await walletService.adminTopUpWallet(userId, amount, description);
+        addToast(`Credited ${fmt(amount)} to wallet`, "success");
+      } else {
+        await walletService.adminDebitWallet(userId, amount, description);
+        addToast(`Debited ${fmt(amount)} from wallet`, "success");
+      }
     } else {
-      await walletService.adminDebitWallet(userId, amount, description);
-      addToast(`Debited ${fmt(amount)} from wallet`, "success");
+      if (mode === "credit") {
+        await walletService.crossAppTopUpWallet(sourceAppId, userId, amount, description);
+        addToast(`Credited ${fmt(amount)} via cross-app`, "success");
+      } else {
+        await walletService.crossAppDebitWallet(sourceAppId, userId, amount, description);
+        addToast(`Debited ${fmt(amount)} via cross-app`, "success");
+      }
     }
     void fetchUsers(pagination.page);
     void fetchAnalytics();
@@ -327,7 +363,11 @@ export default function WalletTopUpsPage() {
   const handleProcessRequest = async (id: string, approve: boolean) => {
     setProcessingId(id);
     try {
-      await walletService.processTopUpRequest(id, approve);
+      if (sourceAppId === "local") {
+        await walletService.processTopUpRequest(id, approve);
+      } else {
+        await walletService.crossAppProcessTopUpRequest(sourceAppId, id, approve);
+      }
       addToast(approve ? "Request approved" : "Request rejected", approve ? "success" : "warning");
       void fetchPendingRequests();
       void fetchAnalytics();
@@ -948,6 +988,15 @@ export default function WalletTopUpsPage() {
         user={selectedUser}
         mode={transactionModal.mode}
         onTransaction={handleTransaction}
+      />
+
+      {/* ── Source App Switcher ──────────────────────────────────────────── */}
+      <CrossAppSwitcher
+        activeApp={sourceAppId}
+        onChange={(v: string) => setSourceAppId(v)}
+        apps={connectedApps}
+        isAdmin={true}
+        thisAppValue="local"
       />
     </div>
   );
