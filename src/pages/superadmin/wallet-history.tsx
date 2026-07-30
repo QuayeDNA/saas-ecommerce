@@ -28,7 +28,7 @@ import { Modal } from "../../design-system/components/modal";
 import { SearchAndFilter } from "../../components/common/SearchAndFilter";
 import { CrossAppSwitcher } from "../../components/common/CrossAppSwitcher";
 import { settingsService } from "../../services/settings.service";
-import type { WalletTransaction } from "../../types/wallet";
+import type { WalletTransaction, TransactionHistoryResponse } from "../../types/wallet";
 import { walletService } from "../../services/wallet-service";
 import type { ConnectedApp } from "../../services/settings.service";
 
