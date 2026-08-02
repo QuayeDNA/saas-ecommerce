@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Plus, Trash2, Wifi, WifiOff, RefreshCw, Edit, Loader2 } from "lucide-react";
-import { Button, Dialog, DialogHeader, DialogBody, DialogFooter, Badge } from "../../../design-system";
+import { Button, Dialog, DialogHeader, DialogBody, DialogFooter, Badge, Switch } from "../../../design-system";
 import { Card } from "../../../design-system/components/card";
 import { useToast } from "../../../design-system/components/toast";
 import { settingsService, type ConnectedApp } from "../../../services/settings.service";
@@ -19,6 +19,9 @@ export const ConnectedAppsTab: React.FC = () => {
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
+  const [crossAppEnabled, setCrossAppEnabled] = useState(false);
+  const [crossAppSaving, setCrossAppSaving] = useState(false);
+
   const fetchApps = useCallback(async () => {
     setLoading(true);
     try {
@@ -31,7 +34,17 @@ export const ConnectedAppsTab: React.FC = () => {
     }
   }, [addToast]);
 
+  const fetchCrossAppSettings = useCallback(async () => {
+    try {
+      const settings = await settingsService.getCrossAppTransferSettings();
+      setCrossAppEnabled(settings.crossAppWalletTransferEnabled);
+    } catch {
+      // non-fatal; toggle stays off by default
+    }
+  }, []);
+
   useEffect(() => { fetchApps(); }, [fetchApps]);
+  useEffect(() => { fetchCrossAppSettings(); }, [fetchCrossAppSettings]);
 
   const openAdd = () => {
     setEditingApp(null);
@@ -118,6 +131,19 @@ export const ConnectedAppsTab: React.FC = () => {
     }
   };
 
+  const handleToggleCrossApp = async (next: boolean) => {
+    setCrossAppSaving(true);
+    try {
+      const settings = await settingsService.updateCrossAppTransferSettings({ crossAppWalletTransferEnabled: next });
+      setCrossAppEnabled(settings.crossAppWalletTransferEnabled);
+      addToast(`Cross-app wallet transfers ${next ? "enabled" : "disabled"}`, "success");
+    } catch {
+      addToast("Failed to update cross-app wallet transfer setting", "error");
+    } finally {
+      setCrossAppSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
@@ -137,6 +163,24 @@ export const ConnectedAppsTab: React.FC = () => {
           <Plus className="w-4 h-4 mr-1" />Add Connection
         </Button>
       </div>
+
+      <Card>
+        <div className="flex items-center justify-between gap-4 p-4">
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-[var(--text-primary)]">Cross-App Wallet Transfers</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
+              Allow agents to transfer wallet balances to this app's connected apps. The Transfer button on the wallet page only appears while this is enabled.
+            </p>
+          </div>
+          <Switch
+            checked={crossAppEnabled}
+            onCheckedChange={handleToggleCrossApp}
+            isDisabled={crossAppSaving}
+            label={crossAppEnabled ? "Enabled" : "Disabled"}
+            colorScheme="success"
+          />
+        </div>
+      </Card>
 
       {apps.length === 0 ? (
         <Card>

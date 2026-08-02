@@ -134,6 +134,10 @@ export interface MomoBridgeSettings {
   momoBridgeAccountNumber: string;
 }
 
+export interface CrossAppTransferSettings {
+  crossAppWalletTransferEnabled: boolean;
+}
+
 // =============================================================================
 // SETTINGS SERVICE
 // =============================================================================
@@ -400,6 +404,21 @@ class SettingsService {
   async testConnectedApp(appId: string): Promise<{ verified: boolean }> {
     const response = await apiClient.post(`/api/settings/connected-apps/${appId}/test`);
     return response.data;
+  }
+
+  // ── Cross-App Wallet Transfer ──────────────────────────────────────────
+
+  async getCrossAppTransferSettings(): Promise<CrossAppTransferSettings> {
+    const response = await apiClient.get("/api/settings/wallet-transfer");
+    return response.data.data ?? response.data;
+  }
+
+  async updateCrossAppTransferSettings(
+    settings: Partial<CrossAppTransferSettings>
+  ): Promise<CrossAppTransferSettings> {
+    const response = await apiClient.put("/api/settings/wallet-transfer", settings);
+    this._allSettingsCache = null;
+    return response.data.data ?? response.data;
   }
 
   // ── Integration Key ─────────────────────────────────────────────────
