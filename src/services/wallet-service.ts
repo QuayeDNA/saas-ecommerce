@@ -11,6 +11,8 @@ import type {
   PayoutDestination,
   AdminPayoutSummary,
   ConvertEarningsResponse,
+  CrossAppTransfer,
+  CrossAppTransferStatus,
 } from "../types/wallet";
 import { canHaveWallet } from "../utils/userTypeHelpers";
 
@@ -626,5 +628,81 @@ export const walletService = {
       pagination: { total: number; page: number; limit: number; pages: number };
     }>(`/api/wallet/app/${appId}/users?${params.toString()}`);
     return { users: response.data.users, pagination: response.data.pagination };
+  },
+
+  // ---------------------------------------------------------------------------
+  // Cross-app wallet transfer (agent self-service)
+  // ---------------------------------------------------------------------------
+
+  getTransferTargets: async (): Promise<{ appId: string; name: string }[]> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      targets: { appId: string; name: string }[];
+    }>("/api/wallet/transfer/targets");
+    return response.data.targets || [];
+  },
+
+  crossAppTransfer: async (
+    appId: string,
+    data: { identifier: string; pin: string; amount: number; note?: string }
+  ): Promise<{ reference: string; status: string }> => {
+    try {
+      const response = await apiClient.post<{
+        success: boolean;
+        data: { reference: string; status: string };
+      }>("/api/wallet/transfer", { appId, ...data });
+      return response.data.data;
+    } catch (err) {
+      throw new Error(extractApiError(err));
+    }
+  },
+
+  getTransferHistory: async (
+    page = 1,
+    limit = 20
+  ): Promise<{
+    transfers: CrossAppTransfer[];
+    pagination: { total: number; page: number; limit: number; pages: number };
+  }> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      transfers: CrossAppTransfer[];
+      pagination: { total: number; page: number; limit: number; pages: number };
+    }>(`/api/wallet/transfer/history?page=${page}&limit=${limit}`);
+    return {
+      transfers: response.data.transfers,
+      pagination: response.data.pagination,
+    };
+  },
+
+  adminGetTransfers: async (
+    page = 1,
+    limit = 20,
+    status?: CrossAppTransferStatus
+  ): Promise<{
+    transfers: CrossAppTransfer[];
+    pagination: { total: number; page: number; limit: number; pages: number };
+  }> => {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+    if (status) params.append("status", status);
+    const response = await apiClient.get<{
+      success: boolean;
+      transfers: CrossAppTransfer[];
+      pagination: { total: number; page: number; limit: number; pages: number };
+    }>(`/api/wallet/transfers?${params.toString()}`);
+    return {
+      transfers: response.data.transfers,
+      pagination: response.data.pagination,
+    };
+  },
+
+  recheckTransfer: async (reference: string): Promise<CrossAppTransfer> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      transfer: CrossAppTransfer;
+    }>(`/api/wallet/transfer/${encodeURIComponent(reference)}/recheck`);
+    return response.data.transfer;
   },
 };

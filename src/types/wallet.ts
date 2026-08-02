@@ -36,6 +36,28 @@ export interface TransactionHistoryResponse {
   };
 }
 
+export type CrossAppTransferStatus = "completed" | "failed" | "pending";
+
+export interface CrossAppTransfer {
+  _id: string;
+  reference: string;
+  sourceAppId: string;
+  destAppId: string;
+  sourceUserId?: string | null;
+  destUserId?: string | null;
+  sourceUserEmail?: string;
+  destUserEmail?: string;
+  amount: number;
+  status: CrossAppTransferStatus;
+  note?: string;
+  sourceAppName: string;
+  destAppName: string;
+  error?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+}
+
 // Top-up request interface
 export interface TopUpRequest {
   amount: number;
