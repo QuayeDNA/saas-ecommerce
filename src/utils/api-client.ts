@@ -99,6 +99,10 @@ apiClient.interceptors.response.use(
 
           // Retry original request with new token
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          // Mark that a refresh genuinely succeeded, so a 401 on the retried
+          // request is treated as a business error (e.g. invalid security PIN),
+          // NOT session expiry.
+          originalRequest._refreshed = true;
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
@@ -115,8 +119,14 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // If refresh failed or another error occurred
-    if (error.response?.status === 401 && !isPublicAuthEndpoint) {
+    // If refresh failed or another error occurred.
+    // Skip the logout when the request was already retried with a freshly
+    // refreshed token: the session is valid, so a 401 is a business error.
+    if (
+      error.response?.status === 401 &&
+      !isPublicAuthEndpoint &&
+      !originalRequest._refreshed
+    ) {
       // Don't redirect here, just clean up tokens and dispatch event
       removeToken();
       Cookies.remove("authToken");
