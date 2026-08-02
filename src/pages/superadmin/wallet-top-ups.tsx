@@ -31,6 +31,7 @@ import type { StatCardProps } from "../../design-system/components/stats-card";
 import { Modal } from "../../design-system/components/modal";
 import { SearchAndFilter } from "../../components/common/SearchAndFilter";
 import { CrossAppSwitcher } from "../../components/common/CrossAppSwitcher";
+import { CrossAppTransfersView } from "../../components/superadmin/CrossAppTransfersView";
 import type { WalletTransaction, WalletAnalytics } from "../../types/wallet";
 import { walletService } from "../../services/wallet-service";
 import { websocketService } from "../../services/websocket.service";
@@ -244,6 +245,7 @@ export default function WalletTopUpsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [sourceAppId, setSourceAppId] = useState("local");
+  const [section, setSection] = useState<"operations" | "transfers">("operations");
   const [connectedApps, setConnectedApps] = useState<ConnectedApp[]>([]);
 
   // ---------------------------------------------------------------------------
@@ -480,6 +482,36 @@ export default function WalletTopUpsPage() {
         </div>
       </Card>
 
+      {/* ── Section switcher ────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 mb-4 rounded-lg p-1 w-fit" style={{ backgroundColor: "color-mix(in srgb, var(--text-primary) 8%, transparent)" }}>
+        <button
+          onClick={() => setSection("operations")}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            section === "operations" ? "bg-[var(--bg-surface)] shadow-sm" : ""
+          }`}
+          style={{
+            color: section === "operations" ? "var(--text-primary)" : "var(--text-muted)",
+          }}
+        >
+          Operations
+        </button>
+        <button
+          onClick={() => setSection("transfers")}
+          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            section === "transfers" ? "bg-[var(--bg-surface)] shadow-sm" : ""
+          }`}
+          style={{
+            color: section === "transfers" ? "var(--text-primary)" : "var(--text-muted)",
+          }}
+        >
+          Transfers
+        </button>
+      </div>
+
+      {section === "transfers" ? (
+        <CrossAppTransfersView />
+      ) : (
+        <>
       {/* ── Stat cards ──────────────────────────────────────────────────────── */}
       {analytics ? (
         <StatsGrid stats={statCards} columns={4} gap="sm" />
@@ -989,6 +1021,8 @@ export default function WalletTopUpsPage() {
         mode={transactionModal.mode}
         onTransaction={handleTransaction}
       />
+        </>
+      )}
 
       {/* ── Source App Switcher ──────────────────────────────────────────── */}
       <CrossAppSwitcher
