@@ -12,6 +12,7 @@ import {
   FaCheck,
   FaExchangeAlt,
   FaSync,
+  FaTimes,
 } from "react-icons/fa";
 import {
   Alert,
@@ -77,6 +78,7 @@ export function CrossAppWalletTransferDialog({
   const [result, setResult] = useState<{
     reference: string;
     status: string;
+    error?: string | null;
   } | null>(null);
   const [rechecking, setRechecking] = useState(false);
   const autoCheckedRef = useRef(false);
@@ -110,9 +112,13 @@ export function CrossAppWalletTransferDialog({
       setRechecking(true);
       try {
         const t = await walletService.recheckTransfer(reference);
-        setResult((prev) => (prev ? { ...prev, status: t.status } : prev));
+        setResult((prev) =>
+          prev ? { ...prev, status: t.status, error: t.error ?? prev.error } : prev,
+        );
         if (t.status === "completed") {
           addToast("Transfer confirmed", "success", 5000);
+        } else if (t.status === "failed") {
+          addToast("Transfer failed — funds reversed", "error", 5000);
         }
       } catch {
         // destination still unreachable — leave the transfer pending
@@ -322,6 +328,29 @@ export function CrossAppWalletTransferDialog({
                   Checking status…
                 </p>
               )}
+            </div>
+          ) : result.status === "failed" ? (
+            <div className="flex flex-col items-center text-center py-4">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center mb-3"
+                style={{
+                  backgroundColor: "color-mix(in srgb, var(--error) 15%, transparent)",
+                }}
+              >
+                <FaTimes className="text-xl" style={{ color: "var(--error)" }} />
+              </div>
+              <p className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>
+                Transfer Failed
+              </p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                {result.error || "The destination app did not confirm your transfer."}
+              </p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                Reference: <span className="font-mono">{result.reference}</span>
+              </p>
+              <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+                Your wallet was refunded.
+              </p>
             </div>
           ) : (
             <div className="flex flex-col items-center text-center py-4">
