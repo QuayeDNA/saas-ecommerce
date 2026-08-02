@@ -22,6 +22,7 @@ import {
   FaTimesCircle,
   FaReceipt,
   FaMobileAlt,
+  FaExchangeAlt,
 } from "react-icons/fa";
 import {
   Alert,
@@ -38,6 +39,7 @@ import {
 import { useToast } from "../design-system/components/toast";
 import { walletService } from "../services/wallet-service";
 import { TopUpRequestModal } from "../components/wallet/TopUpRequestModal";
+import { CrossAppWalletTransferDialog } from "../components/wallet/CrossAppWalletTransferDialog";
 import { EarningsManager } from "../components/storefront/earnings-manager";
 
 
@@ -58,6 +60,8 @@ export const WalletPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferTargets, setTransferTargets] = useState<{ appId: string; name: string }[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
@@ -139,6 +143,13 @@ export const WalletPage = () => {
       setIsMomoLoading(false);
     }
   };
+
+  useEffect(() => {
+    walletService
+      .getTransferTargets()
+      .then(setTransferTargets)
+      .catch(() => setTransferTargets([]));
+  }, []);
 
   // Load transactions function
   const loadTransactions = useCallback(async () => {
@@ -456,6 +467,17 @@ export const WalletPage = () => {
                   >
                     Instant Claim
                   </Button>
+                  {transferTargets.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="md"
+                      leftIcon={<FaExchangeAlt />}
+                      onClick={() => setShowTransferModal(true)}
+                      className="w-full sm:w-auto"
+                    >
+                      Transfer
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardBody>
@@ -977,6 +999,12 @@ export const WalletPage = () => {
         onSubmit={handleTopUpRequest}
         isSubmitting={isSubmittingRequest}
         error={error}
+      />
+      <CrossAppWalletTransferDialog
+        isOpen={showTransferModal}
+        onClose={() => setShowTransferModal(false)}
+        balance={walletBalance}
+        onSuccess={() => void refreshWallet()}
       />
     </>
   );
