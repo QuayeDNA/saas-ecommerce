@@ -1,20 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   FaArrowLeft,
   FaArrowRight,
   FaCheck,
   FaExchangeAlt,
+  FaSync,
 } from "react-icons/fa";
 import {
-  Button,
-  Input,
-  Textarea,
   Alert,
+  Button,
   Dialog,
-  DialogHeader,
   DialogBody,
   DialogFooter,
+  DialogHeader,
+  Input,
+  Spinner,
+  Textarea,
 } from "../../design-system";
 import { useToast } from "../../design-system/components/toast";
 import { walletService } from "../../services/wallet-service";
@@ -70,6 +72,8 @@ export function CrossAppWalletTransferDialog({
     reference: string;
     status: string;
   } | null>(null);
+  const [rechecking, setRechecking] = useState(false);
+  const [autoChecked, setAutoChecked] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -77,6 +81,8 @@ export function CrossAppWalletTransferDialog({
       setForm(emptyForm);
       setError(null);
       setResult(null);
+      setAutoChecked(false);
+      setRechecking(false);
       return;
     }
     walletService
@@ -93,6 +99,34 @@ export function CrossAppWalletTransferDialog({
     amountNum > 0 &&
     amountNum <= balance;
 
+  const runRecheck = useCallback(
+    async (reference: string) => {
+      setRechecking(true);
+      try {
+        const t = await walletService.recheckTransfer(reference);
+        setResult((prev) => (prev ? { ...prev, status: t.status } : prev));
+        if (t.status === "completed") {
+          addToast("Transfer confirmed", "success", 5000);
+        }
+      } catch {
+        // destination still unreachable — leave the transfer pending
+      } finally {
+        setRechecking(false);
+      }
+    },
+    [addToast],
+  );
+
+  useEffect(() => {
+    if (step !== 3 || result?.status !== "pending" || autoChecked) return;
+    setAutoChecked(true);
+    const timer = setTimeout(() => void runRecheck(result.reference), 4000);
+    return () => {
+      clearTimeout(timer);
+      setRechecking(false);
+    };
+  }, [step, result, autoChecked, runRecheck]);
+
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
@@ -105,8 +139,14 @@ export function CrossAppWalletTransferDialog({
       });
       setResult(res);
       setStep(3);
-      addToast("Transfer completed", "success", 5000);
-      onSuccess();
+      if (res.status === "pending") {
+        setAutoChecked(false);
+        addToast("Transfer submitted — awaiting confirmation", "info", 5000);
+        onSuccess();
+      } else {
+        addToast("Transfer completed", "success", 5000);
+        onSuccess();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Transfer failed");
       setStep(2);
@@ -256,28 +296,46 @@ export function CrossAppWalletTransferDialog({
         )}
 
         {step === 3 && result && (
-          <div className="flex flex-col items-center text-center py-4">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center mb-3"
-              style={{
-                backgroundColor: "color-mix(in srgb, var(--success) 15%, transparent)",
-              }}
-            >
-              <FaCheck className="text-xl" style={{ color: "var(--success)" }} />
+          result.status === "pending" ? (
+            <div className="flex flex-col items-center text-center py-4">
+              <Spinner />
+              <p className="font-semibold text-base mt-3" style={{ color: "var(--text-primary)" }}>
+                Transfer submitted
+              </p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                Waiting for the destination app to confirm your transfer. This can
+                take a few seconds.
+              </p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                Reference: <span className="font-mono">{result.reference}</span>
+              </p>
+              {rechecking && (
+                <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+                  Checking status…
+                </p>
+              )}
             </div>
-            <p
-              className="font-semibold text-base"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Transfer Completed
-            </p>
-            <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-              Reference: <span className="font-mono">{result.reference}</span>
-            </p>
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              Status: {result.status}
-            </p>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center text-center py-4">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center mb-3"
+                style={{
+                  backgroundColor: "color-mix(in srgb, var(--success) 15%, transparent)",
+                }}
+              >
+                <FaCheck className="text-xl" style={{ color: "var(--success)" }} />
+              </div>
+              <p className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>
+                Transfer Completed
+              </p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                Reference: <span className="font-mono">{result.reference}</span>
+              </p>
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                Status: {result.status}
+              </p>
+            </div>
+          )
         )}
       </DialogBody>
 
@@ -312,9 +370,26 @@ export function CrossAppWalletTransferDialog({
           </>
         )}
         {step === 3 && (
-          <Button variant="primary" onClick={onClose}>
-            Done
-          </Button>
+          result?.status === "pending" ? (
+            <>
+              <Button variant="outline" onClick={onClose}>
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                leftIcon={<FaSync />}
+                isLoading={rechecking}
+                disabled={rechecking}
+                onClick={() => void runRecheck(result.reference)}
+              >
+                Check status
+              </Button>
+            </>
+          ) : (
+            <Button variant="primary" onClick={onClose}>
+              Done
+            </Button>
+          )
         )}
       </DialogFooter>
     </Dialog>
