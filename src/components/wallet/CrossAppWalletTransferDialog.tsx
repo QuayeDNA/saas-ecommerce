@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -73,7 +79,7 @@ export function CrossAppWalletTransferDialog({
     status: string;
   } | null>(null);
   const [rechecking, setRechecking] = useState(false);
-  const [autoChecked, setAutoChecked] = useState(false);
+  const autoCheckedRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -81,7 +87,7 @@ export function CrossAppWalletTransferDialog({
       setForm(emptyForm);
       setError(null);
       setResult(null);
-      setAutoChecked(false);
+      autoCheckedRef.current = false;
       setRechecking(false);
       return;
     }
@@ -118,14 +124,16 @@ export function CrossAppWalletTransferDialog({
   );
 
   useEffect(() => {
-    if (step !== 3 || result?.status !== "pending" || autoChecked) return;
-    setAutoChecked(true);
+    if (step !== 3 || result?.status !== "pending" || autoCheckedRef.current) {
+      return;
+    }
+    autoCheckedRef.current = true;
     const timer = setTimeout(() => void runRecheck(result.reference), 4000);
     return () => {
       clearTimeout(timer);
       setRechecking(false);
     };
-  }, [step, result, autoChecked, runRecheck]);
+  }, [step, result, runRecheck]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -140,7 +148,7 @@ export function CrossAppWalletTransferDialog({
       setResult(res);
       setStep(3);
       if (res.status === "pending") {
-        setAutoChecked(false);
+        autoCheckedRef.current = false;
         addToast("Transfer submitted — awaiting confirmation", "info", 5000);
         onSuccess();
       } else {
