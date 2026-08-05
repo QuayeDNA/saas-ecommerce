@@ -333,7 +333,7 @@ const PublicStore: React.FC = () => {
 
   // ── UI ───────────────────────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState<string>("all");
+  const [selectedPackage, setSelectedPackage] = useState<string>("all");
 
   const [collapsedPackages, setCollapsedPackages] = useState<Set<string>>(
     new Set(),
@@ -453,6 +453,26 @@ const PublicStore: React.FC = () => {
     return Array.from(map.values());
   }, [storeData]);
 
+  // Flat package pills (merged by name across providers) for the toolbar filter
+  const packages = useMemo(() => {
+    if (!storeData) return [];
+    const counts = new Map<string, number>();
+    if (Array.isArray(storeData.providers) && storeData.providers.length > 0) {
+      storeData.providers.forEach((p) =>
+        (p.packages || []).forEach((pkg) => {
+          const name = pkg.name || "Default";
+          counts.set(name, (counts.get(name) || 0) + (pkg.bundles?.length || 0));
+        }),
+      );
+    } else {
+      storeData.bundles.forEach((b) => {
+        const name = b.packageName || "Default";
+        counts.set(name, (counts.get(name) || 0) + 1);
+      });
+    }
+    return Array.from(counts.entries()).map(([name, count]) => ({ name, count }));
+  }, [storeData]);
+
   const groupedBundles = useMemo(() => {
     if (!storeData) return new Map<string, Map<string, PublicBundle[]>>();
     const grouped = new Map<string, Map<string, PublicBundle[]>>();
@@ -463,7 +483,7 @@ const PublicStore: React.FC = () => {
       if (!grouped.has(prov)) grouped.set(prov, new Map());
       if (!grouped.get(prov)!.has(pkg)) grouped.get(prov)!.set(pkg, []);
       if (
-        (selectedProvider === "all" || prov === selectedProvider) &&
+        (selectedPackage === "all" || pkg === selectedPackage) &&
         (!t ||
           b.name.toLowerCase().includes(t) ||
           (b.description?.toLowerCase() || "").includes(t))
@@ -472,7 +492,7 @@ const PublicStore: React.FC = () => {
       }
     });
     return grouped;
-  }, [storeData, searchTerm, selectedProvider]);
+  }, [storeData, searchTerm, selectedPackage]);
 
   const popularBundles = useMemo(() => {
     if (!storeData) return [];
@@ -881,10 +901,9 @@ const PublicStore: React.FC = () => {
         theme={theme}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        selectedProvider={selectedProvider}
-        onSelectProvider={setSelectedProvider}
-        providers={providers}
-        groupedBundles={groupedBundles as any}
+        selectedPackage={selectedPackage}
+        onSelectPackage={setSelectedPackage}
+        packages={packages}
         storeData={storeData}
         onOpenTrackDrawer={() => setShowTrackDrawer(true)}
         storeClosed={storeClosed}
@@ -917,7 +936,7 @@ const PublicStore: React.FC = () => {
           storeData={storeData}
           groupedBundles={groupedBundles as any}
           providers={providers}
-          selectedProvider={selectedProvider}
+          selectedPackage={selectedPackage}
           searchTerm={searchTerm}
           collapsedPackages={collapsedPackages}
           togglePackage={togglePackage}
@@ -928,7 +947,7 @@ const PublicStore: React.FC = () => {
           EmptyBundlesComponent={EmptyBundles}
           PackageHeaderComponent={PackageHeader}
           AdBannerComponent={AdBanner}
-          onClearSearch={() => { setSearchTerm(""); setSelectedProvider("all"); }}
+          onClearSearch={() => { setSearchTerm(""); setSelectedPackage("all"); }}
         />
       </main>
 

@@ -21,7 +21,7 @@ interface BundleSectionsProps {
   storeData: PublicStorefront;
   groupedBundles: Map<string, Map<string, PublicBundle[]>>;
   providers: Provider[];
-  selectedProvider: string;
+  selectedPackage: string;
   searchTerm: string;
   collapsedPackages: Set<string>;
   togglePackage: (key: string) => void;
@@ -53,7 +53,7 @@ export const BundleSections = memo(
     storeData,
     groupedBundles,
     providers,
-    selectedProvider,
+    selectedPackage,
     searchTerm,
     collapsedPackages,
     togglePackage,
@@ -116,9 +116,6 @@ export const BundleSections = memo(
       return (
         <div className="max-w-7xl mx-auto px-4 py-5 space-y-8">
           {storeData.providers
-            .filter(
-              (p) => selectedProvider === "all" || p.code === selectedProvider,
-            )
             .map((prov) => {
               const pc = getProviderColors(prov.code);
               const filteredPkgs = (prov.packages || [])
@@ -133,7 +130,11 @@ export const BundleSections = memo(
                     );
                   }),
                 }))
-                .filter((p) => p.bundles.length > 0);
+                .filter(
+                  (p) =>
+                    (selectedPackage === "all" || p.name === selectedPackage) &&
+                    p.bundles.length > 0,
+                );
               if (!filteredPkgs.length) return null;
               const total = filteredPkgs.reduce(
                 (s, p) => s + p.bundles.length,
@@ -242,7 +243,12 @@ export const BundleSections = memo(
                 className="space-y-4 border-l-2 pl-4 ml-1"
                 style={{ borderColor: pc.primary + "25" }}
               >
-                {Array.from(pkgMap.entries()).map(([pkgName, bundles]) => {
+                {Array.from(pkgMap.entries())
+                  .filter(
+                    ([pkgName]) =>
+                      selectedPackage === "all" || pkgName === selectedPackage,
+                  )
+                  .map(([pkgName, bundles]) => {
                   const key = `${provCode}-${pkgName}`;
                   const collapsed = collapsedPackages.has(key);
                   return (

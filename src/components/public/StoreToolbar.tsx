@@ -1,29 +1,25 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { FaMagnifyingGlass, FaBoxOpen, FaXmark } from "react-icons/fa6";
 import type { ThemeConfig } from "./types";
-import { getLogoUrl } from "./utils";
-import { getProviderColors } from "../../utils/provider-colors";
 import type { PublicStorefront } from "../../services/storefront.service";
 
 // =============================================================================
-// StoreToolbar — search · provider filter · My Orders
+// StoreToolbar — search · package filter · My Orders
 // Transparent until scrolled; glassmorphic frost background appears on stick.
 // =============================================================================
 
-interface Provider {
-  code: string;
+interface PackagePill {
   name: string;
-  logo?: { url?: string; alt?: string } | string;
+  count: number;
 }
 
 interface StoreToolbarProps {
   theme: ThemeConfig;
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  selectedProvider: string;
-  onSelectProvider: (code: string) => void;
-  providers: Provider[];
-  groupedBundles: Map<string, Map<string, unknown[]>>;
+  selectedPackage: string;
+  onSelectPackage: (name: string) => void;
+  packages: PackagePill[];
   storeData: PublicStorefront | null;
   onOpenTrackDrawer: () => void;
   storeClosed: boolean;
@@ -39,10 +35,9 @@ export const StoreToolbar = memo(
     theme,
     searchTerm,
     onSearchChange,
-    selectedProvider,
-    onSelectProvider,
-    providers,
-    groupedBundles,
+    selectedPackage,
+    onSelectPackage,
+    packages,
     storeData,
     onOpenTrackDrawer,
     storeClosed,
@@ -218,17 +213,17 @@ export const StoreToolbar = memo(
               </button>
             </div>
 
-            {/* ── Provider carousel ────────────────────────────────────────────── */}
-            {providers.length > 1 && (
+            {/* ── Package carousel ────────────────────────────────────────────── */}
+            {packages.length > 1 && (
               <div className="-mx-4 px-4">
                 <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 snap-x">
 
                   {/* All */}
                   <button
-                    onClick={() => onSelectProvider("all")}
+                    onClick={() => onSelectPackage("all")}
                     className="shrink-0 snap-start flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all"
                     style={
-                      selectedProvider === "all"
+                      selectedPackage === "all"
                         ? {
                             backgroundColor: theme.primary,
                             border: `2px solid ${theme.primary}`,
@@ -244,27 +239,18 @@ export const StoreToolbar = memo(
                     All · {storeData?.bundles.length ?? 0}
                   </button>
 
-                  {providers.map((prov) => {
-                    const pc = getProviderColors(prov.code);
-                    const isActive = selectedProvider === prov.code;
-                    const count = groupedBundles.get(prov.code)
-                      ? Array.from(groupedBundles.get(prov.code)!.values()).reduce(
-                          (s, a) => s + a.length,
-                          0,
-                        )
-                      : 0;
-                    const logoUrl = getLogoUrl(prov.logo);
-
+                  {packages.map((pkg) => {
+                    const isActive = selectedPackage === pkg.name;
                     return (
                       <button
-                        key={prov.code}
-                        onClick={() => onSelectProvider(prov.code)}
+                        key={pkg.name}
+                        onClick={() => onSelectPackage(pkg.name)}
                         className="shrink-0 snap-start flex items-center gap-2 px-3 py-2 rounded-full text-sm font-semibold transition-all"
                         style={
                           isActive
                             ? {
-                                backgroundColor: pc.primary,
-                                border: `2px solid ${pc.primary}`,
+                                backgroundColor: theme.primary,
+                                border: `2px solid ${theme.primary}`,
                                 color: "#fff",
                               }
                             : {
@@ -274,21 +260,7 @@ export const StoreToolbar = memo(
                               }
                         }
                       >
-                        {logoUrl ? (
-                          <img
-                            src={logoUrl}
-                            alt={prov.name}
-                            className="w-4 h-4 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span
-                            className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-                            style={{ backgroundColor: pc.primary }}
-                          >
-                            {prov.name.charAt(0)}
-                          </span>
-                        )}
-                        {prov.name} · {count}
+                        {pkg.name} · {pkg.count}
                       </button>
                     );
                   })}
