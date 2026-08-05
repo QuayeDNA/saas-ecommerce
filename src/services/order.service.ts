@@ -293,6 +293,15 @@ class OrderService {
 
   // ── Cross-App Order Bridge ──────────────────────────────────────────────
 
+  async getMatchingOrderIds(
+    filters: OrderFilters = {},
+    limit = 2000
+  ): Promise<{ orderIds: string[]; total: number }> {
+    const params = { ...filters, limit };
+    const response = await apiClient.get("/api/orders/ids", { params });
+    return response.data;
+  }
+
   async getCrossAppOrders(
     appId: string,
     filters: OrderFilters = {},
@@ -366,6 +375,16 @@ class OrderService {
   }> {
     const response = await apiClient.post(`/api/orders/app/${appId}/bulk-reception-status`, { orderIds, receptionStatus });
     return response.data.results;
+  }
+
+  async getCrossAppOrderIds(
+    appId: string,
+    filters: OrderFilters = {},
+    limit = 2000
+  ): Promise<{ orderIds: string[]; total: number }> {
+    const params = { ...filters, limit };
+    const response = await apiClient.get(`/api/orders/app/${appId}/ids`, { params });
+    return response.data;
   }
 }
 
